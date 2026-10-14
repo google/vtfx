@@ -1,0 +1,149 @@
+# Test strategy
+
+Status: Proposal (not approved)
+
+This document defines the structure of the tests that support the autonomous development loop, where oracles live and their formats, and the rules for gates (requirement 7.2). The tests for each module are listed in section 6 of [architecture.md](architecture.md).
+
+## 1. Principles
+
+- **Humans own the oracles.** Spec test data, fixtures, and screenshot goldens are in `spec/`, and agents do not change them.
+- **Agents own the test code.** Agents write, and may change, the runners that load and run oracles, the unit tests, and the fuzzing harnesses.
+- **Gates are deterministic.** Tests used as gates do not depend on time, random numbers, thread timing, or real IMEs.
+- **Gates run with one command.** `scripts/check.sh` runs all gates. CI calls the same script.
+
+## 2. Directories
+
+| Path | Owner | Contents |
+|---|---|---|
+| `spec/core/` | Humans | Spec tests of terminal emulation (format in section 3) |
+| `spec/ime/` | Humans | Expected sent content for IME traces (format in section 4) |
+| `spec/screenshots/` | Humans | Screenshot goldens (section 5) |
+| `tools/ime-probe/traces/` | Humans | Traces recorded with real IMEs. Only the traces that `spec/ime/` refers to are kept |
+| `<module>/src/test/` | Agents | Unit tests and runners that load oracles |
+| `<module>/src/test/resources/spec-expected-failures.txt` | Agents | The list of spec tests that do not pass yet (section 6) |
+| `spec-proposals/` | Agents | Spec tests proposed to humans for addition. Written in the same format as `spec/`. The same content is also run as tests owned by agents. |
+| `vtfx-compose/src/test/screenshots/` | Agents | Provisional goldens (section 5) |
+
+`spec/` and `tools/ime-probe/traces/` are listed under `oracle` in `config/protected-paths.toml`, and changes to them are reported.
+
+## 3. Spec tests of terminal emulation (`spec/core/*.vtspec`)
+
+One file can contain multiple cases. The format is text independent of the API, so that it can be written before the implementation of vtfx-core.
+
+```
+=== CUP moves the cursor
+size 10x3
+input "\e[2;3HX"
+screen
+  |          |
+  |  X       |
+  |          |
+cursor 4,2
+```
+
+| Line | Meaning |
+|---|---|
+| `=== <name>` | The start of a case. The name is unique within the file. |
+| `size <columns>x<rows>` | The terminal size. |
+| `input "<string>"` | Host output. If there are multiple lines, each is given in order as a separate write (used to verify UTF-8 and sequences that span writes). Escapes are `\e`, `\xNN` (one byte), `\uNNNN` (a character encoded in UTF-8), `\b`, `\r`, `\n`, `\t`, `\\`, `\"`. |
+| `screen` | The following lines are the expected screen. Each line is enclosed in `|`. A fullwidth character is written as one character occupying 2 cells, and the continuation cell after it is not written. |
+| `cursor <column>,<row>` | The expected cursor position (1-based). |
+| `ref <source>` | Optional. The place in the reference that is the basis (e.g. `ctlseqs CUP`, `DEC STD 070 5.3`). |
+
+How to write expected values for character attributes and replies (`ReplyRequested` and so on) is added to this document when needed.
+
+## 4. Expected IME sent content (`spec/ime/*.toml`)
+
+Write the expected values for replaying the `ic` events of a `tools/ime-probe` trace into the editing model that follows [ime-contract.md](ime-contract.md).
+
+```toml
+[[case]]
+trace = "tools/ime-probe/traces/gboard-device-contract/contract.jsonl"
+expected = "dont\u007f't \rteh \ri\u007fI \rok \u007f. \rhello world\u001b[D\u001b[Dx\r"
+```
+
+The `send` events recorded in traces are not used as expected values, because the policy of the recording tool differs in part from the contract.
+
+## 5. Screenshot tests
+
+- Use Roborazzi, which renders Compose on the JVM. It does not need an emulator and runs deterministically.
+- Humans do not review every change to the goldens. Therefore goldens are handled in two stages.
+  - **Provisional goldens**: Kept in `vtfx-compose/src/test/screenshots/` and managed by agents. Used to detect regressions. When updating them, write in the commit message what changed and why.
+  - **Official goldens**: Kept in `spec/screenshots/` and owned by humans. Humans check the provisional goldens and promote them, by copying them with the same file name.
+- Implementation: Render with Robolectric's native graphics and compare with Roborazzi. The settings are in `vtfx.screenshot-test` in build-logic. With `roborazzi.test.verify=true` in `gradle.properties`, every test run, including `check`, compares with the goldens. Record goldens with `./gradlew :vtfx-compose:recordRoborazziDebug`. Images of comparison differences are output to `build/outputs/roborazzi/`.
+- `OfficialGoldensTest` in `vtfx-compose` checks that each official golden has a provisional golden with the same pixels. Since the screenshot tests compare the rendering with the provisional goldens, this makes the official goldens a gate too. When a change to the rendering updates a provisional golden that has an official golden, list it in `spec-expected-failures.txt` of `vtfx-compose` as `screenshots/<file name>` (section 6), explain the change in the commit message, and add it to [review-queue.md](../review-queue.md) for a human to promote again ([decisions/0034](../decisions/0034-official-screenshot-goldens.md)).
+
+## 6. Handling spec tests that do not pass
+
+In the middle of development, many spec tests do not pass yet. Agents cannot change the oracles, so they are handled with the following mechanism.
+
+- Cases that do not pass yet are listed in the module's `spec-expected-failures.txt` in the form `<file>:<case name>`. Official screenshot goldens that the provisional goldens no longer match are listed in the same way, as `screenshots/<file name>` (section 5).
+- The gate checks both of the following.
+  - All cases not in the list pass
+  - Cases in the list fail (this forces removing them from the list once they pass, keeping the list accurate)
+- Agents may change the list. Progress can be measured by the number of entries in the list. Changes to the list are checked in the usual code review.
+
+## 7. Fuzzing
+
+- Fuzz the modules that receive untrusted input (the threat model in requirement 6.1) with Jazzer, which can be run from JUnit.
+- What to detect: exceptions, non-terminating processing (timeouts), and memory use beyond the limits.
+- The gate replays a fixed corpus and fuzzes for a short time (e.g. 30 seconds). Long fuzzing runs separately.
+- Agents add the inputs of crashes found as regression tests in the unit tests.
+- Implementation: One target per module (Jazzer can fuzz only one target per run).
+  - `TerminalFuzzTest` in `vtfx-core`: Checks the invariants of the parser and the screen model with host output and resizes.
+  - `GateFuzzTest` in `vtfx-gate`: Passes host output through a real `Terminal` and checks that replies have only known shapes, that the amount of replies is linear in the output, that no URL is opened, and the limit on clipboard writes. It also pastes the same bytes and checks that they do not escape bracketed paste.
+  - `ImeFuzzTest` in `vtfx-input`: Checks the invariants of the editing model and the limit on DELs with sequences of IME calls (the same checks as `HostileImeTest`).
+- The fixed corpus is replayed in the usual `test` task, and the `fuzz` task (which `check` depends on; configured in `vtfx.fuzz` in `build-logic`) fuzzes for 30 seconds. The fuzz tasks of the modules run in parallel ([decisions/0028](../decisions/0028-parallel-fuzzing.md)). Long fuzzing is done with `scripts/fuzz.sh <duration> [module...]`, and the results are appended to `build/reports/fuzzing-log.tsv`. Details, and the relation to the determinism of gates, are in [decisions/0003](../decisions/0003-fuzzing-gate.md).
+
+## 8. e2e on the emulator
+
+- e2e with real IMEs runs on the emulator. The results are for reports and are not gates (requirement 7.2).
+- Regressions in IME behavior are gated by the trace replay tests (section 4).
+- Implementation: `scripts/emulator.sh start` starts the AVD `vtfx-e2e` on a fixed port (serial `emulator-5580`), and then `scripts/e2e_ime.py` runs. The script installs the sample app (`vtfx-sample`), operates the Gboard settings screens to add the English, Japanese (QWERTY), and Korean (두벌식) keyboards, and taps keys following the scenarios in `tools/ime-probe/scripts/run_scenarios.py`. It collects the bytes the app sent to the host from logcat, compares them with the expected values in `spec/ime/gboard.toml`, and writes `build/reports/e2e-ime.md`. Failed cases are rerun once, and those that pass on the rerun are reported as flaky.
+
+- Rendering e2e: `scripts/e2e_render.py` runs the instrumented test of `vtfx-compose` (`RenderConsistencyTest`, `src/androidTest/`) on the emulator and writes `build/reports/e2e-render.md`. It compares, cell by cell, the screen actually drawn with hardware acceleration against a reference drawing of the same terminal state with a software `Canvas`, and fails if any cell is drawn in only one of them. Robolectric's rendering does not go through the hardware acceleration path (the cache of line drawings), so bugs in that path are found here (including regression tests for bugs found on real devices; [decisions/0014](../decisions/0014-performance.md)). It is for reports and is not a gate.
+
+## 9. `scripts/check.sh`
+
+Runs the following in this order, and fails if any one fails.
+
+1. `scripts/check_boundaries.py`
+2. `scripts/check_kdoc.py` (public declarations of library modules have KDoc, requirement 6.5; `@InternalVtfxApi` declarations are excluded from the API reference with `@suppress`; KDoc that appears in the reference does not refer to repository documents or requirement sections. [decisions/0016](../decisions/0016-public-api.md), [decisions/0022](../decisions/0022-api-reference-content.md))
+3. License headers (`addlicense -check`, run with `go run github.com/google/addlicense@v1.2.0` on the files tracked by git; files that are not Google's own source code are excluded. [decisions/0018](../decisions/0018-distribution.md))
+4. Tests of the scripts themselves (`python3 -m unittest discover -s scripts/tests`)
+5. The generated sources are up to date: `scripts/generate_unicode_tables.py --check` regenerates the character width tables of `vtfx-core` and the default-ignorable code points of `vtfx-gate` from `third_party/unicode` and compares them with the committed files ([decisions/0029](../decisions/0029-import-without-gradle.md))
+6. `./gradlew build` (Kotlin formatting check, compilation, unit tests, spec tests, lint, and the public API compatibility check. Formatting is [decisions/0023](../decisions/0023-code-style.md))
+
+Long fuzzing and the emulator e2e take time, so they are not included. They run with separate scripts (sections 7 and 8). Short fuzzing is included in the `check` of `./gradlew build` in step 6 (section 7, [decisions/0003](../decisions/0003-fuzzing-gate.md)).
+
+## 10. Recording and replaying the output of real apps
+
+- On the development machine, run real apps (vim, less, htop, tmux) in a pseudo-terminal and record their output (`tools/recordings/record.py`, recordings in `recordings/`). The size is 80 × 24 with `TERM=xterm-256color`.
+- The expected screen is obtained by replaying the same output into a reference terminal (tmux). The reference pane is put in raw mode (the apps ran in raw mode, so output processing that turns LF into CR LF must not happen).
+- `RecordingReplayTest` in `vtfx-core` compares the screen after replaying a recording with the reference. It checks that all characters match, and that attributes (color, bold, italic, underline, reverse, strikethrough) match for non-blank cells. The reference attributes are read with a reader independent of vtfx's interpretation of SGR.
+- `RecordingScreenshotTest` in `vtfx-compose` has provisional goldens of the same recordings. `replay <name>` in the sample app can display the same recording.
+- Agents own the recordings. When recording again because an app's version changed, write the reason in the commit message.
+
+## 11. esctest2
+
+- `scripts/esctest.py` runs esctest2 and writes the results to `build/reports/esctest.md`. It is for reports and is not a gate.
+- esctest2 is GPL-2.0, so it is not included in the repository. The script fetches a pinned commit into `.cache/esctest2`.
+- esctest runs in a pseudo-terminal, and its counterpart is `EsctestHost` in the tests of `vtfx-gate` (a JVM program that replies with `vtfx-core` and `vtfx-gate`). Only DECRQCRA for esctest to read the screen, the resize to 80 × 25 at the start of each test (XTWINOPS 8), and the report for reading the title (XTWINOPS 21) are intercepted and handled by `EsctestHost`, because vtfx does not support them. The title report answers the last title vtfx notified with `TitleChanged`.
+- The reasons for failing tests are written in `tools/esctest/reasons.toml` (matched by a regular expression on the test name or the test's source). Failures without a reason appear at the top of the report. A failure without a reason is resolved either by fixing vtfx or by writing a reason.
+
+## 12. Tests for each attack type in requirement 6.1
+
+The correspondence between the "attack types to prevent" in requirement 6.1 and the tests that check them. In every test, host output goes through a real `Terminal`.
+
+| Attack type | Tests |
+|---|---|
+| Command injection through terminal responses | `AttackTest.ReplyInjection` in `vtfx-gate` (replies do not include host strings, DECRQSS and the like do not reflect the request, random output produces only replies of known shapes), `GateFuzzTest` (any output produces only replies of known shapes) |
+| Unauthorized reading and writing of the clipboard | `AttackTest.Clipboard` (reading is denied by default, the limit on writing, when there is no clipboard), `GateFuzzTest` (replies to reads are only base64, the limit on writing) |
+| Spoofed hyperlinks and opening unintended URLs | `AttackTest.Hyperlinks` (host output alone does not open anything, only allowed schemes, rejecting URLs whose display and destination can be spoofed), `TerminalSessionTest.hyperlinksAreFoundAndOpenedThroughTheGate` in `vtfx-session`, `TerminalGesturesTest` (a link tap only notifies the app and does not open it), `EmulationCoverageTest.Hyperlinks` in `vtfx-core` (URIs that are too long) |
+| Escaping from bracketed paste | `AttackTest.PasteEscape`, `TerminalSessionTest.pasteIsSanitizedAndBracketedWhenEnabled`, `GateFuzzTest` (arbitrary pastes) |
+| Leakage of terminal content (including disclosure to the IME) | `AttackTest.ContentLeakage` (screen contents are not reported), `TerminalInputConnectionTest` in `vtfx-compose` (IME queries see only the input history, and the `EditorInfo` contract, including disabling personalized learning) |
+| Resource exhaustion | `ResourceExhaustionTest` in `vtfx-core` (for each hostile output, time is linear in the input and memory is within the limits), `TerminalTest` (limits on combining characters, scrollback, and REP), `ParserTest` (limits on parameters, intermediate bytes, and strings), `EmulationCoverageTest.Hyperlinks` (the limit on the link table and thinning out the search), `EmulationCoverageTest.SavedTitles` (limits on the number and total length of saved titles), `AttackTest.ResourceExhaustion` (the amount of replies is linear in the queries), `GateFuzzTest` (the amount of replies is linear in arbitrary output), `LinksTest` in `vtfx-core` (the effort of removing overlaps is linear in the number of matches; no limit is set on the effort of matching the app's patterns, which is the app's responsibility; [decisions/0019](../decisions/0019-extensibility.md)), `ComposingLayoutTest` in `vtfx-compose` (even with a very long composing text from the IME, the layout work is bounded by the grid size), `TerminalSessionTest.bellsAndTitlesOfOneFeedAreReportedOnce` (bell and title notifications are at most once per output), fuzzing (section 7) |
+
+The IME is not trusted, so `HostileImeTest` (random) and `ImeFuzzTest` (fuzzing) in `vtfx-input` check the invariants of the editing model and what the host receives against sequences of calls with arbitrary arguments. The limit on DELs for deletions outside the range and splitting many DELs (`TerminalSessionTest.manyDeletesFromTheImeAreSentInParts`) are also checked here.
+
+The limits are in [decisions/0002](../decisions/0002-resource-limits.md), and the default policies of the gate are in [decisions/0006](../decisions/0006-gate-defaults.md).

@@ -1,0 +1,9 @@
+{
+  "command": "tmux",
+  "columns": 80,
+  "rows": 24,
+  "term": "xterm-256color",
+  "app_version": "tmux 3.5a",
+  "reference": "tmux 3.5a",
+  "bytes": 3564
+}

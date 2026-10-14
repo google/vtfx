@@ -1,0 +1,109 @@
+# Expected bytes sent to the host when replaying Gboard traces into the IME editing model of
+# docs/design/ime-contract.md. See docs/design/testing.md section 4.
+#
+# Only traces recorded under the contract configuration (input history policy, TYPE_CLASS_TEXT
+# only, no personalized learning, rejecting selection changes) are listed, since what the IME sees
+# changes which calls it makes.
+#
+# Derivation: the bytes the probe sent while recording, adjusted where the probe differs from the
+# contract. The only difference found is a committed "\n", which the probe sent as is and the
+# contract sends as CR (ime-contract.md section 4.2).
+
+# --- Japanese (Gboard 17.2, emulator, QWERTY romaji) ---
+
+[[case]]
+name = "ja-confirm-enter"
+trace = "tools/ime-probe/traces/gboard-17.2-api37/ja-confirm-enter@contract.jsonl"
+description = "Type 'nihongo', Enter to confirm the composition, Enter again."
+expected = "にほんご\r"
+
+[[case]]
+name = "ja-convert"
+trace = "tools/ime-probe/traces/gboard-17.2-api37/ja-convert@contract.jsonl"
+description = "Type 'kanji', Space to convert, Enter to confirm, Enter again."
+expected = "感じ\r"
+
+[[case]]
+name = "ja-backspace"
+trace = "tools/ime-probe/traces/gboard-17.2-api37/ja-backspace@contract.jsonl"
+description = "Type 'aiu', BS in the composition, Enter to confirm 'あい', then BS twice outside the composition."
+expected = "あい\u007f\u007f"
+
+[[case]]
+name = "ja-ascii-symbol"
+trace = "tools/ime-probe/traces/gboard-17.2-api37/ja-ascii-symbol@contract.jsonl"
+description = "Type 'a' and '?', which becomes a full-width '？' in the composition, then Enter to confirm."
+expected = "あ？"
+
+[[case]]
+name = "ja-hw-convert"
+trace = "tools/ime-probe/traces/gboard-17.2-api37/ja-hw-convert@contract.jsonl"
+description = "Hardware keys: 'kanji', Space to convert, Enter to confirm, Enter again. Gboard forwards unpaired key-up events, which must be ignored."
+expected = "感じ\r"
+
+# --- Korean (Gboard 17.2, emulator, 2-set) ---
+
+[[case]]
+name = "ko-hangul"
+trace = "tools/ime-probe/traces/gboard-17.2-api37/ko-hangul@contract.jsonl"
+description = "Type 'gksrnr' (한국), Space to commit, Enter."
+expected = "한국 \r"
+
+[[case]]
+name = "ko-jamo-move"
+trace = "tools/ime-probe/traces/gboard-17.2-api37/ko-jamo-move@contract.jsonl"
+description = "Type 'rkr' (각), then 'k' moves the final consonant (가가), then Enter, which Gboard sends as a committed newline."
+expected = "가가\r"
+
+[[case]]
+name = "ko-enter-mid"
+trace = "tools/ime-probe/traces/gboard-17.2-api37/ko-enter-mid@contract.jsonl"
+description = "Type 'gks' (한), then Enter during the composition, which Gboard sends as commitText('한') followed by commitText('\\n')."
+expected = "한\r"
+
+# --- English (Gboard 17.2, emulator, no language model) ---
+
+[[case]]
+name = "en-vim-j"
+trace = "tools/ime-probe/traces/gboard-17.2-api37/en-vim-j@contract.jsonl"
+description = "Type 'j', wait 2 seconds, type 'j'. Each key must be sent immediately."
+expected = "jj"
+
+[[case]]
+name = "en-command"
+trace = "tools/ime-probe/traces/gboard-17.2-api37/en-command@contract.jsonl"
+description = "Type 'ls', Space, Enter."
+expected = "ls \r"
+
+[[case]]
+name = "en-autocorrect"
+trace = "tools/ime-probe/traces/gboard-17.2-api37/en-autocorrect@contract.jsonl"
+description = "Type 'teh', Space, Enter. The emulator Gboard has no language model and does not correct it."
+expected = "teh \r"
+
+[[case]]
+name = "en-double-space"
+trace = "tools/ime-probe/traces/gboard-17.2-api37/en-double-space@contract.jsonl"
+description = "Type 'ok', Space, Space, which Gboard replaces with '. ' via replaceText, then Enter."
+expected = "ok \u007f. \r"
+
+# --- Real device, Gboard with auto-correction enabled ---
+
+[[case]]
+name = "device-english"
+trace = "tools/ime-probe/traces/gboard-device-contract/contract.jsonl"
+description = """\
+'dont' Space (auto-corrected to "don't "), 'teh' Space (not corrected), 'i' Space (auto-corrected \
+to 'I '), 'ok' Space Space, each followed by Enter. Then 'hello world', a space bar swipe that \
+Gboard sends as two DPAD_LEFT keys, 'x', and Enter."""
+expected = "dont\u007f't \rteh \ri\u007fI \rok \u007f. \rhello world\u001b[D\u001b[Dx\r"
+
+[[case]]
+name = "device-japanese-12key"
+trace = "tools/ime-probe/traces/gboard-device-contract/ja-12key.jsonl"
+description = """\
+Japanese 12-key flick input: 'かんじ' converted and a non-first candidate '漢字' chosen, Enter; \
+'あ' twice (toggle input disabled), Enter; 'か' with the dakuten key to 'が', Enter; 'あいう' with \
+◀ during the composition, Enter; then ◀ and ▶ with no composition, Enter. Each Enter during a \
+composition only confirms it."""
+expected = "漢字\rああ\rが\rあいう\r\u001b[D\u001b[C\r"

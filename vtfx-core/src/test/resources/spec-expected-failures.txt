@@ -1,0 +1,2 @@
+# Spec cases in spec/core that do not pass yet, as <file>:<case name>.
+# See docs/design/testing.md section 6. A listed case must fail; remove it once it passes.

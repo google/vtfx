@@ -1,0 +1,58 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Paths whose changes scripts/report_protected_changes.py reports. The report does not fail the
+# build; it lists the changes for human review and later audit (docs/REQUIREMENTS.md sections 6.1
+# and 7.2).
+#
+# Paths are fnmatch patterns relative to the repository root, where "*" also matches "/".
+#
+# Changes to this file require security review.
+
+[security_review]
+description = "Code with external effects, and build and dependency configuration."
+paths = [
+    "vtfx-gate/**",
+    "vtfx-gate-android/**",
+    "settings.gradle.kts",
+    "build.gradle.kts",
+    "**/build.gradle.kts",
+    "gradle.properties",
+    "gradle/**",
+    "gradlew",
+    "gradlew.bat",
+    "build-logic/**",
+    ".github/**",
+    "config/**",
+    "scripts/check_boundaries.py",
+    "scripts/report_protected_changes.py",
+    "scripts/tests/test_check_boundaries.py",
+    "scripts/check.sh",
+]
+
+[process]
+description = "The rules that agents follow. Check that they were not loosened."
+paths = [
+    "AGENTS.md",
+    "docs/REQUIREMENTS.md",
+    "docs/design/testing.md",
+    "docs/reviews/README.md",
+]
+
+[oracle]
+description = "Human-owned specification tests, fixtures, and goldens. Agents must not change them."
+paths = [
+    "spec/**",
+    "tools/ime-probe/traces/**",
+]

@@ -1,0 +1,9 @@
+{
+  "command": "vim",
+  "columns": 80,
+  "rows": 24,
+  "term": "xterm-256color",
+  "app_version": "VIM - Vi IMproved 9.1 (2024 Jan 02, compiled May 23 2025 00:48:59)",
+  "reference": "tmux 3.5a",
+  "bytes": 5050
+}

@@ -1,0 +1,88 @@
+# Scrolling, margins, and screens.
+
+=== LF at the bottom scrolls the screen up
+size 5x3
+input "1\r\n2\r\n3\r\n4"
+screen
+  |2    |
+  |3    |
+  |4    |
+cursor 2,3
+
+=== IND is the same as LF
+size 5x2
+input "ab\eDcd"
+screen
+  |ab   |
+  |  cd |
+cursor 5,2
+ref ctlseqs: ESC D (IND)
+
+=== NEL is the same as CR LF
+size 5x2
+input "ab\eEcd"
+screen
+  |ab   |
+  |cd   |
+cursor 3,2
+ref ctlseqs: ESC E (NEL)
+
+=== RI at the top scrolls the screen down
+size 5x3
+input "a\r\nb\r\nc\e[H\eMX"
+screen
+  |X    |
+  |a    |
+  |b    |
+cursor 2,1
+ref ctlseqs: ESC M (RI)
+
+=== DECSTBM moves the cursor to the home position
+size 10x3
+input "\e[2;5H\e[2;3rX"
+screen
+  |X         |
+  |          |
+  |          |
+cursor 2,1
+ref ctlseqs: CSI Ps ; Ps r (DECSTBM)
+
+=== LF at the bottom margin scrolls only the scrolling region
+size 5x4
+input "1\r\n2\r\n3\r\n4\e[2;3r\e[3;1H\nX"
+screen
+  |1    |
+  |3    |
+  |X    |
+  |4    |
+cursor 2,3
+ref ctlseqs: DECSTBM
+
+=== DECOM makes CUP relative to the top margin
+size 10x4
+input "\e[2;3r\e[?6h\e[1;1HX"
+screen
+  |          |
+  |X         |
+  |          |
+  |          |
+cursor 2,2
+ref ctlseqs: CSI ? 6 h (DECOM)
+
+=== Mode 1049 switches to a cleared alternate screen
+size 10x2
+input "abc\e[?1049hX"
+screen
+  |   X      |
+  |          |
+cursor 5,1
+ref ctlseqs: CSI ? 1049 h
+
+=== Leaving mode 1049 restores the main screen and the cursor
+size 10x2
+input "abc\e[?1049hX\e[2;5H\e[?1049l"
+screen
+  |abc       |
+  |          |
+cursor 4,1
+ref ctlseqs: CSI ? 1049 l

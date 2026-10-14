@@ -1,0 +1,121 @@
+# Printing, line wrapping, and basic C0 controls.
+
+=== Printable characters advance the cursor
+size 10x2
+input "abc"
+screen
+  |abc       |
+  |          |
+cursor 4,1
+
+=== Writing the last column leaves the cursor there with a pending wrap
+size 5x2
+input "abcde"
+screen
+  |abcde|
+  |     |
+cursor 5,1
+ref ctlseqs: DECAWM (autowrap is on by default)
+
+=== The next character after a pending wrap goes to the next line
+size 5x2
+input "abcdef"
+screen
+  |abcde|
+  |f    |
+cursor 2,2
+ref ctlseqs: DECAWM
+
+=== CR cancels a pending wrap
+size 5x2
+input "abcde\rX"
+screen
+  |Xbcde|
+  |     |
+cursor 2,1
+
+=== Without autowrap, characters overwrite the last column
+size 5x2
+input "\e[?7labcdefg"
+screen
+  |abcdg|
+  |     |
+cursor 5,1
+ref ctlseqs: CSI ? 7 l (DECAWM reset)
+
+=== LF moves down without changing the column
+size 10x2
+input "ab\ncd"
+screen
+  |ab        |
+  |  cd      |
+cursor 5,2
+ref ctlseqs: LF (line feed mode is reset by default)
+
+=== CR LF starts a new line
+size 10x2
+input "ab\r\ncd"
+screen
+  |ab        |
+  |cd        |
+cursor 3,2
+
+=== BS moves left without erasing
+size 10x1
+input "abc\b\bX"
+screen
+  |aXc       |
+cursor 3,1
+
+=== BS at the first column does nothing
+size 10x1
+input "\b\bX"
+screen
+  |X         |
+cursor 2,1
+
+=== HT moves to the next tab stop, every 8 columns by default
+size 20x1
+input "a\tb\tc"
+screen
+  |a       b       c   |
+cursor 18,1
+ref ctlseqs: TAB
+
+=== HT stops at the right margin when there is no further tab stop
+size 10x1
+input "\t\tX"
+screen
+  |         X|
+cursor 10,1
+
+=== BEL is not displayed
+size 10x1
+input "a\x07b"
+screen
+  |ab        |
+cursor 3,1
+
+=== A wide character occupies two cells
+size 10x1
+input "あいa"
+screen
+  |あいa     |
+cursor 6,1
+ref Unicode UAX #11: East Asian Wide
+
+=== A wide character that does not fit in the last column wraps to the next line
+size 5x2
+input "abcdあ"
+screen
+  |abcd |
+  |あ   |
+cursor 3,2
+
+=== Insert mode shifts existing characters right
+size 10x1
+input "abc\r\e[4hX"
+screen
+  |Xabc      |
+cursor 2,1
+ref ctlseqs: CSI 4 h (IRM)

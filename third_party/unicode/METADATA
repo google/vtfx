@@ -1,0 +1,25 @@
+name: "Unicode Character Database"
+description:
+  "EastAsianWidth.txt, extracted/DerivedGeneralCategory.txt, and "
+  "DerivedCoreProperties.txt of the Unicode Character Database, from which "
+  "scripts/generate_unicode_tables.py generates the character width "
+  "tables of vtfx-core and the default-ignorable code points of vtfx-gate."
+
+third_party {
+  url {
+    type: HOMEPAGE
+    value: "https://www.unicode.org/ucd/"
+  }
+  url {
+    type: ARCHIVE
+    value: "https://www.unicode.org/Public/16.0.0/ucd/"
+  }
+  version: "16.0.0"
+  last_upgrade_date {
+    year: 2026
+    month: 10
+    day: 15
+  }
+  license_type: NOTICE
+  local_modifications: "None. The files are copied unchanged, keeping the directory layout of ucd/."
+}

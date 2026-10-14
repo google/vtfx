@@ -1,0 +1,3 @@
+# Official goldens in spec/screenshots that the provisional goldens no longer match, as
+# screenshots/<file name>. See docs/design/testing.md sections 5 and 6. A listed golden must differ;
+# remove it once a human promotes the provisional golden.

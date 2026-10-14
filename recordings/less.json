@@ -1,0 +1,9 @@
+{
+  "command": "less",
+  "columns": 80,
+  "rows": 24,
+  "term": "xterm-256color",
+  "app_version": "less 668 (GNU regular expressions)",
+  "reference": "tmux 3.5a",
+  "bytes": 5974
+}

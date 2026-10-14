@@ -1,0 +1,8 @@
+.cache/
+.gradle/
+.kotlin/
+build/
+local.properties
+.idea/
+*.iml
+.cifuzz-corpus/

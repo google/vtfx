@@ -1,0 +1,63 @@
+{"seq":15,"t":4503,"ev":"ic","call":"commitText","depth":0,"args":{"text":"t","newCursorPosition":1}}
+{"seq":16,"t":4506,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":17,"t":4508,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":18,"t":4511,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":19,"t":4512,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"t","sel":[1,1],"comp":[-1,-1]}}
+{"seq":20,"t":4515,"ev":"send","bytes":"t","codePoints":[116]}
+{"seq":21,"t":4517,"ev":"ret","call":"commitText","depth":0,"ret":true,"state":{"text":"t","sel":[1,1],"comp":[-1,-1]}}
+{"seq":22,"t":4519,"ev":"updateSelection","sel":[1,1,-1,-1]}
+{"seq":23,"t":4973,"ev":"ic","call":"commitText","depth":0,"args":{"text":"e","newCursorPosition":1}}
+{"seq":24,"t":4975,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":25,"t":4978,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"t","sel":[1,1],"comp":[-1,-1]}}
+{"seq":26,"t":4980,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":27,"t":4982,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"te","sel":[2,2],"comp":[-1,-1]}}
+{"seq":28,"t":4985,"ev":"send","bytes":"e","codePoints":[101]}
+{"seq":29,"t":4988,"ev":"ret","call":"commitText","depth":0,"ret":true,"state":{"text":"te","sel":[2,2],"comp":[-1,-1]}}
+{"seq":30,"t":4992,"ev":"updateSelection","sel":[2,2,-1,-1]}
+{"seq":31,"t":5442,"ev":"ic","call":"commitText","depth":0,"args":{"text":"h","newCursorPosition":1}}
+{"seq":32,"t":5445,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":33,"t":5447,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"te","sel":[2,2],"comp":[-1,-1]}}
+{"seq":34,"t":5450,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":35,"t":5452,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"teh","sel":[3,3],"comp":[-1,-1]}}
+{"seq":36,"t":5454,"ev":"send","bytes":"h","codePoints":[104]}
+{"seq":37,"t":5457,"ev":"ret","call":"commitText","depth":0,"ret":true,"state":{"text":"teh","sel":[3,3],"comp":[-1,-1]}}
+{"seq":38,"t":5459,"ev":"updateSelection","sel":[3,3,-1,-1]}
+{"seq":39,"t":5914,"ev":"ic","call":"commitText","depth":0,"args":{"text":" ","newCursorPosition":1}}
+{"seq":40,"t":5916,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":41,"t":5918,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"teh","sel":[3,3],"comp":[-1,-1]}}
+{"seq":42,"t":5922,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":43,"t":5925,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"teh ","sel":[4,4],"comp":[-1,-1]}}
+{"seq":44,"t":5928,"ev":"send","bytes":" ","codePoints":[32]}
+{"seq":45,"t":5931,"ev":"ret","call":"commitText","depth":0,"ret":true,"state":{"text":"teh ","sel":[4,4],"comp":[-1,-1]}}
+{"seq":46,"t":5934,"ev":"updateSelection","sel":[4,4,-1,-1]}
+{"seq":47,"t":7374,"ev":"ic","call":"sendKeyEvent","depth":0,"args":{"action":0,"keyCode":"KEYCODE_ENTER","meta":0,"flags":6}}
+{"seq":48,"t":7376,"ev":"ret","call":"sendKeyEvent","depth":0,"ret":false,"state":{"text":"teh ","sel":[4,4],"comp":[-1,-1]}}
+{"seq":49,"t":7377,"ev":"ic","call":"sendKeyEvent","depth":0,"args":{"action":1,"keyCode":"KEYCODE_ENTER","meta":0,"flags":6}}
+{"seq":50,"t":7378,"ev":"ret","call":"sendKeyEvent","depth":0,"ret":false,"state":{"text":"teh ","sel":[4,4],"comp":[-1,-1]}}
+{"seq":51,"t":7381,"ev":"key","action":0,"keyCode":"KEYCODE_ENTER","meta":0,"flags":6,"unicode":10,"source":257,"deviceId":-1,"composing":false}
+{"seq":52,"t":7382,"ev":"restartInput","reason":"non-text key"}
+{"seq":53,"t":7382,"ev":"onCreateInputConnection","inputType":1,"imeOptions":318767105,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":54,"t":7384,"ev":"ic","call":"closeConnection","depth":0,"args":{}}
+{"seq":55,"t":7385,"ev":"ic","call":"finishComposingText","depth":1,"args":{}}
+{"seq":56,"t":7386,"ev":"ic","call":"beginBatchEdit","depth":2,"args":{}}
+{"seq":57,"t":7387,"ev":"ret","call":"beginBatchEdit","depth":2,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":58,"t":7388,"ev":"ic","call":"endBatchEdit","depth":2,"args":{}}
+{"seq":59,"t":7389,"ev":"ret","call":"endBatchEdit","depth":2,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":60,"t":7390,"ev":"ret","call":"finishComposingText","depth":1,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":61,"t":7391,"ev":"ic","call":"setImeConsumesInput","depth":1,"args":{"value":false}}
+{"seq":62,"t":7392,"ev":"ret","call":"setImeConsumesInput","depth":1,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":63,"t":7393,"ev":"ret","call":"closeConnection","depth":0,"ret":null,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":64,"t":7396,"ev":"send","bytes":"\r","codePoints":[13]}
+{"seq":65,"t":7398,"ev":"key","action":1,"keyCode":"KEYCODE_ENTER","meta":0,"flags":6,"unicode":10,"source":257,"deviceId":-1,"composing":false}
+{"seq":66,"t":7407,"ev":"ic","call":"requestCursorUpdates+filter","depth":0,"args":{"mode":2,"filter":0}}
+{"seq":67,"t":7411,"ev":"ic","call":"requestCursorUpdates","depth":1,"args":{"mode":2}}
+{"seq":68,"t":7412,"ev":"ret","call":"requestCursorUpdates","depth":1,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":69,"t":7419,"ev":"ret","call":"requestCursorUpdates+filter","depth":0,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":70,"t":7452,"ev":"ic","call":"getSurroundingText","depth":0,"args":{"before":600,"after":600,"flags":1}}
+{"seq":71,"t":7455,"ev":"ret","call":"getSurroundingText","depth":0,"ret":{"text":"","selStart":0,"selEnd":0,"offset":0},"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":72,"t":7591,"ev":"ic","call":"finishComposingText","depth":0,"args":{}}
+{"seq":73,"t":7592,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":74,"t":7593,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":75,"t":7594,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":76,"t":7596,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":77,"t":7598,"ev":"ret","call":"finishComposingText","depth":0,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}

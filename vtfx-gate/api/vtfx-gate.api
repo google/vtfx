@@ -1,0 +1,29 @@
+public abstract interface class com/google/vtfx/gate/ClipboardAccess {
+	public abstract fun read ()Ljava/lang/String;
+	public abstract fun write (Ljava/lang/String;)V
+}
+
+public final class com/google/vtfx/gate/GatePolicy {
+	public static final field Companion Lcom/google/vtfx/gate/GatePolicy$Companion;
+	public static final field DEFAULT_MAX_CLIPBOARD_WRITE_LENGTH I
+	public fun <init> ()V
+	public fun <init> (ZIZLjava/util/Set;)V
+	public synthetic fun <init> (ZIZLjava/util/Set;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getAllowClipboardRead ()Z
+	public final fun getAllowClipboardWrite ()Z
+	public final fun getMaxClipboardWriteLength ()I
+	public final fun getUrlSchemes ()Ljava/util/Set;
+}
+
+public final class com/google/vtfx/gate/GatePolicy$Companion {
+	public final fun getDEFAULT_URL_SCHEMES ()Ljava/util/Set;
+}
+
+public abstract interface class com/google/vtfx/gate/HostConnection {
+	public abstract fun write ([B)V
+}
+
+public abstract interface class com/google/vtfx/gate/UrlOpener {
+	public abstract fun open (Ljava/lang/String;)V
+}
+

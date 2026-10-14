@@ -1,0 +1,42 @@
+public final class com/google/vtfx/session/TerminalSession {
+	public static final field Companion Lcom/google/vtfx/session/TerminalSession$Companion;
+	public static final field DEFAULT_COLUMNS I
+	public static final field DEFAULT_ROWS I
+	public fun <init> (Lcom/google/vtfx/gate/HostConnection;IILcom/google/vtfx/core/TerminalLimits;Lcom/google/vtfx/core/AmbiguousWidth;Lcom/google/vtfx/gate/GatePolicy;Lcom/google/vtfx/gate/ClipboardAccess;Lcom/google/vtfx/gate/UrlOpener;Lcom/google/vtfx/session/TerminalSessionListener;)V
+	public synthetic fun <init> (Lcom/google/vtfx/gate/HostConnection;IILcom/google/vtfx/core/TerminalLimits;Lcom/google/vtfx/core/AmbiguousWidth;Lcom/google/vtfx/gate/GatePolicy;Lcom/google/vtfx/gate/ClipboardAccess;Lcom/google/vtfx/gate/UrlOpener;Lcom/google/vtfx/session/TerminalSessionListener;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun canOpenUrl (Ljava/lang/String;)Z
+	public final fun feed ([BII)V
+	public static synthetic fun feed$default (Lcom/google/vtfx/session/TerminalSession;[BIIILjava/lang/Object;)V
+	public final fun getDirectInput ()Z
+	public final fun getScrollbackSize ()I
+	public final fun getStickyModifiers-wcG754k ()I
+	public final fun getTitle ()Ljava/lang/String;
+	public final fun openUrl (Ljava/lang/String;)Z
+	public final fun paste (Ljava/lang/String;)V
+	public final fun pasteFromClipboard ()V
+	public final fun resize (II)V
+	public final fun sendKey (Lcom/google/vtfx/core/KeyStroke;)V
+	public final fun sendText (Ljava/lang/String;)V
+	public final fun setDirectInput (Z)V
+	public final fun setStickyModifiers-67e23dI (I)V
+	public final fun snapshot (I)Lcom/google/vtfx/core/TerminalSnapshot;
+	public static synthetic fun snapshot$default (Lcom/google/vtfx/session/TerminalSession;IILjava/lang/Object;)Lcom/google/vtfx/core/TerminalSnapshot;
+}
+
+public final class com/google/vtfx/session/TerminalSession$Companion {
+}
+
+public abstract interface class com/google/vtfx/session/TerminalSessionListener {
+	public fun onBell ()V
+	public fun onResize (II)V
+	public fun onStickyModifiersChanged-67e23dI (I)V
+	public fun onTitleChanged (Ljava/lang/String;)V
+}
+
+public final class com/google/vtfx/session/TerminalSessionListener$DefaultImpls {
+	public static fun onBell (Lcom/google/vtfx/session/TerminalSessionListener;)V
+	public static fun onResize (Lcom/google/vtfx/session/TerminalSessionListener;II)V
+	public static fun onStickyModifiersChanged-67e23dI (Lcom/google/vtfx/session/TerminalSessionListener;I)V
+	public static fun onTitleChanged (Lcom/google/vtfx/session/TerminalSessionListener;Ljava/lang/String;)V
+}
+

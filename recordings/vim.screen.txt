@@ -1,0 +1,24 @@
+ 26  26: The quick brown fox jumps over the lazy dog.
+ 27  27: The quick brown fox jumps over the lazy dog.
+ 28  28: The quick brown fox jumps over the lazy dog.
+ 29  29: The quick brown fox jumps over the lazy dog.
+ 30  30: The quick brown fox jumps over the lazy dog.
+ 31 日本語を入力した行
+ 32 日本語のテキスト。全角の文字が二つのセルを占める。
+ 33 한국어 텍스트
+ 34 混在 mixed テキスト
+ 35
+ 36 end
+~/sample.txt [+]                                              31,25-17       Bot
+ 27  27: The quick brown fox jumps over the lazy dog.
+ 28  28: The quick brown fox jumps over the lazy dog.
+ 29  29: The quick brown fox jumps over the lazy dog.
+ 30  30: The quick brown fox jumps over the lazy dog.
+ 31 日本語を入力した行
+ 32 日本語のテキスト。全角の文字が二つのセルを占める。
+ 33 한국어 텍스트
+ 34 混在 mixed テキスト
+ 35
+ 36 end
+~/sample.txt [+]                                              36,1           Bot
+

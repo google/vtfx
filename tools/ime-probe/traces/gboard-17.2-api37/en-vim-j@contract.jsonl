@@ -1,0 +1,16 @@
+{"seq":19,"t":5872,"ev":"ic","call":"commitText","depth":0,"args":{"text":"j","newCursorPosition":1}}
+{"seq":20,"t":5875,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":21,"t":5878,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":22,"t":5881,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":23,"t":5883,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"j","sel":[1,1],"comp":[-1,-1]}}
+{"seq":24,"t":5885,"ev":"send","bytes":"j","codePoints":[106]}
+{"seq":25,"t":5919,"ev":"ret","call":"commitText","depth":0,"ret":true,"state":{"text":"j","sel":[1,1],"comp":[-1,-1]}}
+{"seq":26,"t":5921,"ev":"updateSelection","sel":[1,1,-1,-1]}
+{"seq":27,"t":8341,"ev":"ic","call":"commitText","depth":0,"args":{"text":"j","newCursorPosition":1}}
+{"seq":28,"t":8344,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":29,"t":8347,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"j","sel":[1,1],"comp":[-1,-1]}}
+{"seq":30,"t":8350,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":31,"t":8353,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"jj","sel":[2,2],"comp":[-1,-1]}}
+{"seq":32,"t":8355,"ev":"send","bytes":"j","codePoints":[106]}
+{"seq":33,"t":8358,"ev":"ret","call":"commitText","depth":0,"ret":true,"state":{"text":"jj","sel":[2,2],"comp":[-1,-1]}}
+{"seq":34,"t":8360,"ev":"updateSelection","sel":[2,2,-1,-1]}

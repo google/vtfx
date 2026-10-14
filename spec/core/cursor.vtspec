@@ -1,0 +1,162 @@
+# Cursor movement.
+
+=== CUP moves the cursor
+size 10x3
+input "\e[2;3HX"
+screen
+  |          |
+  |  X       |
+  |          |
+cursor 4,2
+ref ctlseqs: CSI Ps ; Ps H (CUP)
+
+=== CUP without parameters moves to the home position
+size 10x3
+input "\e[3;5H\e[HX"
+screen
+  |X         |
+  |          |
+  |          |
+cursor 2,1
+ref ctlseqs: CUP
+
+=== CUP treats parameter 0 as 1
+size 10x3
+input "\e[3;5H\e[0;0HX"
+screen
+  |X         |
+  |          |
+  |          |
+cursor 2,1
+ref ctlseqs: CUP
+
+=== CUP clamps to the screen
+size 10x3
+input "\e[99;99HX"
+screen
+  |          |
+  |          |
+  |         X|
+cursor 10,3
+ref ctlseqs: CUP
+
+=== HVP is the same as CUP
+size 10x3
+input "\e[2;3fX"
+screen
+  |          |
+  |  X       |
+  |          |
+cursor 4,2
+ref ctlseqs: CSI Ps ; Ps f (HVP)
+
+=== CUU moves up
+size 10x3
+input "\e[3;5H\e[AX"
+screen
+  |          |
+  |    X     |
+  |          |
+cursor 6,2
+ref ctlseqs: CSI Ps A (CUU)
+
+=== CUU treats parameter 0 as 1
+size 10x3
+input "\e[3;5H\e[0AX"
+screen
+  |          |
+  |    X     |
+  |          |
+cursor 6,2
+ref ctlseqs: CUU
+
+=== CUU stops at the top
+size 10x3
+input "\e[2;5H\e[9AX"
+screen
+  |    X     |
+  |          |
+  |          |
+cursor 6,1
+ref ctlseqs: CUU
+
+=== CUD moves down and stops at the bottom
+size 10x3
+input "\e[1;5H\e[9BX"
+screen
+  |          |
+  |          |
+  |    X     |
+cursor 6,3
+ref ctlseqs: CSI Ps B (CUD)
+
+=== CUF moves right and stops at the right margin
+size 10x1
+input "\e[3CX\e[99CY"
+screen
+  |   X     Y|
+cursor 10,1
+ref ctlseqs: CSI Ps C (CUF)
+
+=== CUB moves left and stops at the left margin
+size 10x1
+input "\e[1;8H\e[2DX\e[99DY"
+screen
+  |Y    X    |
+cursor 2,1
+ref ctlseqs: CSI Ps D (CUB)
+
+=== CHA moves to an absolute column
+size 10x1
+input "abc\e[7GX"
+screen
+  |abc   X   |
+cursor 8,1
+ref ctlseqs: CSI Ps G (CHA)
+
+=== VPA moves to an absolute row without changing the column
+size 10x3
+input "ab\e[3dX"
+screen
+  |ab        |
+  |          |
+  |  X       |
+cursor 4,3
+ref ctlseqs: CSI Ps d (VPA)
+
+=== CNL moves down to the first column
+size 10x3
+input "\e[1;5H\e[2EX"
+screen
+  |          |
+  |          |
+  |X         |
+cursor 2,3
+ref ctlseqs: CSI Ps E (CNL)
+
+=== CPL moves up to the first column
+size 10x3
+input "\e[3;5H\e[2FX"
+screen
+  |X         |
+  |          |
+  |          |
+cursor 2,1
+ref ctlseqs: CSI Ps F (CPL)
+
+=== DECSC and DECRC save and restore the cursor position
+size 10x3
+input "\e[2;3H\e7\e[HX\e8Y"
+screen
+  |X         |
+  |  Y       |
+  |          |
+cursor 4,2
+ref ctlseqs: ESC 7 (DECSC), ESC 8 (DECRC)
+
+=== A huge parameter is clamped
+size 10x1
+input "\e[99999999999999999999CX"
+screen
+  |         X|
+cursor 10,1

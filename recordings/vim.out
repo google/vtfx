@@ -1,0 +1,42 @@
+[?1006;1000h[?1002h[?1049h[22;0;0t[>4;2m[?1h=[?2004h[?1004h[1;24r[?12h[?12l[22;2t[22;1t[27m[23m[29m[m[H[2J[?25l[24;1H"~/sample.txt" 35L, 1627B[2;1H▽[6n[2;1H  [3;1HPzz\[0%m[6n[3;1H           [1;1H[>c]10;?]11;?[1;1H[38;5;130m  1 [m  1: The quick brown fox jumps over the lazy dog.
+[38;5;130m  2 [m  2: The quick brown fox jumps over the lazy dog.[2;54H[K[3;1H[38;5;130m  3 [m  3: The quick brown fox jumps over the lazy dog.[3;54H[K[4;1H[38;5;130m  4 [m  4: The quick brown fox jumps over the lazy dog.
+[38;5;130m  5 [m  5: The quick brown fox jumps over the lazy dog.
+[38;5;130m  6 [m  6: The quick brown fox jumps over the lazy dog.
+[38;5;130m  7 [m  7: The quick brown fox jumps over the lazy dog.
+[38;5;130m  8 [m  8: The quick brown fox jumps over the lazy dog.
+[38;5;130m  9 [m  9: The quick brown fox jumps over the lazy dog.
+[38;5;130m 10 [m 10: The quick brown fox jumps over the lazy dog.
+[38;5;130m 11 [m 11: The quick brown fox jumps over the lazy dog.
+[38;5;130m 12 [m 12: The quick brown fox jumps over the lazy dog.
+[38;5;130m 13 [m 13: The quick brown fox jumps over the lazy dog.
+[38;5;130m 14 [m 14: The quick brown fox jumps over the lazy dog.
+[38;5;130m 15 [m 15: The quick brown fox jumps over the lazy dog.
+[38;5;130m 16 [m 16: The quick brown fox jumps over the lazy dog.
+[38;5;130m 17 [m 17: The quick brown fox jumps over the lazy dog.
+[38;5;130m 18 [m 18: The quick brown fox jumps over the lazy dog.
+[38;5;130m 19 [m 19: The quick brown fox jumps over the lazy dog.
+[38;5;130m 20 [m 20: The quick brown fox jumps over the lazy dog.
+[38;5;130m 21 [m 21: The quick brown fox jumps over the lazy dog.
+[38;5;130m 22 [m 22: The quick brown fox jumps over the lazy dog.
+[38;5;130m 23 [m 23: The quick brown fox jumps over the lazy dog.[24;63H1,1[11CTop[1;5H[?25h[?4m[?25l[24;1H[K[24;1H:30[1;23r[1;1H[12M[1;24r[12;1H[38;5;130m 24 [m 24: The quick brown fox jumps over the lazy dog.
+[38;5;130m 25 [m 25: The quick brown fox jumps over the lazy dog.
+[38;5;130m 26 [m 26: The quick brown fox jumps over the lazy dog.
+[38;5;130m 27 [m 27: The quick brown fox jumps over the lazy dog.
+[38;5;130m 28 [m 28: The quick brown fox jumps over the lazy dog.
+[38;5;130m 29 [m 29: The quick brown fox jumps over the lazy dog.
+[38;5;130m 30 [m 30: The quick brown fox jumps over the lazy dog.
+[38;5;130m 31 [m日本語のテキスト。全角の文字が二つのセルを占める。
+[38;5;130m 32 [m한국어 텍스트
+[38;5;130m 33 [m混在 mixed テキスト
+[38;5;130m 34 
+ 35 [mend[24;1H[K[24;63H30,2[10CBot[18;6H[?25h[?25l[24;63H[K[24;1H/fox[1;26H[103mfox[2;26Hfox[3;26Hfox[4;26Hfox[5;26Hfox[6;26Hfox[7;26Hfox[8;26Hfox[9;26Hfox[10;26Hfox[11;26Hfox[12;26Hfox[13;26Hfox[14;26Hfox[15;26Hfox[16;26Hfox[17;26Hfox[18;26Hfox[m[24;63H30,22[9CBot[18;26H[?25h[?25l[24;1H[1m-- INSERT --[m[24;63H[K[24;63H31,1[10C92%[24;1H[K[18;21H[1;23r[23;1H
+[1;24r[18;23r[18;1H[L[1;24r[18;1H[38;5;130m 31 [m日本語を入力した行[19;3H[38;5;130m2
+ 33
+ 34
+ 35
+ 36[m
+[1m-- INSERT --[m[50C31,28-19      Bot[18;23H[24;53H^[[18;21H[24;53H  [18;23H[24;1H[K[24;63H31,25-17      Bot[18;21H[?25h[?25l[24;63H[K[24;1H:split[1;2H[38;5;130m26[m[2C26[2;2H[38;5;130m27[m[2C27[3;2H[38;5;130m28[m[2C28[4;2H[38;5;130m29[m[2C29[5;2H[38;5;130m30[m[2C30[6;2H[38;5;130m31[m[1C日本語を入力した行[6;23H[K[7;2H[38;5;130m32[m[1C日本語のテキスト。全角の文字が二つのセルを占める。[8;2H[38;5;130m33[m[1C한국어 텍스트[8;18H[K[9;2H[38;5;130m34[m[1C混在 mixed テキスト[9;24H[K[10;2H[38;5;130m35[m[10;6H[K[11;2H[38;5;130m36[m[1Cend[11;8H[K[12;1H[1m[7m~/sample.txt [+]                                              31,25-17       Bot[m[13;3H[38;5;130m4[m[3C4[14;3H[38;5;130m5[m[3C5[15;3H[38;5;130m6[m[3C6[16;3H[38;5;130m7[m[3C7[17;2H[38;5;130m28[m[2C28[18;2H[38;5;130m29[m[1C 29: The quick brown [103mfox[m jumps over the lazy dog.[19;3H[38;5;130m0[m[1C 30: The quick brown [103mfox[m jumps over the lazy dog. [20;3H[38;5;130m1[m[1C日本語を入力した行[21;3H[38;5;130m2[m[1C日本語のテキスト。全角の文字が二つのセルを占める。[22;3H[38;5;130m3[m[1C한국어 텍스트
+[7m~/sample.txt [+]                                              31,25-17       88%[6;21H[?25h[?25l[m[24;70H^Wj[6;21H[24;70H   [18;21H[12;1H[7m~/sample.txt [+][m[1m[7m [m[7m                                              31,25-17       Bot[13;22r[m[13;1H[2M[1;24r[21;1H[38;5;130m 34 [m混在 mixed テキスト
+[38;5;130m 35 [m
+[1m[7m~/sample.txt [+]                                              31,25-17       96%[m[24;1H[K[18;21H[?25h[?25l[24;70HG[18;21H[24;70H [22;5H[13;22r[22;1H
+[1;24r[22;1H[38;5;130m 36 [mend[23;64H[1m[7m6,1           Bot[22;5H[?25h

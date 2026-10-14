@@ -1,0 +1,460 @@
+{"seq":1,"t":102,"ev":"onCreateInputConnection","inputType":1,"imeOptions":318767105,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":2,"t":114,"ev":"onCreateInputConnection","inputType":1,"imeOptions":318767105,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":3,"t":126,"ev":"ic","call":"getSurroundingText","depth":0,"args":{"before":600,"after":600,"flags":1}}
+{"seq":4,"t":128,"ev":"ret","call":"getSurroundingText","depth":0,"ret":{"text":"","selStart":0,"selEnd":0,"offset":0},"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":5,"t":142,"ev":"ic","call":"requestCursorUpdates+filter","depth":0,"args":{"mode":2,"filter":0}}
+{"seq":6,"t":144,"ev":"ic","call":"requestCursorUpdates","depth":1,"args":{"mode":2}}
+{"seq":7,"t":145,"ev":"ret","call":"requestCursorUpdates","depth":1,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":8,"t":146,"ev":"ret","call":"requestCursorUpdates+filter","depth":0,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":9,"t":162,"ev":"ic","call":"beginBatchEdit","depth":0,"args":{}}
+{"seq":10,"t":165,"ev":"ret","call":"beginBatchEdit","depth":0,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":11,"t":169,"ev":"ic","call":"endBatchEdit","depth":0,"args":{}}
+{"seq":12,"t":172,"ev":"ret","call":"endBatchEdit","depth":0,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":13,"t":11451,"ev":"ic","call":"finishComposingText","depth":0,"args":{}}
+{"seq":14,"t":11453,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":15,"t":11454,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":16,"t":11455,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":17,"t":11456,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":18,"t":11456,"ev":"ret","call":"finishComposingText","depth":0,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":19,"t":12192,"ev":"ic","call":"commitText","depth":0,"args":{"text":"d","newCursorPosition":1}}
+{"seq":20,"t":12195,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":21,"t":12196,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":22,"t":12198,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":23,"t":12199,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"d","sel":[1,1],"comp":[-1,-1]}}
+{"seq":24,"t":12200,"ev":"send","bytes":"d","codePoints":[100]}
+{"seq":25,"t":12201,"ev":"ret","call":"commitText","depth":0,"ret":true,"state":{"text":"d","sel":[1,1],"comp":[-1,-1]}}
+{"seq":26,"t":12203,"ev":"updateSelection","sel":[1,1,-1,-1]}
+{"seq":27,"t":12555,"ev":"ic","call":"commitText","depth":0,"args":{"text":"o","newCursorPosition":1}}
+{"seq":28,"t":12557,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":29,"t":12561,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"d","sel":[1,1],"comp":[-1,-1]}}
+{"seq":30,"t":12562,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":31,"t":12562,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"do","sel":[2,2],"comp":[-1,-1]}}
+{"seq":32,"t":12564,"ev":"send","bytes":"o","codePoints":[111]}
+{"seq":33,"t":12564,"ev":"ret","call":"commitText","depth":0,"ret":true,"state":{"text":"do","sel":[2,2],"comp":[-1,-1]}}
+{"seq":34,"t":12565,"ev":"updateSelection","sel":[2,2,-1,-1]}
+{"seq":35,"t":12952,"ev":"ic","call":"commitText","depth":0,"args":{"text":"n","newCursorPosition":1}}
+{"seq":36,"t":12954,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":37,"t":12955,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"do","sel":[2,2],"comp":[-1,-1]}}
+{"seq":38,"t":12956,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":39,"t":12957,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"don","sel":[3,3],"comp":[-1,-1]}}
+{"seq":40,"t":12958,"ev":"send","bytes":"n","codePoints":[110]}
+{"seq":41,"t":12959,"ev":"ret","call":"commitText","depth":0,"ret":true,"state":{"text":"don","sel":[3,3],"comp":[-1,-1]}}
+{"seq":42,"t":12959,"ev":"updateSelection","sel":[3,3,-1,-1]}
+{"seq":43,"t":13302,"ev":"ic","call":"commitText","depth":0,"args":{"text":"t","newCursorPosition":1}}
+{"seq":44,"t":13304,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":45,"t":13305,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"don","sel":[3,3],"comp":[-1,-1]}}
+{"seq":46,"t":13306,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":47,"t":13306,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"dont","sel":[4,4],"comp":[-1,-1]}}
+{"seq":48,"t":13307,"ev":"send","bytes":"t","codePoints":[116]}
+{"seq":49,"t":13307,"ev":"ret","call":"commitText","depth":0,"ret":true,"state":{"text":"dont","sel":[4,4],"comp":[-1,-1]}}
+{"seq":50,"t":13308,"ev":"updateSelection","sel":[4,4,-1,-1]}
+{"seq":51,"t":13551,"ev":"ic","call":"beginBatchEdit","depth":0,"args":{}}
+{"seq":52,"t":13553,"ev":"ret","call":"beginBatchEdit","depth":0,"ret":true,"state":{"text":"dont","sel":[4,4],"comp":[-1,-1]}}
+{"seq":53,"t":13555,"ev":"ic","call":"replaceText","depth":0,"args":{"start":0,"end":4,"text":"don't ","newCursorPosition":1}}
+{"seq":54,"t":13556,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":55,"t":13557,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"dont","sel":[4,4],"comp":[-1,-1]}}
+{"seq":56,"t":13559,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":57,"t":13560,"ev":"ret","call":"endBatchEdit","depth":1,"ret":true,"state":{"text":"don't ","sel":[6,6],"comp":[-1,-1]}}
+{"seq":58,"t":13560,"ev":"ret","call":"replaceText","depth":0,"ret":true,"state":{"text":"don't ","sel":[6,6],"comp":[-1,-1]}}
+{"seq":59,"t":13561,"ev":"updateSelection","sel":[6,6,-1,-1]}
+{"seq":60,"t":13562,"ev":"ic","call":"commitCorrection","depth":0,"args":{"info":"CorrectionInfo{#0 \"\" -> \"don't \"}"}}
+{"seq":61,"t":13563,"ev":"ret","call":"commitCorrection","depth":0,"ret":false,"state":{"text":"don't ","sel":[6,6],"comp":[-1,-1]}}
+{"seq":62,"t":13564,"ev":"ic","call":"endBatchEdit","depth":0,"args":{}}
+{"seq":63,"t":13565,"ev":"send","bytes":"'t ","codePoints":[127,39,116,32]}
+{"seq":64,"t":13567,"ev":"ret","call":"endBatchEdit","depth":0,"ret":false,"state":{"text":"don't ","sel":[6,6],"comp":[-1,-1]}}
+{"seq":65,"t":15555,"ev":"ic","call":"getSurroundingText","depth":0,"args":{"before":4096,"after":4096,"flags":1}}
+{"seq":66,"t":15558,"ev":"ret","call":"getSurroundingText","depth":0,"ret":{"text":"don't ","selStart":6,"selEnd":6,"offset":0},"state":{"text":"don't ","sel":[6,6],"comp":[-1,-1]}}
+{"seq":67,"t":16601,"ev":"ic","call":"sendKeyEvent","depth":0,"args":{"action":0,"keyCode":"KEYCODE_ENTER","meta":0,"flags":6}}
+{"seq":68,"t":16605,"ev":"ret","call":"sendKeyEvent","depth":0,"ret":false,"state":{"text":"don't ","sel":[6,6],"comp":[-1,-1]}}
+{"seq":69,"t":16607,"ev":"ic","call":"sendKeyEvent","depth":0,"args":{"action":1,"keyCode":"KEYCODE_ENTER","meta":0,"flags":6}}
+{"seq":70,"t":16608,"ev":"ret","call":"sendKeyEvent","depth":0,"ret":false,"state":{"text":"don't ","sel":[6,6],"comp":[-1,-1]}}
+{"seq":71,"t":16610,"ev":"key","action":0,"keyCode":"KEYCODE_ENTER","meta":0,"flags":6,"unicode":10,"source":257,"deviceId":-1,"composing":false}
+{"seq":72,"t":16612,"ev":"restartInput","reason":"non-text key"}
+{"seq":73,"t":16614,"ev":"onCreateInputConnection","inputType":1,"imeOptions":318767105,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":74,"t":16615,"ev":"ic","call":"closeConnection","depth":0,"args":{}}
+{"seq":75,"t":16616,"ev":"ic","call":"finishComposingText","depth":1,"args":{}}
+{"seq":76,"t":16617,"ev":"ic","call":"beginBatchEdit","depth":2,"args":{}}
+{"seq":77,"t":16618,"ev":"ret","call":"beginBatchEdit","depth":2,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":78,"t":16619,"ev":"ic","call":"endBatchEdit","depth":2,"args":{}}
+{"seq":79,"t":16620,"ev":"ret","call":"endBatchEdit","depth":2,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":80,"t":16621,"ev":"ret","call":"finishComposingText","depth":1,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":81,"t":16622,"ev":"ic","call":"setImeConsumesInput","depth":1,"args":{"value":false}}
+{"seq":82,"t":16622,"ev":"ret","call":"setImeConsumesInput","depth":1,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":83,"t":16623,"ev":"ret","call":"closeConnection","depth":0,"ret":null,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":84,"t":16625,"ev":"send","bytes":"\r","codePoints":[13]}
+{"seq":85,"t":16626,"ev":"key","action":1,"keyCode":"KEYCODE_ENTER","meta":0,"flags":6,"unicode":10,"source":257,"deviceId":-1,"composing":false}
+{"seq":86,"t":16630,"ev":"ic","call":"requestCursorUpdates+filter","depth":0,"args":{"mode":2,"filter":0}}
+{"seq":87,"t":16631,"ev":"ic","call":"requestCursorUpdates","depth":1,"args":{"mode":2}}
+{"seq":88,"t":16631,"ev":"ret","call":"requestCursorUpdates","depth":1,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":89,"t":16632,"ev":"ret","call":"requestCursorUpdates+filter","depth":0,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":90,"t":16637,"ev":"ic","call":"getSurroundingText","depth":0,"args":{"before":600,"after":600,"flags":1}}
+{"seq":91,"t":16638,"ev":"ret","call":"getSurroundingText","depth":0,"ret":{"text":"","selStart":0,"selEnd":0,"offset":0},"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":92,"t":16646,"ev":"ic","call":"finishComposingText","depth":0,"args":{}}
+{"seq":93,"t":16646,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":94,"t":16647,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":95,"t":16647,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":96,"t":16648,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":97,"t":16648,"ev":"ret","call":"finishComposingText","depth":0,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":98,"t":17152,"ev":"ic","call":"commitText","depth":0,"args":{"text":"t","newCursorPosition":1}}
+{"seq":99,"t":17154,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":100,"t":17155,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":101,"t":17156,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":102,"t":17156,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"t","sel":[1,1],"comp":[-1,-1]}}
+{"seq":103,"t":17157,"ev":"send","bytes":"t","codePoints":[116]}
+{"seq":104,"t":17157,"ev":"ret","call":"commitText","depth":0,"ret":true,"state":{"text":"t","sel":[1,1],"comp":[-1,-1]}}
+{"seq":105,"t":17158,"ev":"updateSelection","sel":[1,1,-1,-1]}
+{"seq":106,"t":17375,"ev":"ic","call":"commitText","depth":0,"args":{"text":"e","newCursorPosition":1}}
+{"seq":107,"t":17377,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":108,"t":17378,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"t","sel":[1,1],"comp":[-1,-1]}}
+{"seq":109,"t":17379,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":110,"t":17380,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"te","sel":[2,2],"comp":[-1,-1]}}
+{"seq":111,"t":17381,"ev":"send","bytes":"e","codePoints":[101]}
+{"seq":112,"t":17382,"ev":"ret","call":"commitText","depth":0,"ret":true,"state":{"text":"te","sel":[2,2],"comp":[-1,-1]}}
+{"seq":113,"t":17382,"ev":"updateSelection","sel":[2,2,-1,-1]}
+{"seq":114,"t":17461,"ev":"ic","call":"commitText","depth":0,"args":{"text":"h","newCursorPosition":1}}
+{"seq":115,"t":17464,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":116,"t":17464,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"te","sel":[2,2],"comp":[-1,-1]}}
+{"seq":117,"t":17465,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":118,"t":17465,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"teh","sel":[3,3],"comp":[-1,-1]}}
+{"seq":119,"t":17466,"ev":"send","bytes":"h","codePoints":[104]}
+{"seq":120,"t":17467,"ev":"ret","call":"commitText","depth":0,"ret":true,"state":{"text":"teh","sel":[3,3],"comp":[-1,-1]}}
+{"seq":121,"t":17467,"ev":"updateSelection","sel":[3,3,-1,-1]}
+{"seq":122,"t":17829,"ev":"ic","call":"commitText","depth":0,"args":{"text":" ","newCursorPosition":1}}
+{"seq":123,"t":17831,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":124,"t":17832,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"teh","sel":[3,3],"comp":[-1,-1]}}
+{"seq":125,"t":17833,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":126,"t":17834,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"teh ","sel":[4,4],"comp":[-1,-1]}}
+{"seq":127,"t":17835,"ev":"send","bytes":" ","codePoints":[32]}
+{"seq":128,"t":17836,"ev":"ret","call":"commitText","depth":0,"ret":true,"state":{"text":"teh ","sel":[4,4],"comp":[-1,-1]}}
+{"seq":129,"t":17836,"ev":"updateSelection","sel":[4,4,-1,-1]}
+{"seq":130,"t":19638,"ev":"ic","call":"getSurroundingText","depth":0,"args":{"before":4096,"after":4096,"flags":1}}
+{"seq":131,"t":19643,"ev":"ret","call":"getSurroundingText","depth":0,"ret":{"text":"teh ","selStart":4,"selEnd":4,"offset":0},"state":{"text":"teh ","sel":[4,4],"comp":[-1,-1]}}
+{"seq":132,"t":19652,"ev":"ic","call":"sendKeyEvent","depth":0,"args":{"action":0,"keyCode":"KEYCODE_ENTER","meta":0,"flags":6}}
+{"seq":133,"t":19654,"ev":"ret","call":"sendKeyEvent","depth":0,"ret":false,"state":{"text":"teh ","sel":[4,4],"comp":[-1,-1]}}
+{"seq":134,"t":19655,"ev":"ic","call":"sendKeyEvent","depth":0,"args":{"action":1,"keyCode":"KEYCODE_ENTER","meta":0,"flags":6}}
+{"seq":135,"t":19656,"ev":"ret","call":"sendKeyEvent","depth":0,"ret":false,"state":{"text":"teh ","sel":[4,4],"comp":[-1,-1]}}
+{"seq":136,"t":19657,"ev":"key","action":0,"keyCode":"KEYCODE_ENTER","meta":0,"flags":6,"unicode":10,"source":257,"deviceId":-1,"composing":false}
+{"seq":137,"t":19658,"ev":"restartInput","reason":"non-text key"}
+{"seq":138,"t":19659,"ev":"onCreateInputConnection","inputType":1,"imeOptions":318767105,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":139,"t":19660,"ev":"ic","call":"closeConnection","depth":0,"args":{}}
+{"seq":140,"t":19661,"ev":"ic","call":"finishComposingText","depth":1,"args":{}}
+{"seq":141,"t":19662,"ev":"ic","call":"beginBatchEdit","depth":2,"args":{}}
+{"seq":142,"t":19662,"ev":"ret","call":"beginBatchEdit","depth":2,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":143,"t":19663,"ev":"ic","call":"endBatchEdit","depth":2,"args":{}}
+{"seq":144,"t":19664,"ev":"ret","call":"endBatchEdit","depth":2,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":145,"t":19665,"ev":"ret","call":"finishComposingText","depth":1,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":146,"t":19666,"ev":"ic","call":"setImeConsumesInput","depth":1,"args":{"value":false}}
+{"seq":147,"t":19667,"ev":"ret","call":"setImeConsumesInput","depth":1,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":148,"t":19668,"ev":"ret","call":"closeConnection","depth":0,"ret":null,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":149,"t":19669,"ev":"send","bytes":"\r","codePoints":[13]}
+{"seq":150,"t":19670,"ev":"key","action":1,"keyCode":"KEYCODE_ENTER","meta":0,"flags":6,"unicode":10,"source":257,"deviceId":-1,"composing":false}
+{"seq":151,"t":19677,"ev":"ic","call":"requestCursorUpdates+filter","depth":0,"args":{"mode":2,"filter":0}}
+{"seq":152,"t":19679,"ev":"ic","call":"requestCursorUpdates","depth":1,"args":{"mode":2}}
+{"seq":153,"t":19679,"ev":"ret","call":"requestCursorUpdates","depth":1,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":154,"t":19680,"ev":"ret","call":"requestCursorUpdates+filter","depth":0,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":155,"t":19680,"ev":"ic","call":"getSurroundingText","depth":0,"args":{"before":600,"after":600,"flags":1}}
+{"seq":156,"t":19681,"ev":"ret","call":"getSurroundingText","depth":0,"ret":{"text":"","selStart":0,"selEnd":0,"offset":0},"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":157,"t":19694,"ev":"ic","call":"finishComposingText","depth":0,"args":{}}
+{"seq":158,"t":19695,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":159,"t":19695,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":160,"t":19696,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":161,"t":19696,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":162,"t":19697,"ev":"ret","call":"finishComposingText","depth":0,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":163,"t":20307,"ev":"ic","call":"commitText","depth":0,"args":{"text":"i","newCursorPosition":1}}
+{"seq":164,"t":20308,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":165,"t":20309,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":166,"t":20310,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":167,"t":20310,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"i","sel":[1,1],"comp":[-1,-1]}}
+{"seq":168,"t":20311,"ev":"send","bytes":"i","codePoints":[105]}
+{"seq":169,"t":20311,"ev":"ret","call":"commitText","depth":0,"ret":true,"state":{"text":"i","sel":[1,1],"comp":[-1,-1]}}
+{"seq":170,"t":20312,"ev":"updateSelection","sel":[1,1,-1,-1]}
+{"seq":171,"t":20607,"ev":"ic","call":"beginBatchEdit","depth":0,"args":{}}
+{"seq":172,"t":20609,"ev":"ret","call":"beginBatchEdit","depth":0,"ret":true,"state":{"text":"i","sel":[1,1],"comp":[-1,-1]}}
+{"seq":173,"t":20611,"ev":"ic","call":"replaceText","depth":0,"args":{"start":0,"end":1,"text":"I ","newCursorPosition":1}}
+{"seq":174,"t":20612,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":175,"t":20613,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"i","sel":[1,1],"comp":[-1,-1]}}
+{"seq":176,"t":20614,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":177,"t":20615,"ev":"ret","call":"endBatchEdit","depth":1,"ret":true,"state":{"text":"I ","sel":[2,2],"comp":[-1,-1]}}
+{"seq":178,"t":20616,"ev":"ret","call":"replaceText","depth":0,"ret":true,"state":{"text":"I ","sel":[2,2],"comp":[-1,-1]}}
+{"seq":179,"t":20617,"ev":"updateSelection","sel":[2,2,-1,-1]}
+{"seq":180,"t":20618,"ev":"ic","call":"commitCorrection","depth":0,"args":{"info":"CorrectionInfo{#0 \"\" -> \"I \"}"}}
+{"seq":181,"t":20619,"ev":"ret","call":"commitCorrection","depth":0,"ret":false,"state":{"text":"I ","sel":[2,2],"comp":[-1,-1]}}
+{"seq":182,"t":20620,"ev":"ic","call":"endBatchEdit","depth":0,"args":{}}
+{"seq":183,"t":20620,"ev":"send","bytes":"I ","codePoints":[127,73,32]}
+{"seq":184,"t":20621,"ev":"ret","call":"endBatchEdit","depth":0,"ret":false,"state":{"text":"I ","sel":[2,2],"comp":[-1,-1]}}
+{"seq":185,"t":21488,"ev":"ic","call":"getSurroundingText","depth":0,"args":{"before":4096,"after":4096,"flags":1}}
+{"seq":186,"t":21493,"ev":"ret","call":"getSurroundingText","depth":0,"ret":{"text":"I ","selStart":2,"selEnd":2,"offset":0},"state":{"text":"I ","sel":[2,2],"comp":[-1,-1]}}
+{"seq":187,"t":21499,"ev":"ic","call":"sendKeyEvent","depth":0,"args":{"action":0,"keyCode":"KEYCODE_ENTER","meta":0,"flags":6}}
+{"seq":188,"t":21500,"ev":"ret","call":"sendKeyEvent","depth":0,"ret":false,"state":{"text":"I ","sel":[2,2],"comp":[-1,-1]}}
+{"seq":189,"t":21501,"ev":"ic","call":"sendKeyEvent","depth":0,"args":{"action":1,"keyCode":"KEYCODE_ENTER","meta":0,"flags":6}}
+{"seq":190,"t":21503,"ev":"ret","call":"sendKeyEvent","depth":0,"ret":false,"state":{"text":"I ","sel":[2,2],"comp":[-1,-1]}}
+{"seq":191,"t":21504,"ev":"key","action":0,"keyCode":"KEYCODE_ENTER","meta":0,"flags":6,"unicode":10,"source":257,"deviceId":-1,"composing":false}
+{"seq":192,"t":21505,"ev":"restartInput","reason":"non-text key"}
+{"seq":193,"t":21506,"ev":"onCreateInputConnection","inputType":1,"imeOptions":318767105,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":194,"t":21507,"ev":"ic","call":"closeConnection","depth":0,"args":{}}
+{"seq":195,"t":21508,"ev":"ic","call":"finishComposingText","depth":1,"args":{}}
+{"seq":196,"t":21509,"ev":"ic","call":"beginBatchEdit","depth":2,"args":{}}
+{"seq":197,"t":21509,"ev":"ret","call":"beginBatchEdit","depth":2,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":198,"t":21510,"ev":"ic","call":"endBatchEdit","depth":2,"args":{}}
+{"seq":199,"t":21511,"ev":"ret","call":"endBatchEdit","depth":2,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":200,"t":21512,"ev":"ret","call":"finishComposingText","depth":1,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":201,"t":21513,"ev":"ic","call":"setImeConsumesInput","depth":1,"args":{"value":false}}
+{"seq":202,"t":21514,"ev":"ret","call":"setImeConsumesInput","depth":1,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":203,"t":21515,"ev":"ret","call":"closeConnection","depth":0,"ret":null,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":204,"t":21518,"ev":"send","bytes":"\r","codePoints":[13]}
+{"seq":205,"t":21519,"ev":"key","action":1,"keyCode":"KEYCODE_ENTER","meta":0,"flags":6,"unicode":10,"source":257,"deviceId":-1,"composing":false}
+{"seq":206,"t":21524,"ev":"ic","call":"requestCursorUpdates+filter","depth":0,"args":{"mode":2,"filter":0}}
+{"seq":207,"t":21526,"ev":"ic","call":"requestCursorUpdates","depth":1,"args":{"mode":2}}
+{"seq":208,"t":21527,"ev":"ret","call":"requestCursorUpdates","depth":1,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":209,"t":21528,"ev":"ret","call":"requestCursorUpdates+filter","depth":0,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":210,"t":21533,"ev":"ic","call":"getSurroundingText","depth":0,"args":{"before":600,"after":600,"flags":1}}
+{"seq":211,"t":21533,"ev":"ret","call":"getSurroundingText","depth":0,"ret":{"text":"","selStart":0,"selEnd":0,"offset":0},"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":212,"t":21541,"ev":"ic","call":"finishComposingText","depth":0,"args":{}}
+{"seq":213,"t":21542,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":214,"t":21542,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":215,"t":21543,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":216,"t":21543,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":217,"t":21544,"ev":"ret","call":"finishComposingText","depth":0,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":218,"t":22641,"ev":"ic","call":"commitText","depth":0,"args":{"text":"o","newCursorPosition":1}}
+{"seq":219,"t":22643,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":220,"t":22644,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":221,"t":22645,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":222,"t":22646,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"o","sel":[1,1],"comp":[-1,-1]}}
+{"seq":223,"t":22647,"ev":"send","bytes":"o","codePoints":[111]}
+{"seq":224,"t":22648,"ev":"ret","call":"commitText","depth":0,"ret":true,"state":{"text":"o","sel":[1,1],"comp":[-1,-1]}}
+{"seq":225,"t":22650,"ev":"updateSelection","sel":[1,1,-1,-1]}
+{"seq":226,"t":22870,"ev":"ic","call":"commitText","depth":0,"args":{"text":"k","newCursorPosition":1}}
+{"seq":227,"t":22873,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":228,"t":22874,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"o","sel":[1,1],"comp":[-1,-1]}}
+{"seq":229,"t":22876,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":230,"t":22877,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"ok","sel":[2,2],"comp":[-1,-1]}}
+{"seq":231,"t":22878,"ev":"send","bytes":"k","codePoints":[107]}
+{"seq":232,"t":22879,"ev":"ret","call":"commitText","depth":0,"ret":true,"state":{"text":"ok","sel":[2,2],"comp":[-1,-1]}}
+{"seq":233,"t":22880,"ev":"updateSelection","sel":[2,2,-1,-1]}
+{"seq":234,"t":23058,"ev":"ic","call":"commitText","depth":0,"args":{"text":" ","newCursorPosition":1}}
+{"seq":235,"t":23061,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":236,"t":23062,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"ok","sel":[2,2],"comp":[-1,-1]}}
+{"seq":237,"t":23063,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":238,"t":23064,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"ok ","sel":[3,3],"comp":[-1,-1]}}
+{"seq":239,"t":23065,"ev":"send","bytes":" ","codePoints":[32]}
+{"seq":240,"t":23066,"ev":"ret","call":"commitText","depth":0,"ret":true,"state":{"text":"ok ","sel":[3,3],"comp":[-1,-1]}}
+{"seq":241,"t":23067,"ev":"updateSelection","sel":[3,3,-1,-1]}
+{"seq":242,"t":23075,"ev":"ic","call":"getSurroundingText","depth":0,"args":{"before":4096,"after":4096,"flags":1}}
+{"seq":243,"t":23076,"ev":"ret","call":"getSurroundingText","depth":0,"ret":{"text":"ok ","selStart":3,"selEnd":3,"offset":0},"state":{"text":"ok ","sel":[3,3],"comp":[-1,-1]}}
+{"seq":244,"t":23208,"ev":"ic","call":"beginBatchEdit","depth":0,"args":{}}
+{"seq":245,"t":23211,"ev":"ret","call":"beginBatchEdit","depth":0,"ret":true,"state":{"text":"ok ","sel":[3,3],"comp":[-1,-1]}}
+{"seq":246,"t":23213,"ev":"ic","call":"replaceText","depth":0,"args":{"start":2,"end":3,"text":". ","newCursorPosition":1}}
+{"seq":247,"t":23214,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":248,"t":23215,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"ok ","sel":[3,3],"comp":[-1,-1]}}
+{"seq":249,"t":23216,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":250,"t":23217,"ev":"ret","call":"endBatchEdit","depth":1,"ret":true,"state":{"text":"ok. ","sel":[4,4],"comp":[-1,-1]}}
+{"seq":251,"t":23217,"ev":"ret","call":"replaceText","depth":0,"ret":true,"state":{"text":"ok. ","sel":[4,4],"comp":[-1,-1]}}
+{"seq":252,"t":23218,"ev":"updateSelection","sel":[4,4,-1,-1]}
+{"seq":253,"t":23219,"ev":"ic","call":"endBatchEdit","depth":0,"args":{}}
+{"seq":254,"t":23220,"ev":"send","bytes":". ","codePoints":[127,46,32]}
+{"seq":255,"t":23221,"ev":"ret","call":"endBatchEdit","depth":0,"ret":false,"state":{"text":"ok. ","sel":[4,4],"comp":[-1,-1]}}
+{"seq":256,"t":23223,"ev":"ic","call":"getSurroundingText","depth":0,"args":{"before":4096,"after":4096,"flags":1}}
+{"seq":257,"t":23223,"ev":"ret","call":"getSurroundingText","depth":0,"ret":{"text":"ok. ","selStart":4,"selEnd":4,"offset":0},"state":{"text":"ok. ","sel":[4,4],"comp":[-1,-1]}}
+{"seq":258,"t":25900,"ev":"ic","call":"sendKeyEvent","depth":0,"args":{"action":0,"keyCode":"KEYCODE_ENTER","meta":0,"flags":6}}
+{"seq":259,"t":25902,"ev":"ret","call":"sendKeyEvent","depth":0,"ret":false,"state":{"text":"ok. ","sel":[4,4],"comp":[-1,-1]}}
+{"seq":260,"t":25904,"ev":"ic","call":"sendKeyEvent","depth":0,"args":{"action":1,"keyCode":"KEYCODE_ENTER","meta":0,"flags":6}}
+{"seq":261,"t":25905,"ev":"ret","call":"sendKeyEvent","depth":0,"ret":false,"state":{"text":"ok. ","sel":[4,4],"comp":[-1,-1]}}
+{"seq":262,"t":25906,"ev":"key","action":0,"keyCode":"KEYCODE_ENTER","meta":0,"flags":6,"unicode":10,"source":257,"deviceId":-1,"composing":false}
+{"seq":263,"t":25908,"ev":"restartInput","reason":"non-text key"}
+{"seq":264,"t":25909,"ev":"onCreateInputConnection","inputType":1,"imeOptions":318767105,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":265,"t":25910,"ev":"ic","call":"closeConnection","depth":0,"args":{}}
+{"seq":266,"t":25912,"ev":"ic","call":"finishComposingText","depth":1,"args":{}}
+{"seq":267,"t":25913,"ev":"ic","call":"beginBatchEdit","depth":2,"args":{}}
+{"seq":268,"t":25914,"ev":"ret","call":"beginBatchEdit","depth":2,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":269,"t":25915,"ev":"ic","call":"endBatchEdit","depth":2,"args":{}}
+{"seq":270,"t":25916,"ev":"ret","call":"endBatchEdit","depth":2,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":271,"t":25916,"ev":"ret","call":"finishComposingText","depth":1,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":272,"t":25917,"ev":"ic","call":"setImeConsumesInput","depth":1,"args":{"value":false}}
+{"seq":273,"t":25918,"ev":"ret","call":"setImeConsumesInput","depth":1,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":274,"t":25919,"ev":"ret","call":"closeConnection","depth":0,"ret":null,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":275,"t":25921,"ev":"send","bytes":"\r","codePoints":[13]}
+{"seq":276,"t":25922,"ev":"key","action":1,"keyCode":"KEYCODE_ENTER","meta":0,"flags":6,"unicode":10,"source":257,"deviceId":-1,"composing":false}
+{"seq":277,"t":25926,"ev":"ic","call":"requestCursorUpdates+filter","depth":0,"args":{"mode":2,"filter":0}}
+{"seq":278,"t":25927,"ev":"ic","call":"requestCursorUpdates","depth":1,"args":{"mode":2}}
+{"seq":279,"t":25928,"ev":"ret","call":"requestCursorUpdates","depth":1,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":280,"t":25930,"ev":"ret","call":"requestCursorUpdates+filter","depth":0,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":281,"t":25931,"ev":"ic","call":"getSurroundingText","depth":0,"args":{"before":600,"after":600,"flags":1}}
+{"seq":282,"t":25931,"ev":"ret","call":"getSurroundingText","depth":0,"ret":{"text":"","selStart":0,"selEnd":0,"offset":0},"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":283,"t":25942,"ev":"ic","call":"finishComposingText","depth":0,"args":{}}
+{"seq":284,"t":25943,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":285,"t":25943,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":286,"t":25944,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":287,"t":25944,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":288,"t":25945,"ev":"ret","call":"finishComposingText","depth":0,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":289,"t":26388,"ev":"ic","call":"commitText","depth":0,"args":{"text":"h","newCursorPosition":1}}
+{"seq":290,"t":26390,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":291,"t":26391,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":292,"t":26392,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":293,"t":26392,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"h","sel":[1,1],"comp":[-1,-1]}}
+{"seq":294,"t":26393,"ev":"send","bytes":"h","codePoints":[104]}
+{"seq":295,"t":26393,"ev":"ret","call":"commitText","depth":0,"ret":true,"state":{"text":"h","sel":[1,1],"comp":[-1,-1]}}
+{"seq":296,"t":26394,"ev":"updateSelection","sel":[1,1,-1,-1]}
+{"seq":297,"t":26588,"ev":"ic","call":"commitText","depth":0,"args":{"text":"e","newCursorPosition":1}}
+{"seq":298,"t":26590,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":299,"t":26591,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"h","sel":[1,1],"comp":[-1,-1]}}
+{"seq":300,"t":26591,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":301,"t":26592,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"he","sel":[2,2],"comp":[-1,-1]}}
+{"seq":302,"t":26592,"ev":"send","bytes":"e","codePoints":[101]}
+{"seq":303,"t":26593,"ev":"ret","call":"commitText","depth":0,"ret":true,"state":{"text":"he","sel":[2,2],"comp":[-1,-1]}}
+{"seq":304,"t":26593,"ev":"updateSelection","sel":[2,2,-1,-1]}
+{"seq":305,"t":26746,"ev":"ic","call":"commitText","depth":0,"args":{"text":"l","newCursorPosition":1}}
+{"seq":306,"t":26748,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":307,"t":26749,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"he","sel":[2,2],"comp":[-1,-1]}}
+{"seq":308,"t":26750,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":309,"t":26751,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"hel","sel":[3,3],"comp":[-1,-1]}}
+{"seq":310,"t":26752,"ev":"send","bytes":"l","codePoints":[108]}
+{"seq":311,"t":26754,"ev":"ret","call":"commitText","depth":0,"ret":true,"state":{"text":"hel","sel":[3,3],"comp":[-1,-1]}}
+{"seq":312,"t":26755,"ev":"updateSelection","sel":[3,3,-1,-1]}
+{"seq":313,"t":26933,"ev":"ic","call":"commitText","depth":0,"args":{"text":"l","newCursorPosition":1}}
+{"seq":314,"t":26936,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":315,"t":26937,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"hel","sel":[3,3],"comp":[-1,-1]}}
+{"seq":316,"t":26938,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":317,"t":26939,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"hell","sel":[4,4],"comp":[-1,-1]}}
+{"seq":318,"t":26940,"ev":"send","bytes":"l","codePoints":[108]}
+{"seq":319,"t":26941,"ev":"ret","call":"commitText","depth":0,"ret":true,"state":{"text":"hell","sel":[4,4],"comp":[-1,-1]}}
+{"seq":320,"t":26942,"ev":"updateSelection","sel":[4,4,-1,-1]}
+{"seq":321,"t":27294,"ev":"ic","call":"commitText","depth":0,"args":{"text":"o","newCursorPosition":1}}
+{"seq":322,"t":27296,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":323,"t":27298,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"hell","sel":[4,4],"comp":[-1,-1]}}
+{"seq":324,"t":27299,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":325,"t":27300,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"hello","sel":[5,5],"comp":[-1,-1]}}
+{"seq":326,"t":27302,"ev":"send","bytes":"o","codePoints":[111]}
+{"seq":327,"t":27303,"ev":"ret","call":"commitText","depth":0,"ret":true,"state":{"text":"hello","sel":[5,5],"comp":[-1,-1]}}
+{"seq":328,"t":27304,"ev":"updateSelection","sel":[5,5,-1,-1]}
+{"seq":329,"t":27649,"ev":"ic","call":"commitText","depth":0,"args":{"text":" ","newCursorPosition":1}}
+{"seq":330,"t":27652,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":331,"t":27653,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"hello","sel":[5,5],"comp":[-1,-1]}}
+{"seq":332,"t":27654,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":333,"t":27655,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"hello ","sel":[6,6],"comp":[-1,-1]}}
+{"seq":334,"t":27657,"ev":"send","bytes":" ","codePoints":[32]}
+{"seq":335,"t":27658,"ev":"ret","call":"commitText","depth":0,"ret":true,"state":{"text":"hello ","sel":[6,6],"comp":[-1,-1]}}
+{"seq":336,"t":27659,"ev":"updateSelection","sel":[6,6,-1,-1]}
+{"seq":337,"t":27662,"ev":"ic","call":"getSurroundingText","depth":0,"args":{"before":4096,"after":4096,"flags":1}}
+{"seq":338,"t":27663,"ev":"ret","call":"getSurroundingText","depth":0,"ret":{"text":"hello ","selStart":6,"selEnd":6,"offset":0},"state":{"text":"hello ","sel":[6,6],"comp":[-1,-1]}}
+{"seq":339,"t":27921,"ev":"ic","call":"commitText","depth":0,"args":{"text":"w","newCursorPosition":1}}
+{"seq":340,"t":27923,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":341,"t":27924,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"hello ","sel":[6,6],"comp":[-1,-1]}}
+{"seq":342,"t":27925,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":343,"t":27926,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"hello w","sel":[7,7],"comp":[-1,-1]}}
+{"seq":344,"t":27927,"ev":"send","bytes":"w","codePoints":[119]}
+{"seq":345,"t":27928,"ev":"ret","call":"commitText","depth":0,"ret":true,"state":{"text":"hello w","sel":[7,7],"comp":[-1,-1]}}
+{"seq":346,"t":27929,"ev":"updateSelection","sel":[7,7,-1,-1]}
+{"seq":347,"t":28251,"ev":"ic","call":"commitText","depth":0,"args":{"text":"o","newCursorPosition":1}}
+{"seq":348,"t":28253,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":349,"t":28254,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"hello w","sel":[7,7],"comp":[-1,-1]}}
+{"seq":350,"t":28255,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":351,"t":28256,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"hello wo","sel":[8,8],"comp":[-1,-1]}}
+{"seq":352,"t":28257,"ev":"send","bytes":"o","codePoints":[111]}
+{"seq":353,"t":28259,"ev":"ret","call":"commitText","depth":0,"ret":true,"state":{"text":"hello wo","sel":[8,8],"comp":[-1,-1]}}
+{"seq":354,"t":28259,"ev":"updateSelection","sel":[8,8,-1,-1]}
+{"seq":355,"t":28484,"ev":"ic","call":"commitText","depth":0,"args":{"text":"r","newCursorPosition":1}}
+{"seq":356,"t":28487,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":357,"t":28489,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"hello wo","sel":[8,8],"comp":[-1,-1]}}
+{"seq":358,"t":28490,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":359,"t":28491,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"hello wor","sel":[9,9],"comp":[-1,-1]}}
+{"seq":360,"t":28492,"ev":"send","bytes":"r","codePoints":[114]}
+{"seq":361,"t":28493,"ev":"ret","call":"commitText","depth":0,"ret":true,"state":{"text":"hello wor","sel":[9,9],"comp":[-1,-1]}}
+{"seq":362,"t":28496,"ev":"updateSelection","sel":[9,9,-1,-1]}
+{"seq":363,"t":28736,"ev":"ic","call":"commitText","depth":0,"args":{"text":"l","newCursorPosition":1}}
+{"seq":364,"t":28738,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":365,"t":28740,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"hello wor","sel":[9,9],"comp":[-1,-1]}}
+{"seq":366,"t":28741,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":367,"t":28742,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"hello worl","sel":[10,10],"comp":[-1,-1]}}
+{"seq":368,"t":28743,"ev":"send","bytes":"l","codePoints":[108]}
+{"seq":369,"t":28744,"ev":"ret","call":"commitText","depth":0,"ret":true,"state":{"text":"hello worl","sel":[10,10],"comp":[-1,-1]}}
+{"seq":370,"t":28745,"ev":"updateSelection","sel":[10,10,-1,-1]}
+{"seq":371,"t":28932,"ev":"ic","call":"commitText","depth":0,"args":{"text":"d","newCursorPosition":1}}
+{"seq":372,"t":28934,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":373,"t":28935,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"hello worl","sel":[10,10],"comp":[-1,-1]}}
+{"seq":374,"t":28936,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":375,"t":28936,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"hello world","sel":[11,11],"comp":[-1,-1]}}
+{"seq":376,"t":28937,"ev":"send","bytes":"d","codePoints":[100]}
+{"seq":377,"t":28938,"ev":"ret","call":"commitText","depth":0,"ret":true,"state":{"text":"hello world","sel":[11,11],"comp":[-1,-1]}}
+{"seq":378,"t":28939,"ev":"updateSelection","sel":[11,11,-1,-1]}
+{"seq":379,"t":30325,"ev":"ic","call":"sendKeyEvent","depth":0,"args":{"action":0,"keyCode":"KEYCODE_DPAD_LEFT","meta":0,"flags":6}}
+{"seq":380,"t":30329,"ev":"ret","call":"sendKeyEvent","depth":0,"ret":false,"state":{"text":"hello world","sel":[11,11],"comp":[-1,-1]}}
+{"seq":381,"t":30331,"ev":"ic","call":"sendKeyEvent","depth":0,"args":{"action":1,"keyCode":"KEYCODE_DPAD_LEFT","meta":0,"flags":6}}
+{"seq":382,"t":30332,"ev":"ret","call":"sendKeyEvent","depth":0,"ret":false,"state":{"text":"hello world","sel":[11,11],"comp":[-1,-1]}}
+{"seq":383,"t":30334,"ev":"ic","call":"sendKeyEvent","depth":0,"args":{"action":0,"keyCode":"KEYCODE_DPAD_LEFT","meta":0,"flags":6}}
+{"seq":384,"t":30335,"ev":"ret","call":"sendKeyEvent","depth":0,"ret":false,"state":{"text":"hello world","sel":[11,11],"comp":[-1,-1]}}
+{"seq":385,"t":30336,"ev":"ic","call":"sendKeyEvent","depth":0,"args":{"action":1,"keyCode":"KEYCODE_DPAD_LEFT","meta":0,"flags":6}}
+{"seq":386,"t":30337,"ev":"ret","call":"sendKeyEvent","depth":0,"ret":false,"state":{"text":"hello world","sel":[11,11],"comp":[-1,-1]}}
+{"seq":387,"t":30338,"ev":"key","action":0,"keyCode":"KEYCODE_DPAD_LEFT","meta":0,"flags":6,"unicode":0,"source":257,"deviceId":-1,"composing":false}
+{"seq":388,"t":30339,"ev":"restartInput","reason":"non-text key"}
+{"seq":389,"t":30340,"ev":"onCreateInputConnection","inputType":1,"imeOptions":318767105,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":390,"t":30341,"ev":"ic","call":"closeConnection","depth":0,"args":{}}
+{"seq":391,"t":30342,"ev":"ic","call":"finishComposingText","depth":1,"args":{}}
+{"seq":392,"t":30343,"ev":"ic","call":"beginBatchEdit","depth":2,"args":{}}
+{"seq":393,"t":30344,"ev":"ret","call":"beginBatchEdit","depth":2,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":394,"t":30345,"ev":"ic","call":"endBatchEdit","depth":2,"args":{}}
+{"seq":395,"t":30346,"ev":"ret","call":"endBatchEdit","depth":2,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":396,"t":30346,"ev":"ret","call":"finishComposingText","depth":1,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":397,"t":30347,"ev":"ic","call":"setImeConsumesInput","depth":1,"args":{"value":false}}
+{"seq":398,"t":30348,"ev":"ret","call":"setImeConsumesInput","depth":1,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":399,"t":30349,"ev":"ret","call":"closeConnection","depth":0,"ret":null,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":400,"t":30351,"ev":"send","bytes":"\u001b[D","codePoints":[27,91,68]}
+{"seq":401,"t":30352,"ev":"key","action":1,"keyCode":"KEYCODE_DPAD_LEFT","meta":0,"flags":6,"unicode":0,"source":257,"deviceId":-1,"composing":false}
+{"seq":402,"t":30352,"ev":"key","action":0,"keyCode":"KEYCODE_DPAD_LEFT","meta":0,"flags":6,"unicode":0,"source":257,"deviceId":-1,"composing":false}
+{"seq":403,"t":30353,"ev":"send","bytes":"\u001b[D","codePoints":[27,91,68]}
+{"seq":404,"t":30353,"ev":"key","action":1,"keyCode":"KEYCODE_DPAD_LEFT","meta":0,"flags":6,"unicode":0,"source":257,"deviceId":-1,"composing":false}
+{"seq":405,"t":30362,"ev":"ic","call":"sendKeyEvent","depth":0,"args":{"action":1,"keyCode":"KEYCODE_SHIFT_LEFT","meta":0,"flags":6}}
+{"seq":406,"t":30363,"ev":"ret","call":"sendKeyEvent","depth":0,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":407,"t":30363,"ev":"ic","call":"requestCursorUpdates+filter","depth":0,"args":{"mode":2,"filter":0}}
+{"seq":408,"t":30364,"ev":"ic","call":"requestCursorUpdates","depth":1,"args":{"mode":2}}
+{"seq":409,"t":30365,"ev":"ret","call":"requestCursorUpdates","depth":1,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":410,"t":30365,"ev":"ret","call":"requestCursorUpdates+filter","depth":0,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":411,"t":30366,"ev":"key","action":1,"keyCode":"KEYCODE_SHIFT_LEFT","meta":0,"flags":6,"unicode":0,"source":257,"deviceId":-1,"composing":false}
+{"seq":412,"t":30371,"ev":"ic","call":"getSurroundingText","depth":0,"args":{"before":600,"after":600,"flags":1}}
+{"seq":413,"t":30372,"ev":"ret","call":"getSurroundingText","depth":0,"ret":{"text":"","selStart":0,"selEnd":0,"offset":0},"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":414,"t":30380,"ev":"ic","call":"finishComposingText","depth":0,"args":{}}
+{"seq":415,"t":30381,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":416,"t":30382,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":417,"t":30383,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":418,"t":30384,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":419,"t":30386,"ev":"ret","call":"finishComposingText","depth":0,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":420,"t":33648,"ev":"ic","call":"commitText","depth":0,"args":{"text":"x","newCursorPosition":1}}
+{"seq":421,"t":33652,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":422,"t":33653,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":423,"t":33654,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":424,"t":33655,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"x","sel":[1,1],"comp":[-1,-1]}}
+{"seq":425,"t":33657,"ev":"send","bytes":"x","codePoints":[120]}
+{"seq":426,"t":33658,"ev":"ret","call":"commitText","depth":0,"ret":true,"state":{"text":"x","sel":[1,1],"comp":[-1,-1]}}
+{"seq":427,"t":33659,"ev":"updateSelection","sel":[1,1,-1,-1]}
+{"seq":428,"t":34283,"ev":"ic","call":"getSurroundingText","depth":0,"args":{"before":4096,"after":4096,"flags":1}}
+{"seq":429,"t":34286,"ev":"ret","call":"getSurroundingText","depth":0,"ret":{"text":"x","selStart":1,"selEnd":1,"offset":0},"state":{"text":"x","sel":[1,1],"comp":[-1,-1]}}
+{"seq":430,"t":34297,"ev":"ic","call":"sendKeyEvent","depth":0,"args":{"action":0,"keyCode":"KEYCODE_ENTER","meta":0,"flags":6}}
+{"seq":431,"t":34299,"ev":"ret","call":"sendKeyEvent","depth":0,"ret":false,"state":{"text":"x","sel":[1,1],"comp":[-1,-1]}}
+{"seq":432,"t":34301,"ev":"ic","call":"sendKeyEvent","depth":0,"args":{"action":1,"keyCode":"KEYCODE_ENTER","meta":0,"flags":6}}
+{"seq":433,"t":34303,"ev":"ret","call":"sendKeyEvent","depth":0,"ret":false,"state":{"text":"x","sel":[1,1],"comp":[-1,-1]}}
+{"seq":434,"t":34305,"ev":"key","action":0,"keyCode":"KEYCODE_ENTER","meta":0,"flags":6,"unicode":10,"source":257,"deviceId":-1,"composing":false}
+{"seq":435,"t":34307,"ev":"restartInput","reason":"non-text key"}
+{"seq":436,"t":34308,"ev":"onCreateInputConnection","inputType":1,"imeOptions":318767105,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":437,"t":34309,"ev":"ic","call":"closeConnection","depth":0,"args":{}}
+{"seq":438,"t":34310,"ev":"ic","call":"finishComposingText","depth":1,"args":{}}
+{"seq":439,"t":34311,"ev":"ic","call":"beginBatchEdit","depth":2,"args":{}}
+{"seq":440,"t":34312,"ev":"ret","call":"beginBatchEdit","depth":2,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":441,"t":34313,"ev":"ic","call":"endBatchEdit","depth":2,"args":{}}
+{"seq":442,"t":34314,"ev":"ret","call":"endBatchEdit","depth":2,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":443,"t":34315,"ev":"ret","call":"finishComposingText","depth":1,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":444,"t":34316,"ev":"ic","call":"setImeConsumesInput","depth":1,"args":{"value":false}}
+{"seq":445,"t":34317,"ev":"ret","call":"setImeConsumesInput","depth":1,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":446,"t":34318,"ev":"ret","call":"closeConnection","depth":0,"ret":null,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":447,"t":34320,"ev":"send","bytes":"\r","codePoints":[13]}
+{"seq":448,"t":34320,"ev":"key","action":1,"keyCode":"KEYCODE_ENTER","meta":0,"flags":6,"unicode":10,"source":257,"deviceId":-1,"composing":false}
+{"seq":449,"t":34331,"ev":"ic","call":"requestCursorUpdates+filter","depth":0,"args":{"mode":2,"filter":0}}
+{"seq":450,"t":34332,"ev":"ic","call":"requestCursorUpdates","depth":1,"args":{"mode":2}}
+{"seq":451,"t":34333,"ev":"ret","call":"requestCursorUpdates","depth":1,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":452,"t":34334,"ev":"ret","call":"requestCursorUpdates+filter","depth":0,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":453,"t":34334,"ev":"ic","call":"getSurroundingText","depth":0,"args":{"before":600,"after":600,"flags":1}}
+{"seq":454,"t":34335,"ev":"ret","call":"getSurroundingText","depth":0,"ret":{"text":"","selStart":0,"selEnd":0,"offset":0},"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":455,"t":34348,"ev":"ic","call":"finishComposingText","depth":0,"args":{}}
+{"seq":456,"t":34350,"ev":"ic","call":"beginBatchEdit","depth":1,"args":{}}
+{"seq":457,"t":34350,"ev":"ret","call":"beginBatchEdit","depth":1,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":458,"t":34351,"ev":"ic","call":"endBatchEdit","depth":1,"args":{}}
+{"seq":459,"t":34352,"ev":"ret","call":"endBatchEdit","depth":1,"ret":false,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}
+{"seq":460,"t":34353,"ev":"ret","call":"finishComposingText","depth":0,"ret":true,"state":{"text":"","sel":[0,0],"comp":[-1,-1]}}

@@ -1,0 +1,330 @@
+public final class com/google/vtfx/core/AmbiguousWidth : java/lang/Enum {
+	public static final field Narrow Lcom/google/vtfx/core/AmbiguousWidth;
+	public static final field Wide Lcom/google/vtfx/core/AmbiguousWidth;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/google/vtfx/core/AmbiguousWidth;
+	public static fun values ()[Lcom/google/vtfx/core/AmbiguousWidth;
+}
+
+public final class com/google/vtfx/core/CellStyle {
+	public static final field Companion Lcom/google/vtfx/core/CellStyle$Companion;
+	public static final synthetic fun box-impl (J)Lcom/google/vtfx/core/CellStyle;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (JLjava/lang/Object;)Z
+	public static final fun equals-impl0 (JJ)Z
+	public static final fun getBackground-ScncimE (J)I
+	public static final fun getForeground-ScncimE (J)I
+	public static final fun getUnderline-impl (J)Lcom/google/vtfx/core/UnderlineStyle;
+	public fun hashCode ()I
+	public static fun hashCode-impl (J)I
+	public static final fun isBlinking-impl (J)Z
+	public static final fun isBold-impl (J)Z
+	public static final fun isFaint-impl (J)Z
+	public static final fun isInverse-impl (J)Z
+	public static final fun isInvisible-impl (J)Z
+	public static final fun isItalic-impl (J)Z
+	public static final fun isOverlined-impl (J)Z
+	public static final fun isStrikethrough-impl (J)Z
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (J)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()J
+}
+
+public final class com/google/vtfx/core/CellStyle$Companion {
+	public final fun getDefault-16wcrso ()J
+}
+
+public final class com/google/vtfx/core/CharWidth {
+	public static final field INSTANCE Lcom/google/vtfx/core/CharWidth;
+	public static final field UNICODE_VERSION Ljava/lang/String;
+	public final fun of (ILcom/google/vtfx/core/AmbiguousWidth;)I
+	public static synthetic fun of$default (Lcom/google/vtfx/core/CharWidth;ILcom/google/vtfx/core/AmbiguousWidth;ILjava/lang/Object;)I
+}
+
+public final class com/google/vtfx/core/CursorShape : java/lang/Enum {
+	public static final field Bar Lcom/google/vtfx/core/CursorShape;
+	public static final field Block Lcom/google/vtfx/core/CursorShape;
+	public static final field Underline Lcom/google/vtfx/core/CursorShape;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/google/vtfx/core/CursorShape;
+	public static fun values ()[Lcom/google/vtfx/core/CursorShape;
+}
+
+public final class com/google/vtfx/core/CursorState {
+	public fun <init> (II)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun copy (II)Lcom/google/vtfx/core/CursorState;
+	public static synthetic fun copy$default (Lcom/google/vtfx/core/CursorState;IIILjava/lang/Object;)Lcom/google/vtfx/core/CursorState;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getColumn ()I
+	public final fun getRow ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/google/vtfx/core/Hyperlink {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lcom/google/vtfx/core/Hyperlink;
+	public static synthetic fun copy$default (Lcom/google/vtfx/core/Hyperlink;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/google/vtfx/core/Hyperlink;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()Ljava/lang/String;
+	public final fun getUri ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface annotation class com/google/vtfx/core/InternalVtfxApi : java/lang/annotation/Annotation {
+}
+
+public final class com/google/vtfx/core/KeyModifiers {
+	public static final field Companion Lcom/google/vtfx/core/KeyModifiers$Companion;
+	public static final synthetic fun box-impl (I)Lcom/google/vtfx/core/KeyModifiers;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (ILjava/lang/Object;)Z
+	public static final fun equals-impl0 (II)Z
+	public static final fun getAlt-impl (I)Z
+	public static final fun getCtrl-impl (I)Z
+	public static final fun getMeta-impl (I)Z
+	public static final fun getShift-impl (I)Z
+	public fun hashCode ()I
+	public static fun hashCode-impl (I)I
+	public static final fun isEmpty-impl (I)Z
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (I)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()I
+	public static final fun union-PCIXSms (II)I
+}
+
+public final class com/google/vtfx/core/KeyModifiers$Companion {
+	public final fun getNone-wcG754k ()I
+	public final fun of-M7JVlHc (ZZZZ)I
+	public static synthetic fun of-M7JVlHc$default (Lcom/google/vtfx/core/KeyModifiers$Companion;ZZZZILjava/lang/Object;)I
+}
+
+public abstract interface class com/google/vtfx/core/KeyStroke {
+	public abstract fun getModifiers-wcG754k ()I
+}
+
+public final class com/google/vtfx/core/KeyStroke$Character : com/google/vtfx/core/KeyStroke {
+	public synthetic fun <init> (IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2-wcG754k ()I
+	public final fun copy-LZWaOlk (II)Lcom/google/vtfx/core/KeyStroke$Character;
+	public static synthetic fun copy-LZWaOlk$default (Lcom/google/vtfx/core/KeyStroke$Character;IIILjava/lang/Object;)Lcom/google/vtfx/core/KeyStroke$Character;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCodePoint ()I
+	public fun getModifiers-wcG754k ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/google/vtfx/core/KeyStroke$Special : com/google/vtfx/core/KeyStroke {
+	public synthetic fun <init> (Lcom/google/vtfx/core/TerminalKey;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lcom/google/vtfx/core/TerminalKey;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/google/vtfx/core/TerminalKey;
+	public final fun component2-wcG754k ()I
+	public final fun copy-LZWaOlk (Lcom/google/vtfx/core/TerminalKey;I)Lcom/google/vtfx/core/KeyStroke$Special;
+	public static synthetic fun copy-LZWaOlk$default (Lcom/google/vtfx/core/KeyStroke$Special;Lcom/google/vtfx/core/TerminalKey;IILjava/lang/Object;)Lcom/google/vtfx/core/KeyStroke$Special;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKey ()Lcom/google/vtfx/core/TerminalKey;
+	public fun getModifiers-wcG754k ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/google/vtfx/core/LineSnapshot {
+	public final fun contentEquals (Lcom/google/vtfx/core/LineSnapshot;)Z
+	public final fun contentHashCode ()I
+	public final fun getColumns ()I
+	public final fun hyperlinkAt (I)Lcom/google/vtfx/core/Hyperlink;
+	public final fun isWrapped ()Z
+	public final fun styleAt-N0s0MVE (I)J
+	public final fun text ()Ljava/lang/String;
+	public final fun textAt (I)Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+	public final fun underlineColorAt-XdDU2qM (I)I
+	public final fun widthAt (I)I
+}
+
+public final class com/google/vtfx/core/LinkPattern {
+	public static final field Companion Lcom/google/vtfx/core/LinkPattern$Companion;
+	public fun <init> (Lkotlin/text/Regex;Ljava/lang/String;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/google/vtfx/core/LinkPattern$Companion {
+	public final fun getUrls ()Lcom/google/vtfx/core/LinkPattern;
+}
+
+public final class com/google/vtfx/core/MouseEncoding : java/lang/Enum {
+	public static final field Default Lcom/google/vtfx/core/MouseEncoding;
+	public static final field Sgr Lcom/google/vtfx/core/MouseEncoding;
+	public static final field Urxvt Lcom/google/vtfx/core/MouseEncoding;
+	public static final field Utf8 Lcom/google/vtfx/core/MouseEncoding;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/google/vtfx/core/MouseEncoding;
+	public static fun values ()[Lcom/google/vtfx/core/MouseEncoding;
+}
+
+public final class com/google/vtfx/core/MouseTracking : java/lang/Enum {
+	public static final field AnyEvent Lcom/google/vtfx/core/MouseTracking;
+	public static final field ButtonEvent Lcom/google/vtfx/core/MouseTracking;
+	public static final field None Lcom/google/vtfx/core/MouseTracking;
+	public static final field Normal Lcom/google/vtfx/core/MouseTracking;
+	public static final field X10 Lcom/google/vtfx/core/MouseTracking;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/google/vtfx/core/MouseTracking;
+	public static fun values ()[Lcom/google/vtfx/core/MouseTracking;
+}
+
+public final class com/google/vtfx/core/TerminalColor {
+	public static final field Companion Lcom/google/vtfx/core/TerminalColor$Companion;
+	public static final synthetic fun box-impl (I)Lcom/google/vtfx/core/TerminalColor;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (ILjava/lang/Object;)Z
+	public static final fun equals-impl0 (II)Z
+	public static final fun getIndex-impl (I)I
+	public static final fun getRgb-impl (I)I
+	public fun hashCode ()I
+	public static fun hashCode-impl (I)I
+	public static final fun isDefault-impl (I)Z
+	public static final fun isIndexed-impl (I)Z
+	public static final fun isRgb-impl (I)Z
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (I)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()I
+}
+
+public final class com/google/vtfx/core/TerminalColor$Companion {
+	public final fun getDefault-ScncimE ()I
+	public final fun indexed-XdDU2qM (I)I
+	public final fun rgb-2CLD7sQ (III)I
+}
+
+public final class com/google/vtfx/core/TerminalKey : java/lang/Enum {
+	public static final field Backspace Lcom/google/vtfx/core/TerminalKey;
+	public static final field Delete Lcom/google/vtfx/core/TerminalKey;
+	public static final field Down Lcom/google/vtfx/core/TerminalKey;
+	public static final field End Lcom/google/vtfx/core/TerminalKey;
+	public static final field Enter Lcom/google/vtfx/core/TerminalKey;
+	public static final field Escape Lcom/google/vtfx/core/TerminalKey;
+	public static final field F1 Lcom/google/vtfx/core/TerminalKey;
+	public static final field F10 Lcom/google/vtfx/core/TerminalKey;
+	public static final field F11 Lcom/google/vtfx/core/TerminalKey;
+	public static final field F12 Lcom/google/vtfx/core/TerminalKey;
+	public static final field F2 Lcom/google/vtfx/core/TerminalKey;
+	public static final field F3 Lcom/google/vtfx/core/TerminalKey;
+	public static final field F4 Lcom/google/vtfx/core/TerminalKey;
+	public static final field F5 Lcom/google/vtfx/core/TerminalKey;
+	public static final field F6 Lcom/google/vtfx/core/TerminalKey;
+	public static final field F7 Lcom/google/vtfx/core/TerminalKey;
+	public static final field F8 Lcom/google/vtfx/core/TerminalKey;
+	public static final field F9 Lcom/google/vtfx/core/TerminalKey;
+	public static final field Home Lcom/google/vtfx/core/TerminalKey;
+	public static final field Insert Lcom/google/vtfx/core/TerminalKey;
+	public static final field Keypad0 Lcom/google/vtfx/core/TerminalKey;
+	public static final field Keypad1 Lcom/google/vtfx/core/TerminalKey;
+	public static final field Keypad2 Lcom/google/vtfx/core/TerminalKey;
+	public static final field Keypad3 Lcom/google/vtfx/core/TerminalKey;
+	public static final field Keypad4 Lcom/google/vtfx/core/TerminalKey;
+	public static final field Keypad5 Lcom/google/vtfx/core/TerminalKey;
+	public static final field Keypad6 Lcom/google/vtfx/core/TerminalKey;
+	public static final field Keypad7 Lcom/google/vtfx/core/TerminalKey;
+	public static final field Keypad8 Lcom/google/vtfx/core/TerminalKey;
+	public static final field Keypad9 Lcom/google/vtfx/core/TerminalKey;
+	public static final field KeypadDecimal Lcom/google/vtfx/core/TerminalKey;
+	public static final field KeypadDivide Lcom/google/vtfx/core/TerminalKey;
+	public static final field KeypadEnter Lcom/google/vtfx/core/TerminalKey;
+	public static final field KeypadEquals Lcom/google/vtfx/core/TerminalKey;
+	public static final field KeypadMinus Lcom/google/vtfx/core/TerminalKey;
+	public static final field KeypadMultiply Lcom/google/vtfx/core/TerminalKey;
+	public static final field KeypadPlus Lcom/google/vtfx/core/TerminalKey;
+	public static final field Left Lcom/google/vtfx/core/TerminalKey;
+	public static final field PageDown Lcom/google/vtfx/core/TerminalKey;
+	public static final field PageUp Lcom/google/vtfx/core/TerminalKey;
+	public static final field Right Lcom/google/vtfx/core/TerminalKey;
+	public static final field Tab Lcom/google/vtfx/core/TerminalKey;
+	public static final field Up Lcom/google/vtfx/core/TerminalKey;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/google/vtfx/core/TerminalKey;
+	public static fun values ()[Lcom/google/vtfx/core/TerminalKey;
+}
+
+public final class com/google/vtfx/core/TerminalLimits {
+	public static final field Companion Lcom/google/vtfx/core/TerminalLimits$Companion;
+	public static final field MAX_DIMENSION I
+	public static final field MAX_SCROLLBACK_LINES I
+	public static final field MAX_STRING_LENGTH I
+	public fun <init> ()V
+	public fun <init> (II)V
+	public synthetic fun <init> (IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getMaxStringLength ()I
+	public final fun getScrollbackLines ()I
+}
+
+public final class com/google/vtfx/core/TerminalLimits$Companion {
+}
+
+public final class com/google/vtfx/core/TerminalModes {
+	public fun <init> ()V
+	public fun <init> (ZZZZLcom/google/vtfx/core/CursorShape;ZZZZZLcom/google/vtfx/core/MouseTracking;Lcom/google/vtfx/core/MouseEncoding;)V
+	public synthetic fun <init> (ZZZZLcom/google/vtfx/core/CursorShape;ZZZZZLcom/google/vtfx/core/MouseTracking;Lcom/google/vtfx/core/MouseEncoding;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component10 ()Z
+	public final fun component11 ()Lcom/google/vtfx/core/MouseTracking;
+	public final fun component12 ()Lcom/google/vtfx/core/MouseEncoding;
+	public final fun component2 ()Z
+	public final fun component3 ()Z
+	public final fun component4 ()Z
+	public final fun component5 ()Lcom/google/vtfx/core/CursorShape;
+	public final fun component6 ()Z
+	public final fun component7 ()Z
+	public final fun component8 ()Z
+	public final fun component9 ()Z
+	public final fun copy (ZZZZLcom/google/vtfx/core/CursorShape;ZZZZZLcom/google/vtfx/core/MouseTracking;Lcom/google/vtfx/core/MouseEncoding;)Lcom/google/vtfx/core/TerminalModes;
+	public static synthetic fun copy$default (Lcom/google/vtfx/core/TerminalModes;ZZZZLcom/google/vtfx/core/CursorShape;ZZZZZLcom/google/vtfx/core/MouseTracking;Lcom/google/vtfx/core/MouseEncoding;ILjava/lang/Object;)Lcom/google/vtfx/core/TerminalModes;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getApplicationCursorKeys ()Z
+	public final fun getApplicationKeypad ()Z
+	public final fun getBracketedPaste ()Z
+	public final fun getCursorBlinking ()Z
+	public final fun getCursorShape ()Lcom/google/vtfx/core/CursorShape;
+	public final fun getCursorVisible ()Z
+	public final fun getFocusEvents ()Z
+	public final fun getMouseEncoding ()Lcom/google/vtfx/core/MouseEncoding;
+	public final fun getMouseTracking ()Lcom/google/vtfx/core/MouseTracking;
+	public final fun getNewLine ()Z
+	public final fun getReverseVideo ()Z
+	public final fun getSynchronizedOutput ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/google/vtfx/core/TerminalSnapshot {
+	public final fun getColumns ()I
+	public final fun getCursor ()Lcom/google/vtfx/core/CursorState;
+	public final fun getModes ()Lcom/google/vtfx/core/TerminalModes;
+	public final fun getRows ()I
+	public final fun getScrollOffset ()I
+	public final fun isAlternateScreen ()Z
+	public final fun line (I)Lcom/google/vtfx/core/LineSnapshot;
+}
+
+public final class com/google/vtfx/core/UnderlineStyle : java/lang/Enum {
+	public static final field Curly Lcom/google/vtfx/core/UnderlineStyle;
+	public static final field Dashed Lcom/google/vtfx/core/UnderlineStyle;
+	public static final field Dotted Lcom/google/vtfx/core/UnderlineStyle;
+	public static final field Double Lcom/google/vtfx/core/UnderlineStyle;
+	public static final field None Lcom/google/vtfx/core/UnderlineStyle;
+	public static final field Single Lcom/google/vtfx/core/UnderlineStyle;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/google/vtfx/core/UnderlineStyle;
+	public static fun values ()[Lcom/google/vtfx/core/UnderlineStyle;
+}
+

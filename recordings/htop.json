@@ -1,0 +1,9 @@
+{
+  "command": "htop",
+  "columns": 80,
+  "rows": 24,
+  "term": "xterm-256color",
+  "app_version": "htop 3.4.1",
+  "reference": "tmux 3.5a",
+  "bytes": 9861
+}

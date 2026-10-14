@@ -1,0 +1,99 @@
+# Erasing, inserting, and deleting.
+
+=== EL 0 erases from the cursor to the end of the line
+size 10x1
+input "abcdefghij\e[5G\e[K"
+screen
+  |abcd      |
+cursor 5,1
+ref ctlseqs: CSI Ps K (EL)
+
+=== EL 1 erases from the start of the line to the cursor, inclusive
+size 10x1
+input "abcdefghij\e[5G\e[1K"
+screen
+  |     fghij|
+cursor 5,1
+ref ctlseqs: EL
+
+=== EL 2 erases the whole line
+size 10x1
+input "abcdefghij\e[5G\e[2K"
+screen
+  |          |
+cursor 5,1
+ref ctlseqs: EL
+
+=== ED 0 erases from the cursor to the end of the screen
+size 5x3
+input "aaa\r\nbbb\r\nccc\e[2;2H\e[J"
+screen
+  |aaa  |
+  |b    |
+  |     |
+cursor 2,2
+ref ctlseqs: CSI Ps J (ED)
+
+=== ED 1 erases from the start of the screen to the cursor, inclusive
+size 5x3
+input "aaa\r\nbbb\r\nccc\e[2;2H\e[1J"
+screen
+  |     |
+  |  b  |
+  |ccc  |
+cursor 2,2
+ref ctlseqs: ED
+
+=== ED 2 erases the whole screen without moving the cursor
+size 5x3
+input "aaa\r\nbbb\r\nccc\e[2;2H\e[2J"
+screen
+  |     |
+  |     |
+  |     |
+cursor 2,2
+ref ctlseqs: ED
+
+=== ECH erases characters without shifting
+size 10x1
+input "abcdef\e[2G\e[2X"
+screen
+  |a  def    |
+cursor 2,1
+ref ctlseqs: CSI Ps X (ECH)
+
+=== DCH deletes characters and shifts the rest left
+size 10x1
+input "abcdef\e[2G\e[2P"
+screen
+  |adef      |
+cursor 2,1
+ref ctlseqs: CSI Ps P (DCH)
+
+=== ICH inserts blanks and shifts the rest right
+size 10x1
+input "abcdef\e[2G\e[2@"
+screen
+  |a  bcdef  |
+cursor 2,1
+ref ctlseqs: CSI Ps @ (ICH)
+
+=== IL inserts lines and pushes the bottom lines out
+size 5x3
+input "aaa\r\nbbb\r\nccc\e[2;1H\e[L"
+screen
+  |aaa  |
+  |     |
+  |bbb  |
+cursor 1,2
+ref ctlseqs: CSI Ps L (IL)
+
+=== DL deletes lines and pulls the lines below up
+size 5x3
+input "aaa\r\nbbb\r\nccc\e[2;1H\e[M"
+screen
+  |aaa  |
+  |ccc  |
+  |     |
+cursor 1,2
+ref ctlseqs: CSI Ps M (DL)

@@ -1,0 +1,63 @@
+# Parsing of control sequences and UTF-8.
+
+=== OSC terminated by BEL is not displayed
+size 10x1
+input "a\e]0;title\x07b"
+screen
+  |ab        |
+cursor 3,1
+ref ctlseqs: OSC Ps ; Pt BEL
+
+=== OSC terminated by ST is not displayed
+size 10x1
+input "a\e]0;title\e\\b"
+screen
+  |ab        |
+cursor 3,1
+ref ctlseqs: OSC Ps ; Pt ST
+
+=== DCS is not displayed
+size 10x1
+input "a\eP1$rabc\e\\b"
+screen
+  |ab        |
+cursor 3,1
+ref DEC ANSI parser: dcs_passthrough
+
+=== An unknown private mode is ignored
+size 10x1
+input "a\e[?9999hb"
+screen
+  |ab        |
+cursor 3,1
+
+=== A C0 control inside a control sequence is executed
+size 10x1
+input "ab\e[1\bCX"
+screen
+  |abX       |
+cursor 4,1
+ref DEC ANSI parser: execute in csi_param
+
+=== ESC inside a control sequence starts a new sequence
+size 10x1
+input "a\e[2\e[3Cb"
+screen
+  |a   b     |
+cursor 6,1
+ref DEC ANSI parser: ESC from csi_param
+
+=== UTF-8 is decoded
+size 10x1
+input "\xe3\x81\x82a"
+screen
+  |あa       |
+cursor 4,1
+
+=== UTF-8 split across inputs is decoded
+size 10x1
+input "\xe3\x81"
+input "\x82a"
+screen
+  |あa       |
+cursor 4,1

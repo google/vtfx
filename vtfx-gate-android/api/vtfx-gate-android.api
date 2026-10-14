@@ -1,0 +1,11 @@
+public final class com/google/vtfx/gate/android/AndroidClipboard : com/google/vtfx/gate/ClipboardAccess {
+	public fun <init> (Landroid/content/Context;)V
+	public fun read ()Ljava/lang/String;
+	public fun write (Ljava/lang/String;)V
+}
+
+public final class com/google/vtfx/gate/android/AndroidUrlOpener : com/google/vtfx/gate/UrlOpener {
+	public fun <init> (Landroid/content/Context;)V
+	public fun open (Ljava/lang/String;)V
+}
+
