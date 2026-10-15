@@ -139,7 +139,7 @@ When all items are "Fixed", "Not reproduced", or "No action needed", do the foll
 2. Check that nothing the report alone holds is lost: choices of behavior are in [decisions/](../decisions/README.md) or the design documents, open "Unverified concerns" are in section 1 of [review-queue.md](../review-queue.md) if a human needs to decide them, and no code, test, or document refers to the report.
 3. Remove the report, `docs/reviews/repro-<date>/`, any entry for it in `config/boundaries.toml`, and its row in section 4. The subject of the commit is `docs: Close the review report <date>-<name>`. Write the report's target commit and a summary of the status table in the body, and the result of step 1 in the `TEST=` line.
 
-Closed reports and their reproduction tests are not kept in the tree, to keep the repository small and because what they record is kept elsewhere: the bugs by the regression tests in the normal tests, and the reasons by decisions and comments. Until the library is published, the history is squashed, so the closing commit is not kept either. After publication, the history is linear, and the report can be read from the parent of its closing commit.
+Closed reports and their reproduction tests are not kept in the tree, to keep the repository small and because what they record is kept elsewhere: the bugs by the regression tests in the normal tests, and the reasons by decisions and comments. The history before publication (2026-10-15) was squashed into one commit, so the reports closed before then are not kept anywhere. From publication on, the history is never rewritten, and a closed report can be read from the parent of its closing commit.
 
 ## 4. List of reports
 

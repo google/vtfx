@@ -26,4 +26,4 @@ Because of 1, 2 is no longer used on Gboard's path, but it is kept because it le
 
 ## Impact of reversing
 
-If Compose's wrapper starts forwarding `replaceText`, `TerminalInputView` can go back to `PlatformTextInputModifierNode` (the M4 implementation is in the history). In that case, check with the e2e's `en-double-space` as well.
+If Compose's wrapper starts forwarding `replaceText`, `TerminalInputView` can go back to `PlatformTextInputModifierNode` (the M4 implementation is not kept: the history before publication was squashed into one commit). In that case, check with the e2e's `en-double-space` as well.

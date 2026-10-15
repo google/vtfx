@@ -1,6 +1,6 @@
 # Distribution (provisional) and license
 
-- Status: Approved (2026-10-13, approved by a human in the final review. Published to Maven Central. The group was changed by a human on 2026-10-14)
+- Status: Approved (2026-10-13, approved by a human in the final review. The group was changed by a human on 2026-10-14. The repository was published on 2026-10-15)
 - Date: 2026-10-12
 - Related: Section 8 of the requirements (distribution and license), "Publishing" in [review-queue.md](../review-queue.md), [0016](0016-public-api.md)
 
@@ -15,7 +15,8 @@ Section 8 of the requirements asks for the distribution method and the license t
 - It is assumed that the six library modules (`vtfx-core`, `vtfx-input`, `vtfx-gate`, `vtfx-gate-android`, `vtfx-session`, `vtfx-compose`) are each distributed as a Maven artifact. `vtfx-session` was added on 2026-10-14 by [0026](0026-session-module.md). JVM modules are jars, and Android modules are AARs. The group is `com.google.vtfx`, and the artifactId is the module name.
 - Apps only need to depend on `vtfx-compose` (the others come transitively; [usage.md](../usage.md)). JVM programs without a UI depend on `vtfx-session`. The modules are distributed separately to keep, in the artifacts too, the structure that mechanically checks the security boundary (only the gate can send to the host) by modules.
 - Versions start at 0.x of Semantic Versioning ([0016](0016-public-api.md)).
-- The project is published as the GitHub repository https://github.com/google/vtfx during October 2026, with the first version 0.1.0 (2026-10-15, decided by a human). The version is `version` in `gradle.properties`, and the release is tagged `v<version>`.
+- The project was published as the GitHub repository https://github.com/google/vtfx on 2026-10-15, with the first version 0.1.0 (decided by a human on 2026-10-15). The version is `version` in `gradle.properties`, and the release is tagged `v<version>`.
+- From publication on, the git history is never rewritten: no amending, rebasing, squashing, or force pushing of existing commits. Changes, including reverts, are added as new commits (2026-10-15, decided by a human). The history before publication was squashed into one commit.
 - The destination is Maven Central (2026-10-13, decided by a human). The group namespace `com.google.vtfx` is under `com.google`, which Google manages on the Central Portal. The permission to publish to it is requested when publishing is decided. Apps can get it without additional repositories or tokens, published versions cannot be changed, and artifacts are signed.
 - The group and package name were initially `jp.nya3.vtfx` and were changed to `org.nya3.vtfx` (2026-10-13, decided by a human), then to `com.google.vtfx` so that the project can be released as a Google open source project (2026-10-14, decided by a human).
 - Publishing configuration (`maven-publish`, POM, signing, the Central Portal) is added when a human decides to publish. Uploading to Maven Central is not part of the first publication: it is set up after the repository is published (2026-10-15, decided by a human).

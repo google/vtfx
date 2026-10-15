@@ -1,4 +1,6 @@
 # Commits that only reformat the sources. Use with
 # git config blame.ignoreRevsFile .git-blame-ignore-revs
 #
-# Empty until publication: the history is squashed until then, so commit IDs would not last.
+# Empty at publication (2026-10-15): the history before it was squashed into one
+# commit. The history is never rewritten after publication, so the IDs listed here
+# last. Add each formatting-only commit in a later commit.

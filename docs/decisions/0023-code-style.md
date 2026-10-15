@@ -20,7 +20,7 @@ A human (the owner of the project) chose to enforce formatting following Google'
 - Generated sources (`UnicodeWidthTables`, `UnicodeDefaultIgnorables`) are not formatted, because ktfmt breaks tables of value pairs into one value per line. They are committed ([0029](0029-import-without-gradle.md)), so `vtfx.ktfmt` excludes them by path, and their generator checks them instead (`scripts/generate_unicode_tables.py --check` in `scripts/check.sh`).
 - ktfmt is called directly with `JavaExec`, without a formatting plugin such as Spotless, so that the dependencies under review are only ktfmt and its dependencies. The plain jar is used rather than a jar with its dependencies bundled, so that each dependency is resolved and visible like other dependencies.
 - ktfmt 0.64 sometimes changes expressions that chain calls on the result of a lambda (`map { ... }.let { ... }` and so on) into a different form on a second formatting. `checkKotlinFormat` would keep failing, so such expressions are rewritten into a form that is stable after one pass.
-- Formatting-only commits are registered in `.git-blame-ignore-revs`. Until publication the history is squashed and commit IDs do not last, so the file is kept empty and registration starts with the first formatting-only commit after publication.
+- Formatting-only commits are registered in `.git-blame-ignore-revs`, in a later commit, since a commit cannot contain its own ID. The history before publication (2026-10-15) was squashed into one commit, so the file was empty at publication. The history is never rewritten after publication, so the registered IDs last.
 
 ## Alternatives considered
 
@@ -31,4 +31,4 @@ A human (the owner of the project) chose to enforce formatting following Google'
 
 ## Impact of reversing
 
-To change the style, change `--kotlinlang-style` in `Ktfmt.kt`, reformat everything with `./gradlew formatKotlin`, and, after publication, add that commit to `.git-blame-ignore-revs`. To stop enforcing formatting, make `check` not depend on `checkKotlinFormat` in `vtfx.ktfmt.gradle.kts`, and revert the descriptions in AGENTS.md and section 9 of testing.md.
+To change the style, change `--kotlinlang-style` in `Ktfmt.kt`, reformat everything with `./gradlew formatKotlin`, and add that commit to `.git-blame-ignore-revs`. To stop enforcing formatting, make `check` not depend on `checkKotlinFormat` in `vtfx.ktfmt.gradle.kts`, and revert the descriptions in AGENTS.md and section 9 of testing.md.
