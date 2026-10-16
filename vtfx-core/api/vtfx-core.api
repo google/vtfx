@@ -152,27 +152,6 @@ public final class com/google/vtfx/core/LinkPattern$Companion {
 	public final fun getUrls ()Lcom/google/vtfx/core/LinkPattern;
 }
 
-public final class com/google/vtfx/core/MouseEncoding : java/lang/Enum {
-	public static final field Default Lcom/google/vtfx/core/MouseEncoding;
-	public static final field Sgr Lcom/google/vtfx/core/MouseEncoding;
-	public static final field Urxvt Lcom/google/vtfx/core/MouseEncoding;
-	public static final field Utf8 Lcom/google/vtfx/core/MouseEncoding;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lcom/google/vtfx/core/MouseEncoding;
-	public static fun values ()[Lcom/google/vtfx/core/MouseEncoding;
-}
-
-public final class com/google/vtfx/core/MouseTracking : java/lang/Enum {
-	public static final field AnyEvent Lcom/google/vtfx/core/MouseTracking;
-	public static final field ButtonEvent Lcom/google/vtfx/core/MouseTracking;
-	public static final field None Lcom/google/vtfx/core/MouseTracking;
-	public static final field Normal Lcom/google/vtfx/core/MouseTracking;
-	public static final field X10 Lcom/google/vtfx/core/MouseTracking;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lcom/google/vtfx/core/MouseTracking;
-	public static fun values ()[Lcom/google/vtfx/core/MouseTracking;
-}
-
 public final class com/google/vtfx/core/TerminalColor {
 	public static final field Companion Lcom/google/vtfx/core/TerminalColor$Companion;
 	public static final synthetic fun box-impl (I)Lcom/google/vtfx/core/TerminalColor;
@@ -270,8 +249,6 @@ public final class com/google/vtfx/core/TerminalModes {
 	public final fun getCursorShape ()Lcom/google/vtfx/core/CursorShape;
 	public final fun getCursorVisible ()Z
 	public final fun getFocusEvents ()Z
-	public final fun getMouseEncoding ()Lcom/google/vtfx/core/MouseEncoding;
-	public final fun getMouseTracking ()Lcom/google/vtfx/core/MouseTracking;
 	public final fun getNewLine ()Z
 	public final fun getReverseVideo ()Z
 	public final fun getSynchronizedOutput ()Z

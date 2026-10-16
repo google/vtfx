@@ -14,9 +14,19 @@
  * limitations under the License.
  */
 
+@file:OptIn(InternalVtfxApi::class)
+
 package com.google.vtfx.core
 
-/** Which mouse events the host asked to receive (DECSET 9, 1000, 1002, 1003). */
+// The mouse modes are not public API: only vtfx-compose and vtfx-gate act on them, and the
+// encodings are likely to grow (SGR-Pixels, mode 1016), which would break exhaustive whens of apps
+// compiled earlier (docs/decisions/0037).
+/**
+ * Which mouse events the host asked to receive (DECSET 9, 1000, 1002, 1003).
+ *
+ * @suppress
+ */
+@InternalVtfxApi
 public enum class MouseTracking {
     None,
     /** Button presses only (DECSET 9). */
@@ -29,7 +39,12 @@ public enum class MouseTracking {
     AnyEvent,
 }
 
-/** How mouse reports are encoded (DECSET 1005, 1006, 1015). */
+/**
+ * How mouse reports are encoded (DECSET 1005, 1006, 1015).
+ *
+ * @suppress
+ */
+@InternalVtfxApi
 public enum class MouseEncoding {
     Default,
     Utf8,
@@ -37,7 +52,10 @@ public enum class MouseEncoding {
     Urxvt,
 }
 
-/** The shape of the cursor, set by DECSCUSR. */
+/**
+ * The shape of the cursor, set by DECSCUSR. The set is closed: a shape is added only in a major
+ * version.
+ */
 public enum class CursorShape {
     Block,
     Underline,
@@ -72,10 +90,18 @@ internal constructor(
     public val focusEvents: Boolean = false,
     /** Mode 2026: the host is in the middle of a synchronized update. */
     public val synchronizedOutput: Boolean = false,
-    /** Modes 9, 1000, 1002, 1003: which mouse events are reported. */
-    public val mouseTracking: MouseTracking = MouseTracking.None,
-    /** Modes 1005, 1006, 1015: how mouse events are encoded. */
-    public val mouseEncoding: MouseEncoding = MouseEncoding.Default,
+    /**
+     * Modes 9, 1000, 1002, 1003: which mouse events are reported.
+     *
+     * @suppress
+     */
+    @InternalVtfxApi public val mouseTracking: MouseTracking = MouseTracking.None,
+    /**
+     * Modes 1005, 1006, 1015: how mouse events are encoded.
+     *
+     * @suppress
+     */
+    @InternalVtfxApi public val mouseEncoding: MouseEncoding = MouseEncoding.Default,
 ) {
     /** Returns these modes with the given ones replaced. */
     internal fun copy(

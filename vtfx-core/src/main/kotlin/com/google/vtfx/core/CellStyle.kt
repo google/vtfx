@@ -77,7 +77,7 @@ public value class TerminalColor internal constructor(internal val bits: Int) {
     }
 }
 
-/** The style of an underline. */
+/** The style of an underline. The set is closed: a style is added only in a major version. */
 public enum class UnderlineStyle {
     None,
     Single,

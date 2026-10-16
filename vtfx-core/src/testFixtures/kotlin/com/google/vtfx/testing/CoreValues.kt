@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
+@file:OptIn(InternalVtfxApi::class)
+
 package com.google.vtfx.testing
 
 import com.google.vtfx.core.CursorShape
 import com.google.vtfx.core.Hyperlink
+import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.MouseEncoding
 import com.google.vtfx.core.MouseTracking
 import com.google.vtfx.core.TerminalModes

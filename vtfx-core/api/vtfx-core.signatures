@@ -125,21 +125,6 @@ public companion object com.google.vtfx.core.LinkPattern.Companion {
     public final val Urls: com.google.vtfx.core.LinkPattern
 }
 
-public enum class com.google.vtfx.core.MouseEncoding : kotlin.Enum<com.google.vtfx.core.MouseEncoding> {
-    entry Default
-    entry Utf8
-    entry Sgr
-    entry Urxvt
-}
-
-public enum class com.google.vtfx.core.MouseTracking : kotlin.Enum<com.google.vtfx.core.MouseTracking> {
-    entry None
-    entry X10
-    entry Normal
-    entry ButtonEvent
-    entry AnyEvent
-}
-
 public final value class com.google.vtfx.core.TerminalColor {
     public final val index: kotlin.Int
     public final val isDefault: kotlin.Boolean
@@ -223,8 +208,6 @@ public final class com.google.vtfx.core.TerminalModes {
     public final val cursorShape: com.google.vtfx.core.CursorShape
     public final val cursorVisible: kotlin.Boolean
     public final val focusEvents: kotlin.Boolean
-    public final val mouseEncoding: com.google.vtfx.core.MouseEncoding
-    public final val mouseTracking: com.google.vtfx.core.MouseTracking
     public final val newLine: kotlin.Boolean
     public final val reverseVideo: kotlin.Boolean
     public final val synchronizedOutput: kotlin.Boolean

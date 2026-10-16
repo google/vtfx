@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
+@file:OptIn(InternalVtfxApi::class)
+
 package com.google.vtfx.gate
 
+import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.KeyModifiers
 import com.google.vtfx.core.KeyStroke
 import com.google.vtfx.core.TerminalKey
