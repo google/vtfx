@@ -40,10 +40,10 @@ import androidx.compose.ui.test.performMultiModalInput
 import androidx.compose.ui.test.rightClick
 import androidx.compose.ui.test.tripleClick
 import androidx.compose.ui.unit.dp
-import com.google.vtfx.core.Hyperlink
 import com.google.vtfx.core.KeyModifiers
 import com.google.vtfx.gate.ClipboardAccess
 import com.google.vtfx.session.TerminalSession
+import com.google.vtfx.testing.hyperlink
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -508,7 +508,7 @@ class TerminalMouseTest {
         assertTrue(display.scrollOffset > 0)
         mouse { click(cell(1, 0)) }
         assertEquals(
-            TerminalLink.Explicit("link", Hyperlink("https://example.com/a", null)),
+            TerminalLink.Explicit("link", hyperlink("https://example.com/a", null)),
             linkClicks.single().link,
         )
         drag(cell(6, 1), cell(3, 2))
@@ -658,7 +658,7 @@ class TerminalMouseTest {
         // Another cell, or it would be a double click.
         withKey(Key.CtrlLeft) { click(cell(2, 0)) }
         mouse { click(cell(7, 0)) }
-        val link = TerminalLink.Explicit("link", Hyperlink("https://example.com/a", null))
+        val link = TerminalLink.Explicit("link", hyperlink("https://example.com/a", null))
         assertEquals(listOf(link, link), linkClicks.map { it.link })
         assertEquals(
             listOf(PointerType.Mouse, PointerType.Mouse),

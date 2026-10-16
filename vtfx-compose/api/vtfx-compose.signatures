@@ -48,11 +48,7 @@ public sealed interface com.google.vtfx.compose.TerminalLink {
     public abstract val url: kotlin.String
 }
 
-public final data class com.google.vtfx.compose.TerminalLink.Explicit : com.google.vtfx.compose.TerminalLink {
-    public constructor(text: kotlin.String, hyperlink: com.google.vtfx.core.Hyperlink)
-    public final fun copy(text: kotlin.String = ..., hyperlink: com.google.vtfx.core.Hyperlink = ...): com.google.vtfx.compose.TerminalLink.Explicit
-    public final operator fun component1(): kotlin.String
-    public final operator fun component2(): com.google.vtfx.core.Hyperlink
+public final class com.google.vtfx.compose.TerminalLink.Explicit : com.google.vtfx.compose.TerminalLink {
     public final val hyperlink: com.google.vtfx.core.Hyperlink
     public open fun hashCode(): kotlin.Int
     public open fun toString(): kotlin.String
@@ -61,12 +57,7 @@ public final data class com.google.vtfx.compose.TerminalLink.Explicit : com.goog
     public open val url: kotlin.String
 }
 
-public final data class com.google.vtfx.compose.TerminalLink.Matched : com.google.vtfx.compose.TerminalLink {
-    public constructor(text: kotlin.String, url: kotlin.String, pattern: com.google.vtfx.core.LinkPattern)
-    public final fun copy(text: kotlin.String = ..., url: kotlin.String = ..., pattern: com.google.vtfx.core.LinkPattern = ...): com.google.vtfx.compose.TerminalLink.Matched
-    public final operator fun component1(): kotlin.String
-    public final operator fun component2(): kotlin.String
-    public final operator fun component3(): com.google.vtfx.core.LinkPattern
+public final class com.google.vtfx.compose.TerminalLink.Matched : com.google.vtfx.compose.TerminalLink {
     public final val pattern: com.google.vtfx.core.LinkPattern
     public open fun hashCode(): kotlin.Int
     public open fun toString(): kotlin.String
@@ -75,12 +66,7 @@ public final data class com.google.vtfx.compose.TerminalLink.Matched : com.googl
     public open val url: kotlin.String
 }
 
-public final data class com.google.vtfx.compose.TerminalLinkClick {
-    public constructor(link: com.google.vtfx.compose.TerminalLink, pointerType: androidx.compose.ui.input.pointer.PointerType, keyboardModifiers: androidx.compose.ui.input.pointer.PointerKeyboardModifiers)
-    public final fun copy(link: com.google.vtfx.compose.TerminalLink = ..., pointerType: androidx.compose.ui.input.pointer.PointerType = ..., keyboardModifiers: androidx.compose.ui.input.pointer.PointerKeyboardModifiers = ...): com.google.vtfx.compose.TerminalLinkClick
-    public final operator fun component1(): com.google.vtfx.compose.TerminalLink
-    public final operator fun component2(): androidx.compose.ui.input.pointer.PointerType
-    public final operator fun component3(): androidx.compose.ui.input.pointer.PointerKeyboardModifiers
+public final class com.google.vtfx.compose.TerminalLinkClick {
     public final val keyboardModifiers: androidx.compose.ui.input.pointer.PointerKeyboardModifiers
     public final val link: com.google.vtfx.compose.TerminalLink
     public final val pointerType: androidx.compose.ui.input.pointer.PointerType

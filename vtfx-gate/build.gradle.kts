@@ -22,6 +22,8 @@ plugins {
 
 dependencies {
     implementation(project(":vtfx-core"))
+    // Makes TerminalModes, which only vtfx-core can construct, for the tests.
+    testImplementation(testFixtures(project(":vtfx-core")))
 }
 
 // Writes the classpath of the esctest2 harness (EsctestHost in the tests), which

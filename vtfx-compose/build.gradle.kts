@@ -41,6 +41,9 @@ dependencies {
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.foundation)
     implementation(libs.compose.ui)
+
+    // Makes Hyperlinks, which only vtfx-core can construct, for the tests.
+    testImplementation(testFixtures(project(":vtfx-core")))
 }
 
 tasks.withType<Test>().configureEach {

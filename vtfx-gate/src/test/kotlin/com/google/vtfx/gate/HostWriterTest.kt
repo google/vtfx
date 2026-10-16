@@ -22,8 +22,8 @@ import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.KeyModifiers
 import com.google.vtfx.core.KeyStroke
 import com.google.vtfx.core.TerminalKey
-import com.google.vtfx.core.TerminalModes
 import com.google.vtfx.core.TerminalQuery
+import com.google.vtfx.testing.terminalModes
 import kotlin.test.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -65,13 +65,13 @@ class HostWriterTest {
 
     @Test
     fun keysAreEncodedUnderTheModes() {
-        writer.sendKey(KeyStroke.Special(TerminalKey.Up), TerminalModes())
+        writer.sendKey(KeyStroke.Special(TerminalKey.Up), terminalModes())
         writer.sendKey(
             KeyStroke.Special(TerminalKey.Up),
-            TerminalModes(applicationCursorKeys = true),
+            terminalModes(applicationCursorKeys = true),
         )
-        writer.sendKey(KeyStroke.Special(TerminalKey.Enter), TerminalModes(newLine = true))
-        writer.sendKey(KeyStroke.Character('c'.code, KeyModifiers.of(ctrl = true)), TerminalModes())
+        writer.sendKey(KeyStroke.Special(TerminalKey.Enter), terminalModes(newLine = true))
+        writer.sendKey(KeyStroke.Character('c'.code, KeyModifiers.of(ctrl = true)), terminalModes())
         assertEquals(listOf("\u001b[A", "\u001bOA", "\r\n", "\u0003"), sent)
     }
 
@@ -120,7 +120,7 @@ class HostWriterTest {
             writer.sendFocus(true)
             writer.sendFocus(false)
             writer.sendPaste("a", bracketed = true)
-            writer.sendKey(KeyStroke.Special(TerminalKey.Up), TerminalModes())
+            writer.sendKey(KeyStroke.Special(TerminalKey.Up), terminalModes())
             writer.sendReply(TerminalQuery.OperatingStatus)
         }
         val once =

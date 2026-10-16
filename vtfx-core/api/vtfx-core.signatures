@@ -35,11 +35,7 @@ public enum class com.google.vtfx.core.CursorShape : kotlin.Enum<com.google.vtfx
     entry Bar
 }
 
-public final data class com.google.vtfx.core.CursorState {
-    public constructor(column: kotlin.Int, row: kotlin.Int)
-    public final fun copy(column: kotlin.Int = ..., row: kotlin.Int = ...): com.google.vtfx.core.CursorState
-    public final operator fun component1(): kotlin.Int
-    public final operator fun component2(): kotlin.Int
+public final class com.google.vtfx.core.CursorState {
     public final val column: kotlin.Int
     public final val row: kotlin.Int
     public open fun hashCode(): kotlin.Int
@@ -47,11 +43,7 @@ public final data class com.google.vtfx.core.CursorState {
     public open operator fun equals(other: kotlin.Any?): kotlin.Boolean
 }
 
-public final data class com.google.vtfx.core.Hyperlink {
-    public constructor(uri: kotlin.String, id: kotlin.String?)
-    public final fun copy(uri: kotlin.String = ..., id: kotlin.String? = ...): com.google.vtfx.core.Hyperlink
-    public final operator fun component1(): kotlin.String
-    public final operator fun component2(): kotlin.String?
+public final class com.google.vtfx.core.Hyperlink {
     public final val id: kotlin.String?
     public final val uri: kotlin.String
     public open fun hashCode(): kotlin.Int
@@ -223,21 +215,7 @@ public companion object com.google.vtfx.core.TerminalLimits.Companion {
     public final val MAX_STRING_LENGTH: kotlin.Int
 }
 
-public final data class com.google.vtfx.core.TerminalModes {
-    public constructor(applicationCursorKeys: kotlin.Boolean = ..., applicationKeypad: kotlin.Boolean = ..., newLine: kotlin.Boolean = ..., cursorVisible: kotlin.Boolean = ..., cursorShape: com.google.vtfx.core.CursorShape = ..., cursorBlinking: kotlin.Boolean = ..., reverseVideo: kotlin.Boolean = ..., bracketedPaste: kotlin.Boolean = ..., focusEvents: kotlin.Boolean = ..., synchronizedOutput: kotlin.Boolean = ..., mouseTracking: com.google.vtfx.core.MouseTracking = ..., mouseEncoding: com.google.vtfx.core.MouseEncoding = ...)
-    public final fun copy(applicationCursorKeys: kotlin.Boolean = ..., applicationKeypad: kotlin.Boolean = ..., newLine: kotlin.Boolean = ..., cursorVisible: kotlin.Boolean = ..., cursorShape: com.google.vtfx.core.CursorShape = ..., cursorBlinking: kotlin.Boolean = ..., reverseVideo: kotlin.Boolean = ..., bracketedPaste: kotlin.Boolean = ..., focusEvents: kotlin.Boolean = ..., synchronizedOutput: kotlin.Boolean = ..., mouseTracking: com.google.vtfx.core.MouseTracking = ..., mouseEncoding: com.google.vtfx.core.MouseEncoding = ...): com.google.vtfx.core.TerminalModes
-    public final operator fun component1(): kotlin.Boolean
-    public final operator fun component10(): kotlin.Boolean
-    public final operator fun component11(): com.google.vtfx.core.MouseTracking
-    public final operator fun component12(): com.google.vtfx.core.MouseEncoding
-    public final operator fun component2(): kotlin.Boolean
-    public final operator fun component3(): kotlin.Boolean
-    public final operator fun component4(): kotlin.Boolean
-    public final operator fun component5(): com.google.vtfx.core.CursorShape
-    public final operator fun component6(): kotlin.Boolean
-    public final operator fun component7(): kotlin.Boolean
-    public final operator fun component8(): kotlin.Boolean
-    public final operator fun component9(): kotlin.Boolean
+public final class com.google.vtfx.core.TerminalModes {
     public final val applicationCursorKeys: kotlin.Boolean
     public final val applicationKeypad: kotlin.Boolean
     public final val bracketedPaste: kotlin.Boolean

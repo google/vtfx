@@ -20,6 +20,7 @@ import com.google.vtfx.core.KeyModifiers
 import com.google.vtfx.core.KeyStroke
 import com.google.vtfx.core.TerminalKey
 import com.google.vtfx.core.TerminalModes
+import com.google.vtfx.testing.terminalModes
 import java.nio.ByteBuffer
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -60,7 +61,7 @@ class KeyEncoderTest {
             }
         val modes =
             (0 until 8).map {
-                TerminalModes(
+                terminalModes(
                     applicationCursorKeys = it and 1 != 0,
                     applicationKeypad = it and 2 != 0,
                     newLine = it and 4 != 0,
@@ -90,10 +91,10 @@ class KeyEncoderTest {
         private val KEY_SHAPE =
             Regex("\u001b?(?:\u001b\\[[0-9;]*[A-Za-z~]|\u001bO[A-Za-z]|\r\n|(?s:.))")
 
-        private val normal = TerminalModes()
-        private val application = TerminalModes(applicationCursorKeys = true)
-        private val newLine = TerminalModes(newLine = true)
-        private val keypad = TerminalModes(applicationKeypad = true)
+        private val normal = terminalModes()
+        private val application = terminalModes(applicationCursorKeys = true)
+        private val newLine = terminalModes(newLine = true)
+        private val keypad = terminalModes(applicationKeypad = true)
         private val shift = KeyModifiers.of(shift = true)
         private val ctrl = KeyModifiers.of(ctrl = true)
         private val alt = KeyModifiers.of(alt = true)

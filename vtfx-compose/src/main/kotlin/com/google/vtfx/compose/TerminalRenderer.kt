@@ -46,7 +46,6 @@ import androidx.compose.ui.unit.LayoutDirection
 import com.google.vtfx.core.AmbiguousWidth
 import com.google.vtfx.core.CellStyle
 import com.google.vtfx.core.CursorShape
-import com.google.vtfx.core.CursorState
 import com.google.vtfx.core.FoundLink
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.LineSnapshot
@@ -266,8 +265,9 @@ internal class TerminalRenderer(
         selection?.let { drawSelection(it, snapshot) }
         // The cursor is in the screen's coordinates; the screen is shifted down when the display
         // shows the scrollback.
-        val cursor = snapshot.cursor.copy(row = snapshot.cursor.row + snapshot.scrollOffset)
-        if (cursor.row >= snapshot.rows) return
+        val cursorColumn = snapshot.cursor.column
+        val cursorRow = snapshot.cursor.row + snapshot.scrollOffset
+        if (cursorRow >= snapshot.rows) return
         // In reverse video, the cursor color would often match the background.
         val cursorColor = if (reverse) defaultForeground else colors.cursor
         val cursorTextColor =
@@ -276,8 +276,8 @@ internal class TerminalRenderer(
             val layout =
                 ComposingLayout(
                     composingText,
-                    cursor.column,
-                    cursor.row,
+                    cursorColumn,
+                    cursorRow,
                     snapshot.columns,
                     snapshot.rows,
                     ambiguousWidth,
@@ -293,7 +293,8 @@ internal class TerminalRenderer(
         } else if (snapshot.modes.cursorVisible && (cursorOn || !focused)) {
             drawCursor(
                 snapshot,
-                cursor,
+                cursorColumn,
+                cursorRow,
                 focused,
                 cursorColor,
                 cursorTextColor,
@@ -601,18 +602,19 @@ internal class TerminalRenderer(
 
     private fun DrawScope.drawCursor(
         snapshot: TerminalSnapshot,
-        cursor: CursorState,
+        cursorColumn: Int,
+        cursorRow: Int,
         focused: Boolean,
         cursorColor: Color,
         cursorTextColor: Color,
         defaultForeground: Color,
         defaultBackground: Color,
     ) {
-        val line = snapshot.line(cursor.row)
-        var column = cursor.column
+        val line = snapshot.line(cursorRow)
+        var column = cursorColumn
         if (line.widthAt(column) == 0 && column > 0) column--
         val width = maxOf(line.widthAt(column), 1)
-        val topLeft = Offset(column * metrics.width, cursor.row * metrics.height)
+        val topLeft = Offset(column * metrics.width, cursorRow * metrics.height)
         val size = Size(width * metrics.width, metrics.height)
         if (!focused) {
             drawRect(cursorColor, topLeft, size, style = Stroke(width = 1f))
@@ -640,7 +642,7 @@ internal class TerminalRenderer(
             drawRun(
                 text,
                 column,
-                cursor.row,
+                cursorRow,
                 cellStyle,
                 defaultForeground,
                 defaultBackground,
@@ -652,7 +654,7 @@ internal class TerminalRenderer(
             drawDecorations(
                 column,
                 column + width,
-                cursor.row,
+                cursorRow,
                 cellStyle,
                 line.underlineColorAt(column),
                 linked = false,

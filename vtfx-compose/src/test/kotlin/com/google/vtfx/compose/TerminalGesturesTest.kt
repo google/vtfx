@@ -39,10 +39,10 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.dp
-import com.google.vtfx.core.Hyperlink
 import com.google.vtfx.core.KeyModifiers
 import com.google.vtfx.core.LinkPattern
 import com.google.vtfx.session.TerminalSession
+import com.google.vtfx.testing.hyperlink
 import java.time.Duration
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -315,7 +315,7 @@ class TerminalGesturesTest {
         composeRule.waitForIdle()
         assertEquals(
             listOf<TerminalLink>(
-                TerminalLink.Explicit("link", Hyperlink("https://example.com/a", null))
+                TerminalLink.Explicit("link", hyperlink("https://example.com/a", null))
             ),
             clickedLinks,
         )
@@ -363,7 +363,7 @@ class TerminalGesturesTest {
         composeRule.waitForIdle()
         assertEquals(
             listOf<TerminalLink>(
-                TerminalLink.Explicit(text, Hyperlink("https://example.com/b", "1"))
+                TerminalLink.Explicit(text, hyperlink("https://example.com/b", "1"))
             ),
             clickedLinks,
         )

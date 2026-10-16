@@ -16,16 +16,28 @@
 
 package com.google.vtfx.core
 
+// Not a data class, so that properties can be added without changing what apps compiled earlier
+// call (docs/decisions/0037). Only vtfx makes it.
 /**
  * A hyperlink set by OSC 8 (https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda).
  * [uri][Hyperlink.uri] is untrusted text from the host: show it to the user, and open it only with
  * `TerminalSession.openUrl` when they confirm. The session opens only the URL schemes that its
- * policy allows.
- *
- * @property uri The URI that the link goes to, as the host sent it.
- * @property id The id parameter, which joins cells that are not adjacent into one link, or null.
+ * policy allows. Immutable, and equal to a hyperlink with the same values.
  */
-public data class Hyperlink(val uri: String, val id: String?)
+public class Hyperlink
+internal constructor(
+    /** The URI that the link goes to, as the host sent it. */
+    public val uri: String,
+    /** The id parameter, which joins cells that are not adjacent into one link, or null. */
+    public val id: String?,
+) {
+    override fun equals(other: Any?): Boolean =
+        other is Hyperlink && other.uri == uri && other.id == id
+
+    override fun hashCode(): Int = 31 * uri.hashCode() + id.hashCode()
+
+    override fun toString(): String = "Hyperlink(uri=$uri, id=$id)"
+}
 
 /**
  * The hyperlinks that cells refer to by number. Bounded by [capacity]: when full, links that no

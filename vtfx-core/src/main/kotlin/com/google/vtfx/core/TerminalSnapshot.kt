@@ -16,16 +16,26 @@
 
 package com.google.vtfx.core
 
+// Not a data class, so that properties can be added without changing what apps compiled earlier
+// call (docs/decisions/0037). Only vtfx makes it.
 /**
  * The position of the cursor. Whether the host shows it is [TerminalModes.cursorVisible].
- *
- * @property column The column, 0-based.
- * @property row The row, 0-based.
+ * Immutable, and equal to a state with the same values.
  */
-public data class CursorState(
-    val column: Int,
-    val row: Int,
-)
+public class CursorState
+internal constructor(
+    /** The column, 0-based. */
+    public val column: Int,
+    /** The row, 0-based. */
+    public val row: Int,
+) {
+    override fun equals(other: Any?): Boolean =
+        other is CursorState && other.column == column && other.row == row
+
+    override fun hashCode(): Int = 31 * column + row
+
+    override fun toString(): String = "CursorState(column=$column, row=$row)"
+}
 
 /**
  * An immutable copy of one line of cells. The functions that take a column throw
