@@ -1,6 +1,6 @@
 # Adding parameters to the public API after 1.0
 
-- Status: Provisional
+- Status: Approved (2026-10-16, approved by a human)
 - Date: 2026-10-16
 - Related: Requirement 6.5, [0016](0016-public-api.md), [0029](0029-import-without-gradle.md), "API shape before 1.0" in [review-queue.md](../review-queue.md)
 
@@ -25,13 +25,14 @@ Both were tried on a copy of the tree with Kotlin 2.4.21 (2026-10-16), by adding
   - The hidden overloads are removed in the next major version, with the other deprecated APIs.
 - The ABI check catches a forgotten overload: the lines of the previous signature disappear from the dump, and `checkKotlinAbi` fails.
 - `@IntroducedAt` is not used while it is experimental. When it becomes stable, it may replace the hand-written overloads. The generated overloads have the same descriptors as the hand-written ones (the dump differs only in the synthetic flag, which does not affect linking), so switching does not break apps.
-- Settings that are likely to grow go into a settings class, like `TerminalStyle`, rather than into the parameters of `Terminal` or `TerminalSession`. Then only that class's constructor and `copy` need the overloads.
+- Whether a new setting becomes a parameter or a property of a settings class (like `TerminalStyle`) is decided case by case; either way, the overloads above keep the previous signatures.
 
 ## Alternatives considered
 
 - **`@IntroducedAt` now**: Less code to write for each new parameter. But it is experimental, so its name or meaning may change, and other build systems that compile the sources ([0029](0029-import-without-gradle.md)) would need Kotlin 2.3 or later and the opt-in. It also rejects some default values that the current API has.
 - **`@JvmOverloads`**: Generates one overload for each prefix of the parameters, which includes the previous full signature. But the synthetic default method of the previous signature, which Kotlin callers that use default arguments call, still changes. Its overloads are meant for Java, which is out of scope (requirement 4.2).
 - **Major versions for every new parameter**: Simple, but parameters are the most common kind of addition, so major versions would come often.
+- **A rule to put settings that are likely to grow into a settings class rather than into the parameters of `Terminal` or `TerminalSession`**: Fewer places would need overloads, but whether a setting belongs to a parameter or a settings class depends on the setting (not taken, decided by a human on 2026-10-16).
 - **Settings with mutable properties or builders**: Adding a property is then compatible without overloads. But it departs from the immutable settings of Compose and of the existing classes (`TerminalStyle`, `GatePolicy`).
 
 ## Impact of reversing
