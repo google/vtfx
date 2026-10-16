@@ -107,6 +107,28 @@ class AttackTest {
         }
 
         @Test
+        fun graphicsRepliesCarryOnlyNumbersAndFixedStatuses() {
+            // Kitty's own messages repeat file names and values; vtfx's never do.
+            val gate = gate()
+            host(
+                gate,
+                "\u001b_Ga=q,i=1,t=f;${base64(payload)}\u001b\\" +
+                    "\u001b_Ga=q,i=2,f=100;${base64(payload)}\u001b\\" +
+                    "\u001b_Ga=p,i=3,p=9\u001b\\" +
+                    // Not graphics: ignored.
+                    "\u001b_${payload}\u001b\\",
+            )
+            assertEquals(
+                listOf(
+                    "\u001b_Gi=1;EBADF:only direct transmission is supported\u001b\\",
+                    "\u001b_Gi=2;EBADPNG:malformed PNG data\u001b\\",
+                    "\u001b_Gi=3,p=9;ENOENT:no such image\u001b\\",
+                ),
+                sent,
+            )
+        }
+
+        @Test
         fun titleAndContentReportsAreNotAnswered() {
             val gate = gate()
             // XTWINOPS title reports, DECRQCRA (screen checksum), and XTGETTCAP.
@@ -153,6 +175,19 @@ class AttackTest {
                     "r",
                     "p",
                     "10",
+                    // Kitty graphics commands.
+                    "\u001b_G",
+                    "a=q",
+                    "a=p",
+                    "a=T",
+                    ",i=",
+                    ",I=",
+                    ",p=",
+                    ",f=24,s=1,v=1",
+                    ",m=1",
+                    "AAAA",
+                    ",t=f",
+                    ",q=1",
                 )
             val random = Random(1)
             repeat(2000) {

@@ -18,6 +18,8 @@
 
 package com.google.vtfx.core
 
+import com.google.vtfx.core.graphics.Graphics
+import com.google.vtfx.core.graphics.GraphicsLayer
 import com.google.vtfx.core.parser.Params
 import com.google.vtfx.core.parser.ParserHandler
 import java.util.Base64
@@ -105,6 +107,43 @@ internal class Emulator(
     /** The window title that the host set last (OSC 0 and 2). Untrusted text. */
     private var title = ""
     private val savedTitles = TitleStack(MAX_SAVED_TITLES, limits.maxStringLength)
+
+    /** Images of the kitty graphics protocol (docs/decisions/0038), one layer per screen. */
+    val graphics = Graphics(limits.maxImageBytes.toLong()) { reply(it) }
+    private val mainLayer = GraphicsLayer(graphics, mainScreen, scrollback)
+    private val alternateLayer = GraphicsLayer(graphics, alternateScreen, null)
+
+    init {
+        graphics.register(mainLayer)
+        graphics.register(alternateLayer)
+    }
+
+    /** The images and placements of the screen displayed. */
+    val layer: GraphicsLayer
+        get() = if (isAlternateScreen) alternateLayer else mainLayer
+
+    private val graphicsScreen =
+        object : Graphics.Screen {
+            override val layer: GraphicsLayer
+                get() = this@Emulator.layer
+
+            override val cursorColumn: Int
+                get() = cursorX
+
+            override val cursorRow: Int
+                get() = cursorY
+
+            override val rows: Int
+                get() = this@Emulator.rows
+
+            override val columns: Int
+                get() = this@Emulator.columns
+
+            override fun line(row: Int): Line = screen[row]
+
+            override fun moveCursorAfterImage(columns: Int, rows: Int) =
+                this@Emulator.moveCursorAfterImage(columns, rows)
+        }
 
     // --- Printing ---
 
@@ -619,7 +658,12 @@ internal class Emulator(
                 for (row in 0 until cursorY) screen[row].clear(erased)
                 screen[cursorY].erase(0, cursorX + 1, erased)
             }
-            2 -> screen.eraseAll(style)
+            2 -> {
+                // Clearing the screen clears its images too, so that `clear` works, as the
+                // protocol says (docs/decisions/0038).
+                graphics.deleteVisible(layer, rows)
+                screen.eraseAll(style)
+            }
             3 -> scrollback.clear()
         }
     }
@@ -736,8 +780,36 @@ internal class Emulator(
         if (alternate == isAlternateScreen) return
         // The cursor is now on a line of the other screen.
         lineChanges++
+        // The images of the alternate screen go when it is left (docs/decisions/0038).
+        if (!alternate) alternateLayer.clear()
         screen = if (alternate) alternateScreen else mainScreen
         if (alternate && clearAlternate) alternateScreen.eraseAll(CellStyle.Default)
+    }
+
+    /**
+     * Moves the cursor after an image placed at it, as kitty does: to the column after the image,
+     * on its last row, wrapping to the next row at the right edge and scrolling at the bottom
+     * margin (docs/decisions/0038).
+     */
+    private fun moveCursorAfterImage(columnsSpanned: Int, rowsSpanned: Int) {
+        var x = cursorX + columnsSpanned
+        var y = cursorY + rowsSpanned - 1
+        if (x >= columns) {
+            x = 0
+            y++
+        }
+        if (cursorY in scrollTop..scrollBottom && y > scrollBottom) {
+            screen.scrollUp(
+                scrollTop,
+                scrollBottom,
+                y - scrollBottom,
+                style,
+                saveToScrollback = true,
+            )
+            y = scrollBottom
+            lineChanges++
+        }
+        moveTo(x, y)
     }
 
     // --- Saving the cursor ---
@@ -889,6 +961,11 @@ internal class Emulator(
             requestStatusString(data.toString())
     }
 
+    /** APC: kitty graphics commands start with `G`; other APC strings are ignored. */
+    override fun apcDispatch(data: CharSequence) {
+        if (data.isNotEmpty() && data[0] == 'G') graphics.handle(data, graphicsScreen)
+    }
+
     /** DECRQSS. The reply carries the setting's values from the state, never the request. */
     private fun requestStatusString(setting: String) {
         reply(
@@ -923,10 +1000,16 @@ internal class Emulator(
         pendingWrap = false
     }
 
-    /** RIS. The scrollback, the window title, and the saved titles are kept, as in xterm. */
+    /**
+     * RIS. The scrollback, the window title, and the saved titles are kept, as in xterm. The images
+     * on the screen go, as the protocol says, and those of the alternate screen.
+     */
     fun reset() {
         // The line the cursor was on is gone, even if the cursor stays on its row.
         lineChanges++
+        graphics.abort()
+        graphics.deleteVisible(mainLayer, rows)
+        alternateLayer.clear()
         screen = mainScreen
         mainScreen.eraseAll(CellStyle.Default)
         alternateScreen.eraseAll(CellStyle.Default)

@@ -16,6 +16,8 @@
 
 package com.google.vtfx.core
 
+import com.google.vtfx.core.graphics.Placement
+
 /**
  * One row of cells.
  *
@@ -40,6 +42,15 @@ internal class Line(columns: Int, style: CellStyle = CellStyle.Default) {
      * allocated when the first color is written (docs/decisions/0030).
      */
     private var underlineColors: IntArray? = null
+
+    /**
+     * The image placements whose top left cell is on this line (docs/decisions/0038), allocated
+     * when the first is placed. They move with the line object: scrolling, the scrollback, and
+     * reflow take them along, and only [killAnchors] deletes them. Copies made for snapshots do not
+     * have them.
+     */
+    var anchors: ArrayList<Placement>? = null
+        private set
 
     /** Whether the text continues on the next line because of autowrap. */
     var isWrapped: Boolean = false
@@ -68,6 +79,59 @@ internal class Line(columns: Int, style: CellStyle = CellStyle.Default) {
 
     /** Returns the underline color of the cell at [column] as [TerminalColor.bits], or 0. */
     fun underlineColorAt(column: Int): Int = underlineColors?.get(column) ?: 0
+
+    /** Anchors [placement] to this line at [column]. */
+    fun anchor(placement: Placement, column: Int) {
+        placement.line = this
+        placement.column = column
+        (anchors ?: ArrayList<Placement>(1).also { anchors = it }) += placement
+    }
+
+    /** Forgets [placement], which was deleted. */
+    fun unanchor(placement: Placement) {
+        anchors?.let {
+            it.remove(placement)
+            if (it.isEmpty()) anchors = null
+        }
+    }
+
+    /** Deletes the placements anchored to this line, which is going away. */
+    fun killAnchors() {
+        val placements = anchors ?: return
+        anchors = null
+        for (placement in placements.toTypedArray()) placement.kill()
+    }
+
+    /** Removes the anchors and returns them, to move them to another line, or returns null. */
+    fun takeAnchors(): Array<Placement>? {
+        val placements = anchors ?: return null
+        anchors = null
+        return placements.toTypedArray()
+    }
+
+    /**
+     * Anchors [placements] to this line. Used for lines that are about to be laid out again, such
+     * as expanded scrollback lines for reflow: the placements do not learn of it, so this line must
+     * only be read.
+     */
+    fun restoreAnchors(placements: Array<Placement>?) {
+        anchors = placements?.let { ArrayList(it.asList()) }
+    }
+
+    /**
+     * Moves the anchors to [target], which takes this line's place, deleting those beyond its
+     * width.
+     */
+    fun moveAnchorsTo(target: Line) {
+        val placements = takeAnchors() ?: return
+        for (placement in placements) {
+            if (placement.column < target.columns) {
+                target.anchor(placement, placement.column)
+            } else {
+                placement.kill()
+            }
+        }
+    }
 
     /**
      * Writes a character of [width] 1 or 2 at [column], with hyperlink [link] or 0, and
@@ -296,9 +360,9 @@ internal class Line(columns: Int, style: CellStyle = CellStyle.Default) {
     /**
      * Returns a compact, immutable copy for the scrollback: without the blank cells at the end,
      * with one style if all cells have the same, and with the clusters joined into one string
-     * (docs/decisions/0014).
+     * (docs/decisions/0014). It keeps [anchors], which the caller took from this line.
      */
-    fun compact(): CompactLine {
+    fun compact(anchors: Array<Placement>? = null): CompactLine {
         val end = contentEnd()
         var uniform = true
         for (column in 1 until end) {
@@ -334,6 +398,7 @@ internal class Line(columns: Int, style: CellStyle = CellStyle.Default) {
             underlineColors =
                 underlineColors?.copyOf(end)?.takeIf { array -> array.any { it != 0 } },
             isWrapped = isWrapped,
+            anchors = anchors,
         )
     }
 
@@ -416,6 +481,11 @@ internal class CompactLine(
     /** The underline colors of the cells of [codes], or null if all are 0. */
     private val underlineColors: IntArray?,
     val isWrapped: Boolean,
+    /**
+     * The image placements anchored to this line, which moved here with it from the screen, or
+     * null. Some may have been deleted since, which [Placement.isAlive] tells.
+     */
+    val anchors: Array<Placement>? = null,
 ) {
     fun expand(): Line {
         val line = Line(columns, CellStyle(trailingStyle))
@@ -425,6 +495,9 @@ internal class CompactLine(
         }
         line.restore(expandClusters(), links, underlineColors)
         line.isWrapped = isWrapped
+        line.restoreAnchors(
+            anchors?.filter { it.isAlive }?.toTypedArray()?.takeIf { it.isNotEmpty() }
+        )
         return line
     }
 
@@ -457,7 +530,8 @@ internal class CompactLine(
                 (clusterText?.let { OBJECT + ARRAY + it.length * 2 } ?: 0) +
                 (clusterIndex?.let { ARRAY + it.size * 4 } ?: 0) +
                 (links?.let { ARRAY + it.size * 4 } ?: 0) +
-                (underlineColors?.let { ARRAY + it.size * 4 } ?: 0)
+                (underlineColors?.let { ARRAY + it.size * 4 } ?: 0) +
+                (anchors?.let { ARRAY + it.size * 4 } ?: 0)
 
     companion object {
         private const val OBJECT = 16

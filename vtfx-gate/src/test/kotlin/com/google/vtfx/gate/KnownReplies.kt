@@ -35,6 +35,13 @@ internal object KnownReplies {
                     """\u001bP0\${'$'}r\u001b\\""",
                     """\u001bP>\|vtfx\(0\.1\)\u001b\\""",
                     """\u001b\[8;\d{1,4};\d{1,4}t""",
+                    // Kitty graphics: the numbers of the command and a fixed status.
+                    """\u001b_G(?:i=\d{1,10})?(?:,?I=\d{1,10})?(?:,?p=\d{1,10})?;""" +
+                        "(?:OK|EINVAL:invalid command|ENOENT:no such image|" +
+                        "ENODATA:insufficient image data|EBADPNG:malformed PNG data|" +
+                        "EFBIG:image too large|EBADF:only direct transmission is supported|" +
+                        "EINVAL:cannot inflate the data|EINVAL:animation is not supported)" +
+                        """\u001b\\""",
                 )
                 .joinToString("|")
         )

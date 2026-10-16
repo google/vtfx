@@ -189,13 +189,15 @@ public enum class com.google.vtfx.core.TerminalKey : kotlin.Enum<com.google.vtfx
 }
 
 public final class com.google.vtfx.core.TerminalLimits {
-    public constructor(scrollbackLines: kotlin.Int = ..., maxStringLength: kotlin.Int = ...)
+    public constructor(scrollbackLines: kotlin.Int = ..., maxStringLength: kotlin.Int = ..., maxImageBytes: kotlin.Int = ...)
+    public final val maxImageBytes: kotlin.Int
     public final val maxStringLength: kotlin.Int
     public final val scrollbackLines: kotlin.Int
 }
 
 public companion object com.google.vtfx.core.TerminalLimits.Companion {
     public final val MAX_DIMENSION: kotlin.Int
+    public final val MAX_IMAGE_BYTES: kotlin.Int
     public final val MAX_SCROLLBACK_LINES: kotlin.Int
     public final val MAX_STRING_LENGTH: kotlin.Int
 }

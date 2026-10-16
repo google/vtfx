@@ -21,11 +21,13 @@ package com.google.vtfx.gate
 import com.google.vtfx.core.CellStyle
 import com.google.vtfx.core.ColorTarget
 import com.google.vtfx.core.CursorShape
+import com.google.vtfx.core.GraphicsStatus
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.ModeState
 import com.google.vtfx.core.MouseEncoding
 import com.google.vtfx.core.MouseTracking
 import com.google.vtfx.core.Terminal
+import com.google.vtfx.core.TerminalEvent
 import com.google.vtfx.core.TerminalQuery
 import kotlin.test.assertEquals
 import org.junit.jupiter.api.Nested
@@ -109,6 +111,45 @@ class RepliesAndMouseTest {
                 ),
                 sent,
             )
+        }
+
+        @Test
+        fun graphicsReplies() {
+            // From a real terminal, as the gate would get them.
+            val terminal =
+                Terminal(80, 24) { event ->
+                    ((event as? TerminalEvent.ReplyRequested)?.query)?.let { writer.sendReply(it) }
+                }
+            fun write(text: String) = terminal.write(text.toByteArray(Charsets.US_ASCII))
+            write("\u001b_Ga=q,i=31,s=1,v=1,f=24;AAAA\u001b\\")
+            write("\u001b_Ga=t,I=7,s=1,v=1,f=24;AAAA\u001b\\")
+            write("\u001b_Ga=p,i=1,p=4294967295\u001b\\")
+            write("\u001b_Ga=p,i=2\u001b\\")
+            write("\u001b_Ga=q,i=3,f=100;AAAA\u001b\\")
+            write("\u001b_Ga=q,i=4,t=f,f=100;L2V0Yy9wYXNzd2Q=\u001b\\")
+            assertEquals(
+                listOf(
+                    "\\e_Gi=31;OK\\e\\",
+                    "\\e_Gi=1,I=7;OK\\e\\",
+                    "\\e_Gi=1,p=4294967295;OK\\e\\",
+                    "\\e_Gi=2;ENOENT:no such image\\e\\",
+                    "\\e_Gi=3;EBADPNG:malformed PNG data\\e\\",
+                    "\\e_Gi=4;EBADF:only direct transmission is supported\\e\\",
+                ),
+                sent,
+            )
+        }
+
+        @Test
+        fun everyGraphicsStatusHasAKnownReply() {
+            for (status in GraphicsStatus.entries) {
+                writer.sendReply(TerminalQuery.GraphicsReply(1, 2, 3, status))
+            }
+            val unknown =
+                sent
+                    .map { it.replace("\\e", "\u001b") }
+                    .filterNot { KnownReplies.pattern.matches(it) }
+            assertEquals(emptyList(), unknown)
         }
     }
 

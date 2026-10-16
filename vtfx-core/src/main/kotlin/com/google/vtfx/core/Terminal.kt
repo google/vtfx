@@ -16,6 +16,8 @@
 
 package com.google.vtfx.core
 
+import com.google.vtfx.core.graphics.GraphicsLayer
+import com.google.vtfx.core.graphics.Placement
 import com.google.vtfx.core.parser.Parser
 
 /**
@@ -201,11 +203,66 @@ public class Terminal(
             linesBelow = linesBelow,
             isCutAbove = isCutAbove,
             isCutBelow = isCutBelow,
+            imagePlacements = imagePlacements(offset),
         )
+    }
+
+    /**
+     * The placements of images that a snapshot scrolled back by [offset] lines shows, with their
+     * rows from its top.
+     */
+    private fun imagePlacements(offset: Int): List<ImagePlacement> {
+        val shown = ArrayList<Placement>()
+        val rowsOf = HashMap<Placement, Int>()
+        emulator.layer.forEachAnchored { placement, row ->
+            val top = row + offset
+            if (top < emulator.rows && top + placement.rows > 0) {
+                shown += placement
+                rowsOf[placement] = top
+            }
+        }
+        if (shown.isEmpty()) return emptyList()
+        shown.sortWith(
+            compareBy<Placement> { it.z }.thenBy { it.image?.id ?: 0L }.thenBy { it.serial }
+        )
+        return shown.map { placement ->
+            ImagePlacement(
+                image = checkNotNull(placement.image).image,
+                row = rowsOf.getValue(placement),
+                column = placement.column,
+                left = placement.left,
+                top = placement.top,
+                width = placement.width,
+                height = placement.height,
+                sourceX = placement.sourceX,
+                sourceY = placement.sourceY,
+                sourceWidth = placement.sourceWidth,
+                sourceHeight = placement.sourceHeight,
+                z = placement.z,
+            )
+        }
+    }
+
+    /**
+     * Sets the size of a cell in pixels, which sizes images placed without a size in cells, and
+     * which the host can ask for (docs/decisions/0038).
+     *
+     * @throws IllegalArgumentException unless both are positive.
+     */
+    public fun setCellSize(width: Int, height: Int) {
+        emulator.graphics.setCellSize(width, height)
     }
 
     /** An estimate of the memory the scrollback takes, for benchmarks (docs/decisions/0014). */
     internal fun estimatedScrollbackBytes(): Long = emulator.estimatedScrollbackBytes()
+
+    /** The images and placements of the screen displayed, for tests. */
+    internal val graphicsLayer: GraphicsLayer
+        get() = emulator.layer
+
+    /** The memory that the pixels of all images take. */
+    internal val imageBytes: Long
+        get() = emulator.graphics.bytes
 
     /** Returns a copy of the scrollback line at [index], where 0 is the oldest. */
     public fun scrollbackLine(index: Int): LineSnapshot =

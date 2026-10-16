@@ -76,6 +76,12 @@ class ResourceExhaustionTest {
             terminal.estimatedScrollbackBytes() <= bound,
             "scrollback ${terminal.estimatedScrollbackBytes()} bytes",
         )
+        assertTrue(
+            terminal.imageBytes <= TerminalLimits().maxImageBytes,
+            "images ${terminal.imageBytes} bytes",
+        )
+        assertTrue(terminal.graphicsLayer.placementCount <= 1024)
+        assertTrue(terminal.graphicsLayer.imageCount <= 1024)
         val snapshot = terminal.snapshot()
         for (row in 0 until snapshot.rows) {
             for (column in 0 until snapshot.columns) {
@@ -101,6 +107,17 @@ class ResourceExhaustionTest {
          * characters, generously.
          */
         private const val MAX_BYTES_PER_CELL = 4 + 8 + 4 + 2 * Line.MAX_CLUSTER_LENGTH + 64
+
+        /** Zlib data of 3 MB of zeros: an image of 1000 by 1000 RGB pixels in 3 KB. */
+        private val BOMB: String by lazy {
+            val deflater = java.util.zip.Deflater(9)
+            deflater.setInput(ByteArray(3_000_000))
+            deflater.finish()
+            val out = java.io.ByteArrayOutputStream()
+            val buffer = ByteArray(65536)
+            while (!deflater.finished()) out.write(buffer, 0, deflater.deflate(buffer))
+            java.util.Base64.getEncoder().encodeToString(out.toByteArray())
+        }
 
         @JvmStatic
         fun cases(): List<Case> =
@@ -129,6 +146,30 @@ class ResourceExhaustionTest {
                     "\u001b[38;2;${it % 256};${it / 256 % 256};1m\u001b[48;5;${it % 256}mx"
                 },
                 Case("queries") { "\u001b[6n\u001b[c\u001b]10;?\u0007" },
+                // Kitty graphics (docs/decisions/0038).
+                Case("images") { "\u001b_Ga=t,i=${it + 1},f=24,s=1,v=1,q=2;AAAA\u001b\\" },
+                Case("images without ids") { "\u001b_Ga=T,f=24,s=1,v=1,c=1,r=1,q=2;AAAA\u001b\\" },
+                Case("large images") {
+                    "\u001b_Ga=t,i=${it + 1},f=24,s=1000,v=1000,o=z,q=2;$BOMB\u001b\\"
+                },
+                Case("unterminated transmission") {
+                    if (it == 0) "\u001b_Ga=t,i=1,f=100,m=1;"
+                    else "\u001b_Gm=1;${"A".repeat(4096)}\u001b\\"
+                },
+                Case("placements") { "\u001b_Ga=T,i=1,f=24,s=1,v=1,q=2;AAAA\u001b\\\n" },
+                Case("deletions by position") {
+                    if (it == 0) "\u001b_Ga=t,i=1,f=24,s=1,v=1,q=2;AAAA\u001b\\"
+                    else if (it <= 1100) "\u001b_Ga=p,i=1,C=1,q=2\u001b\\"
+                    else "\u001b_Ga=d,d=p,x=9,y=9\u001b\\"
+                },
+                Case("clearing the screen with placements") {
+                    if (it == 0) "\u001b_Ga=t,i=1,f=24,s=1,v=1,q=2;AAAA\u001b\\"
+                    else "\u001b_Ga=p,i=1,C=1,q=2\u001b\\\u001b[2J"
+                },
+                Case("placements in a scrolling region") {
+                    if (it == 0) "\u001b_Ga=t,i=1,f=24,s=1,v=1,q=2;AAAA\u001b\\\u001b[2;23r"
+                    else if (it <= 1100) "\u001b_Ga=p,i=1,r=1,c=1,q=2\u001b\\" else "\n"
+                },
             )
     }
 }

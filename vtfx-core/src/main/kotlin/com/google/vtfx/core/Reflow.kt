@@ -65,6 +65,9 @@ internal object Reflow {
             for (row in start..end) {
                 val line = rows[row]
                 val hasCursor = row == cursorRow
+                // Image placements move with the cell they are anchored to (docs/decisions/0038).
+                val anchors = line.takeAnchors()?.also { array -> array.sortBy { it.column } }
+                var nextAnchor = 0
                 val contentEnd =
                     when {
                         row == end -> line.contentEnd()
@@ -87,11 +90,23 @@ internal object Reflow {
                         newCursorRow = out.size - 1
                         newCursorColumn = column + (insertion - c)
                     }
+                    while (anchors != null && nextAnchor < anchors.size) {
+                        if (anchors[nextAnchor].column >= c + width) break
+                        current.anchor(anchors[nextAnchor++], column)
+                        lastContentRow = out.size - 1
+                    }
                     if (line.codes[c] != Line.WIDE_TAIL) line.copyCellTo(c, current, column)
                     column += width
                     c += width
                 }
                 if (column > 0 || line.contentEnd() > 0) lastContentRow = out.size - 1
+                while (anchors != null && nextAnchor < anchors.size) {
+                    // Past the content: keep the distance from it, within the row.
+                    val anchor = anchors[nextAnchor++]
+                    val position = column + maxOf(0, anchor.column - contentEnd)
+                    current.anchor(anchor, minOf(position, newColumns - 1))
+                    lastContentRow = out.size - 1
+                }
                 if (hasCursor && insertion >= contentEnd) {
                     // The cursor is past the content: keep its distance from it.
                     var position = column + (insertion - contentEnd)

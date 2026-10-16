@@ -127,6 +127,46 @@ public sealed interface TerminalQuery {
      * model's.
      */
     @InternalVtfxApi public data class Color(val target: ColorTarget) : TerminalQuery
+
+    /**
+     * The reply to a kitty graphics command (docs/decisions/0038): the [imageId] (or the id given
+     * to a new image with a number), the [imageNumber] and [placementId] of the command, each from
+     * 0 to 4294967295 with 0 for none, and the [status].
+     */
+    @InternalVtfxApi
+    public data class GraphicsReply(
+        val imageId: Long,
+        val imageNumber: Long,
+        val placementId: Long,
+        val status: GraphicsStatus,
+    ) : TerminalQuery
+}
+
+/**
+ * The outcome of a kitty graphics command, which its reply reports.
+ *
+ * @suppress
+ */
+@InternalVtfxApi
+public enum class GraphicsStatus {
+    /** The command succeeded. */
+    Ok,
+    /** The command is not valid: both an id and a number, an unknown format, a zero size. */
+    InvalidCommand,
+    /** No image has the id or number. */
+    NotFound,
+    /** The data is shorter than the image needs. */
+    InsufficientData,
+    /** The data is not a PNG image that can be decoded. */
+    BadPng,
+    /** The image is larger than the limits allow. */
+    TooLarge,
+    /** The data is to be read from a file or shared memory, which vtfx does not do. */
+    UnsupportedMedium,
+    /** The compressed data cannot be inflated. */
+    InflateFailed,
+    /** The command is for animation, which vtfx does not support. */
+    Unsupported,
 }
 
 /**

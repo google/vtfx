@@ -21,6 +21,7 @@ package com.google.vtfx.gate
 import com.google.vtfx.core.CellStyle
 import com.google.vtfx.core.ColorTarget
 import com.google.vtfx.core.CursorShape
+import com.google.vtfx.core.GraphicsStatus
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.TerminalColor
 import com.google.vtfx.core.TerminalLimits
@@ -57,7 +58,24 @@ internal object Replies {
 
     private const val DCS = "\u001bP"
     private const val OSC = "\u001b]"
+    private const val APC = "\u001b_"
     private const val ST = "\u001b\\"
+
+    private const val MAX_GRAPHICS_ID = 0xFFFF_FFFFL
+
+    /** The status strings of graphics replies, with kitty's error codes. */
+    private fun graphicsStatus(status: GraphicsStatus): String =
+        when (status) {
+            GraphicsStatus.Ok -> "OK"
+            GraphicsStatus.InvalidCommand -> "EINVAL:invalid command"
+            GraphicsStatus.NotFound -> "ENOENT:no such image"
+            GraphicsStatus.InsufficientData -> "ENODATA:insufficient image data"
+            GraphicsStatus.BadPng -> "EBADPNG:malformed PNG data"
+            GraphicsStatus.TooLarge -> "EFBIG:image too large"
+            GraphicsStatus.UnsupportedMedium -> "EBADF:only direct transmission is supported"
+            GraphicsStatus.InflateFailed -> "EINVAL:cannot inflate the data"
+            GraphicsStatus.Unsupported -> "EINVAL:animation is not supported"
+        }
 
     /** Returns the reply to [query], or null if there is none (a color without [colors]). */
     fun encode(query: TerminalQuery, colors: ReportedColors?): ByteArray? {
@@ -92,8 +110,27 @@ internal object Replies {
                     "\u001b[8;${query.rows};${query.columns}t"
                 }
                 is TerminalQuery.Color -> color(query.target, colors) ?: return null
+                is TerminalQuery.GraphicsReply -> graphics(query)
             }
         return reply.toByteArray(Charsets.US_ASCII)
+    }
+
+    /**
+     * The reply to a kitty graphics command: the numbers of the command and a fixed status string.
+     * Unlike kitty's, the messages never carry anything from the request (docs/decisions/0038).
+     */
+    private fun graphics(query: TerminalQuery.GraphicsReply): String {
+        val ids = buildList {
+            if (query.imageId != 0L) add("i=${checkId(query.imageId)}")
+            if (query.imageNumber != 0L) add("I=${checkId(query.imageNumber)}")
+            if (query.placementId != 0L) add("p=${checkId(query.placementId)}")
+        }
+        return "${APC}G${ids.joinToString(",")};${graphicsStatus(query.status)}$ST"
+    }
+
+    private fun checkId(id: Long): Long {
+        require(id in 1..MAX_GRAPHICS_ID) { "graphics id out of range: $id" }
+        return id
     }
 
     private fun color(target: ColorTarget, colors: ReportedColors?): String? {

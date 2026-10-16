@@ -80,6 +80,30 @@ class TerminalFuzzTest {
         }
         check(terminal.scrollbackSize <= SCROLLBACK_LINES) { "scrollback exceeds the limit" }
         checkLinks(snapshot)
+        checkImages(terminal, snapshot)
+    }
+
+    /**
+     * Images stay within their limits, and every placement anchored to a line is on the screen or
+     * in the scrollback (docs/decisions/0038).
+     */
+    private fun checkImages(terminal: Terminal, snapshot: TerminalSnapshot) {
+        check(terminal.imageBytes in 0..MAX_IMAGE_BYTES) { "images take ${terminal.imageBytes}" }
+        val layer = terminal.graphicsLayer
+        check(layer.imageCount <= 1024 && layer.placementCount <= 1024) { "too many images" }
+        var anchored = 0
+        layer.forEachPlacement { if (!it.virtual) anchored++ }
+        var found = 0
+        layer.forEachAnchored { _, row ->
+            found++
+            check(row >= -terminal.scrollbackSize && row < snapshot.rows) { "placement at $row" }
+        }
+        check(found == anchored) { "$anchored placements, $found on lines" }
+        for (placement in snapshot.imagePlacements) {
+            check(placement.row < snapshot.rows && placement.column < snapshot.columns) {
+                "placement out of the snapshot"
+            }
+        }
     }
 
     /** The links found on the screen cover cells of the screen without OSC 8 hyperlinks. */
@@ -108,6 +132,9 @@ class TerminalFuzzTest {
     private companion object {
         const val MAX_CELL_TEXT_LENGTH = 32
         const val SCROLLBACK_LINES = 4
+
+        /** Room for a few small images, so that the fuzzer reaches eviction. */
+        const val MAX_IMAGE_BYTES = 4096
 
         /** The built-in URLs, and a pattern with groups, wide characters, and backtracking. */
         val LINK_PATTERNS =
@@ -149,7 +176,11 @@ object TerminalFuzzInput {
         val columns = 1 + (input[0].toInt() and 0xFF) % 12
         val rows = 1 + (input[1].toInt() and 0xFF) % 6
         val limits =
-            TerminalLimits(scrollbackLines = (input[2].toInt() and 0xFF) % 5, maxStringLength = 64)
+            TerminalLimits(
+                scrollbackLines = (input[2].toInt() and 0xFF) % 5,
+                maxStringLength = 64,
+                maxImageBytes = 4096,
+            )
         val operations = mutableListOf<Operation>()
         var start = 3
         var i = 3

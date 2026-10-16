@@ -35,6 +35,13 @@ public class TerminalLimits(
      * outside the Basic Multilingual Plane, such as an emoji, counts as two.
      */
     public val maxStringLength: Int = 256 * 1024,
+    /**
+     * The most memory, in bytes, that images sent with the kitty graphics protocol may take,
+     * decoded at 4 bytes per pixel, for the main and the alternate screen together. The oldest
+     * images go to make room for new ones. 0 turns the protocol off: the terminal then ignores it,
+     * and programs see a terminal without images.
+     */
+    public val maxImageBytes: Int = 32 * 1024 * 1024,
 ) {
     init {
         require(scrollbackLines in 0..MAX_SCROLLBACK_LINES) {
@@ -42,6 +49,9 @@ public class TerminalLimits(
         }
         require(maxStringLength in 0..MAX_STRING_LENGTH) {
             "maxStringLength out of range: $maxStringLength"
+        }
+        require(maxImageBytes in 0..MAX_IMAGE_BYTES) {
+            "maxImageBytes out of range: $maxImageBytes"
         }
     }
 
@@ -59,5 +69,8 @@ public class TerminalLimits(
          * The largest [maxStringLength][TerminalLimits.maxStringLength]: 16 Mi UTF-16 code units.
          */
         public val MAX_STRING_LENGTH: Int = 16 * 1024 * 1024
+
+        /** The largest [maxImageBytes][TerminalLimits.maxImageBytes]: 1 GiB. */
+        public val MAX_IMAGE_BYTES: Int = 1024 * 1024 * 1024
     }
 }

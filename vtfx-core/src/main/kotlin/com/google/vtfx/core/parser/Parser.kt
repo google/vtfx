@@ -49,6 +49,12 @@ internal interface ParserHandler {
 
     /** Dispatches a device control string. Not called if the data exceeded the limit. */
     fun dcsDispatch(params: Params, prefix: Int, intermediates: Int, final: Int, data: CharSequence)
+
+    /**
+     * Dispatches an application program command, such as a kitty graphics command. Not called if
+     * the string exceeded the limit.
+     */
+    fun apcDispatch(data: CharSequence) {}
 }
 
 /**
@@ -63,7 +69,8 @@ internal interface ParserHandler {
  * - A character beyond ASCII where an escape or control sequence expects its final byte ends the
  *   sequence without dispatching it.
  *
- * Strings (OSC and DCS) longer than [maxStringLength] UTF-16 code units are discarded. Every state
+ * Strings (OSC, DCS, and APC) longer than [maxStringLength] UTF-16 code units are discarded. APC is
+ * ended only by ST, and its control characters are dropped; SOS and PM are ignored. Every state
  * handles every input in constant time, so the parser always makes progress.
  */
 internal class Parser(
@@ -97,6 +104,16 @@ internal class Parser(
                 j = i + 1
                 while (j < end && bytes[j] !in PRINTABLE_ASCII_FIRST..PRINTABLE_ASCII_LAST) j++
                 decoder.decode(bytes, i, j - i, this)
+                i = j
+            } else if (
+                state == APC_STRING &&
+                    decoder.isIdle &&
+                    bytes[i] in PRINTABLE_ASCII_FIRST..PRINTABLE_ASCII_LAST
+            ) {
+                // The base64 payload of graphics commands, which can be megabytes, goes in runs.
+                var j = i + 1
+                while (j < end && bytes[j] in PRINTABLE_ASCII_FIRST..PRINTABLE_ASCII_LAST) j++
+                putAscii(bytes, i, j)
                 i = j
             } else {
                 val byte = bytes[i].toInt()
@@ -166,7 +183,8 @@ internal class Parser(
                     c == '['.code -> enterCsi()
                     c == ']'.code -> enterString(OSC_STRING)
                     c == 'P'.code -> enterDcs()
-                    c == 'X'.code || c == '^'.code || c == '_'.code -> state = SOS_PM_APC_STRING
+                    c == '_'.code -> enterString(APC_STRING)
+                    c == 'X'.code || c == '^'.code -> state = SOS_PM_STRING
                     c == DEL -> {}
                     else -> escDispatch(c)
                 }
@@ -271,7 +289,8 @@ internal class Parser(
                     DEL -> {}
                     else -> put(c)
                 }
-            SOS_PM_APC_STRING -> {}
+            APC_STRING -> if (c >= 0x20 && c != DEL) put(c)
+            SOS_PM_STRING -> {}
         }
     }
 
@@ -283,6 +302,7 @@ internal class Parser(
                 if (!stringOverflowed && !intermediatesOverflowed) {
                     handler.dcsDispatch(params, prefix, intermediates, dcsFinal, string)
                 }
+            APC_STRING -> if (!stringOverflowed) handler.apcDispatch(string)
         }
         if (string.isNotEmpty()) string.setLength(0)
         stringOverflowed = false
@@ -342,6 +362,17 @@ internal class Parser(
         string.appendCodePoint(c)
     }
 
+    /** Puts the printable ASCII characters in [from, to) of [bytes], as [put] does for each. */
+    private fun putAscii(bytes: ByteArray, from: Int, to: Int) {
+        if (stringOverflowed) return
+        if (string.length + (to - from) > maxStringLength) {
+            stringOverflowed = true
+            string.setLength(0)
+            return
+        }
+        for (k in from until to) string.append(bytes[k].toInt().toChar())
+    }
+
     private fun escDispatch(final: Int) {
         state = GROUND
         // Final bytes are ASCII. Other characters end the sequence, rather than being taken for
@@ -386,7 +417,8 @@ internal class Parser(
         private const val DCS_PASSTHROUGH = 10
         private const val DCS_IGNORE = 11
         private const val OSC_STRING = 12
-        private const val SOS_PM_APC_STRING = 13
+        private const val SOS_PM_STRING = 13
+        private const val APC_STRING = 14
 
         /** Packs [first] and [second] intermediate bytes as [ParserHandler] receives them. */
         fun intermediates(first: Char, second: Char? = null): Int =

@@ -68,6 +68,11 @@ class ParserTest {
             actions += "dcs($params${chars(intermediates)}${final.toChar()};$data)"
         }
 
+        override fun apcDispatch(data: CharSequence) {
+            flush()
+            actions += "apc($data)"
+        }
+
         fun result(): List<String> {
             flush()
             return actions
@@ -237,9 +242,47 @@ class ParserTest {
     }
 
     @Test
-    fun ignoresSosPmApc() {
-        assertEquals(listOf("esc(\\)", "print(a)"), parse("\u001b_hidden\u001b\\a"))
+    fun ignoresSosAndPm() {
+        assertEquals(listOf("esc(\\)", "print(a)"), parse("\u001bXhidden\u001b\\a"))
         assertEquals(listOf("esc(\\)", "print(a)"), parse("\u001b^x\u001b\\a"))
+    }
+
+    @Test
+    fun dispatchesApcTerminatedBySt() {
+        assertEquals(
+            listOf("apc(Ga=q;AAAA)", "esc(\\)", "print(a)"),
+            parse("\u001b_Ga=q;AAAA\u001b\\a"),
+        )
+        // Split across writes, in runs and one byte at a time.
+        assertEquals(
+            listOf("apc(Gi=1;AB)", "esc(\\)"),
+            parse("\u001b_Gi", "=1;", "A", "B\u001b", "\\"),
+        )
+    }
+
+    @Test
+    fun apcIsNotEndedByBelAndDropsControlsAndDel() {
+        assertEquals(
+            listOf("apc(Gab\u00e9)", "esc(\\)"),
+            parse("\u001b_Ga\u0007\r\u007fb\u00e9\u001b\\"),
+        )
+    }
+
+    @Test
+    fun discardsApcCancelledOrLongerThanTheLimit() {
+        assertEquals(listOf("execute(18)", "print(a)"), parse("\u001b_Gx\u0018a"))
+        assertEquals(
+            listOf("esc(\\)", "print(a)"),
+            parse("\u001b_G12345\u001b\\a", maxStringLength = 5),
+        )
+        assertEquals(
+            listOf("esc(\\)", "print(a)"),
+            parse("\u001b_G1", "234", "5\u001b\\a", maxStringLength = 5),
+        )
+        assertEquals(
+            listOf("apc(G123)", "esc(\\)", "print(a)"),
+            parse("\u001b_G123\u001b\\a", maxStringLength = 5),
+        )
     }
 
     @Test

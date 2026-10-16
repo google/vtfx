@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(InternalVtfxApi::class)
+
 package com.google.vtfx.core
 
 // Not a data class, so that properties can be added without changing what apps compiled earlier
@@ -165,6 +167,13 @@ internal constructor(
      * Whether the last of [linesBelow] (or of the display, if none) continues a line further below.
      */
     internal val isCutBelow: Boolean = false,
+    /**
+     * The images of the kitty graphics protocol that the snapshot shows, in the order to draw them:
+     * by z-index, then in the order they were placed.
+     *
+     * @suppress
+     */
+    @InternalVtfxApi public val imagePlacements: List<ImagePlacement> = emptyList(),
 ) {
     /**
      * Returns the line at [row], 0-based from the top.
