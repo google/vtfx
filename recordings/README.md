@@ -22,3 +22,21 @@ PATH=$PWD/root/usr/bin:$PATH LD_LIBRARY_PATH=$PWD/root/usr/lib/x86_64-linux-gnu 
 ```
 
 To regenerate only the reference screens, add `--reference-only`.
+
+## Images (`graphics/`)
+
+Programs that show images with the kitty graphics protocol, recorded by `tools/recordings/record_graphics.py` ([decisions/0038](../docs/decisions/0038-kitty-graphics.md)). The script answers the programs' queries as vtfx does, in a terminal of 80 × 24 cells of 10 × 20 pixels, and gives them an image it makes (64 × 48 pixels), so the recordings hold no file of the machine. tmux knows nothing of the protocol, so there is no reference screen: `GraphicsRecordingTest` in `vtfx-core` checks where the images are and where the cursor ends, and `replay <name>` in the sample app shows them.
+
+| File | Contents |
+|---|---|
+| `graphics/<name>.out` | The bytes the program wrote |
+| `graphics/<name>.json` | The command, the versions of the programs, the size, and the queries the program asked |
+
+| Name | Program |
+|---|---|
+| `timg` | `timg -pk` (timg recognizes kitty only by name, so a vtfx user asks for the protocol) |
+| `icat` | `kitten icat`, which finds the protocol with a query |
+| `icat-placeholder` | `kitten icat --unicode-placeholder` |
+| `fastfetch` | `fastfetch --logo-type kitty`, with only its color blocks beside the logo |
+
+To record again: `tools/recordings/record_graphics.py recordings/graphics` with timg, kitty's `kitten`, and fastfetch on `PATH`.

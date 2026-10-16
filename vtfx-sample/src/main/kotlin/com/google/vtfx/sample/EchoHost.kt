@@ -194,7 +194,7 @@ class EchoHost(
     private fun replay(name: String): Boolean {
         val data = recording(name)
         if (data == null) {
-            output("No recording '$name'. Try: vim, less, htop, tmux\r\n")
+            output("No recording '$name'. Try: vim, less, htop, tmux, timg, icat, fastfetch\r\n")
             return false
         }
         if (isLargeEnoughForReplay()) {
@@ -278,7 +278,8 @@ class EchoHost(
                 "  unicode  show wide and combining characters\r\n" +
                 "  links    show links to tap\r\n" +
                 "  size     show the terminal size\r\n" +
-                "  replay   show a recorded app until a key: vim, less, htop, tmux\r\n" +
+                "  replay   show a recorded app until a key: vim, less, htop, tmux,\r\n" +
+                "           timg, icat, icat-placeholder, fastfetch (images)\r\n" +
                 "  reset    reset the terminal\r\n" +
                 "  mouse    send mouse reports (mouse off: stop)\r\n" +
                 "Anything else is echoed back.\r\n"

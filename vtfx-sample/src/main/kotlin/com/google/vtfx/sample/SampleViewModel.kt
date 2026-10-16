@@ -103,11 +103,19 @@ class SampleViewModel(application: Application) : AndroidViewModel(application) 
 
     private fun ByteArray.toHex(): String = joinToString("") { "%02x".format(it) }
 
-    /** Reads a recording of tools/recordings, bundled as an asset, or returns null. */
+    /**
+     * Reads a recording of tools/recordings, bundled as an asset, or returns null. The recordings
+     * of programs that show images are in graphics/; they write where the cursor is, so the screen
+     * is cleared before them.
+     */
     private fun readRecording(application: Application, name: String): ByteArray? {
         if (!name.matches(Regex("[a-z0-9-]+"))) return null
+        try {
+            return application.assets.open("$name.out").use { it.readBytes() }
+        } catch (_: java.io.IOException) {}
         return try {
-            application.assets.open("$name.out").use { it.readBytes() }
+            "\u001b[2J\u001b[H".toByteArray() +
+                application.assets.open("graphics/$name.out").use { it.readBytes() }
         } catch (_: java.io.IOException) {
             null
         }
