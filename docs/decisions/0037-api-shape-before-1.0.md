@@ -14,14 +14,14 @@ From 1.0 on, changes that break apps compiled against an earlier version need a 
 
 ## Decision
 
-These are made before 1.0. As of 2026-10-16, none of them is implemented yet.
+These are made before 1.0. All of them were implemented on 2026-10-16.
 
-- **No data classes among what vtfx returns.** `TerminalModes`, `CursorState`, `Hyperlink`, `TerminalLink.Explicit` and `Matched`, and `TerminalLinkClick` become ordinary classes with internal constructors and hand-written `equals`, `hashCode`, and `toString`, like `TerminalSnapshot`. Apps read their properties, which can grow compatibly; they neither build nor destructure them.
+- **No data classes among what vtfx returns.** `TerminalModes`, `CursorState`, `Hyperlink`, `TerminalLink.Explicit` and `Matched`, and `TerminalLinkClick` become ordinary classes with internal constructors and hand-written `equals`, `hashCode`, and `toString`, like `TerminalSnapshot`. Apps read their properties, which can grow compatibly; they neither build nor destructure them. The tests of other modules make `TerminalModes` and `Hyperlink` through functions of vtfx-core's test fixtures, which are compiled as a friend of vtfx-core.
 - **No public `const val`s.** Every public constant becomes a plain `val`, read through its getter at run time, so that a later version can change the value: `TerminalLimits.MAX_DIMENSION`, `MAX_SCROLLBACK_LINES`, `MAX_STRING_LENGTH`, `CharWidth.UNICODE_VERSION`, `TerminalSession.DEFAULT_COLUMNS` and `DEFAULT_ROWS`, and `GatePolicy.DEFAULT_MAX_CLIPBOARD_WRITE_LENGTH`. A single rule is simpler than deciding for each constant whether its value may change, and a check can enforce it. Constants that stay inside one module may still be `const val`s; vtfx-compose reads `MAX_DIMENSION` of vtfx-core through the getter like apps, since the two artifacts can be of different versions.
 - **Enums and sealed types are decided per type.**
   - `UnderlineStyle` and `CursorShape` are closed: an entry is added only in a major version. 0016 lists the closed types.
-  - `TerminalLink` takes a shape on which an exhaustive `when` is not possible, so that apps write `else` and new kinds of links can be added in a minor version. The kinds are still made only by vtfx.
-  - `MouseTracking` and `MouseEncoding`, and the properties of `TerminalModes` that hold them, leave the public API. If apps need it, the public API tells only whether the host asks for the mouse, as a `Boolean`.
+  - `TerminalLink` takes a shape on which an exhaustive `when` is not possible, so that apps write `else` and new kinds of links can be added in a minor version. The kinds are still made only by vtfx: it is an abstract class with an internal constructor.
+  - `MouseTracking` and `MouseEncoding`, and the properties of `TerminalModes` that hold them, leave the public API (marked `@InternalVtfxApi`). If apps need it, the public API tells only whether the host asks for the mouse, as a `Boolean`; no app needs it yet.
   - The types that apps give to vtfx can take new entries and subtypes in a minor version.
 
 ## Alternatives considered
