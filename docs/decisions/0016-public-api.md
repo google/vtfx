@@ -27,6 +27,7 @@ Requirement 6.5 asks for keeping the public API to the minimum needed, mechanica
 - Versions follow Semantic Versioning.
 - Before 1.0 (0.x), compatibility is not guaranteed. However, changes to the public API are always detected by the check and appear in commits as differences in the dump. For changes that break compatibility, write the reason in the commit message.
 - From 1.0 on, changes that break compatibility are made only in major versions. An API to be removed is first replaced with `@Deprecated` (WARNING) pointing to its replacement, becomes ERROR after at least one minor version, and is removed in the next major version.
+  - 2026-10-16: [0036](0036-adding-parameters.md) keeps the previous signature as a hidden overload when a parameter is added from 1.0 on.
 - `@InternalVtfxApi` declarations may change without notice in any version.
 - When to start guaranteeing stability (1.0) is decided by humans once the publishing (Maven) policy is decided ("Publishing" in [review-queue.md](../review-queue.md)).
 
