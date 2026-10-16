@@ -22,24 +22,29 @@ import com.google.vtfx.core.Hyperlink
 import com.google.vtfx.core.LinkPattern
 
 // See docs/decisions/0019. The links and clicks are not data classes, so that properties can be
-// added without changing what apps compiled earlier call; only vtfx makes them
-// (docs/decisions/0037).
+// added without changing what apps compiled earlier call; only vtfx makes them. TerminalLink is an
+// abstract class with an internal constructor rather than a sealed interface, so that apps cannot
+// match the kinds exhaustively, and a new kind does not make code compiled earlier throw
+// NoWhenBranchMatchedException (docs/decisions/0037).
 /**
  * A link on the display that the user clicked, passed to the `onLinkClick` of [Terminal] in a
  * [TerminalLinkClick]. Show [url] to the user and, when they confirm, open it with
  * [TerminalSession.openUrl][com.google.vtfx.session.TerminalSession.openUrl], which refuses the
  * URLs that the session's policy does not allow. This holds for every kind of link: what the user
  * sees may differ from where the link goes.
+ *
+ * New kinds of links may be added in a minor version, so a `when` over the kinds needs an `else`
+ * branch.
  */
-public sealed interface TerminalLink {
+public abstract class TerminalLink internal constructor() {
     /**
      * The text of the link on the display, which may go on beyond the display. Untrusted: it comes
      * from the host.
      */
-    public val text: String
+    public abstract val text: String
 
     /** The URL that the link goes to. Untrusted: it comes from the host, wholly or in part. */
-    public val url: String
+    public abstract val url: String
 
     /**
      * An OSC 8 hyperlink. The host chose its URL apart from [text][TerminalLink.Explicit.text],
@@ -55,7 +60,7 @@ public sealed interface TerminalLink {
         override val text: String,
         /** The hyperlink of the tapped cell. */
         public val hyperlink: Hyperlink,
-    ) : TerminalLink {
+    ) : TerminalLink() {
         override val url: String
             get() = hyperlink.uri
 
@@ -83,7 +88,7 @@ public sealed interface TerminalLink {
         override val url: String,
         /** The pattern that matched, one of the `linkPatterns` of [Terminal]. */
         public val pattern: LinkPattern,
-    ) : TerminalLink {
+    ) : TerminalLink() {
         override fun equals(other: Any?): Boolean =
             other is Matched && other.text == text && other.url == url && other.pattern == pattern
 

@@ -52,7 +52,8 @@ public final class com/google/vtfx/compose/TerminalKt {
 	public static final fun Terminal (Lcom/google/vtfx/session/TerminalSession;Landroidx/compose/ui/Modifier;Lcom/google/vtfx/compose/TerminalState;Lcom/google/vtfx/compose/TerminalStyle;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
 }
 
-public abstract interface class com/google/vtfx/compose/TerminalLink {
+public abstract class com/google/vtfx/compose/TerminalLink {
+	public static final field $stable I
 	public abstract fun getText ()Ljava/lang/String;
 	public abstract fun getUrl ()Ljava/lang/String;
 }
