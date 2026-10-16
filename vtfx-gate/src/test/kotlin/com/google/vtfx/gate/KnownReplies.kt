@@ -35,6 +35,8 @@ internal object KnownReplies {
                     """\u001bP0\${'$'}r\u001b\\""",
                     """\u001bP>\|vtfx\(0\.1\)\u001b\\""",
                     """\u001b\[8;\d{1,4};\d{1,4}t""",
+                    // Pixel sizes, only once a display gave the size of a cell.
+                    """\u001b\[[46];\d{1,7};\d{1,7}t""",
                     // Kitty graphics: the numbers of the command and a fixed status.
                     """\u001b_G(?:i=\d{1,10})?(?:,?I=\d{1,10})?(?:,?p=\d{1,10})?;""" +
                         "(?:OK|EINVAL:invalid command|ENOENT:no such image|" +

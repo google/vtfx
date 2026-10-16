@@ -166,26 +166,30 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
     }
 
     /** The size waiting for [applyPendingSize], or null. */
-    private var pendingSize: Pair<Int, Int>? = null
+    private var pendingSize: GridSize? = null
     private var sized = false
     private val applyPendingSize = Runnable {
-        val (columns, rows) = pendingSize ?: return@Runnable
+        val size = pendingSize ?: return@Runnable
         pendingSize = null
-        session.resize(columns, rows)
+        session.resize(size.columns, size.rows, size.cellWidth, size.cellHeight)
     }
 
+    /** A size of the grid, and of a cell in pixels. */
+    private class GridSize(val columns: Int, val rows: Int, val cellWidth: Int, val cellHeight: Int)
+
     /**
-     * Requests the size that fits the display. A change is applied after the size stays the same
-     * for [RESIZE_DELAY_MILLIS], so that an animation (the keyboard showing, for example) resizes
-     * the terminal and notifies the host once (requirement 5.5). The first size is applied at once.
+     * Requests the size that fits the display, with cells of [cellWidth] by [cellHeight] pixels. A
+     * change is applied after the size stays the same for [RESIZE_DELAY_MILLIS], so that an
+     * animation (the keyboard showing, for example) resizes the terminal and notifies the host once
+     * (requirement 5.5). The first size is applied at once.
      */
-    fun resize(columns: Int, rows: Int) {
+    fun resize(columns: Int, rows: Int, cellWidth: Int = 0, cellHeight: Int = 0) {
         if (!sized) {
             sized = true
-            session.resize(columns, rows)
+            session.resize(columns, rows, cellWidth, cellHeight)
             return
         }
-        pendingSize = Pair(columns, rows)
+        pendingSize = GridSize(columns, rows, cellWidth, cellHeight)
         mainHandler.removeCallbacks(applyPendingSize)
         mainHandler.postDelayed(applyPendingSize, RESIZE_DELAY_MILLIS)
     }

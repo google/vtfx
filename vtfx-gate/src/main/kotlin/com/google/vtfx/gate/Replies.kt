@@ -109,6 +109,16 @@ internal object Replies {
                     checkPosition(query.columns)
                     "\u001b[8;${query.rows};${query.columns}t"
                 }
+                is TerminalQuery.TextAreaPixelSize -> {
+                    checkPixels(query.height)
+                    checkPixels(query.width)
+                    "\u001b[4;${query.height};${query.width}t"
+                }
+                is TerminalQuery.CellPixelSize -> {
+                    checkPixels(query.height)
+                    checkPixels(query.width)
+                    "\u001b[6;${query.height};${query.width}t"
+                }
                 is TerminalQuery.Color -> color(query.target, colors) ?: return null
                 is TerminalQuery.GraphicsReply -> graphics(query)
             }
@@ -203,6 +213,11 @@ internal object Replies {
 
     private fun checkPosition(value: Int) {
         require(value in 1..TerminalLimits.MAX_DIMENSION) { "position out of range: $value" }
+    }
+
+    /** A size in pixels: up to the largest dimension times the largest cell, 1000 pixels. */
+    private fun checkPixels(value: Int) {
+        require(value in 1..TerminalLimits.MAX_DIMENSION * 1000) { "pixels out of range: $value" }
     }
 
     private const val MAX_PARAMETER = 65535

@@ -192,6 +192,23 @@ class GraphicsTest {
             assertEquals(emptyList(), replies())
             assertEquals("x", terminal.snapshot().line(0).text().trim())
         }
+
+        @Test
+        fun pixelSizesAreAnsweredOnceTheCellSizeIsKnown() {
+            val queries = "\u001b[14t\u001b[14;2t\u001b[14;1t\u001b[16t"
+            val unknown = Terminal(80, 24) { events += it }
+            unknown.write(queries)
+            assertEquals(emptyList(), events)
+            terminal().write(queries)
+            assertEquals(
+                listOf(
+                    TerminalQuery.TextAreaPixelSize(19 * 24, 10 * 80),
+                    TerminalQuery.TextAreaPixelSize(19 * 24, 10 * 80),
+                    TerminalQuery.CellPixelSize(19, 10),
+                ),
+                events.map { (it as TerminalEvent.ReplyRequested).query },
+            )
+        }
     }
 
     @Nested

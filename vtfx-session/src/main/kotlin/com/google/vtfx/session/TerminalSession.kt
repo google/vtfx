@@ -65,6 +65,17 @@ public interface TerminalSessionListener {
     public fun onResize(columns: Int, rows: Int) {}
 
     /**
+     * The terminal size is [columns] by [rows], and [widthPixels] by [heightPixels] in pixels, or 0
+     * by 0 if no display has given the size of a cell. Programs that show images read the pixels
+     * from the host's window size, so give them to the host too: the pixel fields of an SSH
+     * window-change request, or `ws_xpixel` and `ws_ypixel` of TIOCSWINSZ. Called as the other
+     * overload, which it calls by default, so that a listener overrides one of them.
+     */
+    public fun onResize(columns: Int, rows: Int, widthPixels: Int, heightPixels: Int) {
+        onResize(columns, rows)
+    }
+
+    /**
      * The host rang the bell. Called on the thread that called [TerminalSession.feed], once per
      * call however many bells the output has.
      */
@@ -175,8 +186,8 @@ public class TerminalSession(
 
     /** Tell [listener] the latest values. Each value is recorded with [lock] held, in order. */
     private val sizeNotifier =
-        LatestValueNotifier<Pair<Int, Int>> { (columns, rows) ->
-            listener.onResize(columns, rows)
+        LatestValueNotifier<ReportedSize> { size ->
+            listener.onResize(size.columns, size.rows, size.widthPixels, size.heightPixels)
         }
     private val titleNotifier = LatestValueNotifier<String> { listener.onTitleChanged(it) }
     private val stickyModifiersNotifier =
@@ -197,6 +208,10 @@ public class TerminalSession(
      * size. Guarded by [lock].
      */
     private var resized = false
+
+    /** The size of a cell in pixels that a display gave, or 0. Guarded by [lock]. */
+    private var cellWidth = 0
+    private var cellHeight = 0
 
     /**
      * The requests to the gate (replies and OSC 52) during the current [feed], in order. Guarded by
@@ -483,22 +498,58 @@ public class TerminalSession(
      * session to fit itself as soon as it is laid out; call it only for a session without a
      * display.
      *
+     * [cellWidth] and [cellHeight] are the size of a cell in pixels, which a display gives, or 0 to
+     * keep the size given before. The host can ask for it, and images that the host sends without a
+     * size in cells take cells of that size; until it is given, the host's queries for pixel sizes
+     * are not answered, and images take cells of 10 by 20 pixels.
+     *
      * @throws IllegalArgumentException if [columns] or [rows] is not from 1 to
-     *   [TerminalLimits.MAX_DIMENSION].
+     *   [TerminalLimits.MAX_DIMENSION], or if [cellWidth] or [cellHeight] is not from 0 to 1000, or
+     *   only one of them is 0.
      */
-    public fun resize(columns: Int, rows: Int) {
+    public fun resize(columns: Int, rows: Int, cellWidth: Int = 0, cellHeight: Int = 0) {
+        require(cellWidth in 0..MAX_CELL_SIZE && cellHeight in 0..MAX_CELL_SIZE) {
+            "cell size out of range: ${cellWidth}x$cellHeight"
+        }
+        require((cellWidth == 0) == (cellHeight == 0)) {
+            "cell size must have both sides or neither: ${cellWidth}x$cellHeight"
+        }
         val (report, changed) =
             synchronized(lock) {
                 val changed = terminal.columns != columns || terminal.rows != rows
                 if (changed) terminal.resize(columns, rows)
-                val report = changed || !resized
+                val cellChanged =
+                    cellWidth != 0 && (cellWidth != this.cellWidth || cellHeight != this.cellHeight)
+                if (cellChanged) {
+                    terminal.setCellSize(cellWidth, cellHeight)
+                    this.cellWidth = cellWidth
+                    this.cellHeight = cellHeight
+                }
+                val report = changed || cellChanged || !resized
                 resized = true
-                if (report) sizeNotifier.record(Pair(columns, rows))
+                if (report) {
+                    sizeNotifier.record(
+                        ReportedSize(
+                            columns,
+                            rows,
+                            columns * this.cellWidth,
+                            rows * this.cellHeight,
+                        )
+                    )
+                }
                 Pair(report, changed)
             }
         if (report) sizeNotifier.tell()
         if (changed) for (observer in observers) observer.onScreenChanged()
     }
+
+    /** The size that [TerminalSessionListener.onResize] reports. */
+    private class ReportedSize(
+        val columns: Int,
+        val rows: Int,
+        val widthPixels: Int,
+        val heightPixels: Int,
+    )
 
     /**
      * Opens [url] if the URL schemes of the gate's policy allow it, and returns whether it did.
@@ -697,6 +748,9 @@ public class TerminalSession(
 
         /** DELs per call of `HostWriter.sendDeletes`, well below its limit. */
         private const val DELETES_PER_WRITE = 4096
+
+        /** The largest width or height of a cell in pixels, as `Terminal.setCellSize` takes. */
+        private const val MAX_CELL_SIZE = 1000
     }
 }
 

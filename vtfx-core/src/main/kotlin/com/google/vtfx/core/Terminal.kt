@@ -245,9 +245,10 @@ public class Terminal(
 
     /**
      * Sets the size of a cell in pixels, which sizes images placed without a size in cells, and
-     * which the host can ask for (docs/decisions/0038).
+     * which the host can then ask for with XTWINOPS 14 and 16 (docs/decisions/0038). Until it is
+     * set, images take cells of 10 by 20 pixels, and those queries are not answered.
      *
-     * @throws IllegalArgumentException unless both are positive.
+     * @throws IllegalArgumentException unless both are from 1 to 1000.
      */
     public fun setCellSize(width: Int, height: Int) {
         emulator.graphics.setCellSize(width, height)

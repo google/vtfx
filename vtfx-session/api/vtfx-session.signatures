@@ -5,7 +5,7 @@ public final class com.google.vtfx.session.TerminalSession {
     public final fun openUrl(url: kotlin.String): kotlin.Boolean
     public final fun paste(text: kotlin.String): kotlin.Unit
     public final fun pasteFromClipboard(): kotlin.Unit
-    public final fun resize(columns: kotlin.Int, rows: kotlin.Int): kotlin.Unit
+    public final fun resize(columns: kotlin.Int, rows: kotlin.Int, cellWidth: kotlin.Int = ..., cellHeight: kotlin.Int = ...): kotlin.Unit
     public final fun sendKey(stroke: com.google.vtfx.core.KeyStroke): kotlin.Unit
     public final fun sendText(text: kotlin.String): kotlin.Unit
     public final fun snapshot(scrollOffset: kotlin.Int = ...): com.google.vtfx.core.TerminalSnapshot
@@ -23,6 +23,7 @@ public companion object com.google.vtfx.session.TerminalSession.Companion {
 public interface com.google.vtfx.session.TerminalSessionListener {
     public open fun onBell(): kotlin.Unit
     public open fun onResize(columns: kotlin.Int, rows: kotlin.Int): kotlin.Unit
+    public open fun onResize(columns: kotlin.Int, rows: kotlin.Int, widthPixels: kotlin.Int, heightPixels: kotlin.Int): kotlin.Unit
     public open fun onStickyModifiersChanged(modifiers: com.google.vtfx.core.KeyModifiers): kotlin.Unit
     public open fun onTitleChanged(title: kotlin.String): kotlin.Unit
 }

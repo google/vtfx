@@ -88,6 +88,36 @@ class TerminalLayoutTest {
     private fun warnings() = ShadowLog.getLogsForTag("vtfx").filter { it.type == Log.WARN }
 
     @Test
+    fun theSessionLearnsTheSizeOfACellInPixels() {
+        // For images and the host's queries of pixel sizes (docs/decisions/0038).
+        val pixels = mutableListOf<List<Int>>()
+        val sent = StringBuilder()
+        val session =
+            TerminalSession(
+                { sent.append(String(it, Charsets.UTF_8)) },
+                listener =
+                    object : TerminalSessionListener {
+                        override fun onResize(
+                            columns: Int,
+                            rows: Int,
+                            widthPixels: Int,
+                            heightPixels: Int,
+                        ) {
+                            pixels += listOf(columns, rows, widthPixels, heightPixels)
+                        }
+                    },
+            )
+        composeRule.setContent { Terminal(session, Modifier.size(400.dp, 300.dp)) }
+        composeRule.waitForIdle()
+        val (columns, rows, width, height) = pixels.single()
+        assertTrue("$width by $height pixels", width > 0 && height > 0)
+        assertEquals(0, width % columns)
+        assertEquals(0, height % rows)
+        composeRule.runOnIdle { session.feed("\u001b[16t".toByteArray()) }
+        assertEquals("\u001b[6;${height / rows};${width / columns}t", sent.toString())
+    }
+
+    @Test
     fun takes80By24CellsWhenTheConstraintsAllow() {
         composeRule.setContent { Terminal(session) }
         composeRule.waitForIdle()

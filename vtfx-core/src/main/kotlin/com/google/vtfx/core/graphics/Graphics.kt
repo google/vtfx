@@ -58,6 +58,10 @@ internal class Graphics(
     var cellHeight: Int = DEFAULT_CELL_HEIGHT
         private set
 
+    /** Whether the display gave the size of a cell, rather than the default. */
+    var isCellSizeKnown: Boolean = false
+        private set
+
     private val layers = ArrayList<GraphicsLayer>(2)
 
     /** The memory of the pixels of every image. */
@@ -72,9 +76,12 @@ internal class Graphics(
     private var transmission: Transmission? = null
 
     fun setCellSize(width: Int, height: Int) {
-        require(width > 0 && height > 0) { "cell size out of range: ${width}x$height" }
+        require(width in 1..MAX_CELL_SIZE && height in 1..MAX_CELL_SIZE) {
+            "cell size out of range: ${width}x$height"
+        }
         cellWidth = width
         cellHeight = height
+        isCellSizeKnown = true
     }
 
     fun register(layer: GraphicsLayer) {
@@ -563,6 +570,12 @@ internal class Graphics(
         /** The size of a cell until the display tells it (docs/decisions/0038). */
         const val DEFAULT_CELL_WIDTH = 10
         const val DEFAULT_CELL_HEIGHT = 20
+
+        /**
+         * The largest width or height of a cell in pixels, so that the text area in pixels fits in
+         * an Int at the largest dimension.
+         */
+        const val MAX_CELL_SIZE = 1000
 
         /** The largest width or height of an image, as in kitty (docs/decisions/0002). */
         const val MAX_SIDE = 10000L

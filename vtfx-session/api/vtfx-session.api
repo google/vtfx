@@ -12,7 +12,8 @@ public final class com/google/vtfx/session/TerminalSession {
 	public final fun openUrl (Ljava/lang/String;)Z
 	public final fun paste (Ljava/lang/String;)V
 	public final fun pasteFromClipboard ()V
-	public final fun resize (II)V
+	public final fun resize (IIII)V
+	public static synthetic fun resize$default (Lcom/google/vtfx/session/TerminalSession;IIIIILjava/lang/Object;)V
 	public final fun sendKey (Lcom/google/vtfx/core/KeyStroke;)V
 	public final fun sendText (Ljava/lang/String;)V
 	public final fun setDirectInput (Z)V
@@ -29,6 +30,7 @@ public final class com/google/vtfx/session/TerminalSession$Companion {
 public abstract interface class com/google/vtfx/session/TerminalSessionListener {
 	public fun onBell ()V
 	public fun onResize (II)V
+	public fun onResize (IIII)V
 	public fun onStickyModifiersChanged-67e23dI (I)V
 	public fun onTitleChanged (Ljava/lang/String;)V
 }
@@ -36,6 +38,7 @@ public abstract interface class com/google/vtfx/session/TerminalSessionListener 
 public final class com/google/vtfx/session/TerminalSessionListener$DefaultImpls {
 	public static fun onBell (Lcom/google/vtfx/session/TerminalSessionListener;)V
 	public static fun onResize (Lcom/google/vtfx/session/TerminalSessionListener;II)V
+	public static fun onResize (Lcom/google/vtfx/session/TerminalSessionListener;IIII)V
 	public static fun onStickyModifiersChanged-67e23dI (Lcom/google/vtfx/session/TerminalSessionListener;I)V
 	public static fun onTitleChanged (Lcom/google/vtfx/session/TerminalSessionListener;Ljava/lang/String;)V
 }

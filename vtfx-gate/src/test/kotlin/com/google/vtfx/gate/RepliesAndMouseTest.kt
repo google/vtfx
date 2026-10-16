@@ -93,7 +93,12 @@ class RepliesAndMouseTest {
         fun versionAndSize() {
             writer.sendReply(TerminalQuery.TerminalVersion)
             writer.sendReply(TerminalQuery.TextAreaSize(24, 80))
-            assertEquals(listOf("\\eP>|vtfx(0.1)\\e\\", "\\e[8;24;80t"), sent)
+            writer.sendReply(TerminalQuery.TextAreaPixelSize(456, 800))
+            writer.sendReply(TerminalQuery.CellPixelSize(19, 10))
+            assertEquals(
+                listOf("\\eP>|vtfx(0.1)\\e\\", "\\e[8;24;80t", "\\e[4;456;800t", "\\e[6;19;10t"),
+                sent,
+            )
         }
 
         @Test

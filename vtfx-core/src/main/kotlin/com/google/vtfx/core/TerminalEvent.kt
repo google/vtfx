@@ -123,6 +123,17 @@ public sealed interface TerminalQuery {
     @InternalVtfxApi public data class TextAreaSize(val rows: Int, val columns: Int) : TerminalQuery
 
     /**
+     * XTWINOPS 14 (CSI 14 t): the size of the text area in pixels, [height] and [width], from the
+     * size of a cell that the display gave (docs/decisions/0038).
+     */
+    @InternalVtfxApi
+    public data class TextAreaPixelSize(val height: Int, val width: Int) : TerminalQuery
+
+    /** XTWINOPS 16 (CSI 16 t): the size of a cell in pixels, [height] and [width]. */
+    @InternalVtfxApi
+    public data class CellPixelSize(val height: Int, val width: Int) : TerminalQuery
+
+    /**
      * OSC 10, 11, 12, or 4 with "?": the color of [target]. The colors are the display's, not the
      * model's.
      */

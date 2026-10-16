@@ -489,6 +489,9 @@ internal class Emulator(
             's' -> saveCursor()
             't' ->
                 when (params[0]) {
+                    // XTWINOPS 14;2 asks for the window, which here is the text area too.
+                    14 -> if (params[1] == 0 || params[1] == 2) reportPixelSize(cell = false)
+                    16 -> reportPixelSize(cell = true)
                     18 -> reply(TerminalQuery.TextAreaSize(rows, columns))
                     22,
                     23 -> saveOrRestoreTitle(params)
@@ -519,6 +522,21 @@ internal class Emulator(
 
     private fun reply(query: TerminalQuery) {
         listener.onEvent(TerminalEvent.ReplyRequested(query))
+    }
+
+    /**
+     * XTWINOPS 14 and 16: the size of the text area or of a cell in pixels, which programs that
+     * show images need. Not answered until the display gives the size of a cell, as colors are not
+     * (docs/decisions/0038).
+     */
+    private fun reportPixelSize(cell: Boolean) {
+        if (!graphics.isCellSizeKnown) return
+        val width = graphics.cellWidth
+        val height = graphics.cellHeight
+        reply(
+            if (cell) TerminalQuery.CellPixelSize(height, width)
+            else TerminalQuery.TextAreaPixelSize(height * rows, width * columns)
+        )
     }
 
     /**

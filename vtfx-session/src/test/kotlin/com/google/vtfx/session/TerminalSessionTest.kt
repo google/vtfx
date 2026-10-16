@@ -170,6 +170,55 @@ class TerminalSessionTest {
     }
 
     @Test
+    fun theSizeOfACellGivesPixelsToTheListenerAndTheHost() {
+        val sizes = mutableListOf<List<Int>>()
+        val sent = StringBuilder()
+        val session =
+            TerminalSession(
+                { sent.append(String(it, Charsets.UTF_8)) },
+                columns = 20,
+                rows = 5,
+                listener =
+                    object : TerminalSessionListener {
+                        override fun onResize(
+                            columns: Int,
+                            rows: Int,
+                            widthPixels: Int,
+                            heightPixels: Int,
+                        ) {
+                            sizes += listOf(columns, rows, widthPixels, heightPixels)
+                        }
+                    },
+            )
+        // Without a display, pixel sizes are unknown: the queries are not answered.
+        session.feed("\u001b[14t\u001b[16t".toByteArray())
+        session.resize(20, 5)
+        session.resize(20, 5, 10, 21)
+        session.resize(20, 5, 10, 21)
+        session.resize(30, 6)
+        session.feed("\u001b[14t\u001b[16t".toByteArray())
+        assertEquals(
+            listOf(listOf(20, 5, 0, 0), listOf(20, 5, 200, 105), listOf(30, 6, 300, 126)),
+            sizes,
+        )
+        assertEquals("\u001b[4;126;300t\u001b[6;21;10t", sent.toString())
+    }
+
+    @Test
+    fun listenersOfTheSizeInCellsAreStillCalled() {
+        session.resize(20, 5, 10, 21)
+        assertEquals(listOf(Pair(20, 5)), resizes)
+    }
+
+    @Test
+    fun theSizeOfACellIsChecked() {
+        assertThrows<IllegalArgumentException> { session.resize(20, 5, 10, 0) }
+        assertThrows<IllegalArgumentException> { session.resize(20, 5, 1001, 20) }
+        assertThrows<IllegalArgumentException> { session.resize(20, 5, -1, -1) }
+        assertEquals(emptyList(), resizes)
+    }
+
+    @Test
     fun echoOfLongInputWrappingDoesNotResetTheIme() {
         session.edit { it.commitText("echo abcdefghijklmnopqrstuvwxyz") }
         feed("echo abcdefghijklmnopqrstuvwxyz")

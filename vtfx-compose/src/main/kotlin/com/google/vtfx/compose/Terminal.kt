@@ -363,7 +363,14 @@ internal fun Terminal(
                     val columns = (size.width / metrics.width).toInt().coerceIn(1, max)
                     val rows = (size.height / metrics.height).toInt().coerceIn(1, max)
                     gridRows = rows
-                    display.resize(columns, rows)
+                    // The size of a cell in pixels, for images and the host's queries
+                    // (docs/decisions/0038).
+                    display.resize(
+                        columns,
+                        rows,
+                        metrics.width.roundToInt().coerceIn(1, MAX_CELL_PIXELS),
+                        metrics.height.roundToInt().coerceIn(1, MAX_CELL_PIXELS),
+                    )
                 }
                 .onGloballyPositioned { gridOrigin = it.positionInRoot() }
                 .terminalGestures(
@@ -554,6 +561,9 @@ private fun hyperlinkText(snapshot: TerminalSnapshot, cell: Cell, link: Hyperlin
 
 private const val CURSOR_BLINK_MILLIS = 500L
 private const val LOG_TAG = "vtfx"
+
+/** The largest size of a cell in pixels that `TerminalSession.resize` takes. */
+private const val MAX_CELL_PIXELS = 1000
 
 /** The size that the terminal takes when the constraints leave it free, as xterm's default. */
 private const val DEFAULT_COLUMNS = 80
