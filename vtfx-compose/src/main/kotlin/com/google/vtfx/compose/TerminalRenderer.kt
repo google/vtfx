@@ -216,6 +216,12 @@ internal class TerminalRenderer(
     private val underlineCenter =
         metrics.baseline + paints.regular.underlinePosition + lineThickness / 2
 
+    /** The bitmaps of the images drawn, and the rectangles and paint to draw them with. */
+    private val images = ImageBitmaps()
+    private val imageSource = android.graphics.Rect()
+    private val imageTarget = android.graphics.RectF()
+    private val imagePaint = Paint(Paint.FILTER_BITMAP_FLAG)
+
     fun DrawScope.draw(
         snapshot: TerminalSnapshot,
         /**
@@ -234,6 +240,9 @@ internal class TerminalRenderer(
         val defaultForeground = if (reverse) colors.background else colors.foreground
         val defaultBackground = if (reverse) colors.foreground else colors.background
         drawRect(defaultBackground)
+        images.startFrame()
+        // Images with a negative z-index go under the text (docs/decisions/0038).
+        drawImages(snapshot, underText = true)
         val nativeCanvas = drawContext.canvas.nativeCanvas
         if (nativeCanvas.isHardwareAccelerated) {
             lineCache.startFrame(snapshot.columns, reverse)
@@ -260,6 +269,8 @@ internal class TerminalRenderer(
                 drawDecorations(line, row, defaultForeground, defaultBackground)
             }
         }
+        drawImages(snapshot, underText = false)
+        images.endFrame()
         // Over the cached lines, since a match depends on the rows that autowrap joins to a line.
         drawLinkUnderlines(links, snapshot, defaultForeground, defaultBackground)
         selection?.let { drawSelection(it, snapshot) }
@@ -302,6 +313,44 @@ internal class TerminalRenderer(
                 defaultBackground,
             )
         }
+    }
+
+    /**
+     * Draws the images of [snapshot] with a negative z-index if [underText], else the others, cut
+     * at the edges of the grid. Images under the text are drawn under the backgrounds of cells as
+     * well, which kitty does only below a z-index of -1073741824: the lines are recorded with their
+     * backgrounds.
+     */
+    private fun DrawScope.drawImages(snapshot: TerminalSnapshot, underText: Boolean) {
+        val placements = snapshot.imagePlacements
+        if (placements.isEmpty()) return
+        val canvas = drawContext.canvas.nativeCanvas
+        canvas.save()
+        canvas.clipRect(0f, 0f, snapshot.columns * metrics.width, snapshot.rows * metrics.height)
+        for (placement in placements) {
+            if ((placement.z < 0) != underText) continue
+            imageSource.set(
+                placement.sourceX,
+                placement.sourceY,
+                placement.sourceX + placement.sourceWidth,
+                placement.sourceY + placement.sourceHeight,
+            )
+            val left = (placement.column + placement.left) * metrics.width
+            val top = (placement.row + placement.top) * metrics.height
+            imageTarget.set(
+                left,
+                top,
+                left + placement.width * metrics.width,
+                top + placement.height * metrics.height,
+            )
+            canvas.drawBitmap(
+                images.bitmapOf(placement.image),
+                imageSource,
+                imageTarget,
+                imagePaint,
+            )
+        }
+        canvas.restore()
     }
 
     private fun DrawScope.drawLinkUnderlines(

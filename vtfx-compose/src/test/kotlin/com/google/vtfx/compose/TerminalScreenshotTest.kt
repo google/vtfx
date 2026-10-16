@@ -230,4 +230,46 @@ class TerminalScreenshotTest {
         show(output = "\u001b[?5hreverse video \u001b[7minverse\u001b[0m\r\n")
         composeRule.onRoot().captureRoboImage()
     }
+
+    /**
+     * Images of the kitty graphics protocol (docs/decisions/0038): scaled to cells; natural size;
+     * cut from a source rectangle with an offset in its cell; under the text with a negative
+     * z-index; and translucent over the text. Each image is 4 by 4 pixels in four colors: red,
+     * green, blue, and translucent white.
+     */
+    @Test
+    fun images() {
+        val pixels = ByteArray(4 * 4 * 4)
+        for (y in 0 until 4) {
+            for (x in 0 until 4) {
+                val rgba =
+                    when {
+                        y < 2 && x < 2 -> intArrayOf(255, 0, 0, 255)
+                        y < 2 -> intArrayOf(0, 160, 0, 255)
+                        x < 2 -> intArrayOf(0, 0, 255, 255)
+                        else -> intArrayOf(255, 255, 255, 128)
+                    }
+                for (c in 0 until 4) pixels[(y * 4 + x) * 4 + c] = rgba[c].toByte()
+            }
+        }
+        val data = java.util.Base64.getEncoder().encodeToString(pixels)
+        fun image(keys: String) = "\u001b_Ga=T,f=32,s=4,v=4,q=2,$keys;$data\u001b\\"
+        show(
+            output =
+                image("c=6,r=3") +
+                    " scaled\r\n\r\n\r\n" +
+                    image("") +
+                    " natural " +
+                    image("x=2,y=2,X=4,Y=6,c=2,r=1") +
+                    " cut\r\n" +
+                    "text \u001b[1mover\u001b[0m an image " +
+                    "\u001b[s\u001b[7;6H" +
+                    image("c=4,r=1,z=-1,C=1") +
+                    "\u001b[u\r\n" +
+                    "under a translucent one" +
+                    "\u001b[8;1H" +
+                    image("x=2,c=16,r=1,C=1")
+        )
+        composeRule.onRoot().captureRoboImage()
+    }
 }
