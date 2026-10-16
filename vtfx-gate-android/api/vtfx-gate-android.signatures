@@ -1,0 +1,11 @@
+public final class com.google.vtfx.gate.android.AndroidClipboard : com.google.vtfx.gate.ClipboardAccess {
+    public constructor(context: android.content.Context)
+    public open fun read(): kotlin.String?
+    public open fun write(text: kotlin.String): kotlin.Unit
+}
+
+public final class com.google.vtfx.gate.android.AndroidUrlOpener : com.google.vtfx.gate.UrlOpener {
+    public constructor(context: android.content.Context)
+    public open fun open(url: kotlin.String): kotlin.Unit
+}
+

@@ -26,6 +26,7 @@ roborazzi = "1.76.0"
 androidx-test-runner = "1.7.0"
 espresso = "3.7.0"
 ktfmt = "0.64"
+asm = "9.9"
 
 [libraries]
 android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
@@ -34,6 +35,8 @@ compose-compiler-gradle-plugin = { module = "org.jetbrains.kotlin:compose-compil
 roborazzi-gradle-plugin = { module = "io.github.takahirom.roborazzi:roborazzi-gradle-plugin", version.ref = "roborazzi" }
 dokka-gradle-plugin = { module = "org.jetbrains.dokka:dokka-gradle-plugin", version.ref = "dokka" }
 ktfmt = { module = "com.facebook:ktfmt", version.ref = "ktfmt" }
+kotlin-metadata-jvm = { module = "org.jetbrains.kotlin:kotlin-metadata-jvm", version.ref = "kotlin" }
+asm = { module = "org.ow2.asm:asm", version.ref = "asm" }
 
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
 activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity-compose" }

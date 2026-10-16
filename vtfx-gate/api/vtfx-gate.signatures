@@ -1,0 +1,26 @@
+public interface com.google.vtfx.gate.ClipboardAccess {
+    public abstract fun read(): kotlin.String?
+    public abstract fun write(text: kotlin.String): kotlin.Unit
+}
+
+public final class com.google.vtfx.gate.GatePolicy {
+    public constructor(allowClipboardWrite: kotlin.Boolean = ..., maxClipboardWriteLength: kotlin.Int = ..., allowClipboardRead: kotlin.Boolean = ..., urlSchemes: kotlin.collections.Set<kotlin.String> = ...)
+    public final val allowClipboardRead: kotlin.Boolean
+    public final val allowClipboardWrite: kotlin.Boolean
+    public final val maxClipboardWriteLength: kotlin.Int
+    public final val urlSchemes: kotlin.collections.Set<kotlin.String>
+}
+
+public companion object com.google.vtfx.gate.GatePolicy.Companion {
+    public final val DEFAULT_MAX_CLIPBOARD_WRITE_LENGTH: kotlin.Int
+    public final val DEFAULT_URL_SCHEMES: kotlin.collections.Set<kotlin.String>
+}
+
+public fun interface com.google.vtfx.gate.HostConnection {
+    public abstract fun write(bytes: kotlin.ByteArray): kotlin.Unit
+}
+
+public fun interface com.google.vtfx.gate.UrlOpener {
+    public abstract fun open(url: kotlin.String): kotlin.Unit
+}
+

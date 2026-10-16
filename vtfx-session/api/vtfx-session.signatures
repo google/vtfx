@@ -1,0 +1,29 @@
+public final class com.google.vtfx.session.TerminalSession {
+    public constructor(connection: com.google.vtfx.gate.HostConnection, columns: kotlin.Int = ..., rows: kotlin.Int = ..., limits: com.google.vtfx.core.TerminalLimits = ..., ambiguousWidth: com.google.vtfx.core.AmbiguousWidth = ..., policy: com.google.vtfx.gate.GatePolicy = ..., clipboard: com.google.vtfx.gate.ClipboardAccess? = ..., urlOpener: com.google.vtfx.gate.UrlOpener? = ..., listener: com.google.vtfx.session.TerminalSessionListener = ...)
+    public final fun canOpenUrl(url: kotlin.String): kotlin.Boolean
+    public final fun feed(bytes: kotlin.ByteArray, offset: kotlin.Int = ..., length: kotlin.Int = ...): kotlin.Unit
+    public final fun openUrl(url: kotlin.String): kotlin.Boolean
+    public final fun paste(text: kotlin.String): kotlin.Unit
+    public final fun pasteFromClipboard(): kotlin.Unit
+    public final fun resize(columns: kotlin.Int, rows: kotlin.Int): kotlin.Unit
+    public final fun sendKey(stroke: com.google.vtfx.core.KeyStroke): kotlin.Unit
+    public final fun sendText(text: kotlin.String): kotlin.Unit
+    public final fun snapshot(scrollOffset: kotlin.Int = ...): com.google.vtfx.core.TerminalSnapshot
+    public final val scrollbackSize: kotlin.Int
+    public final val title: kotlin.String
+    public final var directInput: kotlin.Boolean
+    public final var stickyModifiers: com.google.vtfx.core.KeyModifiers
+}
+
+public companion object com.google.vtfx.session.TerminalSession.Companion {
+    public final val DEFAULT_COLUMNS: kotlin.Int
+    public final val DEFAULT_ROWS: kotlin.Int
+}
+
+public interface com.google.vtfx.session.TerminalSessionListener {
+    public open fun onBell(): kotlin.Unit
+    public open fun onResize(columns: kotlin.Int, rows: kotlin.Int): kotlin.Unit
+    public open fun onStickyModifiersChanged(modifiers: com.google.vtfx.core.KeyModifiers): kotlin.Unit
+    public open fun onTitleChanged(title: kotlin.String): kotlin.Unit
+}
+

@@ -1,0 +1,276 @@
+public enum class com.google.vtfx.core.AmbiguousWidth : kotlin.Enum<com.google.vtfx.core.AmbiguousWidth> {
+    entry Narrow
+    entry Wide
+}
+
+public final value class com.google.vtfx.core.CellStyle {
+    public final val background: com.google.vtfx.core.TerminalColor
+    public final val foreground: com.google.vtfx.core.TerminalColor
+    public final val isBlinking: kotlin.Boolean
+    public final val isBold: kotlin.Boolean
+    public final val isFaint: kotlin.Boolean
+    public final val isInverse: kotlin.Boolean
+    public final val isInvisible: kotlin.Boolean
+    public final val isItalic: kotlin.Boolean
+    public final val isOverlined: kotlin.Boolean
+    public final val isStrikethrough: kotlin.Boolean
+    public final val underline: com.google.vtfx.core.UnderlineStyle
+    public open fun hashCode(): kotlin.Int
+    public open fun toString(): kotlin.String
+    public open operator fun equals(other: kotlin.Any?): kotlin.Boolean
+}
+
+public companion object com.google.vtfx.core.CellStyle.Companion {
+    public final val Default: com.google.vtfx.core.CellStyle
+}
+
+public object com.google.vtfx.core.CharWidth {
+    public final fun of(codePoint: kotlin.Int, ambiguousWidth: com.google.vtfx.core.AmbiguousWidth = ...): kotlin.Int
+    public final val UNICODE_VERSION: kotlin.String
+}
+
+public enum class com.google.vtfx.core.CursorShape : kotlin.Enum<com.google.vtfx.core.CursorShape> {
+    entry Block
+    entry Underline
+    entry Bar
+}
+
+public final data class com.google.vtfx.core.CursorState {
+    public constructor(column: kotlin.Int, row: kotlin.Int)
+    public final fun copy(column: kotlin.Int = ..., row: kotlin.Int = ...): com.google.vtfx.core.CursorState
+    public final operator fun component1(): kotlin.Int
+    public final operator fun component2(): kotlin.Int
+    public final val column: kotlin.Int
+    public final val row: kotlin.Int
+    public open fun hashCode(): kotlin.Int
+    public open fun toString(): kotlin.String
+    public open operator fun equals(other: kotlin.Any?): kotlin.Boolean
+}
+
+public final data class com.google.vtfx.core.Hyperlink {
+    public constructor(uri: kotlin.String, id: kotlin.String?)
+    public final fun copy(uri: kotlin.String = ..., id: kotlin.String? = ...): com.google.vtfx.core.Hyperlink
+    public final operator fun component1(): kotlin.String
+    public final operator fun component2(): kotlin.String?
+    public final val id: kotlin.String?
+    public final val uri: kotlin.String
+    public open fun hashCode(): kotlin.Int
+    public open fun toString(): kotlin.String
+    public open operator fun equals(other: kotlin.Any?): kotlin.Boolean
+}
+
+public annotation class com.google.vtfx.core.InternalVtfxApi : kotlin.Annotation {
+    public constructor()
+}
+
+public final value class com.google.vtfx.core.KeyModifiers {
+    public final fun union(other: com.google.vtfx.core.KeyModifiers): com.google.vtfx.core.KeyModifiers
+    public final val alt: kotlin.Boolean
+    public final val ctrl: kotlin.Boolean
+    public final val isEmpty: kotlin.Boolean
+    public final val meta: kotlin.Boolean
+    public final val shift: kotlin.Boolean
+    public open fun hashCode(): kotlin.Int
+    public open fun toString(): kotlin.String
+    public open operator fun equals(other: kotlin.Any?): kotlin.Boolean
+}
+
+public companion object com.google.vtfx.core.KeyModifiers.Companion {
+    public final fun of(shift: kotlin.Boolean = ..., alt: kotlin.Boolean = ..., ctrl: kotlin.Boolean = ..., meta: kotlin.Boolean = ...): com.google.vtfx.core.KeyModifiers
+    public final val None: com.google.vtfx.core.KeyModifiers
+}
+
+public sealed interface com.google.vtfx.core.KeyStroke {
+    public abstract val modifiers: com.google.vtfx.core.KeyModifiers
+}
+
+public final data class com.google.vtfx.core.KeyStroke.Character : com.google.vtfx.core.KeyStroke {
+    public constructor(codePoint: kotlin.Int, modifiers: com.google.vtfx.core.KeyModifiers = ...)
+    public final fun copy(codePoint: kotlin.Int = ..., modifiers: com.google.vtfx.core.KeyModifiers = ...): com.google.vtfx.core.KeyStroke.Character
+    public final operator fun component1(): kotlin.Int
+    public final operator fun component2(): com.google.vtfx.core.KeyModifiers
+    public final val codePoint: kotlin.Int
+    public open fun hashCode(): kotlin.Int
+    public open fun toString(): kotlin.String
+    public open operator fun equals(other: kotlin.Any?): kotlin.Boolean
+    public open val modifiers: com.google.vtfx.core.KeyModifiers
+}
+
+public final data class com.google.vtfx.core.KeyStroke.Special : com.google.vtfx.core.KeyStroke {
+    public constructor(key: com.google.vtfx.core.TerminalKey, modifiers: com.google.vtfx.core.KeyModifiers = ...)
+    public final fun copy(key: com.google.vtfx.core.TerminalKey = ..., modifiers: com.google.vtfx.core.KeyModifiers = ...): com.google.vtfx.core.KeyStroke.Special
+    public final operator fun component1(): com.google.vtfx.core.TerminalKey
+    public final operator fun component2(): com.google.vtfx.core.KeyModifiers
+    public final val key: com.google.vtfx.core.TerminalKey
+    public open fun hashCode(): kotlin.Int
+    public open fun toString(): kotlin.String
+    public open operator fun equals(other: kotlin.Any?): kotlin.Boolean
+    public open val modifiers: com.google.vtfx.core.KeyModifiers
+}
+
+public final class com.google.vtfx.core.LineSnapshot {
+    public final fun contentEquals(other: com.google.vtfx.core.LineSnapshot): kotlin.Boolean
+    public final fun contentHashCode(): kotlin.Int
+    public final fun hyperlinkAt(column: kotlin.Int): com.google.vtfx.core.Hyperlink?
+    public final fun styleAt(column: kotlin.Int): com.google.vtfx.core.CellStyle
+    public final fun text(): kotlin.String
+    public final fun textAt(column: kotlin.Int): kotlin.String?
+    public final fun underlineColorAt(column: kotlin.Int): com.google.vtfx.core.TerminalColor
+    public final fun widthAt(column: kotlin.Int): kotlin.Int
+    public final val columns: kotlin.Int
+    public final val isWrapped: kotlin.Boolean
+    public open fun toString(): kotlin.String
+}
+
+public final class com.google.vtfx.core.LinkPattern {
+    public constructor(regex: kotlin.text.Regex, urlTemplate: kotlin.String)
+    public open fun hashCode(): kotlin.Int
+    public open fun toString(): kotlin.String
+    public open operator fun equals(other: kotlin.Any?): kotlin.Boolean
+}
+
+public companion object com.google.vtfx.core.LinkPattern.Companion {
+    public final val Urls: com.google.vtfx.core.LinkPattern
+}
+
+public enum class com.google.vtfx.core.MouseEncoding : kotlin.Enum<com.google.vtfx.core.MouseEncoding> {
+    entry Default
+    entry Utf8
+    entry Sgr
+    entry Urxvt
+}
+
+public enum class com.google.vtfx.core.MouseTracking : kotlin.Enum<com.google.vtfx.core.MouseTracking> {
+    entry None
+    entry X10
+    entry Normal
+    entry ButtonEvent
+    entry AnyEvent
+}
+
+public final value class com.google.vtfx.core.TerminalColor {
+    public final val index: kotlin.Int
+    public final val isDefault: kotlin.Boolean
+    public final val isIndexed: kotlin.Boolean
+    public final val isRgb: kotlin.Boolean
+    public final val rgb: kotlin.Int
+    public open fun hashCode(): kotlin.Int
+    public open fun toString(): kotlin.String
+    public open operator fun equals(other: kotlin.Any?): kotlin.Boolean
+}
+
+public companion object com.google.vtfx.core.TerminalColor.Companion {
+    public final fun indexed(index: kotlin.Int): com.google.vtfx.core.TerminalColor
+    public final fun rgb(red: kotlin.Int, green: kotlin.Int, blue: kotlin.Int): com.google.vtfx.core.TerminalColor
+    public final val Default: com.google.vtfx.core.TerminalColor
+}
+
+public enum class com.google.vtfx.core.TerminalKey : kotlin.Enum<com.google.vtfx.core.TerminalKey> {
+    entry Escape
+    entry Tab
+    entry Enter
+    entry Backspace
+    entry Insert
+    entry Delete
+    entry Home
+    entry End
+    entry PageUp
+    entry PageDown
+    entry Up
+    entry Down
+    entry Left
+    entry Right
+    entry F1
+    entry F2
+    entry F3
+    entry F4
+    entry F5
+    entry F6
+    entry F7
+    entry F8
+    entry F9
+    entry F10
+    entry F11
+    entry F12
+    entry Keypad0
+    entry Keypad1
+    entry Keypad2
+    entry Keypad3
+    entry Keypad4
+    entry Keypad5
+    entry Keypad6
+    entry Keypad7
+    entry Keypad8
+    entry Keypad9
+    entry KeypadDecimal
+    entry KeypadPlus
+    entry KeypadMinus
+    entry KeypadMultiply
+    entry KeypadDivide
+    entry KeypadEquals
+    entry KeypadEnter
+}
+
+public final class com.google.vtfx.core.TerminalLimits {
+    public constructor(scrollbackLines: kotlin.Int = ..., maxStringLength: kotlin.Int = ...)
+    public final val maxStringLength: kotlin.Int
+    public final val scrollbackLines: kotlin.Int
+}
+
+public companion object com.google.vtfx.core.TerminalLimits.Companion {
+    public final val MAX_DIMENSION: kotlin.Int
+    public final val MAX_SCROLLBACK_LINES: kotlin.Int
+    public final val MAX_STRING_LENGTH: kotlin.Int
+}
+
+public final data class com.google.vtfx.core.TerminalModes {
+    public constructor(applicationCursorKeys: kotlin.Boolean = ..., applicationKeypad: kotlin.Boolean = ..., newLine: kotlin.Boolean = ..., cursorVisible: kotlin.Boolean = ..., cursorShape: com.google.vtfx.core.CursorShape = ..., cursorBlinking: kotlin.Boolean = ..., reverseVideo: kotlin.Boolean = ..., bracketedPaste: kotlin.Boolean = ..., focusEvents: kotlin.Boolean = ..., synchronizedOutput: kotlin.Boolean = ..., mouseTracking: com.google.vtfx.core.MouseTracking = ..., mouseEncoding: com.google.vtfx.core.MouseEncoding = ...)
+    public final fun copy(applicationCursorKeys: kotlin.Boolean = ..., applicationKeypad: kotlin.Boolean = ..., newLine: kotlin.Boolean = ..., cursorVisible: kotlin.Boolean = ..., cursorShape: com.google.vtfx.core.CursorShape = ..., cursorBlinking: kotlin.Boolean = ..., reverseVideo: kotlin.Boolean = ..., bracketedPaste: kotlin.Boolean = ..., focusEvents: kotlin.Boolean = ..., synchronizedOutput: kotlin.Boolean = ..., mouseTracking: com.google.vtfx.core.MouseTracking = ..., mouseEncoding: com.google.vtfx.core.MouseEncoding = ...): com.google.vtfx.core.TerminalModes
+    public final operator fun component1(): kotlin.Boolean
+    public final operator fun component10(): kotlin.Boolean
+    public final operator fun component11(): com.google.vtfx.core.MouseTracking
+    public final operator fun component12(): com.google.vtfx.core.MouseEncoding
+    public final operator fun component2(): kotlin.Boolean
+    public final operator fun component3(): kotlin.Boolean
+    public final operator fun component4(): kotlin.Boolean
+    public final operator fun component5(): com.google.vtfx.core.CursorShape
+    public final operator fun component6(): kotlin.Boolean
+    public final operator fun component7(): kotlin.Boolean
+    public final operator fun component8(): kotlin.Boolean
+    public final operator fun component9(): kotlin.Boolean
+    public final val applicationCursorKeys: kotlin.Boolean
+    public final val applicationKeypad: kotlin.Boolean
+    public final val bracketedPaste: kotlin.Boolean
+    public final val cursorBlinking: kotlin.Boolean
+    public final val cursorShape: com.google.vtfx.core.CursorShape
+    public final val cursorVisible: kotlin.Boolean
+    public final val focusEvents: kotlin.Boolean
+    public final val mouseEncoding: com.google.vtfx.core.MouseEncoding
+    public final val mouseTracking: com.google.vtfx.core.MouseTracking
+    public final val newLine: kotlin.Boolean
+    public final val reverseVideo: kotlin.Boolean
+    public final val synchronizedOutput: kotlin.Boolean
+    public open fun hashCode(): kotlin.Int
+    public open fun toString(): kotlin.String
+    public open operator fun equals(other: kotlin.Any?): kotlin.Boolean
+}
+
+public final class com.google.vtfx.core.TerminalSnapshot {
+    public final fun line(row: kotlin.Int): com.google.vtfx.core.LineSnapshot
+    public final val columns: kotlin.Int
+    public final val cursor: com.google.vtfx.core.CursorState
+    public final val isAlternateScreen: kotlin.Boolean
+    public final val modes: com.google.vtfx.core.TerminalModes
+    public final val rows: kotlin.Int
+    public final val scrollOffset: kotlin.Int
+}
+
+public enum class com.google.vtfx.core.UnderlineStyle : kotlin.Enum<com.google.vtfx.core.UnderlineStyle> {
+    entry None
+    entry Single
+    entry Double
+    entry Curly
+    entry Dotted
+    entry Dashed
+}
+

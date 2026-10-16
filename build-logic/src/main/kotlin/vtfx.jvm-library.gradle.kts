@@ -49,6 +49,8 @@ kotlin {
     }
 }
 
+registerKotlinSignatures("compileKotlin")
+
 dependencies {
     "testImplementation"(platform(libs.findLibrary("junit-bom").get()))
     "testImplementation"(libs.findLibrary("junit-jupiter").get())

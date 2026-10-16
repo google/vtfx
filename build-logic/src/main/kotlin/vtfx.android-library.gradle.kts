@@ -89,3 +89,5 @@ val checkAbi =
 tasks.named("check") {
     dependsOn(checkAbi)
 }
+
+registerKotlinSignatures("compileReleaseKotlin")

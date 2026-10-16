@@ -16,11 +16,13 @@
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
+import org.gradle.api.Project
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
+import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
@@ -34,6 +36,7 @@ import org.jetbrains.kotlin.buildtools.api.abi.AbiFilters
 import org.jetbrains.kotlin.buildtools.api.abi.AbiValidationToolchain
 import org.jetbrains.kotlin.buildtools.api.abi.dumpJvmAbiToStringOperation
 import org.jetbrains.kotlin.buildtools.api.abi.operations.filters
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 /**
  * Dumps the public ABI of compiled classes, in the format of KGP's ABI validation, with the Kotlin
@@ -77,6 +80,37 @@ abstract class DumpAbiTask : DefaultTask() {
     }
 }
 
+/**
+ * Dumps the Kotlin signatures of the public API of compiled classes ([KotlinSignatures]), which the
+ * ABI dump leaves out. Fails if the public API has a `const val` (docs/decisions/0037).
+ */
+@CacheableTask
+abstract class DumpKotlinSignaturesTask : DefaultTask() {
+    /** The directories of the classes to dump. */
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val classes: ConfigurableFileCollection
+
+    /** Declarations with these annotations are not dumped. */
+    @get:Input abstract val excludedAnnotations: SetProperty<String>
+
+    @get:OutputFile abstract val dump: RegularFileProperty
+
+    @TaskAction
+    fun run() {
+        val files = classes.asFileTree.matching { include("**/*.class") }.files.sorted()
+        val result = KotlinSignatures.dump(files.map { it.readBytes() }, excludedAnnotations.get())
+        if (result.publicConstants.isNotEmpty()) {
+            throw GradleException(
+                "Public const vals are copied into apps at compile time, so later versions cannot " +
+                    "change them; make them plain vals (docs/decisions/0037): " +
+                    result.publicConstants.joinToString()
+            )
+        }
+        dump.get().asFile.writeText(result.text)
+    }
+}
+
 /** Fails if the dumped ABI differs from the reference dump, which is checked in. */
 abstract class CheckAbiTask : DefaultTask() {
     @get:InputFile @get:PathSensitive(PathSensitivity.NONE) abstract val actual: RegularFileProperty
@@ -98,4 +132,38 @@ abstract class CheckAbiTask : DefaultTask() {
             )
         }
     }
+}
+
+/**
+ * Registers the dump of the Kotlin signatures of the public API compiled by [compileTask] into
+ * `api/<module>.signatures` next to the ABI dump: `updateKotlinAbi` also writes it, and
+ * `checkKotlinAbi` and `check` compare it (docs/decisions/0016).
+ */
+fun Project.registerKotlinSignatures(compileTask: String) {
+    val dump =
+        tasks.register("dumpKotlinSignatures", DumpKotlinSignaturesTask::class.java) {
+            classes.from(
+                tasks.named(compileTask, KotlinCompile::class.java).flatMap {
+                    it.destinationDirectory
+                }
+            )
+            excludedAnnotations.add("com.google.vtfx.core.InternalVtfxApi")
+            dump.set(layout.buildDirectory.file("kotlin/signatures/${project.name}.signatures"))
+        }
+    val update =
+        tasks.register("updateKotlinSignatures", Copy::class.java) {
+            description = "Writes the Kotlin signatures of the public API to api/."
+            from(dump.flatMap { it.dump })
+            into(layout.projectDirectory.dir("api"))
+        }
+    tasks.named("updateKotlinAbi") { finalizedBy(update) }
+    val check =
+        tasks.register("checkKotlinSignatures", CheckAbiTask::class.java) {
+            description = "Checks the Kotlin signatures of the public API against api/."
+            actual.set(dump.flatMap { it.dump })
+            reference.from(layout.projectDirectory.file("api/${project.name}.signatures"))
+        }
+    // Part of the ABI check, so that checkKotlinAbi alone reports these changes too.
+    tasks.named("checkKotlinAbi") { dependsOn(check) }
+    tasks.named("check") { dependsOn(check) }
 }

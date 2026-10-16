@@ -27,4 +27,15 @@ dependencies {
     implementation(libs.compose.compiler.gradle.plugin)
     implementation(libs.roborazzi.gradle.plugin)
     implementation(libs.dokka.gradle.plugin)
+    // Read the Kotlin signatures of the public API from the compiled classes (AbiDump.kt).
+    implementation(libs.kotlin.metadata.jvm)
+    implementation(libs.asm)
+
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
+}
+
+tasks.test {
+    useJUnitPlatform()
 }

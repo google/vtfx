@@ -20,3 +20,9 @@ plugins {
     id("vtfx.api-reference")
     id("vtfx.ktfmt")
 }
+
+// The tests of the build logic, such as the dump of the Kotlin signatures of the public API, run
+// with the check of the build.
+tasks.named("check") {
+    dependsOn(gradle.includedBuild("build-logic").task(":test"))
+}
