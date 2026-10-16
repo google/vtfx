@@ -2,7 +2,7 @@
 
 - Status: Approved (2026-10-16, approved by a human)
 - Date: 2026-10-16
-- Related: Requirement 6.5, [0016](0016-public-api.md), [0029](0029-import-without-gradle.md), "API shape before 1.0" in [review-queue.md](../review-queue.md)
+- Related: Requirement 6.5, [0016](0016-public-api.md), [0029](0029-import-without-gradle.md), [0037](0037-api-shape-before-1.0.md)
 
 ## Background
 

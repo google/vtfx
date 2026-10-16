@@ -20,6 +20,7 @@ Section 8 of the requirements asks for the distribution method and the license t
 - The destination is Maven Central (2026-10-13, decided by a human). The group namespace `com.google.vtfx` is under `com.google`, which Google manages on the Central Portal. The permission to publish to it is requested when publishing is decided. Apps can get it without additional repositories or tokens, published versions cannot be changed, and artifacts are signed.
 - The group and package name were initially `jp.nya3.vtfx` and were changed to `org.nya3.vtfx` (2026-10-13, decided by a human), then to `com.google.vtfx` so that the project can be released as a Google open source project (2026-10-14, decided by a human).
 - Publishing configuration (`maven-publish`, POM, signing, the Central Portal) is added when a human decides to publish. Uploading to Maven Central is not part of the first publication: it is set up after the repository is published (2026-10-15, decided by a human).
+- The six artifacts are kept at one version in apps (2026-10-16, decided by a human). The artifacts call each other's `@InternalVtfxApi` declarations, which may change in any version ([0016](0016-public-api.md)), so a Gradle resolution that mixes their versions (for example `vtfx-session` raised by another dependency of the app) can fail with `NoSuchMethodError`. The publishing configuration puts dependency constraints between the artifacts into the published Gradle module metadata, so that Gradle aligns them by itself, and also publishes a BOM (`vtfx-bom`) for Maven.
 
 ### License
 
