@@ -29,8 +29,10 @@ package com.google.vtfx.core
  * Stateless, so it may be used from any thread.
  */
 public object CharWidth {
+    // A plain val rather than a const, so that apps read the version of the tables they run with
+    // (docs/decisions/0037).
     /** The Unicode version of the tables. */
-    public const val UNICODE_VERSION: String = UnicodeWidthTables.UNICODE_VERSION
+    public val UNICODE_VERSION: String = UnicodeWidthTables.UNICODE_VERSION
 
     /**
      * Returns 0 for characters that combine with the previous one, and 1 or 2 otherwise. East Asian

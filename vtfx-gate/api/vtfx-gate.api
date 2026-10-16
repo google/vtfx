@@ -5,7 +5,6 @@ public abstract interface class com/google/vtfx/gate/ClipboardAccess {
 
 public final class com/google/vtfx/gate/GatePolicy {
 	public static final field Companion Lcom/google/vtfx/gate/GatePolicy$Companion;
-	public static final field DEFAULT_MAX_CLIPBOARD_WRITE_LENGTH I
 	public fun <init> ()V
 	public fun <init> (ZIZLjava/util/Set;)V
 	public synthetic fun <init> (ZIZLjava/util/Set;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -16,6 +15,7 @@ public final class com/google/vtfx/gate/GatePolicy {
 }
 
 public final class com/google/vtfx/gate/GatePolicy$Companion {
+	public final fun getDEFAULT_MAX_CLIPBOARD_WRITE_LENGTH ()I
 	public final fun getDEFAULT_URL_SCHEMES ()Ljava/util/Set;
 }
 

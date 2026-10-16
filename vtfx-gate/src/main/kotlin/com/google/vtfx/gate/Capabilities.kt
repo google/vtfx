@@ -76,11 +76,14 @@ public class GatePolicy(
     }
 
     public companion object {
+        // Plain vals rather than consts, so that apps read the values of the vtfx they run with,
+        // not
+        // those they were compiled with (docs/decisions/0037).
         /**
          * The default of [maxClipboardWriteLength][GatePolicy.maxClipboardWriteLength]: 64 Ki
          * UTF-16 code units.
          */
-        public const val DEFAULT_MAX_CLIPBOARD_WRITE_LENGTH: Int = 64 * 1024
+        public val DEFAULT_MAX_CLIPBOARD_WRITE_LENGTH: Int = 64 * 1024
 
         /** The default of [urlSchemes][GatePolicy.urlSchemes]: http and https. */
         public val DEFAULT_URL_SCHEMES: Set<String> = setOf("http", "https")

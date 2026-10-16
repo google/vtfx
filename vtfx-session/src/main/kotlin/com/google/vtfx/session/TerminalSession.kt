@@ -686,11 +686,14 @@ public class TerminalSession(
     }
 
     public companion object {
+        // Plain vals rather than consts, so that apps read the values of the vtfx they run with,
+        // not
+        // those they were compiled with (docs/decisions/0037).
         /** The number of columns until the session is resized. */
-        public const val DEFAULT_COLUMNS: Int = 80
+        public val DEFAULT_COLUMNS: Int = 80
 
         /** The number of rows until the session is resized. */
-        public const val DEFAULT_ROWS: Int = 24
+        public val DEFAULT_ROWS: Int = 24
 
         /** DELs per call of `HostWriter.sendDeletes`, well below its limit. */
         private const val DELETES_PER_WRITE = 4096

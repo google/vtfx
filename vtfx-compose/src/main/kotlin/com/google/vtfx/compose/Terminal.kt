@@ -78,6 +78,7 @@ import com.google.vtfx.core.Hyperlink
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.LinkFinder
 import com.google.vtfx.core.LinkPattern
+import com.google.vtfx.core.TerminalLimits
 import com.google.vtfx.core.TerminalSnapshot
 import com.google.vtfx.session.TerminalSession
 import com.google.vtfx.session.TerminalSessionListener
@@ -358,8 +359,9 @@ internal fun Terminal(
                         gridRows = 0
                         return@onSizeChanged
                     }
-                    val columns = (size.width / metrics.width).toInt().coerceIn(1, MAX_DIMENSION)
-                    val rows = (size.height / metrics.height).toInt().coerceIn(1, MAX_DIMENSION)
+                    val max = TerminalLimits.MAX_DIMENSION
+                    val columns = (size.width / metrics.width).toInt().coerceIn(1, max)
+                    val rows = (size.height / metrics.height).toInt().coerceIn(1, max)
                     gridRows = rows
                     display.resize(columns, rows)
                 }
@@ -550,7 +552,6 @@ private fun hyperlinkText(snapshot: TerminalSnapshot, cell: Cell, link: Hyperlin
     }
 }
 
-private const val MAX_DIMENSION = com.google.vtfx.core.TerminalLimits.MAX_DIMENSION
 private const val CURSOR_BLINK_MILLIS = 500L
 private const val LOG_TAG = "vtfx"
 

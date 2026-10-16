@@ -1,7 +1,5 @@
 public final class com/google/vtfx/session/TerminalSession {
 	public static final field Companion Lcom/google/vtfx/session/TerminalSession$Companion;
-	public static final field DEFAULT_COLUMNS I
-	public static final field DEFAULT_ROWS I
 	public fun <init> (Lcom/google/vtfx/gate/HostConnection;IILcom/google/vtfx/core/TerminalLimits;Lcom/google/vtfx/core/AmbiguousWidth;Lcom/google/vtfx/gate/GatePolicy;Lcom/google/vtfx/gate/ClipboardAccess;Lcom/google/vtfx/gate/UrlOpener;Lcom/google/vtfx/session/TerminalSessionListener;)V
 	public synthetic fun <init> (Lcom/google/vtfx/gate/HostConnection;IILcom/google/vtfx/core/TerminalLimits;Lcom/google/vtfx/core/AmbiguousWidth;Lcom/google/vtfx/gate/GatePolicy;Lcom/google/vtfx/gate/ClipboardAccess;Lcom/google/vtfx/gate/UrlOpener;Lcom/google/vtfx/session/TerminalSessionListener;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun canOpenUrl (Ljava/lang/String;)Z
@@ -24,6 +22,8 @@ public final class com/google/vtfx/session/TerminalSession {
 }
 
 public final class com/google/vtfx/session/TerminalSession$Companion {
+	public final fun getDEFAULT_COLUMNS ()I
+	public final fun getDEFAULT_ROWS ()I
 }
 
 public abstract interface class com/google/vtfx/session/TerminalSessionListener {

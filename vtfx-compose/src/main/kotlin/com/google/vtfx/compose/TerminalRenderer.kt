@@ -822,6 +822,6 @@ internal class LineCache(private val metrics: CellMetrics, private val density: 
     }
 
     private companion object {
-        const val MAX_UNUSED_NODES = 2 * TerminalLimits.MAX_DIMENSION
+        val MAX_UNUSED_NODES = 2 * TerminalLimits.MAX_DIMENSION
     }
 }

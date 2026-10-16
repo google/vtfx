@@ -46,15 +46,18 @@ public class TerminalLimits(
     }
 
     public companion object {
+        // Plain vals rather than consts, so that apps read the values of the vtfx they run with,
+        // not
+        // those they were compiled with (docs/decisions/0037).
         /** The largest number of columns or rows. */
-        public const val MAX_DIMENSION: Int = 2048
+        public val MAX_DIMENSION: Int = 2048
 
         /** The largest [scrollbackLines][TerminalLimits.scrollbackLines]. */
-        public const val MAX_SCROLLBACK_LINES: Int = 1000000
+        public val MAX_SCROLLBACK_LINES: Int = 1000000
 
         /**
          * The largest [maxStringLength][TerminalLimits.maxStringLength]: 16 Mi UTF-16 code units.
          */
-        public const val MAX_STRING_LENGTH: Int = 16 * 1024 * 1024
+        public val MAX_STRING_LENGTH: Int = 16 * 1024 * 1024
     }
 }
