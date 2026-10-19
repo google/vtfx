@@ -49,11 +49,11 @@ internal object CanonicalWriter {
             listOf(
                 Tag.OS2 to os2(parts, glyphs),
                 Tag.CMAP to cmap(parts),
-                Tag.GLYF to glyf.toByteArray(),
+                Tag.GLYF to glyf,
                 Tag.HEAD to head(parts, glyphs),
                 Tag.HHEA to hhea(parts, glyphs),
                 Tag.HMTX to hmtx(parts, glyphs),
-                Tag.LOCA to Sink(Int.MAX_VALUE).apply { loca.forEach { u32(it) } }.toByteArray(),
+                Tag.LOCA to Sink(Int.MAX_VALUE).apply { loca.forEach { u32(it) } },
                 Tag.MAXP to maxp(numGlyphs, glyphs),
                 Tag.NAME to name(parts.macStyle),
                 Tag.POST to post(parts, widthClass),
@@ -187,7 +187,7 @@ internal object CanonicalWriter {
         }
     }
 
-    private fun os2(parts: FaceParts, glyphs: GlyphStats): ByteArray {
+    private fun os2(parts: FaceParts, glyphs: GlyphStats): Sink {
         val em = parts.unitsPerEm
         val nonZero = parts.advances.filter { it != 0 }
         val average =
@@ -201,47 +201,45 @@ internal object CanonicalWriter {
                 (if (!bold && !italic) FS_REGULAR else 0) or
                 FS_USE_TYPO_METRICS
         val codePoints = parts.charMap.codePoints
-        return Sink(Int.MAX_VALUE)
-            .apply {
-                u16(4) // version
-                u16(average.toInt())
-                u16(parts.weightClass)
-                u16(parts.widthClass)
-                u16(0) // fsType: no restrictions on embedding
-                u16(em * 65 / 100) // ySubscriptXSize
-                u16(em * 60 / 100) // ySubscriptYSize
-                u16(0) // ySubscriptXOffset
-                u16(em * 14 / 100) // ySubscriptYOffset
-                u16(em * 65 / 100) // ySuperscriptXSize
-                u16(em * 60 / 100) // ySuperscriptYSize
-                u16(0) // ySuperscriptXOffset
-                u16(em * 48 / 100) // ySuperscriptYOffset
-                u16(em * 5 / 100) // yStrikeoutSize
-                u16(em * 26 / 100) // yStrikeoutPosition
-                u16(0) // sFamilyClass
-                repeat(10) { u8(0) } // panose
-                repeat(4) { u32(0) } // ulUnicodeRange1 to 4
-                u32(VENDOR)
-                u16(fsSelection)
-                u16(minOf(codePoints.first(), 0xFFFF))
-                u16(minOf(codePoints.last(), 0xFFFF))
-                u16(parts.ascender)
-                u16(parts.descender)
-                u16(parts.lineGap)
-                u16(maxOf(glyphs.fontYMax, 0)) // usWinAscent
-                u16(maxOf(-glyphs.fontYMin, 0)) // usWinDescent
-                u32(0) // ulCodePageRange1
-                u32(0) // ulCodePageRange2
-                u16(parts.xHeight)
-                u16(parts.capHeight)
-                u16(0) // usDefaultChar
-                u16(0x20) // usBreakChar
-                u16(0) // usMaxContext
-            }
-            .toByteArray()
+        return Sink(Int.MAX_VALUE).apply {
+            u16(4) // version
+            u16(average.toInt())
+            u16(parts.weightClass)
+            u16(parts.widthClass)
+            u16(0) // fsType: no restrictions on embedding
+            u16(em * 65 / 100) // ySubscriptXSize
+            u16(em * 60 / 100) // ySubscriptYSize
+            u16(0) // ySubscriptXOffset
+            u16(em * 14 / 100) // ySubscriptYOffset
+            u16(em * 65 / 100) // ySuperscriptXSize
+            u16(em * 60 / 100) // ySuperscriptYSize
+            u16(0) // ySuperscriptXOffset
+            u16(em * 48 / 100) // ySuperscriptYOffset
+            u16(em * 5 / 100) // yStrikeoutSize
+            u16(em * 26 / 100) // yStrikeoutPosition
+            u16(0) // sFamilyClass
+            repeat(10) { u8(0) } // panose
+            repeat(4) { u32(0) } // ulUnicodeRange1 to 4
+            u32(VENDOR)
+            u16(fsSelection)
+            u16(minOf(codePoints.first(), 0xFFFF))
+            u16(minOf(codePoints.last(), 0xFFFF))
+            u16(parts.ascender)
+            u16(parts.descender)
+            u16(parts.lineGap)
+            u16(maxOf(glyphs.fontYMax, 0)) // usWinAscent
+            u16(maxOf(-glyphs.fontYMin, 0)) // usWinDescent
+            u32(0) // ulCodePageRange1
+            u32(0) // ulCodePageRange2
+            u16(parts.xHeight)
+            u16(parts.capHeight)
+            u16(0) // usDefaultChar
+            u16(0x20) // usBreakChar
+            u16(0) // usMaxContext
+        }
     }
 
-    private fun cmap(parts: FaceParts): ByteArray {
+    private fun cmap(parts: FaceParts): Sink {
         val variations = parts.variationSelectors
         val format14 = if (variations.isEmpty()) null else format14(variations)
         val format12 = format12(parts.charMap)
@@ -258,7 +256,7 @@ internal object CanonicalWriter {
             out.bytes(format14)
         }
         out.bytes(format12)
-        return out.toByteArray()
+        return out
     }
 
     private fun format12(charMap: CharMap): ByteArray {
@@ -339,7 +337,7 @@ internal object CanonicalWriter {
             .toByteArray()
     }
 
-    private fun head(parts: FaceParts, glyphs: GlyphStats): ByteArray =
+    private fun head(parts: FaceParts, glyphs: GlyphStats): Sink =
         Sink(Int.MAX_VALUE)
             .u32(0x00010000) // version
             .u32(0x00010000) // fontRevision
@@ -360,9 +358,8 @@ internal object CanonicalWriter {
             .u16(2) // fontDirectionHint
             .u16(1) // indexToLocFormat: long offsets
             .u16(0) // glyphDataFormat
-            .toByteArray()
 
-    private fun hhea(parts: FaceParts, glyphs: GlyphStats): ByteArray {
+    private fun hhea(parts: FaceParts, glyphs: GlyphStats): Sink {
         var minLeft = 0
         var minRight = 0
         var maxExtent = 0
@@ -401,19 +398,18 @@ internal object CanonicalWriter {
             .u32(0) // reserved
             .u16(0) // metricDataFormat
             .u16(parts.numGlyphs)
-            .toByteArray()
     }
 
-    private fun hmtx(parts: FaceParts, glyphs: GlyphStats): ByteArray {
+    private fun hmtx(parts: FaceParts, glyphs: GlyphStats): Sink {
         val out = Sink(Int.MAX_VALUE)
         for (glyphId in 0 until parts.numGlyphs) {
             out.u16(parts.advances[glyphId])
             out.u16(if (glyphs.nonEmpty[glyphId]) glyphs.xMin[glyphId] else 0)
         }
-        return out.toByteArray()
+        return out
     }
 
-    private fun maxp(numGlyphs: Int, glyphs: GlyphStats): ByteArray =
+    private fun maxp(numGlyphs: Int, glyphs: GlyphStats): Sink =
         Sink(Int.MAX_VALUE)
             .u32(0x00010000) // version
             .u16(numGlyphs)
@@ -430,9 +426,8 @@ internal object CanonicalWriter {
             .u16(0) // maxSizeOfInstructions
             .u16(0) // maxComponentElements
             .u16(0) // maxComponentDepth
-            .toByteArray()
 
-    private fun name(macStyle: Int): ByteArray {
+    private fun name(macStyle: Int): Sink {
         val subfamily =
             when (macStyle) {
                 FaceParts.BOLD -> "Bold"
@@ -454,10 +449,10 @@ internal object CanonicalWriter {
             offset += string.length * 2
         }
         for ((_, string) in strings) string.forEach { out.u16(it.code) }
-        return out.toByteArray()
+        return out
     }
 
-    private fun post(parts: FaceParts, widthClass: WidthClass): ByteArray =
+    private fun post(parts: FaceParts, widthClass: WidthClass): Sink =
         Sink(Int.MAX_VALUE)
             .u32(0x00030000) // version 3: no glyph names
             .u32(parts.italicAngle)
@@ -468,10 +463,12 @@ internal object CanonicalWriter {
             .u32(0)
             .u32(0)
             .u32(0) // memory use when downloaded, unknown
-            .toByteArray()
 
-    /** The font file of [tables], in this order, with the directory and the checksums. */
-    private fun assemble(tables: List<Pair<Int, ByteArray>>, limits: FontLimits): ByteArray {
+    /**
+     * The font file of [tables], in this order, with the directory and the checksums. The tables
+     * are copied once, into the file, so that a large `glyf` is held twice at most.
+     */
+    private fun assemble(tables: List<Pair<Int, Sink>>, limits: FontLimits): ByteArray {
         var size = 12L + 16L * tables.size
         for ((_, data) in tables) size += align4(data.size.toLong())
         if (size > limits.maxOutputBytes) tooLarge("sanitized font of $size bytes")
@@ -489,13 +486,13 @@ internal object CanonicalWriter {
         var offset = 12 + 16 * tables.size
         var headOffset = 0
         for ((tag, data) in tables) {
-            directory.u32(tag).u32(checksum(data)).u32(offset).u32(data.size)
             data.copyInto(out, offset)
+            directory.u32(tag).u32(checksum(out, offset, data.size)).u32(offset).u32(data.size)
             if (tag == Tag.HEAD) headOffset = offset
             offset += align4(data.size.toLong()).toInt()
         }
-        directory.toByteArray().copyInto(out, 0)
-        val adjustment = CHECKSUM_MAGIC - checksum(out)
+        directory.copyInto(out, 0)
+        val adjustment = CHECKSUM_MAGIC - checksum(out, 0, out.size)
         out[headOffset + 8] = (adjustment ushr 24).toByte()
         out[headOffset + 9] = (adjustment ushr 16).toByte()
         out[headOffset + 10] = (adjustment ushr 8).toByte()
@@ -503,14 +500,18 @@ internal object CanonicalWriter {
         return out
     }
 
-    /** The sum of the big-endian 32-bit words of [data], padded with zeros. */
-    private fun checksum(data: ByteArray): Int {
+    /**
+     * The sum of the big-endian 32-bit words of the [length] bytes of [data] from [offset], padded
+     * with zeros.
+     */
+    private fun checksum(data: ByteArray, offset: Int, length: Int): Int {
+        val end = offset + length
         var sum = 0
-        var i = 0
-        while (i < data.size) {
+        var i = offset
+        while (i < end) {
             var word = 0
             for (j in 0 until 4) {
-                word = (word shl 8) or (if (i + j < data.size) data[i + j].toInt() and 0xFF else 0)
+                word = (word shl 8) or (if (i + j < end) data[i + j].toInt() and 0xFF else 0)
             }
             sum += word
             i += 4
@@ -520,54 +521,76 @@ internal object CanonicalWriter {
 
     private fun align4(size: Long): Long = (size + 3) and 3L.inv()
 
-    /** A growing byte array of big-endian numbers, refusing to grow beyond [limit] bytes. */
+    /**
+     * Big-endian numbers written to a list of chunks, refusing more than [limit] bytes. Chunks are
+     * never copied to grow, so writing a `glyf` of tens of megabytes holds it only once.
+     */
     private class Sink(private val limit: Int) {
-        private var bytes = ByteArray(256)
+        private val full = ArrayList<ByteArray>()
+        private var chunk = ByteArray(256)
+        private var position = 0
         var size = 0
             private set
 
         private fun ensure(more: Int) {
             if (more > limit - size) tooLarge("sanitized font of more than $limit bytes")
-            if (size + more > bytes.size) {
-                val grown =
-                    maxOf(size + more, minOf(bytes.size.toLong() * 2, limit.toLong()).toInt())
-                bytes = bytes.copyOf(grown)
+        }
+
+        private fun put(value: Int) {
+            if (position == chunk.size) {
+                full += chunk
+                chunk = ByteArray(minOf(chunk.size * 2, MAX_CHUNK))
+                position = 0
             }
+            chunk[position++] = value.toByte()
+            size++
         }
 
         fun u8(value: Int) = apply {
             ensure(1)
-            bytes[size++] = value.toByte()
+            put(value)
         }
 
         fun u16(value: Int) = apply {
             ensure(2)
-            bytes[size++] = (value ushr 8).toByte()
-            bytes[size++] = value.toByte()
+            put(value ushr 8)
+            put(value)
         }
 
         fun u24(value: Int) = apply {
             ensure(3)
-            bytes[size++] = (value ushr 16).toByte()
-            bytes[size++] = (value ushr 8).toByte()
-            bytes[size++] = value.toByte()
+            put(value ushr 16)
+            put(value ushr 8)
+            put(value)
         }
 
         fun u32(value: Int) = apply {
             ensure(4)
-            bytes[size++] = (value ushr 24).toByte()
-            bytes[size++] = (value ushr 16).toByte()
-            bytes[size++] = (value ushr 8).toByte()
-            bytes[size++] = value.toByte()
+            put(value ushr 24)
+            put(value ushr 16)
+            put(value ushr 8)
+            put(value)
         }
 
         fun bytes(value: ByteArray) = apply {
             ensure(value.size)
-            value.copyInto(bytes, size)
-            size += value.size
+            for (byte in value) put(byte.toInt())
         }
 
-        fun toByteArray(): ByteArray = bytes.copyOf(size)
+        fun copyInto(destination: ByteArray, offset: Int) {
+            var at = offset
+            for (bytes in full) {
+                bytes.copyInto(destination, at)
+                at += bytes.size
+            }
+            chunk.copyInto(destination, at, 0, position)
+        }
+
+        fun toByteArray(): ByteArray = ByteArray(size).also { copyInto(it, 0) }
+
+        private companion object {
+            const val MAX_CHUNK = 1 shl 20
+        }
     }
 
     private const val FAMILY = "vtfx"
