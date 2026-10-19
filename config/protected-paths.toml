@@ -42,6 +42,7 @@ paths = [
     "scripts/check_boundaries.py",
     "scripts/report_protected_changes.py",
     "scripts/tests/test_check_boundaries.py",
+    "scripts/tests/test_report_protected_changes.py",
     "scripts/check.sh",
 ]
 

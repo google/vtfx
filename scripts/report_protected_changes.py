@@ -34,8 +34,21 @@ def git(*args):
 
 
 def commits_with_files(base, head):
-    """Returns [(commit, subject, [path, ...]), ...] for BASE..HEAD, oldest first."""
-    output = git("log", "--reverse", "--name-only", "--format=%x00%h %s", f"{base}..{head}")
+    """Returns [(commit, subject, [path, ...]), ...] for BASE..HEAD, oldest first.
+
+    A rename lists both its old and new paths, so that moving a file out of a protected path is
+    reported. A merge commit lists the paths it changes from its first parent, which include any
+    change made in the merge itself.
+    """
+    output = git(
+        "log",
+        "--reverse",
+        "--name-only",
+        "--no-renames",
+        "--diff-merges=first-parent",
+        "--format=%x00%h %s",
+        f"{base}..{head}",
+    )
     commits = []
     for chunk in output.split("\0")[1:]:
         lines = [line for line in chunk.splitlines() if line]
