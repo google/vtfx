@@ -397,6 +397,122 @@ class AttackTest {
         }
 
         @Test
+        fun cyrillicLetterInTheHostIsRejected() {
+            val gate = gate()
+
+            // U+0430 CYRILLIC SMALL LETTER A looks like the `a` of apple.com.
+            val allowed = gate.isAllowedUrl("https://\u0430pple.com/")
+
+            assertFalse(allowed)
+        }
+
+        @Test
+        fun greekLetterInTheHostIsRejected() {
+            val gate = gate()
+
+            // U+03BF GREEK SMALL LETTER OMICRON looks like the `o` of google.com.
+            val allowed = gate.isAllowedUrl("https://g\u03bfogle.com")
+
+            assertFalse(allowed)
+        }
+
+        @Test
+        fun fullwidthFullStopInTheHostIsRejected() {
+            val gate = gate()
+
+            // Browsers map U+FF0E FULLWIDTH FULL STOP to `.`, so the host is
+            // good.example.evil.example.
+            val allowed = gate.isAllowedUrl("https://good.example\uff0eevil.example")
+
+            assertFalse(allowed)
+        }
+
+        @Test
+        fun divisionSlashInTheHostIsRejected() {
+            val gate = gate()
+
+            // U+2215 DIVISION SLASH looks like `/`, but the host goes on to evil.example.
+            val allowed = gate.isAllowedUrl("https://good.example\u2215path.evil.example")
+
+            assertFalse(allowed)
+        }
+
+        @Test
+        fun fullwidthSolidusInTheHostIsRejected() {
+            val gate = gate()
+
+            // U+FF0F FULLWIDTH SOLIDUS looks like `/` but does not end the authority.
+            val allowed = gate.isAllowedUrl("https://good.example\uff0f.evil.example")
+
+            assertFalse(allowed)
+        }
+
+        @Test
+        fun nonAsciiAfterAPortIsRejected() {
+            val gate = gate()
+
+            val allowed = gate.isAllowedUrl("https://example.com:80\u0430")
+
+            assertFalse(allowed)
+        }
+
+        @Test
+        fun nonAsciiHostWithoutSlashesIsRejected() {
+            val gate = gate()
+
+            // Browsers read this as https://аpple.com.
+            val allowed = gate.isAllowedUrl("https:\u0430pple.com")
+
+            assertFalse(allowed)
+        }
+
+        @Test
+        fun nonAsciiHostIsRejectedInAnyCaseOfTheScheme() {
+            val gate = gate()
+
+            val allowed = gate.isAllowedUrl("HTTP://\u0430pple.com")
+
+            assertFalse(allowed)
+        }
+
+        @Test
+        fun punycodeHostIsAllowed() {
+            val gate = gate()
+
+            // xn--pple-43d.com is the ASCII form of аpple.com, which shows where it goes.
+            val allowed = gate.isAllowedUrl("https://xn--pple-43d.com/")
+
+            assertTrue(allowed)
+        }
+
+        @Test
+        fun nonAsciiAfterTheHostIsAllowed() {
+            val gate = gate()
+
+            val allowed = gate.isAllowedUrl("https://example.com/\u0430?q=\u0430#\u0430")
+
+            assertTrue(allowed)
+        }
+
+        @Test
+        fun nonAsciiRightAfterTheHostInTheQueryIsAllowed() {
+            val gate = gate()
+
+            val allowed = gate.isAllowedUrl("https://example.com?q=\u65e5\u672c")
+
+            assertTrue(allowed)
+        }
+
+        @Test
+        fun nonAsciiInOtherSchemesIsNotCheckedForAHost() {
+            val gate = gate(GatePolicy(urlSchemes = setOf("mailto")))
+
+            val allowed = gate.isAllowedUrl("mailto:\u0430@example.com")
+
+            assertTrue(allowed)
+        }
+
+        @Test
         fun extraSchemesCanBeAllowed() {
             assertTrue(gate(GatePolicy(urlSchemes = setOf("mailto"))).openUrl("mailto:a@b"))
         }

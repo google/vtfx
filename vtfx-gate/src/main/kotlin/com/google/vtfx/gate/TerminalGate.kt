@@ -92,9 +92,9 @@ public class TerminalGate(
     /**
      * Opens a hyperlink. Must be called only for an explicit action of the user, after the UI
      * showed them [url] (requirement 6.1: spoofed links). Returns whether it was opened: false if
-     * the scheme is not allowed, the URL is malformed, it has characters or userinfo that could
-     * make the URL shown differ from where it goes (docs/decisions/0006-gate-defaults.md), or there
-     * is no [UrlOpener].
+     * the scheme is not allowed, the URL is malformed, it has characters, userinfo, or a host that
+     * is not ASCII that could make the URL shown differ from where it goes
+     * (docs/decisions/0006-gate-defaults.md), or there is no [UrlOpener].
      */
     public fun openUrl(url: String): Boolean {
         val opener = urlOpener ?: return false
@@ -124,7 +124,7 @@ public class TerminalGate(
         }
         val lowercaseScheme = scheme.lowercase()
         if (lowercaseScheme !in policy.urlSchemes) return false
-        return lowercaseScheme !in HTTP_SCHEMES || !hasUserinfoOrBackslash(url, colon)
+        return lowercaseScheme !in HTTP_SCHEMES || !hasMisleadingAuthority(url, colon)
     }
 
     private fun isHidingCharacter(c: Char): Boolean =
@@ -153,19 +153,23 @@ public class TerminalGate(
 
     /**
      * Returns whether the authority of the http or https [url] whose scheme ends at [colon] has
-     * userinfo or a backslash. Userinfo lets the shown URL begin with another host
-     * (`https://good.example@evil.example`), and a long one can push the real host out of view.
-     * Browsers treat `\` in the authority as `/` but other parsers do not, so they disagree on the
-     * host of `https://evil.example\@good.example`. As browsers do (the WHATWG URL Standard), the
-     * authority starts after any `/` and `\` that follow the scheme, with or without `//`, and ends
-     * at the first `/`, `?`, or `#`. Refusing `\` instead of ending the authority there also
-     * refuses an `@` after it, whichever way it is parsed.
+     * userinfo, a backslash, or a character that is not ASCII. Userinfo lets the shown URL begin
+     * with another host (`https://good.example@evil.example`), and a long one can push the real
+     * host out of view. Browsers treat `\` in the authority as `/` but other parsers do not, so
+     * they disagree on the host of `https://evil.example\@good.example`. Characters that are not
+     * ASCII let the host look like another one: letters of other scripts (`https://apple.com` with
+     * U+0430 CYRILLIC SMALL LETTER A for the `a`), and characters that look like `.` or `/` but are
+     * mapped to `.` or stay in the host (U+FF0E FULLWIDTH FULL STOP, U+2215 DIVISION SLASH). A host
+     * in punycode (`xn--`) is ASCII and shows where it goes. As browsers do (the WHATWG URL
+     * Standard), the authority starts after any `/` and `\` that follow the scheme, with or without
+     * `//`, and ends at the first `/`, `?`, or `#`. Refusing `\` instead of ending the authority
+     * there also refuses an `@` after it, whichever way it is parsed.
      */
-    private fun hasUserinfoOrBackslash(url: String, colon: Int): Boolean {
+    private fun hasMisleadingAuthority(url: String, colon: Int): Boolean {
         var i = colon + 1
         while (i < url.length && (url[i] == '/' || url[i] == '\\')) i++
         while (i < url.length && url[i] !in "/?#") {
-            if (url[i] == '@' || url[i] == '\\') return true
+            if (url[i] == '@' || url[i] == '\\' || url[i] > '\u007f') return true
             i++
         }
         return false
@@ -184,7 +188,10 @@ public class TerminalGate(
         const val MAX_URL_LENGTH = 8192
         const val MAX_SELECTION_LENGTH = 16
 
-        /** The schemes in which [isAllowedUrl] refuses userinfo. */
+        /**
+         * The schemes in which [isAllowedUrl] refuses userinfo and characters that are not ASCII in
+         * the authority.
+         */
         val HTTP_SCHEMES = setOf("http", "https")
     }
 }
