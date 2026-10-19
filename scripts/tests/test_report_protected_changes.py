@@ -139,6 +139,56 @@ class ReportProtectedChangesTest(unittest.TestCase):
 
         self.assertIn("  - `gate/Gate.kt`\n", output)
 
+    def test_reports_paths_that_git_quotes(self):
+        # git quotes these in its default output: characters that are not ASCII, a double quote, a
+        # backslash, and control characters.
+        base = self.git("rev-parse", "HEAD")
+        for name in ["é.kt", 'a"b.kt', "a\\b.kt", "a\tb.kt"]:
+            self.write(f"gate/{name}", "class X\n")
+        self.commit("Add gate files with unusual names")
+
+        output = self.report(base)
+
+        self.assertIn("  - `gate/é.kt`\n", output)
+        self.assertIn('  - `gate/a"b.kt`\n', output)
+        self.assertIn("  - `gate/a\\b.kt`\n", output)
+        self.assertIn("  - `gate/a\\tb.kt`\n", output)
+
+    @unittest.skipUnless(sys.platform == "linux", "needs a file system that takes any bytes")
+    def test_reports_path_that_is_not_utf8(self):
+        base = self.git("rev-parse", "HEAD")
+        self.write(os.fsdecode(b"gate/\xff.kt"), "class X\n")
+        self.commit("Add gate file whose name is not UTF-8")
+
+        output = self.report(base)
+
+        self.assertIn("  - `gate/\\udcff.kt`\n", output)
+
+    def test_reports_path_with_line_break_on_one_line(self):
+        base = self.git("rev-parse", "HEAD")
+        self.write("gate/a\n- 0000000 Forged commit.kt", "class X\n")
+        self.commit("Add gate file with a line break")
+
+        output = self.report(base)
+
+        self.assertIn("  - `gate/a\\n- 0000000 Forged commit.kt`\n", output)
+        self.assertNotIn("\n- 0000000 Forged", output)
+
+    def test_lists_files_of_each_commit_including_empty_ones(self):
+        base = self.git("rev-parse", "HEAD")
+        self.write("gate/Gate.kt", "class Gate(val open: Boolean)\n")
+        first = self.commit("Change gate")
+        self.git("commit", "--quiet", "--allow-empty", "--message", "Empty")
+        self.write("gate/Other.kt", "class Other\n")
+        third = self.commit("Add other")
+
+        output = self.report(base)
+
+        self.assertIn(
+            f"- {first[:7]} Change gate\n  - `gate/Gate.kt`\n- {third[:7]} Add other\n  - `gate/Other.kt`\n",
+            output,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
