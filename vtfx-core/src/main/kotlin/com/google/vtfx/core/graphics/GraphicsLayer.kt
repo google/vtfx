@@ -46,6 +46,13 @@ internal class GraphicsLayer(
     val placementCount: Int
         get() = placements.size
 
+    /** The number of live virtual placements, for Unicode placeholders. */
+    private var virtualCount = 0
+
+    /** Whether any image has a virtual placement, without which no placeholder shows an image. */
+    val hasVirtualPlacements: Boolean
+        get() = virtualCount > 0
+
     fun images(): Collection<StoredImage> = images.values
 
     fun imageById(id: Long): StoredImage? = imagesById[id]
@@ -95,8 +102,10 @@ internal class GraphicsLayer(
             val list = if (placement.virtual) image.virtualPlacements else image.placements
             list.firstOrNull { it.id == placement.id }?.let { remove(it) }
         }
-        if (placement.virtual) image.virtualPlacements += placement
-        else {
+        if (placement.virtual) {
+            image.virtualPlacements += placement
+            virtualCount++
+        } else {
             image.placements += placement
             checkNotNull(line).anchor(placement, column)
         }
@@ -117,7 +126,7 @@ internal class GraphicsLayer(
     }
 
     private fun forget(placement: Placement) {
-        placements.remove(placement)
+        if (placements.remove(placement) && placement.virtual) virtualCount--
         placement.forget()
     }
 

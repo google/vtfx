@@ -18,6 +18,7 @@
 
 package com.google.vtfx.core
 
+import com.google.vtfx.core.graphics.PlaceholderDiacritics
 import com.google.vtfx.core.graphics.PngTestEncoder
 import java.util.Base64
 import java.util.zip.Deflater
@@ -670,6 +671,137 @@ class GraphicsTest {
             terminal.write(apc("a=p,i=1,c=4294967295,r=4294967295,C=1,q=2"))
             val placement = terminal.snapshot().imagePlacements.single()
             assertEquals(TerminalLimits.MAX_DIMENSION.toFloat(), placement.width)
+        }
+    }
+
+    @Nested
+    inner class UnicodePlaceholders {
+        /** A placeholder with the diacritics of [values]: row, column, and high byte. */
+        private fun cell(vararg values: Int): String = buildString {
+            appendCodePoint(0x10EEEE)
+            for (value in values) appendCodePoint(PlaceholderDiacritics.CODE_POINTS[value])
+        }
+
+        /** Transmits image [id] with a virtual placement of [keys]. */
+        private fun Terminal.virtual(id: Long = 42, keys: String = "c=2,r=2") =
+            write(apc("a=T,i=$id,U=1,f=24,s=2,v=2,q=2,$keys", ByteArray(12)))
+
+        private fun Terminal.tiles(): List<String> =
+            snapshot().imageTiles.map {
+                "${it.row},${it.column}: ${it.imageRow},${it.imageColumn} of ${it.columns}x${it.rows}"
+            }
+
+        @Test
+        fun placeholdersAreOneCellWideAndNotText() {
+            // U+10EEEE is East Asian Ambiguous, as private use characters are.
+            val terminal = Terminal(10, 2, ambiguousWidth = AmbiguousWidth.Wide)
+            terminal.write("\u001b[38;5;42m" + cell(0, 0) + cell(0, 1) + "x")
+            val line = terminal.snapshot().line(0)
+            assertEquals(listOf(1, 1, 1), (0..2).map { line.widthAt(it) })
+            assertEquals(listOf(null, null, "x"), (0..2).map { line.textAt(it) })
+            assertEquals("  x", line.text().trimEnd())
+            assertEquals(CursorState(3, 0), terminal.cursor)
+        }
+
+        @Test
+        fun cellsShowTheirPartOfTheVirtualPlacement() {
+            val terminal = terminal()
+            terminal.virtual()
+            terminal.write(
+                "\u001b[38;5;42m" + cell(0, 0) + cell(0, 1) + "\r\n" + cell(1, 0) + cell(1, 1)
+            )
+            assertEquals(
+                listOf("0,0: 0,0 of 2x2", "0,1: 0,1 of 2x2", "1,0: 1,0 of 2x2", "1,1: 1,1 of 2x2"),
+                terminal.tiles(),
+            )
+            assertEquals(emptyList(), terminal.snapshot().imagePlacements)
+        }
+
+        @Test
+        fun missingDiacriticsComeFromTheCellToTheLeft() {
+            val terminal = terminal()
+            terminal.virtual(keys = "c=3,r=2")
+            // Only the row on the first cell of each row, as the protocol's example; then a cell
+            // with a row and a column, and one with nothing after a cell of another color.
+            terminal.write(
+                "\u001b[38;5;42m" +
+                    cell(0) +
+                    cell() +
+                    cell() +
+                    "\r\n" +
+                    cell(1) +
+                    cell() +
+                    "\u001b[38;5;7m" +
+                    cell() +
+                    "\u001b[38;5;42m" +
+                    cell()
+            )
+            assertEquals(
+                listOf(
+                    "0,0: 0,0 of 3x2",
+                    "0,1: 0,1 of 3x2",
+                    "0,2: 0,2 of 3x2",
+                    "1,0: 1,0 of 3x2",
+                    "1,1: 1,1 of 3x2",
+                    // Image 7 has no virtual placement; then nothing to the left to follow.
+                    "1,3: 0,0 of 3x2",
+                ),
+                terminal.tiles(),
+            )
+        }
+
+        @Test
+        fun theThirdDiacriticAndDirectColorsGiveLargerIds() {
+            val terminal = terminal()
+            terminal.virtual(id = 42 + (2L shl 24), keys = "c=1,r=1")
+            terminal.virtual(id = 0x010203, keys = "c=1,r=1")
+            terminal.write("\u001b[38;5;42m" + cell(0, 0, 2) + "\u001b[38;2;1;2;3m" + cell(0, 0))
+            assertEquals(listOf("0,0: 0,0 of 1x1", "0,1: 0,0 of 1x1"), terminal.tiles())
+            val images = terminal.snapshot().imageTiles.map { it.image }
+            assertEquals(
+                listOf(42 + (2L shl 24), 0x010203L).map {
+                    terminal.graphicsLayer.imageById(it)!!.image
+                },
+                images,
+            )
+        }
+
+        @Test
+        fun theUnderlineColorChoosesThePlacementWithoutAnUnderline() {
+            val terminal = terminal()
+            terminal.write(apc("a=t,i=42,f=24,s=2,v=2,q=2", ByteArray(12)))
+            terminal.write(apc("a=p,i=42,U=1,p=1,c=1,r=1,q=2"))
+            terminal.write(apc("a=p,i=42,U=1,p=2,c=2,r=2,q=2"))
+            terminal.write(apc("a=p,i=42,U=1,p=3,c=3,r=3,q=2"))
+            terminal.write("\u001b[38;5;42;58;5;2m" + cell(0, 0) + "\u001b[59m" + cell(0, 0))
+            // Without a placement id, the newest virtual placement.
+            assertEquals(listOf("0,0: 0,0 of 2x2", "0,1: 0,0 of 3x3"), terminal.tiles())
+            // The color does not make the cell underlined.
+            assertEquals(UnderlineStyle.None, terminal.snapshot().line(0).styleAt(0).underline)
+        }
+
+        @Test
+        fun placeholdersShowNothingWithoutAnImage() {
+            val terminal = terminal()
+            terminal.virtual(keys = "c=2,r=2")
+            terminal.write(
+                // The default color names no image; image 43 does not exist; row 2 is outside.
+                cell(0, 0) + "\u001b[38;5;43m" + cell(0, 0) + "\u001b[38;5;42m" + cell(2, 0)
+            )
+            assertEquals(emptyList(), terminal.tiles())
+        }
+
+        @Test
+        fun deletingTheImageOrItsVirtualPlacementRemovesTheTiles() {
+            val terminal = terminal()
+            terminal.virtual()
+            terminal.write("\u001b[38;5;42m" + cell(0, 0))
+            assertEquals(1, terminal.tiles().size)
+            // Deleting what is on the screen does not touch virtual placements.
+            terminal.write(apc("a=d,d=a"))
+            assertEquals(1, terminal.tiles().size)
+            terminal.write(apc("a=d,d=i,i=42"))
+            assertEquals(emptyList(), terminal.tiles())
         }
     }
 

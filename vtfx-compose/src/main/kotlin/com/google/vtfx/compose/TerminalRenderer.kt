@@ -270,6 +270,7 @@ internal class TerminalRenderer(
             }
         }
         drawImages(snapshot, underText = false)
+        drawImageTiles(snapshot)
         images.endFrame()
         // Over the cached lines, since a match depends on the rows that autowrap joins to a line.
         drawLinkUnderlines(links, snapshot, defaultForeground, defaultBackground)
@@ -351,6 +352,42 @@ internal class TerminalRenderer(
             )
         }
         canvas.restore()
+    }
+
+    /**
+     * Draws the placeholders of images: each cell shows its part of the image fitted into the box
+     * of its virtual placement, keeping the aspect ratio, and centered (docs/decisions/0038). The
+     * whole image is drawn at the box's place, cut to the cell.
+     */
+    private fun DrawScope.drawImageTiles(snapshot: TerminalSnapshot) {
+        val tiles = snapshot.imageTiles
+        if (tiles.isEmpty()) return
+        val canvas = drawContext.canvas.nativeCanvas
+        val cellWidth = metrics.width
+        val cellHeight = metrics.height
+        for (tile in tiles) {
+            val image = tile.image
+            val boxWidth = tile.columns * cellWidth
+            val boxHeight = tile.rows * cellHeight
+            val scale = minOf(boxWidth / image.width, boxHeight / image.height)
+            val width = image.width * scale
+            val height = image.height * scale
+            // The top left of the box, so that the cell is at its row and column of the box.
+            val boxLeft = (tile.column - tile.imageColumn) * cellWidth
+            val boxTop = (tile.row - tile.imageRow) * cellHeight
+            val left = boxLeft + (boxWidth - width) / 2
+            val top = boxTop + (boxHeight - height) / 2
+            canvas.save()
+            canvas.clipRect(
+                tile.column * cellWidth,
+                tile.row * cellHeight,
+                (tile.column + 1) * cellWidth,
+                (tile.row + 1) * cellHeight,
+            )
+            imageTarget.set(left, top, left + width, top + height)
+            canvas.drawBitmap(images.bitmapOf(image), null, imageTarget, imagePaint)
+            canvas.restore()
+        }
     }
 
     private fun DrawScope.drawLinkUnderlines(

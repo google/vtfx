@@ -1,9 +1,11 @@
 name: "Unicode Character Database"
 description:
-  "EastAsianWidth.txt, extracted/DerivedGeneralCategory.txt, and "
-  "DerivedCoreProperties.txt of the Unicode Character Database, from which "
-  "scripts/generate_unicode_tables.py generates the character width "
-  "tables of vtfx-core and the default-ignorable code points of vtfx-gate."
+  "EastAsianWidth.txt, extracted/DerivedGeneralCategory.txt, "
+  "DerivedCoreProperties.txt, extracted/DerivedCombiningClass.txt, "
+  "extracted/DerivedDecompositionType.txt, and DerivedAge.txt of the "
+  "Unicode Character Database, from which scripts/generate_unicode_tables.py "
+  "generates the character width tables and the diacritics of placeholders "
+  "of vtfx-core and the default-ignorable code points of vtfx-gate."
 
 third_party {
   url {

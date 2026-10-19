@@ -18,6 +18,8 @@
 
 package com.google.vtfx.core
 
+import com.google.vtfx.core.graphics.Placeholders
+
 // Not a data class, so that properties can be added without changing what apps compiled earlier
 // call (docs/decisions/0037). Only vtfx makes it.
 /**
@@ -45,7 +47,7 @@ internal constructor(
  */
 public class LineSnapshot
 internal constructor(
-    private val line: Line,
+    internal val line: Line,
     /** The hyperlinks that the cells of [line] refer to. */
     private val links: Map<Int, Hyperlink> = emptyMap(),
 ) {
@@ -58,10 +60,12 @@ internal constructor(
         get() = line.isWrapped
 
     /**
-     * Returns the text displayed in the cell at [column]: a grapheme, or null if the cell is blank
-     * or the right half of a wide character.
+     * Returns the text displayed in the cell at [column]: a grapheme, or null if the cell is blank,
+     * the right half of a wide character, or a placeholder of an image (U+10EEEE of the kitty
+     * graphics protocol), which shows a part of an image rather than text.
      */
-    public fun textAt(column: Int): String? = line.textAt(column)
+    public fun textAt(column: Int): String? =
+        if (line.codes[column] == Placeholders.CODE_POINT) null else line.textAt(column)
 
     /**
      * Returns the number of cells the character at [column] occupies: 0 for a wide tail, else 1
@@ -97,13 +101,13 @@ internal constructor(
     }
 
     /**
-     * Returns the text of the line, with a space for each blank cell and nothing for wide tails.
-     * Trailing blanks are kept.
+     * Returns the text of the line, with a space for each blank cell and placeholder of an image,
+     * and nothing for wide tails. Trailing blanks are kept.
      */
     public fun text(): String = buildString {
         for (column in 0 until line.columns) {
             if (line.codes[column] == Line.WIDE_TAIL) continue
-            append(line.textAt(column) ?: " ")
+            append(textAt(column) ?: " ")
         }
     }
 
@@ -174,6 +178,13 @@ internal constructor(
      * @suppress
      */
     @InternalVtfxApi public val imagePlacements: List<ImagePlacement> = emptyList(),
+    /**
+     * The cells of the snapshot that are placeholders of images (U+10EEEE of the kitty graphics
+     * protocol) of an image that exists, with the part of the image each shows, row by row.
+     *
+     * @suppress
+     */
+    @InternalVtfxApi public val imageTiles: List<ImageTile> = emptyList(),
 ) {
     /**
      * Returns the line at [row], 0-based from the top.

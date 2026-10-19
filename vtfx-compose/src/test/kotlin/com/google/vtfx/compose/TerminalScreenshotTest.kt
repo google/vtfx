@@ -272,4 +272,51 @@ class TerminalScreenshotTest {
         )
         composeRule.onRoot().captureRoboImage()
     }
+
+    /**
+     * Unicode placeholders (docs/decisions/0038): a 4 by 4 image of four colors in a virtual
+     * placement of 8 by 2 cells, fitted and centered, written as placeholders with only the row
+     * diacritic on the first cell of each row, as the protocol's example does; then the same
+     * placeholders with their columns in reverse, which show the image in vertical strips swapped.
+     */
+    @Test
+    fun imagePlaceholders() {
+        val pixels = ByteArray(4 * 4 * 4)
+        for (y in 0 until 4) {
+            for (x in 0 until 4) {
+                val rgb =
+                    when {
+                        y < 2 && x < 2 -> intArrayOf(255, 0, 0)
+                        y < 2 -> intArrayOf(0, 160, 0)
+                        x < 2 -> intArrayOf(0, 0, 255)
+                        else -> intArrayOf(255, 255, 255)
+                    }
+                for (c in 0 until 3) pixels[(y * 4 + x) * 4 + c] = rgb[c].toByte()
+                pixels[(y * 4 + x) * 4 + 3] = 255.toByte()
+            }
+        }
+        val data = java.util.Base64.getEncoder().encodeToString(pixels)
+        // The diacritics for 0 to 7, from the protocol's list.
+        val diacritics = intArrayOf(0x0305, 0x030D, 0x030E, 0x0310, 0x0312, 0x033D, 0x033E, 0x033F)
+        fun cell(vararg values: Int) = buildString {
+            appendCodePoint(0x10EEEE)
+            for (value in values) appendCodePoint(diacritics[value])
+        }
+        show(
+            output =
+                "\u001b_Ga=T,i=42,U=1,c=8,r=2,f=32,s=4,v=4,q=2;$data\u001b\\" +
+                    "\u001b[38;5;42m" +
+                    cell(0) +
+                    cell().repeat(7) +
+                    "\u001b[39m fitted\r\n\u001b[38;5;42m" +
+                    cell(1) +
+                    cell().repeat(7) +
+                    "\u001b[39m\r\n\u001b[38;5;42m" +
+                    (7 downTo 0).joinToString("") { cell(0, it) } +
+                    "\u001b[39m reversed\r\n\u001b[38;5;42m" +
+                    (7 downTo 0).joinToString("") { cell(1, it) } +
+                    "\u001b[39m"
+        )
+        composeRule.onRoot().captureRoboImage()
+    }
 }

@@ -36,17 +36,23 @@ public object CharWidth {
 
     /**
      * Returns 0 for characters that combine with the previous one, and 1 or 2 otherwise. East Asian
-     * Ambiguous characters are [ambiguousWidth] wide.
+     * Ambiguous characters are [ambiguousWidth] wide, except U+10EEEE, the placeholder of an image
+     * of the kitty graphics protocol, which takes one cell as in kitty.
      */
     public fun of(codePoint: Int, ambiguousWidth: AmbiguousWidth = AmbiguousWidth.Narrow): Int {
         val kind = if (codePoint < BMP_SIZE) BMP[codePoint].toInt() else kindOf(codePoint)
         return when (kind) {
             ZERO -> 0
             WIDE -> 2
-            AMBIGUOUS -> if (ambiguousWidth == AmbiguousWidth.Wide) 2 else 1
+            AMBIGUOUS ->
+                if (ambiguousWidth == AmbiguousWidth.Wide && codePoint != IMAGE_PLACEHOLDER) 2
+                else 1
             else -> 1
         }
     }
+
+    /** The placeholder of an image of the kitty graphics protocol (docs/decisions/0038). */
+    private const val IMAGE_PLACEHOLDER = 0x10EEEE
 
     private const val NARROW = 0
     private const val ZERO = 1

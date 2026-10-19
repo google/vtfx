@@ -86,3 +86,32 @@ internal constructor(
     override fun toString(): String =
         "ImagePlacement(${image.key} at $row,$column ${width}x$height z=$z)"
 }
+
+/**
+ * A cell of a [TerminalSnapshot] that is a placeholder of an image (U+10EEEE of the kitty graphics
+ * protocol). The image is fitted into a box of [columns] by [rows] cells, keeping its aspect ratio,
+ * and centered; the cell shows the part of the box at [imageRow] and [imageColumn].
+ *
+ * @suppress
+ */
+@InternalVtfxApi
+public class ImageTile
+internal constructor(
+    /** The image. */
+    public val image: TerminalImage,
+    /** The row of the cell, from the top of the snapshot. */
+    public val row: Int,
+    /** The column of the cell. */
+    public val column: Int,
+    /** The width of the box, in cells. */
+    public val columns: Int,
+    /** The height of the box, in cells. */
+    public val rows: Int,
+    /** The row of the box that the cell shows, from 0. */
+    public val imageRow: Int,
+    /** The column of the box that the cell shows, from 0. */
+    public val imageColumn: Int,
+) {
+    override fun toString(): String =
+        "ImageTile(${image.key} at $row,$column: $imageRow,$imageColumn of ${columns}x$rows)"
+}

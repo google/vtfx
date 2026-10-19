@@ -17,6 +17,7 @@
 package com.google.vtfx.core
 
 import com.google.vtfx.core.graphics.GraphicsLayer
+import com.google.vtfx.core.graphics.Placeholders
 import com.google.vtfx.core.graphics.Placement
 import com.google.vtfx.core.parser.Parser
 
@@ -204,7 +205,39 @@ public class Terminal(
             isCutAbove = isCutAbove,
             isCutBelow = isCutBelow,
             imagePlacements = imagePlacements(offset),
+            imageTiles = imageTiles(lines),
         )
+    }
+
+    /**
+     * The placeholders of images among [lines] (docs/decisions/0038), each with the virtual
+     * placement that its underline color names, or the newest one of its image.
+     */
+    private fun imageTiles(lines: List<LineSnapshot>): List<ImageTile> {
+        val layer = emulator.layer
+        if (!layer.hasVirtualPlacements) return emptyList()
+        val tiles = ArrayList<ImageTile>()
+        for ((row, line) in lines.withIndex()) {
+            for (cell in Placeholders.resolve(line.line)) {
+                val image = layer.imageById(cell.imageId) ?: continue
+                val placement =
+                    image.virtualPlacements.lastOrNull {
+                        cell.placementId == 0L || it.id == cell.placementId
+                    } ?: continue
+                if (cell.row >= placement.rows || cell.imageColumn >= placement.columns) continue
+                tiles +=
+                    ImageTile(
+                        image.image,
+                        row,
+                        cell.column,
+                        placement.columns,
+                        placement.rows,
+                        cell.row,
+                        cell.imageColumn,
+                    )
+            }
+        }
+        return tiles
     }
 
     /**

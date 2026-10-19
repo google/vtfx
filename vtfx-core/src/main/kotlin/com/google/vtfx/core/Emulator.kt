@@ -20,6 +20,7 @@ package com.google.vtfx.core
 
 import com.google.vtfx.core.graphics.Graphics
 import com.google.vtfx.core.graphics.GraphicsLayer
+import com.google.vtfx.core.graphics.Placeholders
 import com.google.vtfx.core.parser.Params
 import com.google.vtfx.core.parser.ParserHandler
 import java.util.Base64
@@ -207,7 +208,12 @@ internal class Emulator(
         }
         val line = screen[cursorY]
         if (insertMode) line.insertBlanks(cursorX, width, style.erased())
-        line.set(cursorX, codePoint, width, style, activeLink, rendition.cellUnderlineColor)
+        // A placeholder of an image keeps the underline color without an underline: it is the
+        // placement id (docs/decisions/0038).
+        val underlineColor =
+            if (codePoint == Placeholders.CODE_POINT) rendition.underlineColor.bits
+            else rendition.cellUnderlineColor
+        line.set(cursorX, codePoint, width, style, activeLink, underlineColor)
         val next = cursorX + width
         if (next >= columns) {
             cursorX = columns - 1

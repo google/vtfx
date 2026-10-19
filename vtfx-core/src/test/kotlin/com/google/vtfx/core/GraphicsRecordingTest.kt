@@ -61,6 +61,23 @@ class GraphicsRecordingTest {
     }
 
     @Test
+    fun kittenIcatWithUnicodePlaceholders() {
+        // A virtual placement of 7 by 3 cells, and placeholders with every diacritic, in the
+        // foreground color of a 24-bit id and the third diacritic for its high byte.
+        val terminal = replay("icat-placeholder")
+        val snapshot = terminal.snapshot()
+        assertEquals(emptyList(), snapshot.placed())
+        val tiles = snapshot.imageTiles
+        assertEquals(21, tiles.size)
+        assertEquals(setOf(64 to 48), tiles.map { it.image.width to it.image.height }.toSet())
+        for (tile in tiles) {
+            assertEquals(Pair(7, 3), Pair(tile.columns, tile.rows))
+            assertEquals(Pair(tile.row, tile.column), Pair(tile.imageRow, tile.imageColumn))
+        }
+        assertEquals("", snapshot.line(0).text().trim(), "placeholders are not text")
+    }
+
+    @Test
     fun fastfetch() {
         // fastfetch scales the logo to 16 columns (160 by 120 pixels), then moves up 5 rows from
         // the last row of the image to write the color blocks beside it, on its first two rows.
