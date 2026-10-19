@@ -140,7 +140,7 @@ public class TerminalSession(
     // The width of ambiguous characters follows docs/decisions/0011.
     ambiguousWidth: AmbiguousWidth = AmbiguousWidth.Narrow,
     policy: GatePolicy = GatePolicy(),
-    private val clipboard: ClipboardAccess? = null,
+    clipboard: ClipboardAccess? = null,
     urlOpener: UrlOpener? = null,
     private val listener: TerminalSessionListener = object : TerminalSessionListener {},
 ) {
@@ -174,6 +174,8 @@ public class TerminalSession(
      */
     @InternalVtfxApi @Volatile public var reportedColors: ReportedColors? = null
 
+    // The session hands the clipboard and the URL opener to the gate without calling them, also for
+    // the user's copy and paste (docs/decisions/0042).
     private val gate =
         TerminalGate(
             writer,
@@ -612,7 +614,7 @@ public class TerminalSession(
 
     /** Pastes the text on the clipboard, if there is a clipboard and it has text. */
     public fun pasteFromClipboard() {
-        val text = clipboard?.read() ?: return
+        val text = gate.readClipboardForPaste() ?: return
         paste(text)
     }
 
@@ -633,12 +635,7 @@ public class TerminalSession(
      *
      * @suppress
      */
-    @InternalVtfxApi
-    public fun copyToClipboard(text: String): Boolean {
-        val clipboard = clipboard ?: return false
-        clipboard.write(text)
-        return true
-    }
+    @InternalVtfxApi public fun copyToClipboard(text: String): Boolean = gate.copyToClipboard(text)
 
     /**
      * Sends a mouse report, if the host asked for this kind of event.

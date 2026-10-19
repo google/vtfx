@@ -69,6 +69,26 @@ public class TerminalGate(
         writer.write("\u001b]52;$selection;$data\u001b\\".toByteArray(Charsets.US_ASCII))
     }
 
+    // The user's copy and paste go through the gate, like opening URLs, so that only vtfx-gate
+    // calls the clipboard (docs/decisions/0042).
+    /**
+     * Copies [text] to the clipboard. Must be called only for an explicit action of the user, such
+     * as copying a selection: the OSC 52 policy does not apply to it. Returns whether there is a
+     * clipboard to copy it to.
+     */
+    public fun copyToClipboard(text: String): Boolean {
+        val clipboard = clipboard ?: return false
+        clipboard.write(text)
+        return true
+    }
+
+    /**
+     * Returns the text on the clipboard, for the user's paste, or null if there is no clipboard or
+     * it has no text. Must be called only for an explicit action of the user: the OSC 52 policy
+     * does not apply to it. Send the text with [HostWriter.sendPaste], which sanitizes it.
+     */
+    public fun readClipboardForPaste(): String? = clipboard?.read()
+
     /**
      * Opens a hyperlink. Must be called only for an explicit action of the user, after the UI
      * showed them [url] (requirement 6.1: spoofed links). Returns whether it was opened: false if

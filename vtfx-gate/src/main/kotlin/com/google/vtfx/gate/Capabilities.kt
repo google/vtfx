@@ -17,8 +17,9 @@
 package com.google.vtfx.gate
 
 /**
- * Access to the system clipboard, implemented by vtfx-gate-android. vtfx calls it only after the
- * [GatePolicy] allowed the request.
+ * Access to the system clipboard, implemented by vtfx-gate-android. Only vtfx-gate calls it: for
+ * OSC 52 after the [GatePolicy] allowed the request, and for the user's copy and paste, to which
+ * the policy does not apply.
  *
  * Called on any thread, without a lock of vtfx held: with `TerminalSession`, the main thread for
  * copy and paste, and the thread that feeds the host's output for OSC 52. Implementations must be
