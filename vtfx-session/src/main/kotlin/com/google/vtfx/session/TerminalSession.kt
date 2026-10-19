@@ -40,6 +40,8 @@ import com.google.vtfx.gate.UrlOpener
 import com.google.vtfx.input.HostInput
 import com.google.vtfx.input.ImeEditor
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 /**
  * Receives notifications from a [TerminalSession]. Each is called on the thread that caused it,
@@ -154,9 +156,11 @@ public class TerminalSession(
     /**
      * Serializes the user's input with its sending, so that the host receives it in the order that
      * the IME editing model made it, also from several threads. Taken before [lock], and held while
-     * the app's code behind [writer] runs.
+     * the app's code behind [writer] runs. Fair, so that the threads waiting for it while the
+     * connection takes bytes take it in the order they came: an intrinsic lock may hand it to the
+     * latest first.
      */
-    private val inputLock = Any()
+    private val inputLock = ReentrantLock(/* fair= */ true)
 
     /**
      * The width of East Asian Ambiguous characters, which a display needs to draw the composing
@@ -378,7 +382,7 @@ public class TerminalSession(
         val result: T
         val restart: Boolean
         val sent: Boolean
-        synchronized(inputLock) {
+        inputLock.withLock {
             val sends: List<() -> Unit>
             synchronized(lock) {
                 check(outbox.isEmpty() && !restartRequested && !resetRequested)

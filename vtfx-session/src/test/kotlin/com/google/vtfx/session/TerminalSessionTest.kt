@@ -639,6 +639,39 @@ class TerminalSessionTest {
     }
 
     @Test
+    fun inputWaitingForTheConnectionReachesTheHostInTheOrderItCame() {
+        // While one thread is inside the connection, the threads with input wait for it; one that
+        // comes later must not overtake those already waiting.
+        val writing = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val received = StringBuffer()
+        val typing =
+            TerminalSession({
+                if (String(it, Charsets.UTF_8) == "a") {
+                    writing.countDown()
+                    release.await(TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
+                }
+                received.append(String(it, Charsets.UTF_8))
+            })
+        val first = Thread { typing.sendText("a") }
+        first.start()
+        writing.await(TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
+        val second = Thread { typing.sendText("b") }
+        second.start()
+        awaitBlocked(second)
+        val third = Thread { typing.sendText("c") }
+        third.start()
+        awaitBlocked(third)
+
+        release.countDown()
+        first.join()
+        second.join()
+        third.join()
+
+        assertEquals("abc", received.toString())
+    }
+
+    @Test
     fun theListenerIsCalledWithoutTheSessionLocks() {
         // A listener that waits for another thread using the session would otherwise deadlock.
         lateinit var listening: TerminalSession
@@ -873,6 +906,15 @@ class TerminalSessionTest {
         thread.start()
         thread.join()
         return failure
+    }
+
+    /** Waits until [thread] waits to take a lock. */
+    private fun awaitBlocked(thread: Thread) {
+        val deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(TIMEOUT_MILLIS)
+        while (thread.state != Thread.State.BLOCKED && thread.state != Thread.State.WAITING) {
+            check(System.nanoTime() < deadline) { "$thread did not wait for a lock" }
+            Thread.yield()
+        }
     }
 
     /** Counts the restarts of the IME input that the session asks its displays for. */
