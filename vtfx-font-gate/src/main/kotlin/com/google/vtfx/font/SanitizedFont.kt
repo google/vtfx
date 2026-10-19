@@ -25,9 +25,9 @@ import java.security.MessageDigest
  * A font that vtfx wrote itself from a font file, in a simple form that it has checked, and that
  * the platform's font code can therefore read without trusting the original file.
  *
- * The only ways to get one are [sanitize], which reads a font file, and [fromCanonical], which
- * loads the bytes of one saved with [toByteArray]; both end in the same check, so holding a
- * `SanitizedFont` proves that its bytes passed it.
+ * The only way to get one is [fromCanonical], which checks the bytes; `FontFile.sanitize` of
+ * vtfx-font, which reads a font file, ends in it too. So holding a `SanitizedFont` proves that its
+ * bytes passed the check.
  *
  * What the original font had beyond outlines, metrics, and characters is gone: hinting, ligatures
  * and other OpenType layout, color and bitmap glyphs, variations (a variable font becomes its
@@ -67,38 +67,17 @@ private constructor(
 
     public companion object {
         /**
-         * Reads face [faceIndex] of a font file, TrueType or OpenType with TrueType or CFF outlines
-         * (CFF2 is not read), or a collection of them, and writes it again in the canonical form.
-         *
-         * This takes time, up to seconds for a CJK font on a phone: call it on a background thread,
-         * once when the user imports a font, and save the result with [toByteArray]. It stops with
-         * [InterruptedException] if the thread is interrupted.
-         *
-         * @param faceIndex The index of the face, from [FontFile.inspect]; 0 for a single font.
-         * @throws InvalidFontException if the font is larger than [limits] allow, is malformed, or
-         *   uses formats that vtfx does not read.
-         * @throws IllegalArgumentException if the file has no face [faceIndex].
-         */
-        @Throws(InvalidFontException::class, InterruptedException::class)
-        public fun sanitize(input: ByteArray, faceIndex: Int, limits: FontLimits): SanitizedFont {
-            if (input.size > limits.maxInputBytes) tooLarge("font of ${input.size} bytes")
-            val faces = Sfnt.faceOffsets(input)
-            require(faceIndex in faces.indices) { "face $faceIndex of ${faces.size}" }
-            val parts = FaceParts.read(Sfnt.face(input, faces[faceIndex]), limits)
-            return verified(CanonicalWriter.write(parts, limits), limits)
-        }
-
-        /**
-         * Loads a font saved with [toByteArray]. The bytes are checked again, as they were when the
-         * font was sanitized, so they may come from storage that the app does not fully trust. This
-         * takes one pass over the bytes, much less time than [sanitize].
+         * Checks bytes in the canonical form and makes a font of them: the bytes that
+         * `FontFile.sanitize` of vtfx-font wrote, or those of a font saved with [toByteArray]. The
+         * bytes are checked every time, so they may come from storage that the app does not fully
+         * trust. This takes one pass over the bytes, much less time than sanitizing a font file.
          *
          * @throws InvalidFontException if the bytes are not a sanitized font, or are larger than
          *   [FontLimits.maxOutputBytes].
          */
         @Throws(InvalidFontException::class)
         public fun fromCanonical(canonical: ByteArray, limits: FontLimits): SanitizedFont =
-            // Copied first, so that the app cannot change the bytes after they are checked.
+            // Copied first, so that the caller cannot change the bytes after they are checked.
             verified(canonical.copyOf(), limits)
 
         /** A font of [bytes], which no one else holds, if they pass [CanonicalVerifier]. */

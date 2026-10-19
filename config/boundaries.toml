@@ -27,7 +27,14 @@
 allowed_dependencies = []
 
 [modules.vtfx-font]
+allowed_dependencies = ["vtfx-font-gate"]
+
+[modules.vtfx-font-gate]
 allowed_dependencies = []
+
+# vtfx-core only for the InternalVtfxApi annotation (compileOnly).
+[modules.vtfx-font-gate-android]
+allowed_dependencies = ["vtfx-font-gate", "vtfx-core"]
 
 [modules.vtfx-input]
 allowed_dependencies = ["vtfx-core"]
@@ -42,7 +49,7 @@ allowed_dependencies = ["vtfx-gate"]
 allowed_dependencies = ["vtfx-core", "vtfx-input", "vtfx-gate"]
 
 [modules.vtfx-compose]
-allowed_dependencies = ["vtfx-core", "vtfx-input", "vtfx-gate", "vtfx-gate-android", "vtfx-session", "vtfx-font"]
+allowed_dependencies = ["vtfx-core", "vtfx-input", "vtfx-gate", "vtfx-gate-android", "vtfx-session", "vtfx-font", "vtfx-font-gate", "vtfx-font-gate-android"]
 
 # The sample app uses only the public API, as a third-party app would.
 [modules.vtfx-sample]
@@ -87,10 +94,10 @@ allowed_paths = []
 [[restricted_apis]]
 pattern = '\bTypeface\.(createFromFile|createFromAsset|Builder|CustomFallbackBuilder)\b|\bandroid\.graphics\.fonts\b|\b(AndroidFont|GoogleFont|LoadedFontFamily|ParcelFileDescriptor)\b|\bFont\(\s*(File\b|file\s*=|path\s*=|fileDescriptor)|\bFontFamily\(\s*[Tt]ypeface\b'
 reason = "vtfx draws only fonts of the system, of the app's package, or sanitized by vtfx-font (TerminalFont); font files from elsewhere may be malicious (docs/decisions/0020, 0040)."
-# SanitizedTypefaces.kt makes typefaces from SanitizedFont alone, whose bytes passed the verifier of
-# vtfx-font (docs/decisions/0040); it is under security review. The test stands for a font loading
-# asynchronously.
+# vtfx-font-gate-android makes typefaces from SanitizedFont alone, whose bytes passed the verifier of
+# vtfx-font-gate (docs/decisions/0040, 0041); the module is under security review. The test stands
+# for a font loading asynchronously.
 allowed_paths = [
-    "vtfx-compose/src/main/kotlin/com/google/vtfx/compose/SanitizedTypefaces.kt",
+    "vtfx-font-gate-android/**",
     "vtfx-compose/src/test/kotlin/com/google/vtfx/compose/TerminalStyleTest.kt",
 ]

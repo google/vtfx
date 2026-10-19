@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
+@file:OptIn(InternalVtfxApi::class)
+
 package com.google.vtfx.compose
 
+import android.graphics.Typeface
 import androidx.annotation.FontRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -25,7 +28,11 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import com.google.vtfx.core.InternalVtfxApi
+import com.google.vtfx.font.FontFile
+import com.google.vtfx.font.SanitizedFamily
 import com.google.vtfx.font.SanitizedFont
+import com.google.vtfx.font.gate.android.SanitizedTypefaces
 
 // The fonts that are accepted are chosen in docs/decisions/0020 and 0040.
 /**
@@ -83,9 +90,9 @@ public sealed interface TerminalFont {
     }
 
     /**
-     * Fonts that users chose, sanitized with [SanitizedFont.sanitize]: a list of families, each
-     * tried in turn for a character, such as a Latin font and then a CJK font. Characters in none
-     * of them are drawn with the system's monospace font and its fallbacks.
+     * Fonts that users chose, sanitized with [FontFile.sanitize]: a list of families, each tried in
+     * turn for a character, such as a Latin font and then a CJK font. Characters in none of them
+     * are drawn with the system's monospace font and its fallbacks.
      *
      * The cell size is measured from the first family.
      *
@@ -111,33 +118,6 @@ public sealed interface TerminalFont {
             public val MAX_FAMILIES: Int = 64
         }
     }
-}
-
-/**
- * A family of sanitized fonts for [TerminalFont.Sanitized]. Without [bold], [italic], or
- * [boldItalic], the system synthesizes them from the closest font of the family.
- */
-@Immutable
-public class SanitizedFamily(
-    /** The regular font. */
-    public val regular: SanitizedFont,
-    /** The bold font, or null to synthesize it. */
-    public val bold: SanitizedFont? = null,
-    /** The italic font, or null to synthesize it. */
-    public val italic: SanitizedFont? = null,
-    /** The bold italic font, or null to synthesize it. */
-    public val boldItalic: SanitizedFont? = null,
-) {
-    override fun equals(other: Any?): Boolean =
-        other is SanitizedFamily &&
-            other.regular == regular &&
-            other.bold == bold &&
-            other.italic == italic &&
-            other.boldItalic == boldItalic
-
-    override fun hashCode(): Int = listOf(regular, bold, italic, boldItalic).hashCode()
-
-    override fun toString(): String = "SanitizedFamily($regular, $bold, $italic, $boldItalic)"
 }
 
 /**
@@ -170,6 +150,23 @@ internal fun resolveTextTypefaces(
         is TerminalFont.Resources -> TextTypefaces.resolve(font.toFontFamily(), resolver)
         is TerminalFont.Sanitized -> sanitizedTypefaces(font)
     }
+
+/**
+ * The typefaces of [font]. Only vtfx-font-gate-android makes the regular one from the fonts' data;
+ * the others are derived from it.
+ */
+internal fun sanitizedTypefaces(font: TerminalFont.Sanitized): TextTypefaces {
+    val regular = SanitizedTypefaces.regular(font.families)
+    val normal = FontWeight.Normal.weight
+    val bold = FontWeight.Bold.weight
+    // Each family gives its closest font for these styles, and the system synthesizes the rest.
+    return TextTypefaces(
+        regular = regular,
+        bold = Typeface.create(regular, bold, false),
+        italic = Typeface.create(regular, normal, true),
+        boldItalic = Typeface.create(regular, bold, true),
+    )
+}
 
 /** The Compose font family of this font. */
 internal fun TerminalFont.System.toFontFamily(): FontFamily =

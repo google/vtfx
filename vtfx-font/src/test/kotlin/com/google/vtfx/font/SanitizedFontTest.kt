@@ -27,7 +27,7 @@ class SanitizedFontTest {
     private val limits = FontLimits()
 
     private fun sanitize(font: TestTrueTypeFont, limits: FontLimits = this.limits) =
-        SanitizedFont.sanitize(font.build(), 0, limits)
+        FontFile.sanitize(font.build(), 0, limits)
 
     private fun contents(font: TestTrueTypeFont) = SanitizedContents(sanitize(font))
 
@@ -369,8 +369,7 @@ class SanitizedFontTest {
         val tables = TestTrueTypeFont().tables() - "glyf" - "loca" + ("CFF2" to ByteArray(0))
         val font = TestSfnt.font(tables, Tag.OPEN_TYPE_CFF)
 
-        val kind =
-            assertFailsWith<InvalidFontException> { SanitizedFont.sanitize(font, 0, limits) }.kind
+        val kind = assertFailsWith<InvalidFontException> { FontFile.sanitize(font, 0, limits) }.kind
 
         assertEquals(Kind.Unsupported, kind)
     }
@@ -381,7 +380,7 @@ class SanitizedFontTest {
         val second = TestTrueTypeFont(characters = mapOf(0x42 to 1)).tables()
         val collection = TestSfnt.collection(listOf(first, second))
 
-        val font = SanitizedFont.sanitize(collection, 1, limits)
+        val font = FontFile.sanitize(collection, 1, limits)
 
         assertEquals(mapOf(0x42 to 1), SanitizedContents(font).characters)
     }
@@ -390,7 +389,7 @@ class SanitizedFontTest {
     fun faceIndexBeyondTheFacesIsAnError() {
         val font = TestTrueTypeFont().build()
 
-        assertFailsWith<IllegalArgumentException> { SanitizedFont.sanitize(font, 1, limits) }
+        assertFailsWith<IllegalArgumentException> { FontFile.sanitize(font, 1, limits) }
     }
 
     @Test
@@ -398,14 +397,14 @@ class SanitizedFontTest {
         val font = TestTrueTypeFont().build()
         Thread.currentThread().interrupt()
 
-        assertFailsWith<InterruptedException> { SanitizedFont.sanitize(font, 0, limits) }
+        assertFailsWith<InterruptedException> { FontFile.sanitize(font, 0, limits) }
     }
 
     @Test
     fun sanitizingASanitizedFontGivesTheSameBytes() {
         val first = sanitize(TestTrueTypeFont(characters = mapOf(0x41 to 1, 0x42 to 1)))
 
-        val second = SanitizedFont.sanitize(first.toByteArray(), 0, limits)
+        val second = FontFile.sanitize(first.toByteArray(), 0, limits)
 
         assertContentEquals(first.toByteArray(), second.toByteArray())
     }

@@ -36,11 +36,11 @@ class FontFuzzTest {
         for (face in faces.take(MAX_FACES)) {
             val font =
                 try {
-                    SanitizedFont.sanitize(input, face.index, LIMITS)
+                    FontFile.sanitize(input, face.index, LIMITS)
                 } catch (_: InvalidFontException) {
                     continue
                 }
-            val again = SanitizedFont.sanitize(font.toByteArray(), 0, LIMITS)
+            val again = FontFile.sanitize(font.toByteArray(), 0, LIMITS)
             check(again == font) { "sanitizing face ${face.index} again changed it" }
         }
 
@@ -51,7 +51,7 @@ class FontFuzzTest {
                 return
             }
         check(loaded.toByteArray().contentEquals(input)) { "loading changed the bytes" }
-        val sanitized = SanitizedFont.sanitize(input, 0, LIMITS)
+        val sanitized = FontFile.sanitize(input, 0, LIMITS)
         check(sanitized == loaded) { "the verifier accepted a font that sanitizing changes" }
     }
 

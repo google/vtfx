@@ -167,7 +167,7 @@ class SampleViewModel(application: Application) : AndroidViewModel(application) 
                             ?: faces.firstOrNull { it.isSupported }?.index
                             ?: throw IllegalArgumentException("no face that vtfx reads")
                     val started = System.nanoTime()
-                    val font = SanitizedFont.sanitize(bytes, face, LIMITS)
+                    val font = FontFile.sanitize(bytes, face, LIMITS)
                     val millis = (System.nanoTime() - started) / 1_000_000
                     val report =
                         faces.joinToString("\n", postfix = "\n") { info ->

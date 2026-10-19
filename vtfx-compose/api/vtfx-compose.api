@@ -1,16 +1,3 @@
-public final class com/google/vtfx/compose/SanitizedFamily {
-	public static final field $stable I
-	public fun <init> (Lcom/google/vtfx/font/SanitizedFont;Lcom/google/vtfx/font/SanitizedFont;Lcom/google/vtfx/font/SanitizedFont;Lcom/google/vtfx/font/SanitizedFont;)V
-	public synthetic fun <init> (Lcom/google/vtfx/font/SanitizedFont;Lcom/google/vtfx/font/SanitizedFont;Lcom/google/vtfx/font/SanitizedFont;Lcom/google/vtfx/font/SanitizedFont;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getBold ()Lcom/google/vtfx/font/SanitizedFont;
-	public final fun getBoldItalic ()Lcom/google/vtfx/font/SanitizedFont;
-	public final fun getItalic ()Lcom/google/vtfx/font/SanitizedFont;
-	public final fun getRegular ()Lcom/google/vtfx/font/SanitizedFont;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
 public final class com/google/vtfx/compose/TerminalColors {
 	public static final field $stable I
 	public static final field Companion Lcom/google/vtfx/compose/TerminalColors$Companion;

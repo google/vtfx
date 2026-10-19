@@ -27,7 +27,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.vtfx.font.FontFile
 import com.google.vtfx.font.FontLimits
 import com.google.vtfx.font.InvalidFontException
-import com.google.vtfx.font.SanitizedFont
+import com.google.vtfx.font.SanitizedFamily
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -71,7 +71,7 @@ class SystemFontsTest {
                 val started = SystemClock.elapsedRealtime()
                 val font =
                     try {
-                        SanitizedFont.sanitize(bytes, index, limits)
+                        FontFile.sanitize(bytes, index, limits)
                     } catch (e: InvalidFontException) {
                         val message = "${file.name} face $index: ${e.kind}: ${e.message}"
                         Log.i(TAG, message)

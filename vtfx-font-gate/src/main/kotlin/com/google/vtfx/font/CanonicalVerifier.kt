@@ -23,8 +23,8 @@ internal class Verified(val widthClass: WidthClass)
  * Checks that bytes are a font in the canonical form of docs/decisions/0040, exactly: every byte of
  * the file is either checked against a fixed value, checked against a value computed from other
  * parts of the file, or a number within a checked range. Only bytes that pass reach the platform's
- * native font code, so this file is under security review; the readers and the writer, which this
- * shares no code with, are not.
+ * native font code, so this module is under security review; the readers and the writer, in
+ * vtfx-font, which this shares no code with, are not.
  *
  * Everything that it rejects is [InvalidFontException.Kind.Malformed], except a file larger than
  * [FontLimits.maxOutputBytes], which is [InvalidFontException.Kind.TooLarge]. Every read is checked
@@ -69,6 +69,12 @@ private const val MIN_COORDINATE = -16384
 private const val MAX_COORDINATE = 16383
 private const val MAX_CODE_POINT = 0x10FFFF
 private const val MAX_ITALIC_ANGLE = 60 shl 16
+
+private fun malformed(message: String): Nothing =
+    throw InvalidFontException(InvalidFontException.Kind.Malformed, message)
+
+private fun tooLarge(message: String): Nothing =
+    throw InvalidFontException(InvalidFontException.Kind.TooLarge, message)
 
 private class FontCheck(private val font: ByteArray, private val limits: FontLimits) {
     private val offsets = IntArray(TAGS.size)

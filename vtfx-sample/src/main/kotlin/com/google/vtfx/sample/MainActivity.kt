@@ -45,13 +45,13 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModelProvider
-import com.google.vtfx.compose.SanitizedFamily
 import com.google.vtfx.compose.Terminal
 import com.google.vtfx.compose.TerminalFont
 import com.google.vtfx.compose.TerminalState
 import com.google.vtfx.compose.TerminalStyle
 import com.google.vtfx.compose.rememberTerminalState
 import com.google.vtfx.core.LinkPattern
+import com.google.vtfx.font.SanitizedFamily
 import com.google.vtfx.session.TerminalSession
 
 class MainActivity : ComponentActivity() {

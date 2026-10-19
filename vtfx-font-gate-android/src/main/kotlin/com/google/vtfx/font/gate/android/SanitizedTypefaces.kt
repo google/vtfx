@@ -14,37 +14,46 @@
  * limitations under the License.
  */
 
-package com.google.vtfx.compose
+package com.google.vtfx.font.gate.android
 
 import android.graphics.Typeface
 import android.graphics.fonts.Font
 import android.graphics.fonts.FontFamily
 import android.graphics.fonts.FontStyle
+import com.google.vtfx.core.InternalVtfxApi
+import com.google.vtfx.font.SanitizedFamily
 import com.google.vtfx.font.SanitizedFont
 import java.io.IOException
 
 // This is the only file of vtfx that makes typefaces from font data (config/boundaries.toml), and
-// it is under security review (config/protected-paths.toml). It takes only SanitizedFont, whose
-// bytes passed CanonicalVerifier, so the platform's native font code reads no font file from
-// outside the app as it is (docs/decisions/0040).
+// its module is under security review (config/protected-paths.toml). It takes only SanitizedFont,
+// whose bytes passed the verifier of vtfx-font-gate, so the platform's native font code reads no
+// font file from outside the app as it is (docs/decisions/0040).
 
-/** The typefaces of [font]: its families in turn, then the system's monospace font. */
-internal fun sanitizedTypefaces(font: TerminalFont.Sanitized): TextTypefaces {
-    val families = font.families.map(::platformFamily)
-    val builder = Typeface.CustomFallbackBuilder(families.first())
-    for (family in families.drop(1)) builder.addCustomFallback(family)
-    val regular =
-        builder
+/**
+ * Makes the typefaces of sanitized fonts for vtfx-compose. An object rather than a top-level
+ * function, so that its annotation keeps it out of the dump of the public API.
+ *
+ * Thread-safe.
+ *
+ * @suppress
+ */
+@InternalVtfxApi
+public object SanitizedTypefaces {
+    /**
+     * The regular typeface of [families]: each family in turn, then the system's monospace font.
+     * The other styles are derived from it with `Typeface.create`, which reads no font data.
+     */
+    public fun regular(families: List<SanitizedFamily>): Typeface {
+        require(families.isNotEmpty()) { "no families" }
+        val platformFamilies = families.map(::platformFamily)
+        val builder = Typeface.CustomFallbackBuilder(platformFamilies.first())
+        for (family in platformFamilies.drop(1)) builder.addCustomFallback(family)
+        return builder
             .setSystemFallback("monospace")
             .setStyle(FontStyle(FontStyle.FONT_WEIGHT_NORMAL, FontStyle.FONT_SLANT_UPRIGHT))
             .build()
-    // Each family gives its closest font for these styles, and the system synthesizes the rest.
-    return TextTypefaces(
-        regular = regular,
-        bold = Typeface.create(regular, FontStyle.FONT_WEIGHT_BOLD, false),
-        italic = Typeface.create(regular, FontStyle.FONT_WEIGHT_NORMAL, true),
-        boldItalic = Typeface.create(regular, FontStyle.FONT_WEIGHT_BOLD, true),
-    )
+    }
 }
 
 private fun platformFamily(family: SanitizedFamily): FontFamily {

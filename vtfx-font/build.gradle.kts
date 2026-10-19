@@ -15,7 +15,14 @@
  */
 
 // Reads fonts that users choose and writes them again in one canonical form (docs/decisions/0040).
-// Depends on nothing, so that it could become a library of its own.
+// What reaches native code is decided by the verifier of vtfx-font-gate, so this module is not
+// under
+// security review (docs/decisions/0041).
 plugins {
     id("vtfx.fuzz")
+}
+
+dependencies {
+    // The public API returns SanitizedFont and takes FontLimits.
+    api(project(":vtfx-font-gate"))
 }

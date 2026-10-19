@@ -93,6 +93,7 @@ public sealed interface TerminalFont { ...; public class Sanitized(public val fa
 
 - `config/boundaries.toml` allows the font APIs (`android.graphics.fonts`, `Typeface.CustomFallbackBuilder`) in exactly one file of `vtfx-compose`, which takes only `SanitizedFont`. This is the one relaxation of 0020's rule, approved by a human with this design.
 - `config/protected-paths.toml` puts that file and `CanonicalVerifier` under security review.
+- Changed by [0041](0041-security-review-by-module.md): security review covers whole modules, so the verifier, `SanitizedFont`, and what they rely on are in `vtfx-font-gate`, the file that makes typefaces is `vtfx-font-gate-android`, and `sanitize` is `FontFile.sanitize`.
 
 ### Tests
 

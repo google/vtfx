@@ -49,5 +49,9 @@ include(":vtfx-compose")
 
 include(":vtfx-font")
 
+include(":vtfx-font-gate")
+
+include(":vtfx-font-gate-android")
+
 // A sample app with a pseudo host, for manual checks and the emulator end-to-end tests.
 include(":vtfx-sample")

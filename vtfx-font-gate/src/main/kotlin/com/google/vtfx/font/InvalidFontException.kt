@@ -19,9 +19,13 @@ package com.google.vtfx.font
 /**
  * Thrown when a font cannot be read or sanitized. [message] describes the problem in English, for
  * logs; [kind] tells apps what to say to users.
+ *
+ * The constructor is public because the readers of font files, in vtfx-font, throw it from outside
+ * the module that defines it; apps have no reason to construct one.
+ *
+ * @param message What is wrong with the font, in English.
  */
-public class InvalidFontException
-internal constructor(
+public class InvalidFontException(
     /** What kind of problem the font has. */
     public val kind: Kind,
     message: String,
@@ -59,15 +63,3 @@ internal constructor(
         }
     }
 }
-
-internal fun malformed(message: String): Nothing =
-    throw InvalidFontException(InvalidFontException.Kind.Malformed, message)
-
-internal fun unsupported(message: String): Nothing =
-    throw InvalidFontException(InvalidFontException.Kind.Unsupported, message)
-
-internal fun tooLarge(message: String): Nothing =
-    throw InvalidFontException(InvalidFontException.Kind.TooLarge, message)
-
-internal fun tooComplex(message: String): Nothing =
-    throw InvalidFontException(InvalidFontException.Kind.TooComplex, message)

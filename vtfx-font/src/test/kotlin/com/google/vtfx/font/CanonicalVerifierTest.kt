@@ -22,12 +22,17 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import org.junit.jupiter.api.Test
 
+/**
+ * The verifier of vtfx-font-gate, through [SanitizedFont.fromCanonical], which runs only it. The
+ * tests are here rather than in vtfx-font-gate, since the fonts that they check are written by this
+ * module.
+ */
 class CanonicalVerifierTest {
     private val limits = FontLimits()
 
     /** A canonical font with composite glyphs, variation sequences, and an empty glyph. */
     private val canonical: ByteArray =
-        SanitizedFont.sanitize(
+        FontFile.sanitize(
                 TestTrueTypeFont(
                         glyphs =
                             listOf(
@@ -53,7 +58,7 @@ class CanonicalVerifierTest {
             .toByteArray()
 
     private fun verifyFailure(font: ByteArray): Kind =
-        assertFailsWith<InvalidFontException> { CanonicalVerifier.verify(font, limits) }.kind
+        assertFailsWith<InvalidFontException> { SanitizedFont.fromCanonical(font, limits) }.kind
 
     /** The offset of table [name] in [font]. */
     private fun tableOffset(font: ByteArray, name: String): Int {
@@ -93,7 +98,7 @@ class CanonicalVerifierTest {
     fun sanitizedFontPasses() {
         assertEquals(
             WidthClass.Monospaced,
-            CanonicalVerifier.verify(canonical, limits).widthClass,
+            SanitizedFont.fromCanonical(canonical, limits).widthClass,
         )
     }
 
@@ -128,7 +133,7 @@ class CanonicalVerifierTest {
     fun fontLargerThanTheOutputLimitIsTooLarge() {
         val kind =
             assertFailsWith<InvalidFontException> {
-                    CanonicalVerifier.verify(canonical, FontLimits(maxOutputBytes = 100))
+                    SanitizedFont.fromCanonical(canonical, FontLimits(maxOutputBytes = 100))
                 }
                 .kind
 
@@ -139,7 +144,7 @@ class CanonicalVerifierTest {
     fun glyphWithMorePointsThanTheLimitIsMalformed() {
         val kind =
             assertFailsWith<InvalidFontException> {
-                    CanonicalVerifier.verify(canonical, FontLimits(maxGlyphPoints = 4))
+                    SanitizedFont.fromCanonical(canonical, FontLimits(maxGlyphPoints = 4))
                 }
                 .kind
 
@@ -200,12 +205,12 @@ class CanonicalVerifierTest {
                 val fixed = withChecksums(font)
                 if (fixed.contentEquals(canonical)) continue
                 try {
-                    CanonicalVerifier.verify(fixed, limits)
+                    SanitizedFont.fromCanonical(fixed, limits)
                 } catch (_: InvalidFontException) {
                     continue
                 }
                 accepted += at to delta
-                val again = SanitizedFont.sanitize(fixed, 0, limits).toByteArray()
+                val again = FontFile.sanitize(fixed, 0, limits).toByteArray()
                 if (!again.contentEquals(fixed)) notFixedPoints += at to delta
             }
         }
@@ -215,7 +220,7 @@ class CanonicalVerifierTest {
 
     @Test
     fun canonicalFontIsAFixedPointOfSanitizing() {
-        val again = SanitizedFont.sanitize(canonical, 0, limits).toByteArray()
+        val again = FontFile.sanitize(canonical, 0, limits).toByteArray()
 
         assertContentEquals(canonical, again)
     }

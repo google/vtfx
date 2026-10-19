@@ -69,6 +69,9 @@ See the [embedding guide](docs/usage.md) for the details, and `vtfx-sample` for 
 | `vtfx-gate-android` | **Security boundary.** Executes permitted requests with Android APIs |
 | `vtfx-session` | The terminal session. Ties together the terminal, input, and requests to the host. Usable without a UI (JVM) |
 | `vtfx-compose` | The Compose UI. Rendering, input, and accessibility |
+| `vtfx-font` | Reads fonts that users choose and writes them again in one canonical form (JVM) |
+| `vtfx-font-gate` | **Security boundary.** Checks the canonical form, which is all that reaches the platform's native font code (JVM) |
+| `vtfx-font-gate-android` | **Security boundary.** Makes typefaces from checked fonts |
 | `vtfx-sample` | A sample app |
 
 The structure, the direction of dependencies, and how the boundary is checked are described in [docs/design/architecture.md](docs/design/architecture.md). Design decisions are recorded in [docs/decisions/](docs/decisions/README.md).

@@ -28,7 +28,7 @@ class SanitizedCffFontTest {
     private val limits = FontLimits()
 
     private fun sanitize(font: TestCffFont, limits: FontLimits = this.limits) =
-        SanitizedFont.sanitize(font.build(), 0, limits)
+        FontFile.sanitize(font.build(), 0, limits)
 
     private fun contents(font: TestCffFont) = SanitizedContents(sanitize(font))
 
@@ -36,7 +36,7 @@ class SanitizedCffFontTest {
         assertFailsWith<InvalidFontException> { sanitize(font, limits) }.kind
 
     private fun failure(input: ByteArray): Kind =
-        assertFailsWith<InvalidFontException> { SanitizedFont.sanitize(input, 0, limits) }.kind
+        assertFailsWith<InvalidFontException> { FontFile.sanitize(input, 0, limits) }.kind
 
     /** A font of one glyph besides glyph 0, drawn by [charString]. */
     private fun glyph(charString: String) = TestCffFont(glyphs = listOf("endchar", charString))
@@ -452,7 +452,7 @@ class SanitizedCffFontTest {
         val first =
             sanitize(glyph("100 100 rmoveto 276 0 224 224 0 276 rrcurveto -500 0 rlineto endchar"))
 
-        val second = SanitizedFont.sanitize(first.toByteArray(), 0, limits)
+        val second = FontFile.sanitize(first.toByteArray(), 0, limits)
 
         assertContentEquals(first.toByteArray(), second.toByteArray())
     }

@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.vtfx.core.CursorShape
 import com.google.vtfx.font.FontLimits
+import com.google.vtfx.font.SanitizedFamily
 import com.google.vtfx.font.SanitizedFont
 import com.google.vtfx.session.TerminalSession
 import com.google.vtfx.session.TerminalSessionListener

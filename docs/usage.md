@@ -4,7 +4,7 @@ This shows how to embed vtfx in an Android app. How to use it without a UI from 
 
 ## 1. Dependencies
 
-Apps depend on `vtfx-compose`. `vtfx-compose` transitively exposes the other modules (`vtfx-core`, `vtfx-gate`, `vtfx-gate-android`, `vtfx-session`) for the types the public API uses and for the Android implementations. JVM programs without a UI depend on `vtfx-session` (section 8).
+Apps depend on `vtfx-compose`. `vtfx-compose` transitively exposes the other modules (`vtfx-core`, `vtfx-gate`, `vtfx-gate-android`, `vtfx-session`, `vtfx-font`, `vtfx-font-gate`) for the types the public API uses and for the Android implementations. JVM programs without a UI depend on `vtfx-session` (section 8).
 
 Declarations marked `@InternalVtfxApi` are not public API ([decisions/0016](decisions/0016-public-api.md)). Apps must not opt in.
 
@@ -100,13 +100,13 @@ DropdownMenuItem(
 TerminalStyle(font = TerminalFont.Resources(R.font.hackgen_regular, bold = R.font.hackgen_bold))
 ```
 
-Fonts are parsed by native code inside the app's process, so a malicious font file can take over the app (and the keys and connections it holds). So a font file that a user chose is never drawn as it is: `vtfx-font`, which `vtfx-compose` exposes, reads it in Kotlin and writes a new font in a simple form that it checks, and only that reaches native code ([decisions/0040](decisions/0040-sanitized-user-fonts.md)). Files, URIs, and downloaded fonts are not accepted otherwise ([decisions/0020](decisions/0020-fonts.md)).
+Fonts are parsed by native code inside the app's process, so a malicious font file can take over the app (and the keys and connections it holds). So a font file that a user chose is never drawn as it is: `vtfx-font`, which `vtfx-compose` exposes, reads it in Kotlin and writes a new font in a simple form, which `vtfx-font-gate` checks, and only that reaches native code ([decisions/0040](decisions/0040-sanitized-user-fonts.md), [decisions/0041](decisions/0041-security-review-by-module.md)). Files, URIs, and downloaded fonts are not accepted otherwise ([decisions/0020](decisions/0020-fonts.md)).
 
 ```kotlin
 // When the user imports a font, on a background thread: it can take seconds for a CJK font.
 val bytes = contentResolver.openInputStream(uri)!!.use { it.readBytes() }
 val faces = FontFile.inspect(bytes, FontLimits())  // one per face of a collection, with names
-val font = SanitizedFont.sanitize(bytes, faces.first { it.isSupported }.index, FontLimits())
+val font = FontFile.sanitize(bytes, faces.first { it.isSupported }.index, FontLimits())
 File(filesDir, "font.ttf").writeBytes(font.toByteArray())  // save the sanitized font, not the file
 
 // Later, loading a saved font checks it again but does not convert it.

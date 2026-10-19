@@ -1,0 +1,5 @@
+public final class com/google/vtfx/font/gate/android/SanitizedTypefaces {
+	public static final field INSTANCE Lcom/google/vtfx/font/gate/android/SanitizedTypefaces;
+	public final fun regular (Ljava/util/List;)Landroid/graphics/Typeface;
+}
+

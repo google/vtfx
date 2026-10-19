@@ -26,7 +26,7 @@ package com.google.vtfx.font
  */
 public class FaceInfo
 internal constructor(
-    /** The index of the face in the file, which [SanitizedFont.sanitize] takes. */
+    /** The index of the face in the file, which [FontFile.sanitize] takes. */
     public val index: Int,
     /** The family name, such as "Noto Sans Mono CJK JP", or null if the face has none. */
     public val familyName: String?,
@@ -35,7 +35,7 @@ internal constructor(
     /** The format of the outlines. */
     public val outlineFormat: OutlineFormat,
 ) {
-    /** Whether [SanitizedFont.sanitize] reads the outlines of this face. */
+    /** Whether [FontFile.sanitize] reads the outlines of this face. */
     public val isSupported: Boolean
         get() = outlineFormat == OutlineFormat.TrueType || outlineFormat == OutlineFormat.Cff
 

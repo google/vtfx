@@ -76,6 +76,9 @@ The paths listed under `security_review` in `config/protected-paths.toml` are su
 | `vtfx-gate-android` | Android | Executes permitted requests with Android APIs (subject to security review) |
 | `vtfx-session` | JVM | The terminal session. Ties together the terminal, input, and requests to the host. Usable without a UI. |
 | `vtfx-compose` | Android | The Compose UI. Rendering, input, and accessibility |
+| `vtfx-font` | JVM | Reads fonts that users choose and writes them again in one canonical form |
+| `vtfx-font-gate` | JVM | Checks the canonical form of fonts before the platform's native code reads them (subject to security review) |
+| `vtfx-font-gate-android` | Android | Makes typefaces from checked fonts (subject to security review) |
 
 - The direction of dependencies follows `config/boundaries.toml`. `scripts/check_boundaries.py` checks it.
 - When adding a new module, add it to both `settings.gradle.kts` and `config/boundaries.toml`.
