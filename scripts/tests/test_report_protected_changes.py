@@ -118,6 +118,27 @@ class ReportProtectedChangesTest(unittest.TestCase):
 
         self.assertIn("  - `gate/Gate.kt`\n", output)
 
+    def test_reports_change_under_pattern_removed_in_same_range(self):
+        base = self.git("rev-parse", "HEAD")
+        self.write("config/protected-paths.toml", CONFIG.replace('"gate/**"', '"none/**"'))
+        self.write("gate/Gate.kt", "class Gate(val open: Boolean)\n")
+        self.commit("Drop gate from config and change it")
+
+        output = self.report(base)
+
+        self.assertIn("  - `gate/Gate.kt`\n", output)
+
+    def test_reports_change_under_pattern_added_in_same_range(self):
+        self.write("config/protected-paths.toml", CONFIG.replace('"gate/**"', '"none/**"'))
+        base = self.commit("Drop gate from config")
+        self.write("config/protected-paths.toml", CONFIG)
+        self.write("gate/Gate.kt", "class Gate(val open: Boolean)\n")
+        self.commit("Add gate to config and change it")
+
+        output = self.report(base)
+
+        self.assertIn("  - `gate/Gate.kt`\n", output)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -16,6 +16,8 @@
 """Reports changes to the paths listed in config/protected-paths.toml.
 
 Prints a Markdown report of the commits in BASE..HEAD that touch each category of protected paths.
+The paths of each category are the union of those in config/protected-paths.toml at BASE and at
+HEAD, so that a range that drops a pattern and changes the code under it is still reported.
 Always exits with status 0 unless git fails: the report is for human review and later audit, not a
 gate.
 
@@ -23,7 +25,6 @@ Usage: report_protected_changes.py BASE [HEAD]
 """
 
 import fnmatch
-import pathlib
 import subprocess
 import sys
 import tomllib
@@ -57,13 +58,23 @@ def commits_with_files(base, head):
     return commits
 
 
+def read_config(base, head):
+    """Returns {category: {"description": ..., "paths": [...]}} from BASE and HEAD, HEAD first."""
+    merged = {}
+    for rev in (head, base):
+        config = tomllib.loads(git("show", f"{rev}:config/protected-paths.toml"))
+        for category, settings in config.items():
+            entry = merged.setdefault(category, {"description": settings["description"], "paths": []})
+            entry["paths"] += [path for path in settings["paths"] if path not in entry["paths"]]
+    return merged
+
+
 def main():
     if len(sys.argv) not in (2, 3):
         sys.exit(__doc__)
     base = sys.argv[1]
     head = sys.argv[2] if len(sys.argv) == 3 else "HEAD"
-    root = pathlib.Path(git("rev-parse", "--show-toplevel").strip())
-    config = tomllib.loads((root / "config" / "protected-paths.toml").read_text(encoding="utf-8"))
+    config = read_config(base, head)
     commits = commits_with_files(base, head)
 
     print(f"# Changes to protected paths in {base}..{head}")
