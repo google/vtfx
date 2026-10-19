@@ -107,6 +107,32 @@ class TerminalInputConnectionTest {
         assertEquals("日本\u007f\u007f二本\u007f", sent.toString())
     }
 
+    @Test fun editsWithoutReplaceTextAreDelegated() = assertEditsWithoutReplaceText()
+
+    /**
+     * The edits of IMEs before API 34, which correct text without `replaceText`
+     * (docs/design/ime-contract.md section 6.1). They send the same on every version.
+     */
+    private fun assertEditsWithoutReplaceText() {
+        assertTrue(connection.beginBatchEdit())
+        assertTrue(connection.setComposingText("にほ", 1))
+        assertTrue(connection.commitText("日本", 1))
+        assertFalse(connection.endBatchEdit())
+        assertEquals("日本", sent.toString())
+        connection.beginBatchEdit()
+        assertTrue(connection.setComposingRegion(0, 2))
+        assertTrue(connection.commitText("二本", 1))
+        connection.endBatchEdit()
+        connection.beginBatchEdit()
+        assertTrue(connection.setSelection(1, 2))
+        assertTrue(connection.commitText("x", 1))
+        connection.endBatchEdit()
+        assertTrue(connection.deleteSurroundingText(1, 0))
+        assertTrue(connection.deleteSurroundingTextInCodePoints(1, 0))
+        connection.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER))
+        assertEquals("日本\u007f\u007f二本\u007fx\u007f\u007f\r", sent.toString())
+    }
+
     @Test
     fun editsDeleteOnlyTheCharactersThatTheGateSent() {
         // The editor keeps out what the gate drops; this checks that both follow the same rule.

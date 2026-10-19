@@ -18,6 +18,7 @@
 
 package com.google.vtfx.compose
 
+import android.os.Build
 import android.os.Bundle
 import android.text.InputType
 import android.view.KeyEvent
@@ -32,6 +33,7 @@ import android.view.inputmethod.InputContentInfo
 import android.view.inputmethod.InputMethodManager
 import android.view.inputmethod.SurroundingText
 import android.view.inputmethod.TextAttribute
+import androidx.annotation.RequiresApi
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.input.ImeEditor
 import com.google.vtfx.session.TerminalSession
@@ -161,6 +163,8 @@ internal class TerminalInputConnection(
 
     override fun getSelectedText(flags: Int): CharSequence? = session.edit { it.selectedText }
 
+    /** Called only on API 31 and later, where `SurroundingText` exists. */
+    @RequiresApi(31)
     override fun getSurroundingText(
         beforeLength: Int,
         afterLength: Int,
@@ -168,7 +172,7 @@ internal class TerminalInputConnection(
     ): SurroundingText = session.edit { editor ->
         val before = editor.textBeforeCursor(beforeLength)
         val selected = editor.selectedText.orEmpty()
-        SurroundingText(
+        Api31.surroundingText(
             before + selected,
             before.length,
             before.length + selected.length,
@@ -292,7 +296,22 @@ internal class TerminalInputConnection(
                     EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING
             outAttrs.initialSelStart = editor.cursor
             outAttrs.initialSelEnd = editor.cursor
-            outAttrs.setInitialSurroundingText(editor.text)
+            // Before API 30, the IME asks for the input history with getTextBeforeCursor instead.
+            if (Build.VERSION.SDK_INT >= 30) outAttrs.setInitialSurroundingText(editor.text)
         }
+    }
+
+    /**
+     * Uses of API 31, kept out of [TerminalInputConnection] so that the runtime of older versions
+     * does not have to resolve them when it loads the class.
+     */
+    @RequiresApi(31)
+    private object Api31 {
+        fun surroundingText(
+            text: CharSequence,
+            selectionStart: Int,
+            selectionEnd: Int,
+            offset: Int,
+        ): SurroundingText = SurroundingText(text, selectionStart, selectionEnd, offset)
     }
 }
