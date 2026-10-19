@@ -35,6 +35,9 @@ dependencies {
     // Not used by the public API, but nearly every app on Android passes its AndroidClipboard and
     // AndroidUrlOpener to the session, so that an app depends on vtfx-compose alone.
     api(project(":vtfx-gate-android"))
+    // TerminalFont.Sanitized takes the SanitizedFonts of vtfx-font, which apps make from the fonts
+    // that users choose (docs/decisions/0040).
+    api(project(":vtfx-font"))
     // The IME editing model, which has no public API.
     implementation(project(":vtfx-input"))
 

@@ -202,11 +202,7 @@ internal fun Terminal(
     }
     val density = LocalDensity.current
     val fontFamilyResolver = LocalFontFamilyResolver.current
-    val typefaces =
-        TextTypefaces.rememberTextTypefaces(
-            remember(style.font) { style.font.toFontFamily() },
-            fontFamilyResolver,
-        )
+    val typefaces = rememberTextTypefaces(style.font, fontFamilyResolver)
     val paints = remember(style, density, typefaces) { TextPaints(style, density, typefaces) }
     val metrics = remember(paints) { CellMetrics.measure(paints) }
     val renderer =

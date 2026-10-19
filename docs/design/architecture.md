@@ -38,7 +38,7 @@ This document defines the module structure, responsibilities, direction of depen
                      ★ = subject to security review
 ```
 
-Dependencies are allowed only in the direction of the arrows. `vtfx-core` does not depend on other vtfx modules, and neither does `vtfx-font`, which is not in the figure. Besides the arrows in the figure, `vtfx-compose` also depends on `vtfx-core`, `vtfx-input`, `vtfx-gate`, and `vtfx-gate-android` to use their types.
+Dependencies are allowed only in the direction of the arrows. `vtfx-core` does not depend on other vtfx modules, and neither does `vtfx-font`, which is not in the figure. Besides the arrows in the figure, `vtfx-compose` also depends on `vtfx-core`, `vtfx-input`, `vtfx-gate`, `vtfx-gate-android`, and `vtfx-font` to use their types.
 
 | Module | Kind | Responsibility (one sentence) | Review |
 |---|---|---|---|
@@ -48,9 +48,9 @@ Dependencies are allowed only in the direction of the arrows. `vtfx-core` does n
 | `vtfx-gate-android` | Android | Performs the operations `vtfx-gate` allowed with Android APIs (clipboard, Intent). | **Needed** |
 | `vtfx-session` | JVM | Ties together the terminal, the IME editing model, and requests to the host, and provides a terminal session without a UI. | Not needed |
 | `vtfx-compose` | Android | Displays the session as a Compose UI and receives input. | Not needed |
-| `vtfx-font` | JVM | Reads fonts that users choose and writes them again in one canonical form, which is all that reaches the platform's native font code ([decisions/0040](../decisions/0040-sanitized-user-fonts.md)). | **Needed** for `CanonicalVerifier` only |
+| `vtfx-font` | JVM | Reads fonts that users choose and writes them again in one canonical form, which is all that reaches the platform's native font code ([decisions/0040](../decisions/0040-sanitized-user-fonts.md)). | **Needed** for `CanonicalVerifier` only, with `SanitizedTypefaces.kt` in `vtfx-compose`, the one file that makes typefaces from its fonts |
 
-Apps depend on `vtfx-compose`. `vtfx-compose` exposes with `api` `vtfx-core`, `vtfx-gate`, and `vtfx-session` for the types the public API uses (`TerminalSession`, `HostConnection`, `KeyStroke`, `TerminalSnapshot`, and so on), and `vtfx-gate-android` so that apps can use `AndroidClipboard` and `AndroidUrlOpener`. `vtfx-input`, which has no public API, is `implementation`. JVM programs without a UI depend on `vtfx-session`. The inside of each module is `internal`, and `public` declarations used only between modules (the terminal model's `Terminal`, the IME editing model's `ImeEditor`, `TerminalGate`, and so on) are marked `@InternalVtfxApi` and excluded from the public API ([decisions/0016](../decisions/0016-public-api.md)).
+Apps depend on `vtfx-compose`. `vtfx-compose` exposes with `api` `vtfx-core`, `vtfx-gate`, and `vtfx-session` for the types the public API uses (`TerminalSession`, `HostConnection`, `KeyStroke`, `TerminalSnapshot`, and so on), `vtfx-gate-android` so that apps can use `AndroidClipboard` and `AndroidUrlOpener`, and `vtfx-font` for the `SanitizedFont`s that `TerminalFont.Sanitized` takes. `vtfx-input`, which has no public API, is `implementation`. JVM programs without a UI depend on `vtfx-session`. The inside of each module is `internal`, and `public` declarations used only between modules (the terminal model's `Terminal`, the IME editing model's `ImeEditor`, `TerminalGate`, and so on) are marked `@InternalVtfxApi` and excluded from the public API ([decisions/0016](../decisions/0016-public-api.md)).
 
 ### 2.1 Threads
 

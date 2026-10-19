@@ -94,13 +94,31 @@ DropdownMenuItem(
 
 ### Fonts
 
-Only system fonts (`TerminalFont.System("monospace")` and so on) and fonts bundled in the app's `res/font` (`TerminalFont.Resources`) can be passed to `TerminalStyle.font`. Use a monospace font (the cell size is measured from the width of `M`).
+`TerminalStyle.font` takes system fonts (`TerminalFont.System("monospace")` and so on), fonts bundled in the app's `res/font` (`TerminalFont.Resources`), and fonts that users choose, sanitized (`TerminalFont.Sanitized`). Use a monospace font (the cell size is measured from the width of `M`).
 
 ```kotlin
 TerminalStyle(font = TerminalFont.Resources(R.font.hackgen_regular, bold = R.font.hackgen_bold))
 ```
 
-Files, URIs, and downloaded fonts are not accepted. Fonts are parsed by native code inside the app's process, so a malicious font file can take over the app (and the keys and connections it holds). Limiting fonts to those of the system and the app's package removes paths by which vtfx reads such files ([decisions/0020](decisions/0020-fonts.md)). Apps that want to let users choose a font bundle the candidates in the app.
+Fonts are parsed by native code inside the app's process, so a malicious font file can take over the app (and the keys and connections it holds). So a font file that a user chose is never drawn as it is: `vtfx-font`, which `vtfx-compose` exposes, reads it in Kotlin and writes a new font in a simple form that it checks, and only that reaches native code ([decisions/0040](decisions/0040-sanitized-user-fonts.md)). Files, URIs, and downloaded fonts are not accepted otherwise ([decisions/0020](decisions/0020-fonts.md)).
+
+```kotlin
+// When the user imports a font, on a background thread: it can take seconds for a CJK font.
+val bytes = contentResolver.openInputStream(uri)!!.use { it.readBytes() }
+val faces = FontFile.inspect(bytes, FontLimits())  // one per face of a collection, with names
+val font = SanitizedFont.sanitize(bytes, faces.first { it.isSupported }.index, FontLimits())
+File(filesDir, "font.ttf").writeBytes(font.toByteArray())  // save the sanitized font, not the file
+
+// Later, loading a saved font checks it again but does not convert it.
+val saved = SanitizedFont.fromCanonical(File(filesDir, "font.ttf").readBytes(), FontLimits())
+TerminalStyle(font = TerminalFont.Sanitized(listOf(SanitizedFamily(latin), SanitizedFamily(saved))))
+```
+
+- TrueType and OpenType fonts with TrueType or CFF outlines, and collections of them (TTC, OTC), are read; WOFF, CFF2, and bitmap fonts are not. `InvalidFontException.kind` tells why a font was rejected.
+- What a terminal does not need is dropped: hinting, ligatures and other OpenType layout, color glyphs, and the font's names. A variable font becomes its default instance. CFF outlines are converted to TrueType ones, within 1/1000 of the em. Variation sequences (such as the forms of kanji in names) are kept.
+- For CJK, choose the face of the region (for example the JP face of Noto Sans CJK), since the regional forms of the other faces come from OpenType layout, which is dropped.
+- `TerminalFont.Sanitized` takes families in order, such as a Latin font and then a CJK font; characters in none of them come from the system's monospace font. `SanitizedFont.widthClass` tells whether a font is monospaced, or monospaced with double-width CJK characters.
+- `SanitizedFont.fromCanonical` checks the bytes again, so the place where the app keeps them does not need to be trusted.
 
 ### Links
 

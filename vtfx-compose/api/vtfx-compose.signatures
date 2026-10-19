@@ -1,3 +1,14 @@
+public final class com.google.vtfx.compose.SanitizedFamily {
+    public constructor(regular: com.google.vtfx.font.SanitizedFont, bold: com.google.vtfx.font.SanitizedFont? = ..., italic: com.google.vtfx.font.SanitizedFont? = ..., boldItalic: com.google.vtfx.font.SanitizedFont? = ...)
+    public final val bold: com.google.vtfx.font.SanitizedFont?
+    public final val boldItalic: com.google.vtfx.font.SanitizedFont?
+    public final val italic: com.google.vtfx.font.SanitizedFont?
+    public final val regular: com.google.vtfx.font.SanitizedFont
+    public open fun hashCode(): kotlin.Int
+    public open fun toString(): kotlin.String
+    public open operator fun equals(other: kotlin.Any?): kotlin.Boolean
+}
+
 public final class com.google.vtfx.compose.TerminalColors {
     public constructor(foreground: androidx.compose.ui.graphics.Color, background: androidx.compose.ui.graphics.Color, cursor: androidx.compose.ui.graphics.Color, palette: kotlin.collections.List<androidx.compose.ui.graphics.Color>, selection: androidx.compose.ui.graphics.Color, cursorText: androidx.compose.ui.graphics.Color = ...)
     public final fun copy(foreground: androidx.compose.ui.graphics.Color = ..., background: androidx.compose.ui.graphics.Color = ..., cursor: androidx.compose.ui.graphics.Color = ..., palette: kotlin.collections.List<androidx.compose.ui.graphics.Color> = ..., selection: androidx.compose.ui.graphics.Color = ..., cursorText: androidx.compose.ui.graphics.Color = ...): com.google.vtfx.compose.TerminalColors
@@ -29,6 +40,18 @@ public final class com.google.vtfx.compose.TerminalFont.Resources : com.google.v
     public open fun hashCode(): kotlin.Int
     public open fun toString(): kotlin.String
     public open operator fun equals(other: kotlin.Any?): kotlin.Boolean
+}
+
+public final class com.google.vtfx.compose.TerminalFont.Sanitized : com.google.vtfx.compose.TerminalFont {
+    public constructor(families: kotlin.collections.List<com.google.vtfx.compose.SanitizedFamily>)
+    public final val families: kotlin.collections.List<com.google.vtfx.compose.SanitizedFamily>
+    public open fun hashCode(): kotlin.Int
+    public open fun toString(): kotlin.String
+    public open operator fun equals(other: kotlin.Any?): kotlin.Boolean
+}
+
+public companion object com.google.vtfx.compose.TerminalFont.Sanitized.Companion {
+    public final val MAX_FAMILIES: kotlin.Int
 }
 
 public final class com.google.vtfx.compose.TerminalFont.System : com.google.vtfx.compose.TerminalFont {

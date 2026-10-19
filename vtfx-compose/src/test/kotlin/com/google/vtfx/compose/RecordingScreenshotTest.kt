@@ -58,7 +58,8 @@ class RecordingScreenshotTest {
                             it,
                             LocalDensity.current,
                             TextTypefaces.resolve(
-                                it.font.toFontFamily(),
+                                // The default font of TerminalStyle, a system font.
+                                (it.font as TerminalFont.System).toFontFamily(),
                                 LocalFontFamilyResolver.current,
                             ),
                         )

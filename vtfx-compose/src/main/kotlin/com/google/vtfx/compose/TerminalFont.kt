@@ -17,21 +17,26 @@
 package com.google.vtfx.compose
 
 import androidx.annotation.FontRes
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.text.font.DeviceFontFamilyName
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import com.google.vtfx.font.SanitizedFont
 
-// The fonts that are accepted are chosen in docs/decisions/0020.
+// The fonts that are accepted are chosen in docs/decisions/0020 and 0040.
 /**
- * The font of a terminal: a font family of the system, or fonts bundled in the app's resources. It
- * should be monospaced: the cell size is measured from it.
+ * The font of a terminal: a font family of the system, fonts bundled in the app's resources, or
+ * fonts that users chose, sanitized. It should be monospaced: the cell size is measured from it.
  *
  * Fonts are parsed by native code in the app's process, where a malicious font file could take over
  * the app and what it holds, such as keys and connections. So only fonts that come with the system
- * or with the app's own signed package are accepted, never files, URIs, or downloaded fonts.
+ * or with the app's own signed package are accepted as they are, and a font file from anywhere else
+ * only as a [SanitizedFont], which vtfx wrote itself in a simple form that it checked. Files, URIs,
+ * and downloaded fonts are never read directly.
  */
 @Immutable
 public sealed interface TerminalFont {
@@ -76,28 +81,99 @@ public sealed interface TerminalFont {
         override fun toString(): String =
             "TerminalFont.Resources($regular, $bold, $italic, $boldItalic)"
     }
+
+    /**
+     * Fonts that users chose, sanitized with [SanitizedFont.sanitize]: a list of families, each
+     * tried in turn for a character, such as a Latin font and then a CJK font. Characters in none
+     * of them are drawn with the system's monospace font and its fallbacks.
+     *
+     * The cell size is measured from the first family.
+     *
+     * @property families The families, at least one and at most [MAX_FAMILIES].
+     */
+    public class Sanitized(public val families: List<SanitizedFamily>) : TerminalFont {
+        init {
+            require(families.size in 1..MAX_FAMILIES) {
+                "${families.size} families out of 1..$MAX_FAMILIES"
+            }
+        }
+
+        override fun equals(other: Any?): Boolean = other is Sanitized && other.families == families
+
+        override fun hashCode(): Int = families.hashCode()
+
+        override fun toString(): String = "TerminalFont.Sanitized($families)"
+
+        public companion object {
+            // A plain val rather than a const, so that apps read the value of the vtfx they run
+            // with (docs/decisions/0037). The platform takes this many fallback families.
+            /** The most families that [Sanitized] takes. */
+            public val MAX_FAMILIES: Int = 64
+        }
+    }
 }
 
-/** The Compose font family of this font. */
-internal fun TerminalFont.toFontFamily(): FontFamily =
-    when (this) {
+/**
+ * A family of sanitized fonts for [TerminalFont.Sanitized]. Without [bold], [italic], or
+ * [boldItalic], the system synthesizes them from the closest font of the family.
+ */
+@Immutable
+public class SanitizedFamily(
+    /** The regular font. */
+    public val regular: SanitizedFont,
+    /** The bold font, or null to synthesize it. */
+    public val bold: SanitizedFont? = null,
+    /** The italic font, or null to synthesize it. */
+    public val italic: SanitizedFont? = null,
+    /** The bold italic font, or null to synthesize it. */
+    public val boldItalic: SanitizedFont? = null,
+) {
+    override fun equals(other: Any?): Boolean =
+        other is SanitizedFamily &&
+            other.regular == regular &&
+            other.bold == bold &&
+            other.italic == italic &&
+            other.boldItalic == boldItalic
+
+    override fun hashCode(): Int = listOf(regular, bold, italic, boldItalic).hashCode()
+
+    override fun toString(): String = "SanitizedFamily($regular, $bold, $italic, $boldItalic)"
+}
+
+/**
+ * The typefaces of [font] for each combination of bold and italic, read in the composition, so that
+ * the terminal follows a font that resolves asynchronously.
+ */
+@Composable
+internal fun rememberTextTypefaces(
+    font: TerminalFont,
+    resolver: FontFamily.Resolver,
+): TextTypefaces =
+    when (font) {
         is TerminalFont.System ->
-            GENERIC_FAMILIES[family]
-                ?: FontFamily(
-                    STYLES.map { (weight, style) ->
-                        Font(DeviceFontFamilyName(family), weight, style)
-                    }
-                )
+            TextTypefaces.rememberTextTypefaces(remember(font) { font.toFontFamily() }, resolver)
         is TerminalFont.Resources ->
-            FontFamily(
-                listOfNotNull(
-                    Font(regular),
-                    bold?.let { Font(it, FontWeight.Bold) },
-                    italic?.let { Font(it, FontWeight.Normal, FontStyle.Italic) },
-                    boldItalic?.let { Font(it, FontWeight.Bold, FontStyle.Italic) },
-                )
-            )
+            TextTypefaces.rememberTextTypefaces(remember(font) { font.toFontFamily() }, resolver)
+        is TerminalFont.Sanitized -> remember(font) { sanitizedTypefaces(font) }
     }
+
+/** The Compose font family of this font. */
+internal fun TerminalFont.System.toFontFamily(): FontFamily =
+    GENERIC_FAMILIES[family]
+        ?: FontFamily(
+            STYLES.map { (weight, style) -> Font(DeviceFontFamilyName(family), weight, style) }
+        )
+
+/** The Compose font family of these fonts. */
+internal fun TerminalFont.Resources.toFontFamily(): FontFamily =
+    FontFamily(
+        listOfNotNull(
+            Font(regular),
+            bold?.let { Font(it, FontWeight.Bold) },
+            italic?.let { Font(it, FontWeight.Normal, FontStyle.Italic) },
+            boldItalic?.let { Font(it, FontWeight.Bold, FontStyle.Italic) },
+        )
+    )
 
 private val GENERIC_FAMILIES =
     mapOf(

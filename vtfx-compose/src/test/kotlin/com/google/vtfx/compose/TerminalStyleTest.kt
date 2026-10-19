@@ -39,6 +39,8 @@ import androidx.compose.ui.text.font.ResourceFont
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.vtfx.core.CursorShape
+import com.google.vtfx.font.FontLimits
+import com.google.vtfx.font.SanitizedFont
 import com.google.vtfx.session.TerminalSession
 import com.google.vtfx.session.TerminalSessionListener
 import java.time.Duration
@@ -47,6 +49,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -237,5 +240,63 @@ class TerminalStyleTest {
         loaded.complete(Typeface.MONOSPACE)
         settle()
         assertSame(Typeface.MONOSPACE, typefaces.regular)
+    }
+
+    /** A family of one font from the test resources, sanitized by vtfx-font's test builder. */
+    private fun sanitizedFamily(name: String): SanitizedFamily {
+        val bytes = checkNotNull(javaClass.getResourceAsStream("sanitized-$name.ttf")).readBytes()
+        return SanitizedFamily(SanitizedFont.fromCanonical(bytes, FontLimits()))
+    }
+
+    @Test
+    fun sanitizedFontsSetTheCellSize() {
+        // The two fonts are the same but for their advance widths: 1000 and 500 units of 1000.
+        var style by
+            mutableStateOf(
+                TerminalStyle(font = TerminalFont.Sanitized(listOf(sanitizedFamily("narrow"))))
+            )
+        composeRule.setContent { Terminal(session, Modifier.size(300.dp, 200.dp), style = style) }
+        settle()
+        val narrow = columns.last()
+
+        style = TerminalStyle(font = TerminalFont.Sanitized(listOf(sanitizedFamily("wide"))))
+        settle()
+
+        assertEquals(narrow / 2, columns.last())
+    }
+
+    @Test
+    fun firstSanitizedFamilySetsTheCellSize() {
+        var style by
+            mutableStateOf(
+                TerminalStyle(font = TerminalFont.Sanitized(listOf(sanitizedFamily("wide"))))
+            )
+        composeRule.setContent { Terminal(session, Modifier.size(300.dp, 200.dp), style = style) }
+        settle()
+        val wide = columns.last()
+
+        style =
+            TerminalStyle(
+                font =
+                    TerminalFont.Sanitized(
+                        listOf(sanitizedFamily("wide"), sanitizedFamily("narrow"))
+                    )
+            )
+        settle()
+
+        assertEquals(listOf(wide), columns.distinct())
+    }
+
+    @Test
+    fun sanitizedFontsWithTheSameFamiliesAreEqual() {
+        val first = TerminalFont.Sanitized(listOf(sanitizedFamily("wide")))
+        val second = TerminalFont.Sanitized(listOf(sanitizedFamily("wide")))
+
+        assertEquals(first, second)
+    }
+
+    @Test
+    fun sanitizedFontWithoutFamiliesIsAnError() {
+        assertThrows(IllegalArgumentException::class.java) { TerminalFont.Sanitized(emptyList()) }
     }
 }
