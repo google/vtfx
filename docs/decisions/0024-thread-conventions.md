@@ -57,7 +57,7 @@ Rules common to calls of callbacks, listeners, and interfaces the app implements
 
 `TerminalSession` calls the app's `HostConnection`, `ClipboardAccess`, and `UrlOpener` on the thread that called the operation for user operations (until 2026-10-14, limited to the main thread), and on the thread that called `feed` for host requests (replies to queries and OSC 52). Both are called after releasing the session's lock (principle 3, item 2). Host requests that arise within `feed` are collected inside the lock and handled in the order they arose after releasing the lock. The values of queries (the cursor position and so on) are fixed by the state at the time the requests were collected, so delaying the handling does not change the replies.
 
-Calling `feed` from within `HostConnection.write` is forbidden as principle 3, item 3, and detected at the entry of `feed`. It fails as soon as `feed` is called, not only when a reply arises, so it is found deterministically regardless of host output. Triggering another send (`sendKey` and so on) from within `HostConnection.write` is also detected by `HostWriter`.
+Calling `feed` from within `HostConnection.write` is forbidden as principle 3, item 3, and detected at the entry of `feed`. It fails as soon as `feed` is called, not only when a reply arises, so it is found deterministically regardless of host output. Triggering another send (`sendKey` and so on) from within `HostConnection.write` is also detected, at the entry of the session's input operation, before the IME editing model changes: the input lock is reentrant, so the check in `HostWriter` alone would come after the model had taken the input for sent. Likewise, an operation that `TerminalSession.edit` runs, which holds the session's lock, is detected when it sends input or calls `feed`.
 
 ## Alternatives considered
 
@@ -71,4 +71,4 @@ Calling `feed` from within `HostConnection.write` is forbidden as principle 3, i
 
 - To call `HostConnection` on a particular thread, change the handling of host requests in `TerminalSession.feed` to forward them to that thread. Also revise the KDoc of `HostConnection` and usage.md.
 - To allow `feed` from within `write`, remove the check at the entry of `TerminalSession.feed`, and turn `HostWriter` into a send queue.
-- The related tests are those in `TerminalSessionTest` for handling host requests outside the lock and for rejecting `feed` from within `write`.
+- The related tests are those in `TerminalSessionTest` for handling host requests outside the lock, and for rejecting `feed` and input from within `write` and from within an edit operation.

@@ -234,6 +234,12 @@ public class TerminalSession(
     /** Whether to reset the IME editing model after the current operation. */
     private var resetRequested = false
 
+    /**
+     * The thread running an input operation, or null. Written with [lock] held; read without it
+     * only to compare with the current thread, which is the only thread that can store itself.
+     */
+    @Volatile private var editingThread: Thread? = null
+
     private var titleState = ""
 
     /** The window title set by the host. Untrusted text. */
@@ -360,6 +366,15 @@ public class TerminalSession(
      * returns. With [notifySent], the displays are also told of the user's input if it sent any.
      */
     private fun <T> input(notifySent: Boolean = false, operation: (ImeEditor) -> T): T {
+        // Checked before the locks, which are reentrant: a nested call would change the IME
+        // editing model before HostWriter refused to send what it made, and the model would take
+        // it for received by the host (docs/decisions/0024).
+        check(!writer.isWritingOnCurrentThread()) {
+            "input must not be sent while sending to the host; post it instead"
+        }
+        check(!isEditingOnCurrentThread()) {
+            "an input operation must not call back into the session"
+        }
         val result: T
         val restart: Boolean
         val sent: Boolean
@@ -368,6 +383,7 @@ public class TerminalSession(
             synchronized(lock) {
                 check(outbox.isEmpty() && !restartRequested && !resetRequested)
                 val stickyModifiersBefore = stickyModifiersState
+                editingThread = Thread.currentThread()
                 try {
                     result = operation(editor)
                     if (resetRequested) {
@@ -375,6 +391,7 @@ public class TerminalSession(
                         editor.requestReset()
                     }
                 } finally {
+                    editingThread = null
                     sends = outbox.toList()
                     outbox.clear()
                     restart = restartRequested
@@ -394,10 +411,13 @@ public class TerminalSession(
         return result
     }
 
+    private fun isEditingOnCurrentThread(): Boolean = editingThread === Thread.currentThread()
+
     /**
      * Runs [operation] on the IME editing model, as an IME adapter does for each call of the IME,
      * and sends what it made to the host. Returns what [operation] returns. [operation] must not
-     * keep the editing model or call back into this session.
+     * keep the editing model or call back into this session; sending input or feeding output from
+     * it throws [IllegalStateException].
      *
      * The displays are told of the user's input only if [operation] sent some: the IME also calls
      * without any effect, for example with a key event of a modifier key alone, and such a call
@@ -421,6 +441,10 @@ public class TerminalSession(
         // what the host sends.
         check(!writer.isWritingOnCurrentThread()) {
             "feed must not be called while sending to the host; post the output instead"
+        }
+        // The output would change the terminal in the middle of an input operation.
+        check(!isEditingOnCurrentThread()) {
+            "an input operation must not call back into the session"
         }
         var synchronizing = false
         var scrolledLines = 0L

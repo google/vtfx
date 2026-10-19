@@ -29,7 +29,9 @@ import java.io.ByteArrayOutputStream
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.junit.jupiter.api.Test
@@ -808,6 +810,54 @@ class TerminalSessionTest {
         assertThrows<IllegalStateException> { session.sendText("a") }
         val failure = runOnAnotherThread { session.feed("\u001b[c".toByteArray()) }
         assertTrue(failure is IllegalStateException, "$failure")
+        assertEquals("", session.snapshot().line(0).text().trimEnd())
+    }
+
+    @Test
+    fun sendingFromTheHostConnectionFailsBeforeTheEditorRecordsTheInput() {
+        // The editor would take the input for received by the host (docs/decisions/0024).
+        lateinit var session: TerminalSession
+        var failure: Throwable? = null
+        session =
+            TerminalSession({ failure = runCatching { session.sendText("b") }.exceptionOrNull() })
+
+        session.sendText("a")
+
+        assertIs<IllegalStateException>(failure)
+        assertEquals("a", session.edit { it.text })
+    }
+
+    @Test
+    fun editsAfterSendingFromTheHostConnectionFailedEraseOnlyWhatTheHostReceived() {
+        // DELs for input that the host never received would erase its characters
+        // (docs/design/ime-contract.md, invariant 3).
+        lateinit var session: TerminalSession
+        val received = StringBuilder()
+        session =
+            TerminalSession({
+                received.append(String(it, Charsets.UTF_8))
+                runCatching { session.sendText("b") }
+            })
+        session.sendText("a")
+
+        session.edit { it.replaceText(0, 1, "c") }
+
+        assertEquals("a\u007fc", received.toString())
+    }
+
+    @Test
+    fun sendingFromAnEditOperationFails() {
+        // The nested operation would send while the outer one holds the session's lock.
+        assertFailsWith<IllegalStateException> { session.edit { session.sendText("a") } }
+
+        assertEquals("", sent.toString())
+    }
+
+    @Test
+    fun feedingFromAnEditOperationFails() {
+        // The host's output would change the terminal in the middle of the edit.
+        assertFailsWith<IllegalStateException> { session.edit { feed("x") } }
+
         assertEquals("", session.snapshot().line(0).text().trimEnd())
     }
 
