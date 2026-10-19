@@ -88,8 +88,10 @@ def scenarios(image):
 def versions():
     def first_line(command):
         try:
-            return subprocess.run(command, capture_output=True, text=True, check=False).stdout.splitlines()[0]
-        except (OSError, IndexError):
+            # Without a terminal on stdin: timg --version waits for an answer from the terminal.
+            return subprocess.run(command, capture_output=True, text=True, check=False, stdin=subprocess.DEVNULL,
+                                  timeout=10).stdout.splitlines()[0]
+        except (OSError, IndexError, subprocess.TimeoutExpired):
             return "unknown"
     return {
         "timg": first_line(["timg", "--version"]),
