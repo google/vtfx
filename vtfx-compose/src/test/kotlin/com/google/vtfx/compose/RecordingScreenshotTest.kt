@@ -36,7 +36,7 @@ import org.robolectric.annotation.GraphicsMode
 /**
  * Screenshots of the output of real apps, recorded by tools/recordings, against provisional goldens
  * (docs/design/testing.md section 10). vtfx-core's RecordingReplayTest checks the text against a
- * reference terminal; this checks how it looks.
+ * reference terminal, and GraphicsRecordingTest where the images are; this checks how it looks.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -88,6 +88,18 @@ class RecordingScreenshotTest {
     @Test fun htop() = replay("htop")
 
     @Test fun tmux() = replay("tmux")
+
+    // Programs that show images with the kitty graphics protocol (docs/decisions/0038). They chose
+    // the sizes of the images from cells of 10 by 20 pixels, and the display takes each image's
+    // size in cells from its own cells, as on a device.
+
+    @Test fun timg() = replay("graphics/timg")
+
+    @Test fun icat() = replay("graphics/icat")
+
+    @Test fun icatPlaceholder() = replay("graphics/icat-placeholder")
+
+    @Test fun fastfetch() = replay("graphics/fastfetch")
 
     private companion object {
         const val COLUMNS = 80
