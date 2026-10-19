@@ -232,35 +232,51 @@ class TerminalScreenshotTest {
     }
 
     /**
-     * Images of the kitty graphics protocol (docs/decisions/0038): scaled to cells; natural size;
-     * cut from a source rectangle with an offset in its cell; under the text with a negative
-     * z-index; and translucent over the text. Each image is 4 by 4 pixels in four colors: red,
-     * green, blue, and translucent white.
+     * The base64 of an image of 64 by 64 pixels for the tests of images, RGBA: four quarters, red,
+     * green, blue, and translucent white, the first three each a checkerboard of squares of 8
+     * pixels in its color and a darker one. Its edges are sharp, so that the screenshots show how
+     * it is scaled and cut, and it is about as large as the cells it is drawn in, so that it is not
+     * blurred much by scaling.
+     */
+    private fun quarters(): String {
+        val pixels = ByteArray(IMAGE_SIZE * IMAGE_SIZE * 4)
+        val half = IMAGE_SIZE / 2
+        for (y in 0 until IMAGE_SIZE) {
+            for (x in 0 until IMAGE_SIZE) {
+                var rgba =
+                    when {
+                        y < half && x < half -> intArrayOf(255, 0, 0, 255)
+                        y < half -> intArrayOf(0, 160, 0, 255)
+                        x < half -> intArrayOf(0, 0, 255, 255)
+                        else -> intArrayOf(255, 255, 255, 128)
+                    }
+                if (rgba[3] == 255 && (x / 8 + y / 8) % 2 == 1) {
+                    rgba = intArrayOf(rgba[0] / 2, rgba[1] / 2, rgba[2] / 2, 255)
+                }
+                for (c in 0 until 4) pixels[(y * IMAGE_SIZE + x) * 4 + c] = rgba[c].toByte()
+            }
+        }
+        return java.util.Base64.getEncoder().encodeToString(pixels)
+    }
+
+    /**
+     * Images of the kitty graphics protocol (docs/decisions/0038), each from [quarters]: scaled to
+     * 6 by 3 cells; at its natural size, which takes 4 by 2 cells and leaves the cursor on its last
+     * row; its middle cut from a source rectangle, with an offset in its cell; under the text with
+     * a negative z-index; and its translucent quarter stretched over the text.
      */
     @Test
     fun images() {
-        val pixels = ByteArray(4 * 4 * 4)
-        for (y in 0 until 4) {
-            for (x in 0 until 4) {
-                val rgba =
-                    when {
-                        y < 2 && x < 2 -> intArrayOf(255, 0, 0, 255)
-                        y < 2 -> intArrayOf(0, 160, 0, 255)
-                        x < 2 -> intArrayOf(0, 0, 255, 255)
-                        else -> intArrayOf(255, 255, 255, 128)
-                    }
-                for (c in 0 until 4) pixels[(y * 4 + x) * 4 + c] = rgba[c].toByte()
-            }
-        }
-        val data = java.util.Base64.getEncoder().encodeToString(pixels)
-        fun image(keys: String) = "\u001b_Ga=T,f=32,s=4,v=4,q=2,$keys;$data\u001b\\"
+        val data = quarters()
+        fun image(keys: String) =
+            "\u001b_Ga=T,f=32,s=$IMAGE_SIZE,v=$IMAGE_SIZE,q=2,$keys;$data\u001b\\"
         show(
             output =
                 image("c=6,r=3") +
-                    " scaled\r\n\r\n\r\n" +
+                    " scaled\r\n\r\n" +
                     image("") +
                     " natural " +
-                    image("x=2,y=2,X=4,Y=6,c=2,r=1") +
+                    image("x=16,y=16,w=32,h=32,X=4,Y=6,c=2,r=1") +
                     " cut\r\n" +
                     "text \u001b[1mover\u001b[0m an image " +
                     "\u001b[s\u001b[7;6H" +
@@ -268,34 +284,20 @@ class TerminalScreenshotTest {
                     "\u001b[u\r\n" +
                     "under a translucent one" +
                     "\u001b[8;1H" +
-                    image("x=2,c=16,r=1,C=1")
+                    image("x=32,y=32,c=16,r=1,C=1")
         )
         composeRule.onRoot().captureRoboImage()
     }
 
     /**
-     * Unicode placeholders (docs/decisions/0038): a 4 by 4 image of four colors in a virtual
-     * placement of 8 by 2 cells, fitted and centered, written as placeholders with only the row
-     * diacritic on the first cell of each row, as the protocol's example does; then the same
-     * placeholders with their columns in reverse, which show the image in vertical strips swapped.
+     * Unicode placeholders (docs/decisions/0038): the image of [quarters] in a virtual placement of
+     * 8 by 2 cells, fitted and centered, written as placeholders with only the row diacritic on the
+     * first cell of each row, as the protocol's example does; then the same placeholders with their
+     * columns in reverse, which show the image in vertical strips swapped.
      */
     @Test
     fun imagePlaceholders() {
-        val pixels = ByteArray(4 * 4 * 4)
-        for (y in 0 until 4) {
-            for (x in 0 until 4) {
-                val rgb =
-                    when {
-                        y < 2 && x < 2 -> intArrayOf(255, 0, 0)
-                        y < 2 -> intArrayOf(0, 160, 0)
-                        x < 2 -> intArrayOf(0, 0, 255)
-                        else -> intArrayOf(255, 255, 255)
-                    }
-                for (c in 0 until 3) pixels[(y * 4 + x) * 4 + c] = rgb[c].toByte()
-                pixels[(y * 4 + x) * 4 + 3] = 255.toByte()
-            }
-        }
-        val data = java.util.Base64.getEncoder().encodeToString(pixels)
+        val data = quarters()
         // The diacritics for 0 to 7, from the protocol's list.
         val diacritics = intArrayOf(0x0305, 0x030D, 0x030E, 0x0310, 0x0312, 0x033D, 0x033E, 0x033F)
         fun cell(vararg values: Int) = buildString {
@@ -304,7 +306,7 @@ class TerminalScreenshotTest {
         }
         show(
             output =
-                "\u001b_Ga=T,i=42,U=1,c=8,r=2,f=32,s=4,v=4,q=2;$data\u001b\\" +
+                "\u001b_Ga=T,i=42,U=1,c=8,r=2,f=32,s=$IMAGE_SIZE,v=$IMAGE_SIZE,q=2;$data\u001b\\" +
                     "\u001b[38;5;42m" +
                     cell(0) +
                     cell().repeat(7) +
@@ -318,5 +320,10 @@ class TerminalScreenshotTest {
                     "\u001b[39m"
         )
         composeRule.onRoot().captureRoboImage()
+    }
+
+    private companion object {
+        /** The width and height of the image of [quarters]. */
+        const val IMAGE_SIZE = 64
     }
 }

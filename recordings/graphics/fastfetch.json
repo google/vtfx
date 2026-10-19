@@ -24,18 +24,6 @@
     "fastfetch": "fastfetch 2.57.1 (x86_64)"
   },
   "queries": [
-    "graphics a=T,f=32,m=1",
-    "graphics m=1",
-    "graphics m=1",
-    "graphics m=1",
-    "graphics m=1",
-    "graphics m=1",
-    "graphics m=1",
-    "graphics m=1",
-    "graphics m=1",
-    "graphics m=1",
-    "graphics m=1",
-    "graphics m=1",
-    "graphics m=0"
+    "graphics a=T,f=32,m=0"
   ]
 }

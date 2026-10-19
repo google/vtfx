@@ -24,7 +24,7 @@ program writes is recorded in OUT_DIR/<scenario>.out, with the versions and the 
 OUT_DIR/<scenario>.json. GraphicsRecordingTest in vtfx-core replays them, and the sample app shows
 them with "replay".
 
-The image is made here (a gradient with a transparent corner), so the recordings hold no file of
+The image is made here (a checkerboard in four colors with a transparent corner), so the recordings hold no file of
 the machine. fastfetch shows only its color blocks, not the machine's information.
 
 Usage: record_graphics.py OUT_DIR [SCENARIO ...]
@@ -56,13 +56,19 @@ SEQUENCE = re.compile(rb"\x1b(\[[\x30-\x3f]*[\x20-\x2f]*[\x40-\x7e]|_[^\x1b]*\x1
 
 
 def png(width, height):
-    """A PNG of a gradient, red to blue across and green down, transparent in the bottom right."""
+    """A PNG of four quarters, red, green, blue, and yellow, each a checkerboard of squares of 8
+    pixels in its color and a darker one, transparent in the bottom right. The edges are sharp, so
+    that scaling and cutting show in screenshots."""
+    colors = ((255, 0, 0), (0, 200, 0), (0, 0, 255), (230, 200, 0))
     rows = bytearray()
     for y in range(height):
         rows.append(0)
         for x in range(width):
             alpha = 0 if x >= width * 3 // 4 and y >= height * 3 // 4 else 255
-            rows += bytes((255 * (width - 1 - x) // (width - 1), 255 * y // (height - 1), 255 * x // (width - 1), alpha))
+            color = colors[(2 if y >= height // 2 else 0) + (1 if x >= width // 2 else 0)]
+            if (x // 8 + y // 8) % 2:
+                color = tuple(c // 2 for c in color)
+            rows += bytes((*color, alpha))
 
     def chunk(kind, data):
         body = kind + data
