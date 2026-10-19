@@ -24,13 +24,15 @@ import com.google.vtfx.core.CharWidth
  * apps recorded by tools/recordings.
  *
  * Not thread-safe. [output] receives the host's output, [recording] returns the recorded output
- * with a name or null, and [requestSize] asks the app for at least the given columns and rows, for
- * example by making the font smaller.
+ * with a name or null, [requestSize] asks the app for at least the given columns and rows, for
+ * example by making the font smaller, and [font] receives the arguments of the `font` command,
+ * which the app carries out and answers with [report].
  */
 class EchoHost(
     private val output: (ByteArray) -> Unit,
     private val recording: (String) -> ByteArray? = { null },
     private val requestSize: (columns: Int, rows: Int) -> Unit = { _, _ -> },
+    private val font: (arguments: String) -> Unit,
 ) {
     private val line = StringBuilder()
     private val utf8 = Utf8Accumulator()
@@ -58,6 +60,13 @@ class EchoHost(
     fun start() {
         output("vtfx sample. Type 'help' for the commands.\r\n")
         prompt()
+    }
+
+    /** Shows [message] from the app above the prompt, keeping the line being edited. */
+    fun report(message: String) {
+        output("\r\u001b[K${message.replace("\n", "\r\n")}\r\n")
+        prompt()
+        output(line.toString())
     }
 
     fun onResize(columns: Int, rows: Int) {
@@ -175,6 +184,7 @@ class EchoHost(
             // The recording is shown instead of the prompt.
             "replay" -> if (replay(command.substringAfter(' ', "").trim())) return false
             "reset" -> output("\u001bc")
+            "font" -> font(command.substringAfter(' ', "").trim())
             // Mouse reports (button events, SGR), to try a mouse as with vim's mouse=a.
             "mouse" ->
                 output(
@@ -282,6 +292,8 @@ class EchoHost(
                 "           timg, icat, icat-placeholder, fastfetch (images)\r\n" +
                 "  reset    reset the terminal\r\n" +
                 "  mouse    send mouse reports (mouse off: stop)\r\n" +
+                "  font     font import [FACE]: add a font file to the fonts, sanitized;\r\n" +
+                "           font reset: back to the system font; font: list them\r\n" +
                 "Anything else is echoed back.\r\n"
 
         /**

@@ -20,8 +20,10 @@ import android.app.AlertDialog
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -30,6 +32,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
@@ -42,7 +45,9 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModelProvider
+import com.google.vtfx.compose.SanitizedFamily
 import com.google.vtfx.compose.Terminal
+import com.google.vtfx.compose.TerminalFont
 import com.google.vtfx.compose.TerminalState
 import com.google.vtfx.compose.TerminalStyle
 import com.google.vtfx.compose.rememberTerminalState
@@ -64,12 +69,27 @@ class MainActivity : ComponentActivity() {
         val locale = intent.getStringExtra(EXTRA_LOCALE)?.let { LocaleList(it) }
         setContent {
             val state = rememberTerminalState()
+            val fontRequest = viewModel.fontRequest
+            val pickFont =
+                rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+                    if (uri != null && fontRequest != null) viewModel.importFont(fontRequest, uri)
+                }
+            LaunchedEffect(fontRequest) { if (fontRequest != null) pickFont.launch(arrayOf("*/*")) }
+            val fonts = viewModel.fonts
+            val font =
+                if (fonts.isEmpty()) TerminalFont.System()
+                else TerminalFont.Sanitized(fonts.map { SanitizedFamily(it) })
             Column(Modifier.fillMaxSize().background(Color.Black).safeDrawingPadding()) {
                 Terminal(
                     viewModel.session,
                     Modifier.fillMaxWidth().weight(1f),
                     state = state,
-                    style = TerminalStyle(fontSize = viewModel.fontSize.sp, locale = locale),
+                    style =
+                        TerminalStyle(
+                            font = font,
+                            fontSize = viewModel.fontSize.sp,
+                            locale = locale,
+                        ),
                     linkPatterns = LINK_PATTERNS,
                     onLinkClick = { click -> confirmOpening(viewModel.session, click.link.url) },
                     onPreImeKeyEvent = { interceptShortcut(it, state) },

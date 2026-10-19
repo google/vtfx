@@ -26,8 +26,10 @@ class EchoHostTest {
             output = { output.append(String(it, Charsets.UTF_8)) },
             recording = { name -> if (name == "demo") "\u001b[?1049hDEMO".toByteArray() else null },
             requestSize = { columns, rows -> requested += columns to rows },
+            font = { fontCommands += it },
         )
     private val requested = mutableListOf<Pair<Int, Int>>()
+    private val fontCommands = mutableListOf<String>()
 
     private fun receive(text: String) = host.receive(text.toByteArray(Charsets.UTF_8))
 
@@ -114,5 +116,21 @@ class EchoHostTest {
         host.receive(byteArrayOf(0xE3.toByte(), 0x81.toByte()))
         host.receive(byteArrayOf(0x82.toByte()))
         assertEquals("あ", output.toString())
+    }
+
+    @Test
+    fun fontCommandGoesToTheApp() {
+        receive("font import 2\r")
+
+        assertEquals(listOf("import 2"), fontCommands)
+    }
+
+    @Test
+    fun reportShowsAMessageAboveTheLineBeingEdited() {
+        receive("ab")
+
+        host.report("done")
+
+        assertEquals("ab\r\u001b[Kdone\r\n\u001b[32m$\u001b[0m ab", output.toString())
     }
 }
