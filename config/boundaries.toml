@@ -77,6 +77,12 @@ reason = "Only vtfx-gate may hold the connection to the host. TerminalSession on
 allowed_paths = ["vtfx-gate/**", "vtfx-session/src/main/kotlin/com/google/vtfx/session/TerminalSession.kt"]
 
 [[restricted_apis]]
+# Tests may implement fakes of them; test code is not shipped (docs/decisions/0042).
+pattern = '\b(ClipboardAccess|UrlOpener)\b'
+reason = "Only vtfx-gate may call the clipboard and the URL opener, which vtfx-gate-android implements. TerminalSession only hands them over (docs/decisions/0042)."
+allowed_paths = ["vtfx-gate/**", "vtfx-gate-android/**", "vtfx-session/src/main/kotlin/com/google/vtfx/session/TerminalSession.kt", "*/src/test/**"]
+
+[[restricted_apis]]
 pattern = '\bjava\.lang\.(reflect|invoke)\b|\bkotlin\.reflect\.(full|jvm)\b|\bClass\.forName\b|\.getDeclared(Field|Method|Constructor)s?\b'
 reason = "Reflection can bypass visibility, which the module boundaries rely on."
 allowed_paths = []

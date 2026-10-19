@@ -175,6 +175,8 @@ class RepositoryRestrictedApisTest(unittest.TestCase):
         ("import java.lang.invoke.MethodHandles", None),
         ("import kotlin.reflect.jvm.isAccessible", None),
         ("import kotlin.reflect.full.declaredMemberProperties", None),
+        ("public class AndroidClipboard(context: Context) : ClipboardAccess {", "vtfx-gate-android"),
+        ("public class AndroidUrlOpener(private val context: Context) : UrlOpener {", "vtfx-gate-android"),
     ]
 
     def setUp(self):
@@ -210,6 +212,32 @@ class RepositoryRestrictedApisTest(unittest.TestCase):
                 self.write(f"{allowed_module}/src/main/kotlin/Capability.kt", line + "\n")
                 result = self.run_check()
                 self.assertEqual(result.returncode, 0, result.stdout)
+
+    def test_rejects_clipboard_in_session_outside_terminal_session(self):
+        self.write("vtfx-session/src/main/kotlin/com/google/vtfx/session/Copy.kt",
+                   "fun copy(clipboard: ClipboardAccess, text: String) = clipboard.write(text)\n")
+        result = self.run_check()
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("vtfx-session/src/main/kotlin/com/google/vtfx/session/Copy.kt:1:", result.stdout)
+
+    def test_rejects_url_opener_in_compose(self):
+        self.write("vtfx-compose/src/main/kotlin/com/google/vtfx/compose/Links.kt",
+                   "fun open(opener: UrlOpener, url: String) = opener.open(url)\n")
+        result = self.run_check()
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("vtfx-compose/src/main/kotlin/com/google/vtfx/compose/Links.kt:1:", result.stdout)
+
+    def test_accepts_clipboard_handed_over_by_terminal_session(self):
+        self.write("vtfx-session/src/main/kotlin/com/google/vtfx/session/TerminalSession.kt",
+                   "    clipboard: ClipboardAccess? = null,\n")
+        result = self.run_check()
+        self.assertEqual(result.returncode, 0, result.stdout)
+
+    def test_accepts_fake_clipboard_in_tests(self):
+        self.write("vtfx-compose/src/test/kotlin/com/google/vtfx/compose/TerminalStateTest.kt",
+                   "        object : ClipboardAccess {\n")
+        result = self.run_check()
+        self.assertEqual(result.returncode, 0, result.stdout)
 
 
 if __name__ == "__main__":
