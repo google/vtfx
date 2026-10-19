@@ -117,7 +117,12 @@ internal class FaceParts(
                             limits,
                         )
                     }
-                    OutlineFormat.Cff -> unsupported("CFF outlines")
+                    OutlineFormat.Cff ->
+                        CffOutlines(
+                            CffFont.read(face.require(Tag.CFF), numGlyphs, unitsPerEm),
+                            unitsPerEm,
+                            limits,
+                        )
                     OutlineFormat.Cff2 -> unsupported("CFF2 outlines")
                     else -> unsupported("no outlines that vtfx reads")
                 }
