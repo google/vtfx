@@ -23,6 +23,7 @@ import com.google.vtfx.core.ColorTarget
 import com.google.vtfx.core.CursorShape
 import com.google.vtfx.core.GraphicsStatus
 import com.google.vtfx.core.InternalVtfxApi
+import com.google.vtfx.core.ProtocolLimits
 import com.google.vtfx.core.TerminalColor
 import com.google.vtfx.core.TerminalLimits
 import com.google.vtfx.core.TerminalQuery
@@ -61,8 +62,6 @@ internal object Replies {
     private const val APC = "\u001b_"
     private const val ST = "\u001b\\"
 
-    private const val MAX_GRAPHICS_ID = 0xFFFF_FFFFL
-
     /** The status strings of graphics replies, with kitty's error codes. */
     private fun graphicsStatus(status: GraphicsStatus): String =
         when (status) {
@@ -90,7 +89,9 @@ internal object Replies {
                     "\u001b[${if (query.isDecPrivate) "?" else ""}${query.row};${query.column}R"
                 }
                 is TerminalQuery.ModeStatus -> {
-                    require(query.mode in 0..MAX_PARAMETER) { "mode out of range: ${query.mode}" }
+                    require(query.mode in 0..ProtocolLimits.MAX_PARAMETER) {
+                        "mode out of range: ${query.mode}"
+                    }
                     "\u001b[${if (query.isDecPrivate) "?" else ""}${query.mode};${query.state.code}\$y"
                 }
                 is TerminalQuery.SgrStatus ->
@@ -139,7 +140,7 @@ internal object Replies {
     }
 
     private fun checkId(id: Long): Long {
-        require(id in 1..MAX_GRAPHICS_ID) { "graphics id out of range: $id" }
+        require(id in 1..ProtocolLimits.MAX_GRAPHICS_NUMBER) { "graphics id out of range: $id" }
         return id
     }
 
@@ -215,10 +216,10 @@ internal object Replies {
         require(value in 1..TerminalLimits.MAX_DIMENSION) { "position out of range: $value" }
     }
 
-    /** A size in pixels: up to the largest dimension times the largest cell, 1000 pixels. */
+    /** A size in pixels: up to the largest dimension times the largest cell. */
     private fun checkPixels(value: Int) {
-        require(value in 1..TerminalLimits.MAX_DIMENSION * 1000) { "pixels out of range: $value" }
+        require(value in 1..TerminalLimits.MAX_DIMENSION * ProtocolLimits.MAX_CELL_SIZE) {
+            "pixels out of range: $value"
+        }
     }
-
-    private const val MAX_PARAMETER = 65535
 }

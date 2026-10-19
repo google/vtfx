@@ -24,6 +24,7 @@ import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.KeyModifiers
 import com.google.vtfx.core.KeyStroke
 import com.google.vtfx.core.LineSnapshot
+import com.google.vtfx.core.ProtocolLimits
 import com.google.vtfx.core.Terminal
 import com.google.vtfx.core.TerminalEvent
 import com.google.vtfx.core.TerminalLimits
@@ -554,7 +555,10 @@ public class TerminalSession(
      *   only one of them is 0.
      */
     public fun resize(columns: Int, rows: Int, cellWidth: Int = 0, cellHeight: Int = 0) {
-        require(cellWidth in 0..MAX_CELL_SIZE && cellHeight in 0..MAX_CELL_SIZE) {
+        require(
+            cellWidth in 0..ProtocolLimits.MAX_CELL_SIZE &&
+                cellHeight in 0..ProtocolLimits.MAX_CELL_SIZE
+        ) {
             "cell size out of range: ${cellWidth}x$cellHeight"
         }
         require((cellWidth == 0) == (cellHeight == 0)) {
@@ -789,9 +793,6 @@ public class TerminalSession(
 
         /** DELs per call of `HostWriter.sendDeletes`, well below its limit. */
         private const val DELETES_PER_WRITE = 4096
-
-        /** The largest width or height of a cell in pixels, as `Terminal.setCellSize` takes. */
-        private const val MAX_CELL_SIZE = 1000
     }
 }
 

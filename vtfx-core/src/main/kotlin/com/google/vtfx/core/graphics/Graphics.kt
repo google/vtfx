@@ -21,6 +21,7 @@ package com.google.vtfx.core.graphics
 import com.google.vtfx.core.GraphicsStatus
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.Line
+import com.google.vtfx.core.ProtocolLimits
 import com.google.vtfx.core.TerminalImage
 import com.google.vtfx.core.TerminalLimits
 import com.google.vtfx.core.TerminalQuery
@@ -76,7 +77,9 @@ internal class Graphics(
     private var transmission: Transmission? = null
 
     fun setCellSize(width: Int, height: Int) {
-        require(width in 1..MAX_CELL_SIZE && height in 1..MAX_CELL_SIZE) {
+        require(
+            width in 1..ProtocolLimits.MAX_CELL_SIZE && height in 1..ProtocolLimits.MAX_CELL_SIZE
+        ) {
             "cell size out of range: ${width}x$height"
         }
         cellWidth = width
@@ -265,7 +268,7 @@ internal class Graphics(
     private fun assignId(): Long {
         while (true) {
             val id = nextAssignedId
-            nextAssignedId = if (id == MAX_ID) 1L else id + 1
+            nextAssignedId = if (id == ProtocolLimits.MAX_GRAPHICS_NUMBER) 1L else id + 1
             if (layers.none { it.imageById(id) != null }) return id
         }
     }
@@ -571,12 +574,6 @@ internal class Graphics(
         const val DEFAULT_CELL_WIDTH = 10
         const val DEFAULT_CELL_HEIGHT = 20
 
-        /**
-         * The largest width or height of a cell in pixels, so that the text area in pixels fits in
-         * an Int at the largest dimension.
-         */
-        const val MAX_CELL_SIZE = 1000
-
         /** The largest width or height of an image, as in kitty (docs/decisions/0002). */
         const val MAX_SIDE = 10000L
 
@@ -586,8 +583,6 @@ internal class Graphics(
 
         /** The most decoded bytes a transmission keeps, below the largest array. */
         private const val MAX_TRANSMISSION_BYTES = Int.MAX_VALUE - 8
-
-        private const val MAX_ID = 0xFFFF_FFFFL
 
         /** Below which a fraction of a cell does not take another cell. */
         private const val EPSILON = 1e-9

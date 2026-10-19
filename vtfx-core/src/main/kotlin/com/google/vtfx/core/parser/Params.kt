@@ -14,15 +14,20 @@
  * limitations under the License.
  */
 
+@file:OptIn(InternalVtfxApi::class)
+
 package com.google.vtfx.core.parser
+
+import com.google.vtfx.core.InternalVtfxApi
+import com.google.vtfx.core.ProtocolLimits
 
 /**
  * The numeric parameters of a control sequence.
  *
  * An omitted parameter is 0, which the control functions treat as their default, as ECMA-48
  * specifies. Parameters separated by ':' are sub-parameters of the preceding parameter (ITU T.416,
- * used by SGR). Values are clamped to [MAX_VALUE], and parameters beyond [MAX_COUNT] are dropped,
- * so that a hostile sequence cannot overflow or grow without bound.
+ * used by SGR). Values are clamped to [ProtocolLimits.MAX_PARAMETER], and parameters beyond
+ * [MAX_COUNT] are dropped, so that a hostile sequence cannot overflow or grow without bound.
  */
 internal class Params {
     private val values = IntArray(MAX_COUNT)
@@ -60,7 +65,8 @@ internal class Params {
         started = true
         if (index >= MAX_COUNT) return
         val value = values[index] * 10 + digit
-        values[index] = if (value > MAX_VALUE) MAX_VALUE else value
+        values[index] =
+            if (value > ProtocolLimits.MAX_PARAMETER) ProtocolLimits.MAX_PARAMETER else value
     }
 
     internal fun nextParameter(isSubParameter: Boolean) {
@@ -84,6 +90,5 @@ internal class Params {
 
     companion object {
         const val MAX_COUNT: Int = 32
-        const val MAX_VALUE: Int = 65535
     }
 }

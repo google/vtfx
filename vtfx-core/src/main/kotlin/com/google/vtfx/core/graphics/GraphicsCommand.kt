@@ -14,7 +14,12 @@
  * limitations under the License.
  */
 
+@file:OptIn(InternalVtfxApi::class)
+
 package com.google.vtfx.core.graphics
+
+import com.google.vtfx.core.InternalVtfxApi
+import com.google.vtfx.core.ProtocolLimits
 
 /**
  * The control data of a kitty graphics command (`ESC _ G <control> ; <payload> ESC \`), and where
@@ -95,8 +100,6 @@ internal class GraphicsCommand {
 
     companion object {
         const val NONE: Char = '\u0000'
-
-        private const val MAX_UNSIGNED = 0xFFFF_FFFFL
 
         /**
          * Parses the graphics command in [data], which starts with `G`. Returns null if kitty would
@@ -179,7 +182,7 @@ internal class GraphicsCommand {
             if (digit !in 0..9) return null
             value = value * 10 + digit
         }
-        return value.takeIf { it <= MAX_UNSIGNED }
+        return value.takeIf { it <= ProtocolLimits.MAX_GRAPHICS_NUMBER }
     }
 
     private fun signed(data: CharSequence, from: Int, to: Int): Int? {
