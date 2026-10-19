@@ -22,7 +22,7 @@ package com.google.vtfx.font.gate
  * depends on it, so its tests take the fonts that vtfx-font writes from these files.
  */
 object CanonicalFonts {
-    /** Every font. */
+    /** Every font, in the order that the input of [VerifierFuzzTest] refers to them by. */
     val names: List<String> =
         listOf("variations.ttf", "dual-width.ttf", "cff.ttf", "fewer-points.ttf")
 

@@ -181,7 +181,7 @@ As in requirement 6.1, in the initial phase the verification is at the level of 
 | Target | Tests | Gate? |
 |---|---|---|
 | `vtfx-core` | JVM unit tests. Spec tests owned by humans (`spec/core`). Replay tests that compare recordings of real apps with a reference terminal. | Yes |
-| `vtfx-core`, `vtfx-gate`, `vtfx-input`, `vtfx-font` | Fuzzing (detecting exceptions, non-terminating states, memory exhaustion, and each module's invariants). | A 30-second run each. Long runs are separate |
+| `vtfx-core`, `vtfx-gate`, `vtfx-input`, `vtfx-font`, `vtfx-font-gate` | Fuzzing (detecting exceptions, non-terminating states, memory exhaustion, and each module's invariants). | A 30-second run each. Long runs are separate |
 | `vtfx-input` | IME trace replay tests (`spec/ime`). Tests with hostile IME calls. | Yes |
 | `vtfx-gate` | Table-driven tests of key encoding. Unit tests of replies, pastes, and policies, including malicious inputs. | Yes |
 | `vtfx-compose` | Unit tests with Robolectric, and screenshot tests (agents manage provisional goldens, and humans approve them). | Yes |

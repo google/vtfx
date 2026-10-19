@@ -19,5 +19,5 @@
 // 0041). Depends on nothing, not even in its tests: they take the canonical fonts that vtfx-font
 // writes from src/test/resources, where CanonicalFixturesTest in vtfx-font keeps them current.
 plugins {
-    id("vtfx.jvm-library")
+    id("vtfx.fuzz")
 }
