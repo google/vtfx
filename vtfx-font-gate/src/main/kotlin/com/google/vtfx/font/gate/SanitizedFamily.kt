@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.vtfx.font
+package com.google.vtfx.font.gate
 
 /**
  * A family of sanitized fonts, which the terminal draws in turn with other families. Without

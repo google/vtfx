@@ -10,8 +10,8 @@ public final class com.google.vtfx.font.FaceInfo {
 }
 
 public object com.google.vtfx.font.FontFile {
-    public final fun inspect(input: kotlin.ByteArray, limits: com.google.vtfx.font.FontLimits): kotlin.collections.List<com.google.vtfx.font.FaceInfo>
-    public final fun sanitize(input: kotlin.ByteArray, faceIndex: kotlin.Int, limits: com.google.vtfx.font.FontLimits): com.google.vtfx.font.SanitizedFont
+    public final fun inspect(input: kotlin.ByteArray, limits: com.google.vtfx.font.gate.FontLimits): kotlin.collections.List<com.google.vtfx.font.FaceInfo>
+    public final fun sanitize(input: kotlin.ByteArray, faceIndex: kotlin.Int, limits: com.google.vtfx.font.gate.FontLimits): com.google.vtfx.font.gate.SanitizedFont
 }
 
 public final value class com.google.vtfx.font.OutlineFormat {

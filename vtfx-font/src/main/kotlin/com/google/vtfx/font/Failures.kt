@@ -16,6 +16,8 @@
 
 package com.google.vtfx.font
 
+import com.google.vtfx.font.gate.InvalidFontException
+
 // The verifier in vtfx-font-gate has its own, so that it shares no code with the readers.
 
 internal fun malformed(message: String): Nothing =

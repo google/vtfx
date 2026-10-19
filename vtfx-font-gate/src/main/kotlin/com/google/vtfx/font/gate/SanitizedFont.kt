@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.google.vtfx.font
+package com.google.vtfx.font.gate
 
-import com.google.vtfx.font.gate.CanonicalVerifier
 import java.nio.Buffer
 import java.nio.ByteBuffer
 import java.security.MessageDigest

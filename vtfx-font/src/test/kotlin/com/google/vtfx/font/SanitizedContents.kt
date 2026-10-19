@@ -16,6 +16,9 @@
 
 package com.google.vtfx.font
 
+import com.google.vtfx.font.gate.FontLimits
+import com.google.vtfx.font.gate.SanitizedFont
+
 /** Reads back what a sanitized font holds, with the readers of the input. */
 class SanitizedContents(font: SanitizedFont) {
     private val bytes = font.toByteArray()

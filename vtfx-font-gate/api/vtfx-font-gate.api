@@ -1,5 +1,5 @@
-public final class com/google/vtfx/font/FontLimits {
-	public static final field Companion Lcom/google/vtfx/font/FontLimits$Companion;
+public final class com/google/vtfx/font/gate/FontLimits {
+	public static final field Companion Lcom/google/vtfx/font/gate/FontLimits$Companion;
 	public fun <init> ()V
 	public fun <init> (III)V
 	public synthetic fun <init> (IIIILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -11,19 +11,19 @@ public final class com/google/vtfx/font/FontLimits {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/google/vtfx/font/FontLimits$Companion {
+public final class com/google/vtfx/font/gate/FontLimits$Companion {
 	public final fun getMAX_BYTES ()I
 	public final fun getMAX_GLYPH_POINTS ()I
 }
 
-public final class com/google/vtfx/font/InvalidFontException : java/lang/Exception {
+public final class com/google/vtfx/font/gate/InvalidFontException : java/lang/Exception {
 	public synthetic fun <init> (ILjava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun getKind-yDlMGn0 ()I
+	public final fun getKind-EgyIaaI ()I
 }
 
-public final class com/google/vtfx/font/InvalidFontException$Kind {
-	public static final field Companion Lcom/google/vtfx/font/InvalidFontException$Kind$Companion;
-	public static final synthetic fun box-impl (I)Lcom/google/vtfx/font/InvalidFontException$Kind;
+public final class com/google/vtfx/font/gate/InvalidFontException$Kind {
+	public static final field Companion Lcom/google/vtfx/font/gate/InvalidFontException$Kind$Companion;
+	public static final synthetic fun box-impl (I)Lcom/google/vtfx/font/gate/InvalidFontException$Kind;
 	public fun equals (Ljava/lang/Object;)Z
 	public static fun equals-impl (ILjava/lang/Object;)Z
 	public static final fun equals-impl0 (II)Z
@@ -34,43 +34,43 @@ public final class com/google/vtfx/font/InvalidFontException$Kind {
 	public final synthetic fun unbox-impl ()I
 }
 
-public final class com/google/vtfx/font/InvalidFontException$Kind$Companion {
-	public final fun getMalformed-yDlMGn0 ()I
-	public final fun getTooComplex-yDlMGn0 ()I
-	public final fun getTooLarge-yDlMGn0 ()I
-	public final fun getUnsupported-yDlMGn0 ()I
+public final class com/google/vtfx/font/gate/InvalidFontException$Kind$Companion {
+	public final fun getMalformed-EgyIaaI ()I
+	public final fun getTooComplex-EgyIaaI ()I
+	public final fun getTooLarge-EgyIaaI ()I
+	public final fun getUnsupported-EgyIaaI ()I
 }
 
-public final class com/google/vtfx/font/SanitizedFamily {
-	public fun <init> (Lcom/google/vtfx/font/SanitizedFont;Lcom/google/vtfx/font/SanitizedFont;Lcom/google/vtfx/font/SanitizedFont;Lcom/google/vtfx/font/SanitizedFont;)V
-	public synthetic fun <init> (Lcom/google/vtfx/font/SanitizedFont;Lcom/google/vtfx/font/SanitizedFont;Lcom/google/vtfx/font/SanitizedFont;Lcom/google/vtfx/font/SanitizedFont;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+public final class com/google/vtfx/font/gate/SanitizedFamily {
+	public fun <init> (Lcom/google/vtfx/font/gate/SanitizedFont;Lcom/google/vtfx/font/gate/SanitizedFont;Lcom/google/vtfx/font/gate/SanitizedFont;Lcom/google/vtfx/font/gate/SanitizedFont;)V
+	public synthetic fun <init> (Lcom/google/vtfx/font/gate/SanitizedFont;Lcom/google/vtfx/font/gate/SanitizedFont;Lcom/google/vtfx/font/gate/SanitizedFont;Lcom/google/vtfx/font/gate/SanitizedFont;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getBold ()Lcom/google/vtfx/font/SanitizedFont;
-	public final fun getBoldItalic ()Lcom/google/vtfx/font/SanitizedFont;
-	public final fun getItalic ()Lcom/google/vtfx/font/SanitizedFont;
-	public final fun getRegular ()Lcom/google/vtfx/font/SanitizedFont;
+	public final fun getBold ()Lcom/google/vtfx/font/gate/SanitizedFont;
+	public final fun getBoldItalic ()Lcom/google/vtfx/font/gate/SanitizedFont;
+	public final fun getItalic ()Lcom/google/vtfx/font/gate/SanitizedFont;
+	public final fun getRegular ()Lcom/google/vtfx/font/gate/SanitizedFont;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/google/vtfx/font/SanitizedFont {
-	public static final field Companion Lcom/google/vtfx/font/SanitizedFont$Companion;
+public final class com/google/vtfx/font/gate/SanitizedFont {
+	public static final field Companion Lcom/google/vtfx/font/gate/SanitizedFont$Companion;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getSize ()I
-	public final fun getWidthClass-NVJfhDY ()I
+	public final fun getWidthClass-poC3YvU ()I
 	public fun hashCode ()I
 	public final fun toByteArray ()[B
 	public final fun toByteBuffer ()Ljava/nio/ByteBuffer;
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/google/vtfx/font/SanitizedFont$Companion {
-	public final fun fromCanonical ([BLcom/google/vtfx/font/FontLimits;)Lcom/google/vtfx/font/SanitizedFont;
+public final class com/google/vtfx/font/gate/SanitizedFont$Companion {
+	public final fun fromCanonical ([BLcom/google/vtfx/font/gate/FontLimits;)Lcom/google/vtfx/font/gate/SanitizedFont;
 }
 
-public final class com/google/vtfx/font/WidthClass {
-	public static final field Companion Lcom/google/vtfx/font/WidthClass$Companion;
-	public static final synthetic fun box-impl (I)Lcom/google/vtfx/font/WidthClass;
+public final class com/google/vtfx/font/gate/WidthClass {
+	public static final field Companion Lcom/google/vtfx/font/gate/WidthClass$Companion;
+	public static final synthetic fun box-impl (I)Lcom/google/vtfx/font/gate/WidthClass;
 	public fun equals (Ljava/lang/Object;)Z
 	public static fun equals-impl (ILjava/lang/Object;)Z
 	public static final fun equals-impl0 (II)Z
@@ -81,9 +81,9 @@ public final class com/google/vtfx/font/WidthClass {
 	public final synthetic fun unbox-impl ()I
 }
 
-public final class com/google/vtfx/font/WidthClass$Companion {
-	public final fun getDualWidth-NVJfhDY ()I
-	public final fun getMonospaced-NVJfhDY ()I
-	public final fun getProportional-NVJfhDY ()I
+public final class com/google/vtfx/font/gate/WidthClass$Companion {
+	public final fun getDualWidth-poC3YvU ()I
+	public final fun getMonospaced-poC3YvU ()I
+	public final fun getProportional-poC3YvU ()I
 }
 

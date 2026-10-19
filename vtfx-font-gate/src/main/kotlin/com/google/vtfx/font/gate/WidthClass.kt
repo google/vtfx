@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.vtfx.font
+package com.google.vtfx.font.gate
 
 // A value class rather than an enum, since vtfx returns it and may add classes
 // (docs/decisions/0037).

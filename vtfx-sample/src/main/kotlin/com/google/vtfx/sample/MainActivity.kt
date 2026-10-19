@@ -51,7 +51,7 @@ import com.google.vtfx.compose.TerminalState
 import com.google.vtfx.compose.TerminalStyle
 import com.google.vtfx.compose.rememberTerminalState
 import com.google.vtfx.core.LinkPattern
-import com.google.vtfx.font.SanitizedFamily
+import com.google.vtfx.font.gate.SanitizedFamily
 import com.google.vtfx.gate.OpenUrlResult
 import com.google.vtfx.session.TerminalSession
 

@@ -16,6 +16,9 @@
 
 package com.google.vtfx.font
 
+import com.google.vtfx.font.gate.FontLimits
+import com.google.vtfx.font.gate.WidthClass
+
 /**
  * Writes the canonical form of a face (docs/decisions/0040) from its [FaceParts]: every value is
  * either one of those, which [FaceParts.read] checked, or computed here from the outlines. The

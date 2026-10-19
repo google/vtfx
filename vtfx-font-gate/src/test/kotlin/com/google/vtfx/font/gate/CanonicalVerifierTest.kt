@@ -16,11 +16,7 @@
 
 package com.google.vtfx.font.gate
 
-import com.google.vtfx.font.FontLimits
-import com.google.vtfx.font.InvalidFontException
-import com.google.vtfx.font.InvalidFontException.Kind
-import com.google.vtfx.font.SanitizedFont
-import com.google.vtfx.font.WidthClass
+import com.google.vtfx.font.gate.InvalidFontException.Kind
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.vtfx.font
+package com.google.vtfx.font.gate
 
 // The defaults are chosen in docs/decisions/0040.
 /**

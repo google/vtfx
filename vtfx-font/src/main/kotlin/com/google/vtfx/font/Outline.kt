@@ -16,6 +16,8 @@
 
 package com.google.vtfx.font
 
+import com.google.vtfx.font.gate.FontLimits
+
 /**
  * The outline of one glyph in TrueType's terms: contours of on-curve and off-curve points of
  * quadratic curves, in font units. Contour `i` ends at point `endPoints[i]`, inclusive. Every

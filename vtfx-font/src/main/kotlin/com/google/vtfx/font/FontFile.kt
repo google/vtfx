@@ -16,6 +16,10 @@
 
 package com.google.vtfx.font
 
+import com.google.vtfx.font.gate.FontLimits
+import com.google.vtfx.font.gate.InvalidFontException
+import com.google.vtfx.font.gate.SanitizedFont
+
 /** Reads what a font file holds, for an app to show before it sanitizes a face. */
 public object FontFile {
     /**

@@ -16,6 +16,7 @@
 
 package com.google.vtfx.font
 
+import com.google.vtfx.font.gate.FontLimits
 import kotlin.math.roundToInt
 
 /**

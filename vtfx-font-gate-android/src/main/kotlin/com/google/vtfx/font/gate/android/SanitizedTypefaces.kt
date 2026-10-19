@@ -21,8 +21,8 @@ import android.graphics.fonts.Font
 import android.graphics.fonts.FontFamily
 import android.graphics.fonts.FontStyle
 import com.google.vtfx.core.InternalVtfxApi
-import com.google.vtfx.font.SanitizedFamily
-import com.google.vtfx.font.SanitizedFont
+import com.google.vtfx.font.gate.SanitizedFamily
+import com.google.vtfx.font.gate.SanitizedFont
 import java.io.IOException
 
 // This is the only file of vtfx that makes typefaces from font data (config/boundaries.toml), and

@@ -30,8 +30,8 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.font.FontFile
-import com.google.vtfx.font.SanitizedFamily
-import com.google.vtfx.font.SanitizedFont
+import com.google.vtfx.font.gate.SanitizedFamily
+import com.google.vtfx.font.gate.SanitizedFont
 import com.google.vtfx.font.gate.android.SanitizedTypefaces
 
 // The fonts that are accepted are chosen in docs/decisions/0020 and 0040.

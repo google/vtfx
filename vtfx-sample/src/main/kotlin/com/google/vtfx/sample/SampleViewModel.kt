@@ -28,9 +28,9 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import com.google.vtfx.core.KeyModifiers
 import com.google.vtfx.font.FontFile
-import com.google.vtfx.font.FontLimits
-import com.google.vtfx.font.InvalidFontException
-import com.google.vtfx.font.SanitizedFont
+import com.google.vtfx.font.gate.FontLimits
+import com.google.vtfx.font.gate.InvalidFontException
+import com.google.vtfx.font.gate.SanitizedFont
 import com.google.vtfx.gate.android.AndroidClipboard
 import com.google.vtfx.gate.android.AndroidUrlOpener
 import com.google.vtfx.session.TerminalSession

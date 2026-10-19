@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.vtfx.font
+package com.google.vtfx.font.gate
 
 /**
  * Thrown when a font cannot be read or sanitized. [message] describes the problem in English, for

@@ -16,6 +16,8 @@
 
 package com.google.vtfx.font
 
+import com.google.vtfx.font.gate.InvalidFontException
+
 /**
  * Big-endian reads from [length] bytes of [data] starting at [start], as fonts store their numbers.
  * Positions are relative to [start]. A read outside the range is a malformed font, never an

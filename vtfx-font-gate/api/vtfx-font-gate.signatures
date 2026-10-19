@@ -1,4 +1,4 @@
-public final class com.google.vtfx.font.FontLimits {
+public final class com.google.vtfx.font.gate.FontLimits {
     public constructor(maxInputBytes: kotlin.Int = ..., maxOutputBytes: kotlin.Int = ..., maxGlyphPoints: kotlin.Int = ...)
     public final val maxGlyphPoints: kotlin.Int
     public final val maxInputBytes: kotlin.Int
@@ -8,63 +8,63 @@ public final class com.google.vtfx.font.FontLimits {
     public open operator fun equals(other: kotlin.Any?): kotlin.Boolean
 }
 
-public companion object com.google.vtfx.font.FontLimits.Companion {
+public companion object com.google.vtfx.font.gate.FontLimits.Companion {
     public final val MAX_BYTES: kotlin.Int
     public final val MAX_GLYPH_POINTS: kotlin.Int
 }
 
-public final class com.google.vtfx.font.InvalidFontException : java.lang.Exception {
-    public constructor(kind: com.google.vtfx.font.InvalidFontException.Kind, message: kotlin.String)
-    public final val kind: com.google.vtfx.font.InvalidFontException.Kind
+public final class com.google.vtfx.font.gate.InvalidFontException : java.lang.Exception {
+    public constructor(kind: com.google.vtfx.font.gate.InvalidFontException.Kind, message: kotlin.String)
+    public final val kind: com.google.vtfx.font.gate.InvalidFontException.Kind
 }
 
-public final value class com.google.vtfx.font.InvalidFontException.Kind {
+public final value class com.google.vtfx.font.gate.InvalidFontException.Kind {
     public open fun hashCode(): kotlin.Int
     public open fun toString(): kotlin.String
     public open operator fun equals(other: kotlin.Any?): kotlin.Boolean
 }
 
-public companion object com.google.vtfx.font.InvalidFontException.Kind.Companion {
-    public final val Malformed: com.google.vtfx.font.InvalidFontException.Kind
-    public final val TooComplex: com.google.vtfx.font.InvalidFontException.Kind
-    public final val TooLarge: com.google.vtfx.font.InvalidFontException.Kind
-    public final val Unsupported: com.google.vtfx.font.InvalidFontException.Kind
+public companion object com.google.vtfx.font.gate.InvalidFontException.Kind.Companion {
+    public final val Malformed: com.google.vtfx.font.gate.InvalidFontException.Kind
+    public final val TooComplex: com.google.vtfx.font.gate.InvalidFontException.Kind
+    public final val TooLarge: com.google.vtfx.font.gate.InvalidFontException.Kind
+    public final val Unsupported: com.google.vtfx.font.gate.InvalidFontException.Kind
 }
 
-public final class com.google.vtfx.font.SanitizedFamily {
-    public constructor(regular: com.google.vtfx.font.SanitizedFont, bold: com.google.vtfx.font.SanitizedFont? = ..., italic: com.google.vtfx.font.SanitizedFont? = ..., boldItalic: com.google.vtfx.font.SanitizedFont? = ...)
-    public final val bold: com.google.vtfx.font.SanitizedFont?
-    public final val boldItalic: com.google.vtfx.font.SanitizedFont?
-    public final val italic: com.google.vtfx.font.SanitizedFont?
-    public final val regular: com.google.vtfx.font.SanitizedFont
+public final class com.google.vtfx.font.gate.SanitizedFamily {
+    public constructor(regular: com.google.vtfx.font.gate.SanitizedFont, bold: com.google.vtfx.font.gate.SanitizedFont? = ..., italic: com.google.vtfx.font.gate.SanitizedFont? = ..., boldItalic: com.google.vtfx.font.gate.SanitizedFont? = ...)
+    public final val bold: com.google.vtfx.font.gate.SanitizedFont?
+    public final val boldItalic: com.google.vtfx.font.gate.SanitizedFont?
+    public final val italic: com.google.vtfx.font.gate.SanitizedFont?
+    public final val regular: com.google.vtfx.font.gate.SanitizedFont
     public open fun hashCode(): kotlin.Int
     public open fun toString(): kotlin.String
     public open operator fun equals(other: kotlin.Any?): kotlin.Boolean
 }
 
-public final class com.google.vtfx.font.SanitizedFont {
+public final class com.google.vtfx.font.gate.SanitizedFont {
     public final fun toByteArray(): kotlin.ByteArray
     public final fun toByteBuffer(): java.nio.ByteBuffer
     public final val size: kotlin.Int
-    public final val widthClass: com.google.vtfx.font.WidthClass
+    public final val widthClass: com.google.vtfx.font.gate.WidthClass
     public open fun hashCode(): kotlin.Int
     public open fun toString(): kotlin.String
     public open operator fun equals(other: kotlin.Any?): kotlin.Boolean
 }
 
-public companion object com.google.vtfx.font.SanitizedFont.Companion {
-    public final fun fromCanonical(canonical: kotlin.ByteArray, limits: com.google.vtfx.font.FontLimits): com.google.vtfx.font.SanitizedFont
+public companion object com.google.vtfx.font.gate.SanitizedFont.Companion {
+    public final fun fromCanonical(canonical: kotlin.ByteArray, limits: com.google.vtfx.font.gate.FontLimits): com.google.vtfx.font.gate.SanitizedFont
 }
 
-public final value class com.google.vtfx.font.WidthClass {
+public final value class com.google.vtfx.font.gate.WidthClass {
     public open fun hashCode(): kotlin.Int
     public open fun toString(): kotlin.String
     public open operator fun equals(other: kotlin.Any?): kotlin.Boolean
 }
 
-public companion object com.google.vtfx.font.WidthClass.Companion {
-    public final val DualWidth: com.google.vtfx.font.WidthClass
-    public final val Monospaced: com.google.vtfx.font.WidthClass
-    public final val Proportional: com.google.vtfx.font.WidthClass
+public companion object com.google.vtfx.font.gate.WidthClass.Companion {
+    public final val DualWidth: com.google.vtfx.font.gate.WidthClass
+    public final val Monospaced: com.google.vtfx.font.gate.WidthClass
+    public final val Proportional: com.google.vtfx.font.gate.WidthClass
 }
 

@@ -16,10 +16,6 @@
 
 package com.google.vtfx.font.gate
 
-import com.google.vtfx.font.FontLimits
-import com.google.vtfx.font.InvalidFontException
-import com.google.vtfx.font.WidthClass
-
 /** What [CanonicalVerifier] learned of a font that it accepted. */
 internal class Verified(val widthClass: WidthClass)
 

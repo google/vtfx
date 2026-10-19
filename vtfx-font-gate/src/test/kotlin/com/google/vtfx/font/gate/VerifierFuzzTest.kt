@@ -17,9 +17,6 @@
 package com.google.vtfx.font.gate
 
 import com.code_intelligence.jazzer.junit.FuzzTest
-import com.google.vtfx.font.FontLimits
-import com.google.vtfx.font.InvalidFontException
-import com.google.vtfx.font.SanitizedFont
 
 /**
  * Fuzzes the verifier, through [SanitizedFont.fromCanonical], with fonts close to the canonical

@@ -16,6 +16,9 @@
 
 package com.google.vtfx.font
 
+import com.google.vtfx.font.gate.FontLimits
+import com.google.vtfx.font.gate.InvalidFontException
+import com.google.vtfx.font.gate.SanitizedFont
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import org.junit.jupiter.api.Test

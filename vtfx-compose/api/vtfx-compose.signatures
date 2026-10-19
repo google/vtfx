@@ -32,8 +32,8 @@ public final class com.google.vtfx.compose.TerminalFont.Resources : com.google.v
 }
 
 public final class com.google.vtfx.compose.TerminalFont.Sanitized : com.google.vtfx.compose.TerminalFont {
-    public constructor(families: kotlin.collections.List<com.google.vtfx.font.SanitizedFamily>)
-    public final val families: kotlin.collections.List<com.google.vtfx.font.SanitizedFamily>
+    public constructor(families: kotlin.collections.List<com.google.vtfx.font.gate.SanitizedFamily>)
+    public final val families: kotlin.collections.List<com.google.vtfx.font.gate.SanitizedFamily>
     public open fun hashCode(): kotlin.Int
     public open fun toString(): kotlin.String
     public open operator fun equals(other: kotlin.Any?): kotlin.Boolean

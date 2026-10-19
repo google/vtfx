@@ -11,8 +11,8 @@ public final class com/google/vtfx/font/FaceInfo {
 
 public final class com/google/vtfx/font/FontFile {
 	public static final field INSTANCE Lcom/google/vtfx/font/FontFile;
-	public final fun inspect ([BLcom/google/vtfx/font/FontLimits;)Ljava/util/List;
-	public final fun sanitize ([BILcom/google/vtfx/font/FontLimits;)Lcom/google/vtfx/font/SanitizedFont;
+	public final fun inspect ([BLcom/google/vtfx/font/gate/FontLimits;)Ljava/util/List;
+	public final fun sanitize ([BILcom/google/vtfx/font/gate/FontLimits;)Lcom/google/vtfx/font/gate/SanitizedFont;
 }
 
 public final class com/google/vtfx/font/OutlineFormat {

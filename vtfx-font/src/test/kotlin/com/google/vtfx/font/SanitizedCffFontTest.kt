@@ -16,7 +16,9 @@
 
 package com.google.vtfx.font
 
-import com.google.vtfx.font.InvalidFontException.Kind
+import com.google.vtfx.font.gate.FontLimits
+import com.google.vtfx.font.gate.InvalidFontException
+import com.google.vtfx.font.gate.InvalidFontException.Kind
 import kotlin.math.hypot
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals

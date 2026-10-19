@@ -25,9 +25,9 @@ import android.os.SystemClock
 import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.vtfx.font.FontFile
-import com.google.vtfx.font.FontLimits
-import com.google.vtfx.font.InvalidFontException
-import com.google.vtfx.font.SanitizedFamily
+import com.google.vtfx.font.gate.FontLimits
+import com.google.vtfx.font.gate.InvalidFontException
+import com.google.vtfx.font.gate.SanitizedFamily
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Test
