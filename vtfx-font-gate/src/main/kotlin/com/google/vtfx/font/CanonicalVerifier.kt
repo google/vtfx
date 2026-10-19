@@ -130,15 +130,22 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
         if (!condition) fail(message())
     }
 
+    // The reads check their bounds without expect, whose message, built in place, made them too
+    // large for Android's runtime to inline; called for every byte, they then took a sixth of the
+    // time of checking a CJK font. They throw what readOutside returns rather than call a function
+    // that throws: Kotlin follows a call that returns Nothing with code to throw if it returns.
     private fun u8(at: Int): Int {
-        expect(at >= 0 && at < font.size) { "read at $at" }
+        if (at < 0 || at >= font.size) throw readOutside(at)
         return font[at].toInt() and 0xFF
     }
 
     private fun u16(at: Int): Int {
-        expect(at >= 0 && at <= font.size - 2) { "read at $at" }
+        if (at < 0 || at > font.size - 2) throw readOutside(at)
         return ((font[at].toInt() and 0xFF) shl 8) or (font[at + 1].toInt() and 0xFF)
     }
+
+    private fun readOutside(at: Int): InvalidFontException =
+        InvalidFontException(InvalidFontException.Kind.Malformed, "not canonical: read at $at")
 
     private fun s16(at: Int): Int = u16(at).toShort().toInt()
 
