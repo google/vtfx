@@ -152,6 +152,28 @@ class CanonicalVerifierTest {
     }
 
     @Test
+    fun glyphWithFewerPointsThanTheGlyphBeforeItPasses() {
+        // Glyphs share the arrays of points, so the bounding box of glyph 1 would take in the
+        // points of glyph 0 at (0, 0) if the verifier read past its own four.
+        val input =
+            TestTrueTypeFont(
+                    glyphs =
+                        listOf(
+                            TestGlyph.Simple(listOf(square(0, 0, 1000), square(100, 100, 800))),
+                            TestGlyph.Simple(listOf(square(300, 300, 100))),
+                        ),
+                    characters = mapOf(0x41 to 1),
+                )
+                .build()
+        // Written without the verifier, which FontFile.sanitize ends in.
+        val font = CanonicalWriter.write(FaceParts.read(Sfnt.face(input, 0), limits), limits)
+
+        val loaded = SanitizedFont.fromCanonical(font, limits)
+
+        assertContentEquals(font, loaded.toByteArray())
+    }
+
+    @Test
     fun overlapFlagOfAGlyphIsMalformed() {
         val font = canonical.copyOf()
         // The first flag of glyph 0, a square of one contour: after the header, one end point, and

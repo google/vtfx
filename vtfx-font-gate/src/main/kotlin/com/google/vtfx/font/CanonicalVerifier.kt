@@ -100,6 +100,14 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
     private var maxPoints = 0
     private var maxContours = 0
 
+    // The points of the glyph being checked, in arrays that every glyph reuses, grown to the
+    // largest: a CJK font has tens of thousands of glyphs, and Android's runtime does not remove
+    // short-lived arrays. Only the first points of the glyph are its own.
+    private var flags = IntArray(0)
+    private var xs = IntArray(0)
+    private var ys = IntArray(0)
+    private var expectedFlags = IntArray(0)
+
     // Computed from cmap.
     private var firstCodePoint = 0
     private var lastCodePoint = 0
@@ -293,7 +301,10 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
         expect(u16(at) == 0) { "glyph $glyph instructions" }
         at += 2
 
-        val flags = IntArray(points)
+        reserve(points)
+        val flags = flags
+        val xs = xs
+        val ys = ys
         val flagsStart = at
         var p = 0
         while (p < points) {
@@ -309,18 +320,22 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
             }
         }
         val flagsEnd = at
-        val xs = IntArray(points)
-        at = readCoordinates(glyph, flags, 0x02, 0x10, at, end, xs)
-        val ys = IntArray(points)
-        at = readCoordinates(glyph, flags, 0x04, 0x20, at, end, ys)
+        at = readCoordinates(glyph, points, 0x02, 0x10, at, end, xs)
+        at = readCoordinates(glyph, points, 0x04, 0x20, at, end, ys)
         expect((at + 3 - start) and 3.inv() == length) { "glyph $glyph length" }
         for (k in at until end) expect(font[k].toInt() == 0) { "glyph $glyph padding" }
-        checkFlagEncoding(glyph, flags, xs, ys, flagsStart, flagsEnd)
+        checkFlagEncoding(glyph, points, flagsStart, flagsEnd)
 
-        val boxXMin = xs.min()
-        val boxYMin = ys.min()
-        val boxXMax = xs.max()
-        val boxYMax = ys.max()
+        var boxXMin = xs[0]
+        var boxYMin = ys[0]
+        var boxXMax = xs[0]
+        var boxYMax = ys[0]
+        for (k in 1 until points) {
+            boxXMin = minOf(boxXMin, xs[k])
+            boxYMin = minOf(boxYMin, ys[k])
+            boxXMax = maxOf(boxXMax, xs[k])
+            boxYMax = maxOf(boxYMax, ys[k])
+        }
         expect(
             s16(start + 2) == boxXMin &&
                 s16(start + 4) == boxYMin &&
@@ -348,22 +363,29 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
         maxContours = maxOf(maxContours, contours)
     }
 
+    /** Grows the arrays of points, if needed, to hold [points]. */
+    private fun reserve(points: Int) {
+        if (points <= flags.size) return
+        // At least doubled, so that glyphs of growing sizes do not each allocate them again.
+        val size = minOf(maxOf(points, 2 * flags.size), limits.maxGlyphPoints)
+        flags = IntArray(size)
+        xs = IntArray(size)
+        ys = IntArray(size)
+        expectedFlags = IntArray(size)
+    }
+
     /**
-     * Checks that the flags of a glyph, from [start] to [end], are encoded in the one way that the
-     * canonical form allows: each coordinate in its shortest form, and runs of three or more equal
-     * flags, up to 256, with a repeat count. So a font has one canonical encoding, and sanitizing a
-     * canonical font gives the same bytes.
+     * Checks that the flags of a glyph of [points] points, from [start] to [end], are encoded in
+     * the one way that the canonical form allows: each coordinate in its shortest form, and runs of
+     * three or more equal flags, up to 256, with a repeat count. So a font has one canonical
+     * encoding, and sanitizing a canonical font gives the same bytes.
      */
-    private fun checkFlagEncoding(
-        glyph: Int,
-        flags: IntArray,
-        xs: IntArray,
-        ys: IntArray,
-        start: Int,
-        end: Int,
-    ) {
-        val expected = IntArray(flags.size)
-        for (p in flags.indices) {
+    private fun checkFlagEncoding(glyph: Int, points: Int, start: Int, end: Int) {
+        val flags = flags
+        val xs = xs
+        val ys = ys
+        val expected = expectedFlags
+        for (p in 0 until points) {
             val dx = xs[p] - (if (p == 0) 0 else xs[p - 1])
             val dy = ys[p] - (if (p == 0) 0 else ys[p - 1])
             expected[p] =
@@ -371,9 +393,9 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
         }
         var at = start
         var p = 0
-        while (p < expected.size) {
+        while (p < points) {
             var run = 1
-            while (p + run < expected.size && expected[p + run] == expected[p] && run < 256) run++
+            while (p + run < points && expected[p + run] == expected[p] && run < 256) run++
             if (run >= 3) {
                 expect(u8(at) == expected[p] or 0x08 && u8(at + 1) == run - 1) {
                     "glyph $glyph flags"
@@ -396,19 +418,23 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
             else -> 0
         }
 
-    /** Reads one axis of coordinates into [out], each within range; returns the end. */
+    /**
+     * Reads one axis of the coordinates of a glyph of [points] points into [out], each within
+     * range; returns the end.
+     */
     private fun readCoordinates(
         glyph: Int,
-        flags: IntArray,
+        points: Int,
         short: Int,
         sameOrPositive: Int,
         start: Int,
         end: Int,
         out: IntArray,
     ): Int {
+        val flags = flags
         var at = start
         var value = 0
-        for (p in flags.indices) {
+        for (p in 0 until points) {
             val flag = flags[p]
             if (flag and short != 0) {
                 expect(at < end) { "glyph $glyph coordinates" }
