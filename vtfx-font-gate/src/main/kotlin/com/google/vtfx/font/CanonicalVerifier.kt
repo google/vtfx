@@ -121,17 +121,22 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
 
     private fun fail(message: String): Nothing = malformed("not canonical: $message")
 
-    private fun expect(condition: Boolean, message: String) {
-        if (!condition) fail(message)
+    /**
+     * Fails with [message] unless [condition] holds. The message is built only on failure: checks
+     * run for every byte and point of a font, and building their messages each time made checking a
+     * CJK font take several times as long, and allocate gigabytes.
+     */
+    private inline fun expect(condition: Boolean, message: () -> String) {
+        if (!condition) fail(message())
     }
 
     private fun u8(at: Int): Int {
-        expect(at >= 0 && at < font.size, "read at $at")
+        expect(at >= 0 && at < font.size) { "read at $at" }
         return font[at].toInt() and 0xFF
     }
 
     private fun u16(at: Int): Int {
-        expect(at >= 0 && at <= font.size - 2, "read at $at")
+        expect(at >= 0 && at <= font.size - 2) { "read at $at" }
         return ((font[at].toInt() and 0xFF) shl 8) or (font[at + 1].toInt() and 0xFF)
     }
 
@@ -142,45 +147,46 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
     private fun s32(at: Int): Int = (u16(at) shl 16) or u16(at + 2)
 
     private fun field(table: Int, at: Int, expected: Int, name: String) {
-        expect(u16(offsets[table] + at) == expected, name)
+        expect(u16(offsets[table] + at) == expected) { name }
     }
 
     private fun field32(table: Int, at: Int, expected: Int, name: String) {
-        expect(s32(offsets[table] + at) == expected, name)
+        expect(s32(offsets[table] + at) == expected) { name }
     }
 
     /** The header, the directory, the layout of the tables, and every checksum. */
     private fun checkDirectory() {
-        expect(font.size >= DIRECTORY_END, "file too short")
-        expect(s32(0) == 0x00010000, "sfnt version")
-        expect(u16(4) == TAGS.size, "number of tables")
-        expect(u16(6) == 128 && u16(8) == 3 && u16(10) == 32, "search fields")
+        expect(font.size >= DIRECTORY_END) { "file too short" }
+        expect(s32(0) == 0x00010000) { "sfnt version" }
+        expect(u16(4) == TAGS.size) { "number of tables" }
+        expect(u16(6) == 128 && u16(8) == 3 && u16(10) == 32) { "search fields" }
         var expectedOffset = DIRECTORY_END
         for (i in TAGS.indices) {
             val record = 12 + i * 16
-            expect(s32(record) == TAGS[i], "table $i tag")
+            expect(s32(record) == TAGS[i]) { "table $i tag" }
             val offset = s32(record + 8)
             val length = s32(record + 12)
-            expect(offset == expectedOffset, "table $i offset")
+            expect(offset == expectedOffset) { "table $i offset" }
             // offset is at most the file size here, so the subtraction cannot overflow.
-            expect(length >= 0 && length <= font.size - offset, "table $i length")
+            expect(length >= 0 && length <= font.size - offset) { "table $i length" }
             val padded = (length + 3) and 3.inv()
-            expect(padded <= font.size - offset, "table $i padding")
-            for (p in offset + length until offset + padded) expect(font[p].toInt() == 0, "padding")
+            expect(padded <= font.size - offset) { "table $i padding" }
+            for (p in offset + length until offset + padded) {
+                expect(font[p].toInt() == 0) { "padding" }
+            }
             offsets[i] = offset
             lengths[i] = length
             expectedOffset = offset + padded
         }
-        expect(expectedOffset == font.size, "data after the tables")
+        expect(expectedOffset == font.size) { "data after the tables" }
         for (i in TAGS.indices) {
             val record = 12 + i * 16
-            expect(
-                s32(record + 4) == checksum(offsets[i], lengths[i], i == HEAD),
-                "table $i checksum",
-            )
+            expect(s32(record + 4) == checksum(offsets[i], lengths[i], i == HEAD)) {
+                "table $i checksum"
+            }
         }
         val adjustment = s32(offsets[HEAD] + 8)
-        expect(adjustment == CHECKSUM_MAGIC - checksum(0, font.size, true), "checksumAdjustment")
+        expect(adjustment == CHECKSUM_MAGIC - checksum(0, font.size, true)) { "checksumAdjustment" }
     }
 
     /**
@@ -207,16 +213,16 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
     }
 
     private fun checkHead() {
-        expect(lengths[HEAD] == 54, "head length")
+        expect(lengths[HEAD] == 54) { "head length" }
         field32(HEAD, 0, 0x00010000, "head version")
         field32(HEAD, 4, 0x00010000, "fontRevision")
         field32(HEAD, 12, 0x5F0F3CF5, "head magic")
         field(HEAD, 16, 0x000B, "head flags")
         unitsPerEm = u16(offsets[HEAD] + 18)
-        expect(unitsPerEm in 16..16384, "unitsPerEm")
+        expect(unitsPerEm in 16..16384) { "unitsPerEm" }
         for (at in 20 until 36 step 2) field(HEAD, at, 0, "dates")
         macStyle = u16(offsets[HEAD] + 44)
-        expect(macStyle and 3.inv() == 0, "macStyle")
+        expect(macStyle and 3.inv() == 0) { "macStyle" }
         field(HEAD, 46, 8, "lowestRecPPEM")
         field(HEAD, 48, 2, "fontDirectionHint")
         field(HEAD, 50, 1, "indexToLocFormat")
@@ -225,39 +231,40 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
     }
 
     private fun checkMaxp() {
-        expect(lengths[MAXP] == 32, "maxp length")
+        expect(lengths[MAXP] == 32) { "maxp length" }
         field32(MAXP, 0, 0x00010000, "maxp version")
         numGlyphs = u16(offsets[MAXP] + 4)
-        expect(numGlyphs >= 1, "no glyphs")
+        expect(numGlyphs >= 1) { "no glyphs" }
         // maxPoints and maxContours, at 6 and 8, are checked against the glyphs in checkGlyf.
         for (at in 10 until 32 step 2) field(MAXP, at, if (at == 14) 1 else 0, "maxp field $at")
     }
 
     private fun checkGlyf() {
-        expect(lengths[LOCA] == 4 * (numGlyphs + 1), "loca length")
+        expect(lengths[LOCA] == 4 * (numGlyphs + 1)) { "loca length" }
         nonEmpty = BooleanArray(numGlyphs)
         glyphXMin = IntArray(numGlyphs)
         glyphXMax = IntArray(numGlyphs)
         val loca = offsets[LOCA]
         var previous = 0
-        expect(s32(loca) == 0, "first loca offset")
+        expect(s32(loca) == 0) { "first loca offset" }
         for (glyph in 0 until numGlyphs) {
             val start = previous
             val end = s32(loca + (glyph + 1) * 4)
-            expect(end >= start && end <= lengths[GLYF], "loca offset ${glyph + 1}")
-            expect(end % 4 == 0, "loca alignment")
+            expect(end >= start && end <= lengths[GLYF]) { "loca offset ${glyph + 1}" }
+            expect(end % 4 == 0) { "loca alignment" }
             if (end > start) checkGlyph(glyph, offsets[GLYF] + start, end - start)
             previous = end
         }
-        expect(previous == lengths[GLYF], "glyf length")
+        expect(previous == lengths[GLYF]) { "glyf length" }
         val head = offsets[HEAD]
         expect(
             s16(head + 36) == xMin &&
                 s16(head + 38) == yMin &&
                 s16(head + 40) == xMax &&
-                s16(head + 42) == yMax,
-            "head bounding box",
-        )
+                s16(head + 42) == yMax
+        ) {
+            "head bounding box"
+        }
         field(MAXP, 6, maxPoints, "maxPoints")
         field(MAXP, 8, maxContours, "maxContours")
     }
@@ -266,31 +273,31 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
     private fun checkGlyph(glyph: Int, start: Int, length: Int) {
         val end = start + length
         val contours = s16(start)
-        expect(contours >= 1, "glyph $glyph contours")
+        expect(contours >= 1) { "glyph $glyph contours" }
         var lastEnd = -1
         for (c in 0 until contours) {
             val endPoint = u16(start + 10 + c * 2)
-            expect(endPoint > lastEnd, "glyph $glyph end points")
+            expect(endPoint > lastEnd) { "glyph $glyph end points" }
             lastEnd = endPoint
         }
         val points = lastEnd + 1
-        expect(points <= limits.maxGlyphPoints, "glyph $glyph points")
+        expect(points <= limits.maxGlyphPoints) { "glyph $glyph points" }
         var at = start + 10 + contours * 2
-        expect(u16(at) == 0, "glyph $glyph instructions")
+        expect(u16(at) == 0) { "glyph $glyph instructions" }
         at += 2
 
         val flags = IntArray(points)
         val flagsStart = at
         var p = 0
         while (p < points) {
-            expect(at < end, "glyph $glyph flags")
+            expect(at < end) { "glyph $glyph flags" }
             val flag = u8(at++)
-            expect(flag and 0x3F.inv() == 0, "glyph $glyph flag bits")
+            expect(flag and 0x3F.inv() == 0) { "glyph $glyph flag bits" }
             flags[p++] = flag
             if (flag and 0x08 != 0) {
-                expect(at < end, "glyph $glyph repeat")
+                expect(at < end) { "glyph $glyph repeat" }
                 val count = u8(at++)
-                expect(count <= points - p, "glyph $glyph repeat count")
+                expect(count <= points - p) { "glyph $glyph repeat count" }
                 for (k in 0 until count) flags[p++] = flag
             }
         }
@@ -299,8 +306,8 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
         at = readCoordinates(glyph, flags, 0x02, 0x10, at, end, xs)
         val ys = IntArray(points)
         at = readCoordinates(glyph, flags, 0x04, 0x20, at, end, ys)
-        expect((at + 3 - start) and 3.inv() == length, "glyph $glyph length")
-        for (k in at until end) expect(font[k].toInt() == 0, "glyph $glyph padding")
+        expect((at + 3 - start) and 3.inv() == length) { "glyph $glyph length" }
+        for (k in at until end) expect(font[k].toInt() == 0) { "glyph $glyph padding" }
         checkFlagEncoding(glyph, flags, xs, ys, flagsStart, flagsEnd)
 
         val boxXMin = xs.min()
@@ -311,9 +318,10 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
             s16(start + 2) == boxXMin &&
                 s16(start + 4) == boxYMin &&
                 s16(start + 6) == boxXMax &&
-                s16(start + 8) == boxYMax,
-            "glyph $glyph bounding box",
-        )
+                s16(start + 8) == boxYMax
+        ) {
+            "glyph $glyph bounding box"
+        }
         nonEmpty[glyph] = true
         glyphXMin[glyph] = boxXMin
         glyphXMax[glyph] = boxXMax
@@ -360,16 +368,18 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
             var run = 1
             while (p + run < expected.size && expected[p + run] == expected[p] && run < 256) run++
             if (run >= 3) {
-                expect(u8(at) == expected[p] or 0x08 && u8(at + 1) == run - 1, "glyph $glyph flags")
+                expect(u8(at) == expected[p] or 0x08 && u8(at + 1) == run - 1) {
+                    "glyph $glyph flags"
+                }
                 at += 2
                 p += run
             } else {
-                expect(u8(at) == expected[p], "glyph $glyph flags")
+                expect(u8(at) == expected[p]) { "glyph $glyph flags" }
                 at++
                 p++
             }
         }
-        expect(at == end, "glyph $glyph flags")
+        expect(at == end) { "glyph $glyph flags" }
     }
 
     private fun shortest(delta: Int, short: Int, sameOrPositive: Int): Int =
@@ -394,31 +404,31 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
         for (p in flags.indices) {
             val flag = flags[p]
             if (flag and short != 0) {
-                expect(at < end, "glyph $glyph coordinates")
+                expect(at < end) { "glyph $glyph coordinates" }
                 val delta = u8(at++)
                 value += if (flag and sameOrPositive != 0) delta else -delta
             } else if (flag and sameOrPositive == 0) {
-                expect(at + 2 <= end, "glyph $glyph coordinates")
+                expect(at + 2 <= end) { "glyph $glyph coordinates" }
                 value += s16(at)
                 at += 2
             }
-            expect(value in MIN_COORDINATE..MAX_COORDINATE, "glyph $glyph coordinate range")
+            expect(value in MIN_COORDINATE..MAX_COORDINATE) { "glyph $glyph coordinate range" }
             out[p] = value
         }
         return at
     }
 
     private fun checkHhea() {
-        expect(lengths[HHEA] == 36, "hhea length")
+        expect(lengths[HHEA] == 36) { "hhea length" }
         val hhea = offsets[HHEA]
         field32(HHEA, 0, 0x00010000, "hhea version")
         ascender = s16(hhea + 4)
         descender = s16(hhea + 6)
         lineGap = s16(hhea + 8)
-        expect(ascender in 1..2 * unitsPerEm, "ascender")
-        expect(descender in -2 * unitsPerEm..0, "descender")
-        expect(lineGap in 0..unitsPerEm, "lineGap")
-        expect(lengths[HMTX] == 4 * numGlyphs, "hmtx length")
+        expect(ascender in 1..2 * unitsPerEm) { "ascender" }
+        expect(descender in -2 * unitsPerEm..0) { "descender" }
+        expect(lineGap in 0..unitsPerEm) { "lineGap" }
+        expect(lengths[HMTX] == 4 * numGlyphs) { "hmtx length" }
         advances = IntArray(numGlyphs) { u16(offsets[HMTX] + it * 4) }
         var minLeft = 0
         var minRight = 0
@@ -435,9 +445,9 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
             any = true
         }
         field(HHEA, 10, advances.max(), "advanceWidthMax")
-        expect(s16(hhea + 12) == minLeft, "minLeftSideBearing")
-        expect(s16(hhea + 14) == minRight, "minRightSideBearing")
-        expect(s16(hhea + 16) == maxExtent, "xMaxExtent")
+        expect(s16(hhea + 12) == minLeft) { "minLeftSideBearing" }
+        expect(s16(hhea + 14) == minRight) { "minRightSideBearing" }
+        expect(s16(hhea + 16) == maxExtent) { "xMaxExtent" }
         field(HHEA, 18, 1, "caretSlopeRise")
         for (at in 20 until 34 step 2) field(HHEA, at, 0, "hhea field $at")
         field(HHEA, 34, numGlyphs, "numberOfHMetrics")
@@ -445,10 +455,10 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
 
     private fun checkHmtx() {
         for (glyph in 0 until numGlyphs) {
-            expect(advances[glyph] <= 4 * unitsPerEm, "advance of glyph $glyph")
+            expect(advances[glyph] <= 4 * unitsPerEm) { "advance of glyph $glyph" }
             val leftSideBearing = s16(offsets[HMTX] + glyph * 4 + 2)
             val expected = if (nonEmpty[glyph]) glyphXMin[glyph] else 0
-            expect(leftSideBearing == expected, "left side bearing of glyph $glyph")
+            expect(leftSideBearing == expected) { "left side bearing of glyph $glyph" }
         }
     }
 
@@ -458,28 +468,28 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
         val tables = u16(cmap + 2)
         val format12: Int
         if (tables == 1) {
-            expect(u16(cmap + 4) == 3 && u16(cmap + 6) == 10, "cmap record")
-            expect(s32(cmap + 8) == 12, "cmap offset")
+            expect(u16(cmap + 4) == 3 && u16(cmap + 6) == 10) { "cmap record" }
+            expect(s32(cmap + 8) == 12) { "cmap offset" }
             format12 = 12
         } else {
-            expect(tables == 2, "cmap records")
-            expect(u16(cmap + 4) == 0 && u16(cmap + 6) == 5, "cmap variation record")
-            expect(s32(cmap + 8) == 20, "cmap variation offset")
-            expect(u16(cmap + 12) == 3 && u16(cmap + 14) == 10, "cmap record")
+            expect(tables == 2) { "cmap records" }
+            expect(u16(cmap + 4) == 0 && u16(cmap + 6) == 5) { "cmap variation record" }
+            expect(s32(cmap + 8) == 20) { "cmap variation offset" }
+            expect(u16(cmap + 12) == 3 && u16(cmap + 14) == 10) { "cmap record" }
             format12 = 20 + checkFormat14(cmap + 20)
-            expect(s32(cmap + 16) == format12, "cmap offset")
+            expect(s32(cmap + 16) == format12) { "cmap offset" }
         }
         val end = checkFormat12(cmap + format12)
-        expect(end == cmap + lengths[CMAP], "cmap length")
+        expect(end == cmap + lengths[CMAP]) { "cmap length" }
     }
 
     /** Checks the format 12 subtable at [start]; returns its end. */
     private fun checkFormat12(start: Int): Int {
-        expect(u16(start) == 12 && u16(start + 2) == 0, "format 12 header")
+        expect(u16(start) == 12 && u16(start + 2) == 0) { "format 12 header" }
         val groups = s32(start + 12)
-        expect(groups >= 1 && groups <= (font.size - start) / 12, "format 12 groups")
-        expect(s32(start + 4) == 16 + 12 * groups, "format 12 length")
-        expect(s32(start + 8) == 0, "format 12 language")
+        expect(groups >= 1 && groups <= (font.size - start) / 12) { "format 12 groups" }
+        expect(s32(start + 4) == 16 + 12 * groups) { "format 12 length" }
+        expect(s32(start + 8) == 0) { "format 12 language" }
         val widths = IntArray(2)
         var widthCount = 0
         var proportional = false
@@ -490,17 +500,15 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
             val first = s32(group)
             val last = s32(group + 4)
             val glyph = s32(group + 8)
-            expect(first in 0..MAX_CODE_POINT && last in first..MAX_CODE_POINT, "group range")
-            expect(last < 0xD800 || first > 0xDFFF, "group with surrogates")
-            expect(first > previousEnd, "groups not in order")
-            expect(
-                glyph >= 1 && glyph < numGlyphs && last - first < numGlyphs - glyph,
-                "group glyphs",
-            )
-            expect(
-                !(first == previousEnd + 1 && glyph == previousGlyphEnd + 1),
-                "groups not merged",
-            )
+            expect(first in 0..MAX_CODE_POINT && last in first..MAX_CODE_POINT) { "group range" }
+            expect(last < 0xD800 || first > 0xDFFF) { "group with surrogates" }
+            expect(first > previousEnd) { "groups not in order" }
+            expect(glyph >= 1 && glyph < numGlyphs && last - first < numGlyphs - glyph) {
+                "group glyphs"
+            }
+            expect(!(first == previousEnd + 1 && glyph == previousGlyphEnd + 1)) {
+                "groups not merged"
+            }
             if (g == 0) firstCodePoint = first
             lastCodePoint = last
             previousEnd = last
@@ -530,10 +538,10 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
 
     /** Checks the format 14 subtable at [start]; returns its length. */
     private fun checkFormat14(start: Int): Int {
-        expect(u16(start) == 14, "format 14 header")
+        expect(u16(start) == 14) { "format 14 header" }
         val length = s32(start + 2)
         val records = s32(start + 6)
-        expect(records in 1..(3 + 1 + 16 + 240), "format 14 records")
+        expect(records in 1..(3 + 1 + 16 + 240)) { "format 14 records" }
         // The tables follow the records, in the order of the records, each default table before
         // the non-default one.
         var expectedOffset = 10 + 11 * records
@@ -541,38 +549,38 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
         for (r in 0 until records) {
             val record = start + 10 + r * 11
             val selector = u24(record)
-            expect(isVariationSelector(selector) && selector > previousSelector, "selector")
+            expect(isVariationSelector(selector) && selector > previousSelector) { "selector" }
             previousSelector = selector
             val defaultOffset = s32(record + 3)
             val nonDefaultOffset = s32(record + 7)
-            expect(defaultOffset != 0 || nonDefaultOffset != 0, "selector without sequences")
+            expect(defaultOffset != 0 || nonDefaultOffset != 0) { "selector without sequences" }
             if (defaultOffset != 0) {
-                expect(defaultOffset == expectedOffset, "default table offset")
+                expect(defaultOffset == expectedOffset) { "default table offset" }
                 expectedOffset += checkDefaultTable(start + defaultOffset)
             }
             if (nonDefaultOffset != 0) {
-                expect(nonDefaultOffset == expectedOffset, "non-default table offset")
+                expect(nonDefaultOffset == expectedOffset) { "non-default table offset" }
                 expectedOffset += checkNonDefaultTable(start + nonDefaultOffset)
             }
         }
-        expect(length == expectedOffset, "format 14 length")
+        expect(length == expectedOffset) { "format 14 length" }
         return length
     }
 
     /** Checks a default table of variation sequences at [start]; returns its length. */
     private fun checkDefaultTable(start: Int): Int {
         val ranges = s32(start)
-        expect(ranges >= 1 && ranges <= (font.size - start) / 4, "default ranges")
+        expect(ranges >= 1 && ranges <= (font.size - start) / 4) { "default ranges" }
         var previousEnd = -2
         var previousFull = false
         for (r in 0 until ranges) {
             val first = u24(start + 4 + r * 4)
             val count = u8(start + 4 + r * 4 + 3)
             val last = first + count
-            expect(last <= MAX_CODE_POINT, "default range")
-            expect(last < 0xD800 || first > 0xDFFF, "default range with surrogates")
-            expect(first > previousEnd, "default ranges not in order")
-            expect(first != previousEnd + 1 || previousFull, "default ranges not merged")
+            expect(last <= MAX_CODE_POINT) { "default range" }
+            expect(last < 0xD800 || first > 0xDFFF) { "default range with surrogates" }
+            expect(first > previousEnd) { "default ranges not in order" }
+            expect(first != previousEnd + 1 || previousFull) { "default ranges not merged" }
             previousEnd = last
             previousFull = count == 255
         }
@@ -582,13 +590,13 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
     /** Checks a non-default table of variation sequences at [start]; returns its length. */
     private fun checkNonDefaultTable(start: Int): Int {
         val mappings = s32(start)
-        expect(mappings >= 1 && mappings <= (font.size - start) / 5, "non-default mappings")
+        expect(mappings >= 1 && mappings <= (font.size - start) / 5) { "non-default mappings" }
         var previous = -1
         for (m in 0 until mappings) {
             val c = u24(start + 4 + m * 5)
             val glyph = u16(start + 4 + m * 5 + 3)
-            expect(c > previous && c <= MAX_CODE_POINT && c !in 0xD800..0xDFFF, "sequence base")
-            expect(glyph in 1 until numGlyphs, "sequence glyph")
+            expect(c > previous && c <= MAX_CODE_POINT && c !in 0xD800..0xDFFF) { "sequence base" }
+            expect(glyph in 1 until numGlyphs) { "sequence glyph" }
             previous = c
         }
         return 4 + 5 * mappings
@@ -598,7 +606,7 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
         c in 0x180B..0x180D || c == 0x180F || c in 0xFE00..0xFE0F || c in 0xE0100..0xE01EF
 
     private fun checkOs2() {
-        expect(lengths[OS2] == 96, "OS/2 length")
+        expect(lengths[OS2] == 96) { "OS/2 length" }
         val os2 = offsets[OS2]
         val em = unitsPerEm
         field(OS2, 0, 4, "OS/2 version")
@@ -611,8 +619,8 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
             }
         }
         field(OS2, 2, if (count == 0) 0 else ((sum + count / 2) / count).toInt(), "xAvgCharWidth")
-        expect(u16(os2 + 4) in 1..1000, "usWeightClass")
-        expect(u16(os2 + 6) in 1..9, "usWidthClass")
+        expect(u16(os2 + 4) in 1..1000) { "usWeightClass" }
+        expect(u16(os2 + 6) in 1..9) { "usWidthClass" }
         field(OS2, 8, 0, "fsType")
         field(OS2, 10, em * 65 / 100, "ySubscriptXSize")
         field(OS2, 12, em * 60 / 100, "ySubscriptYSize")
@@ -637,14 +645,14 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
         field(OS2, 62, fsSelection, "fsSelection")
         field(OS2, 64, minOf(firstCodePoint, 0xFFFF), "usFirstCharIndex")
         field(OS2, 66, minOf(lastCodePoint, 0xFFFF), "usLastCharIndex")
-        expect(s16(os2 + 68) == ascender, "sTypoAscender")
-        expect(s16(os2 + 70) == descender, "sTypoDescender")
-        expect(s16(os2 + 72) == lineGap, "sTypoLineGap")
+        expect(s16(os2 + 68) == ascender) { "sTypoAscender" }
+        expect(s16(os2 + 70) == descender) { "sTypoDescender" }
+        expect(s16(os2 + 72) == lineGap) { "sTypoLineGap" }
         field(OS2, 74, maxOf(yMax, 0), "usWinAscent")
         field(OS2, 76, maxOf(-yMin, 0), "usWinDescent")
         for (at in 78 until 86 step 2) field(OS2, at, 0, "ulCodePageRange")
-        expect(s16(os2 + 86) in 0..2 * em, "sxHeight")
-        expect(s16(os2 + 88) in 0..2 * em, "sCapHeight")
+        expect(s16(os2 + 86) in 0..2 * em) { "sxHeight" }
+        expect(s16(os2 + 88) in 0..2 * em) { "sCapHeight" }
         field(OS2, 90, 0, "usDefaultChar")
         field(OS2, 92, 0x20, "usBreakChar")
         field(OS2, 94, 0, "usMaxContext")
@@ -679,18 +687,18 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
         }
         for (string in strings) string.forEach { put16(it.code) }
         val bytes = expected.toByteArray()
-        expect(lengths[NAME] == bytes.size, "name length")
-        for (i in bytes.indices) expect(font[offsets[NAME] + i] == bytes[i], "name byte $i")
+        expect(lengths[NAME] == bytes.size) { "name length" }
+        for (i in bytes.indices) expect(font[offsets[NAME] + i] == bytes[i]) { "name byte $i" }
     }
 
     private fun checkPost() {
-        expect(lengths[POST] == 32, "post length")
+        expect(lengths[POST] == 32) { "post length" }
         val post = offsets[POST]
         field32(POST, 0, 0x00030000, "post version")
         val italicAngle = s32(post + 4)
-        expect(italicAngle in -MAX_ITALIC_ANGLE..MAX_ITALIC_ANGLE, "italicAngle")
-        expect(s16(post + 8) in -unitsPerEm..unitsPerEm, "underlinePosition")
-        expect(s16(post + 10) in 0..unitsPerEm, "underlineThickness")
+        expect(italicAngle in -MAX_ITALIC_ANGLE..MAX_ITALIC_ANGLE) { "italicAngle" }
+        expect(s16(post + 8) in -unitsPerEm..unitsPerEm) { "underlinePosition" }
+        expect(s16(post + 10) in 0..unitsPerEm) { "underlineThickness" }
         field32(POST, 12, if (widthClass == WidthClass.Monospaced) 1 else 0, "isFixedPitch")
         for (at in 16 until 32 step 4) field32(POST, at, 0, "post memory")
     }
