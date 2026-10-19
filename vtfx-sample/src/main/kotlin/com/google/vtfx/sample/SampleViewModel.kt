@@ -144,7 +144,7 @@ class SampleViewModel(application: Application) : AndroidViewModel(application) 
                     fontRequest = FontRequest(face)
                 }
             }
-            "reset" -> fontExecutor.execute { saveFonts(emptyList()) }
+            "reset" -> fontExecutor.execute { saveFonts(emptyList(), report = "") }
             else -> host.report("Usage: font, font import [FACE], or font reset")
         }
     }
@@ -156,7 +156,7 @@ class SampleViewModel(application: Application) : AndroidViewModel(application) 
     fun importFont(request: FontRequest, uri: Uri) {
         val resolver = getApplication<Application>().contentResolver
         fontExecutor.execute {
-            val message =
+            val failure =
                 try {
                     val bytes =
                         checkNotNull(resolver.openInputStream(uri)) { "cannot open $uri" }
@@ -169,12 +169,16 @@ class SampleViewModel(application: Application) : AndroidViewModel(application) 
                     val started = System.nanoTime()
                     val font = SanitizedFont.sanitize(bytes, face, LIMITS)
                     val millis = (System.nanoTime() - started) / 1_000_000
-                    saveFonts(savedFonts + font)
-                    faces.joinToString("\n", postfix = "\n") { info ->
-                        val mark = if (info.index == face) "*" else " "
-                        "$mark ${info.index}: ${info.familyName} ${info.styleName} " +
-                            "(${info.outlineFormat})"
-                    } + "Imported face $face in $millis ms: ${bytes.size} bytes to ${font.size}."
+                    val report =
+                        faces.joinToString("\n", postfix = "\n") { info ->
+                            val mark = if (info.index == face) "*" else " "
+                            "$mark ${info.index}: ${info.familyName} ${info.styleName} " +
+                                "(${info.outlineFormat})"
+                        } +
+                            "Imported face $face in $millis ms: ${bytes.size} bytes to " +
+                            "${font.size}.\n"
+                    saveFonts(savedFonts + font, report)
+                    null
                 } catch (e: InvalidFontException) {
                     "Not imported: ${e.kind}: ${e.message}"
                 } catch (e: IllegalArgumentException) {
@@ -182,7 +186,7 @@ class SampleViewModel(application: Application) : AndroidViewModel(application) 
                 } catch (e: java.io.IOException) {
                     "Not imported: $e"
                 }
-            mainHandler.post { host.report(message) }
+            if (failure != null) mainHandler.post { host.report(failure) }
         }
     }
 
@@ -194,8 +198,11 @@ class SampleViewModel(application: Application) : AndroidViewModel(application) 
         mainHandler.post { fonts = loaded }
     }
 
-    /** Saves [newFonts] in place of the saved fonts and uses them, on the font thread. */
-    private fun saveFonts(newFonts: List<SanitizedFont>) {
+    /**
+     * Saves [newFonts] in place of the saved fonts and uses them, on the font thread, then shows
+     * [report] and the fonts.
+     */
+    private fun saveFonts(newFonts: List<SanitizedFont>, report: String) {
         fontDirectory.deleteRecursively()
         fontDirectory.mkdirs()
         for ((i, font) in newFonts.withIndex()) {
@@ -204,7 +211,7 @@ class SampleViewModel(application: Application) : AndroidViewModel(application) 
         savedFonts = newFonts
         mainHandler.post {
             fonts = newFonts
-            host.report(describeFonts(newFonts))
+            host.report(report + describeFonts(newFonts))
         }
     }
 
