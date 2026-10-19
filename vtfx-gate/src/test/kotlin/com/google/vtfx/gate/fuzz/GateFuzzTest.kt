@@ -44,6 +44,9 @@ import java.util.Base64
  * - Byte 1: the number of rows, 1 + (byte % 24).
  * - Byte 2: bit 0 allows clipboard reads, bit 1 reports colors, and the rest is the limit of
  *   clipboard writes, (byte shr 2) % 16.
+ * - Bytes 3 and 4: the width of a cell in pixels, big-endian, % 1001. Bytes 5 and 6: the height,
+ *   the same way. The cell size is set, as a display sets it, only if both are nonzero, so that the
+ *   replies to XTWINOPS 14 and 16 are made and their ranges checked.
  * - The rest: host output. 0xFE, which does not appear in UTF-8, splits it into separate writes.
  *   The rest is also pasted, decoded as UTF-8.
  */
@@ -60,6 +63,8 @@ class GateFuzzTest {
                 maxClipboardWriteLength = (flags shr 2) % 16,
             )
         val reportsColors = flags and 2 != 0
+        val cellWidth = input.uint16At(3) % 1001
+        val cellHeight = input.uint16At(5) % 1001
         val output = input.copyOfRange(HEADER_SIZE, input.size)
 
         val replies = mutableListOf<String>()
@@ -84,6 +89,7 @@ class GateFuzzTest {
                     else null,
             )
         val terminal = Terminal(columns, rows) { gate.handle(it) }
+        if (cellWidth != 0 && cellHeight != 0) terminal.setCellSize(cellWidth, cellHeight)
         for (write in output.split(SPLIT)) terminal.write(write)
 
         val allowed = buildList {
@@ -130,6 +136,9 @@ class GateFuzzTest {
         return """\u001b\]52;[$selection]{1,16};${Regex.escape(data)}\u001b\\"""
     }
 
+    private fun ByteArray.uint16At(index: Int): Int =
+        ((this[index].toInt() and 0xFF) shl 8) or (this[index + 1].toInt() and 0xFF)
+
     private fun ByteArray.split(separator: Byte): List<ByteArray> {
         val parts = mutableListOf<ByteArray>()
         var start = 0
@@ -149,7 +158,7 @@ class GateFuzzTest {
         }
 
     private companion object {
-        const val HEADER_SIZE = 3
+        const val HEADER_SIZE = 7
         const val SPLIT = 0xFE.toByte()
 
         /** Text with a sequence that would answer the host, were it not encoded. */
