@@ -60,6 +60,9 @@ internal interface OutlineSource {
 /**
  * Collects the contours of an outline, refusing more than [maxPoints] points. Contours without
  * points are dropped, as they draw nothing.
+ *
+ * [build] starts the next outline, keeping the arrays, so that one builder can collect the outlines
+ * of all the glyphs of a font without growing its arrays again for each. Not thread-safe.
  */
 internal class OutlineBuilder(private val maxPoints: Int) {
     private var xs = IntArray(16)
@@ -92,14 +95,20 @@ internal class OutlineBuilder(private val maxPoints: Int) {
         contourStart = points
     }
 
+    /** The outline of the points and contours collected since the last call. */
     fun build(): Outline {
         check(points == contourStart) { "open contour" }
         if (points == 0) return Outline.EMPTY
-        return Outline(
-            endPoints.copyOf(contours),
-            xs.copyOf(points),
-            ys.copyOf(points),
-            onCurve.copyOf(points),
-        )
+        val outline =
+            Outline(
+                endPoints.copyOf(contours),
+                xs.copyOf(points),
+                ys.copyOf(points),
+                onCurve.copyOf(points),
+            )
+        points = 0
+        contours = 0
+        contourStart = 0
+        return outline
     }
 }

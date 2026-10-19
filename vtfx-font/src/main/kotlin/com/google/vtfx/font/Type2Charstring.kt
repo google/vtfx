@@ -116,13 +116,13 @@ internal class Type2Charstring(
                 }
                 RLINETO -> {
                     requirePath(sp > 0 && sp % 2 == 0)
-                    for (i in 0 until sp step 2) lineTo(x + stack[i], y + stack[i + 1])
+                    lines(sp)
                 }
                 HLINETO -> alternatingLines(horizontal = true)
                 VLINETO -> alternatingLines(horizontal = false)
                 RRCURVETO -> {
                     requirePath(sp > 0 && sp % 6 == 0)
-                    for (i in 0 until sp step 6) relativeCurve(i)
+                    relativeCurves(sp)
                 }
                 HHCURVETO -> {
                     requirePath(sp >= 4 && sp % 4 <= 1)
@@ -148,12 +148,12 @@ internal class Type2Charstring(
                 VHCURVETO -> alternatingCurves(horizontal = false)
                 RCURVELINE -> {
                     requirePath(sp >= 8 && (sp - 2) % 6 == 0)
-                    for (i in 0 until sp - 2 step 6) relativeCurve(i)
+                    relativeCurves(sp - 2)
                     lineTo(x + stack[sp - 2], y + stack[sp - 1])
                 }
                 RLINECURVE -> {
                     requirePath(sp >= 8 && (sp - 6) % 2 == 0)
-                    for (i in 0 until sp - 6 step 2) lineTo(x + stack[i], y + stack[i + 1])
+                    lines(sp - 6)
                     relativeCurve(sp - 6)
                 }
                 CALLSUBR -> {
@@ -208,9 +208,11 @@ internal class Type2Charstring(
                 requirePath(sp == 11)
                 var dx = 0.0
                 var dy = 0.0
-                for (i in 0 until 10 step 2) {
+                var i = 0
+                while (i < 10) {
                     dx += stack[i]
                     dy += stack[i + 1]
+                    i += 2
                 }
                 val startX = x
                 val startY = y
@@ -300,6 +302,29 @@ internal class Type2Charstring(
             }
             startsAlongX = !startsAlongX
             i += 4
+        }
+    }
+
+    // Loops over the arguments, here and in flex1, are while loops: a for loop with a step
+    // allocates
+    // an IntProgression, which Android's runtime does not remove, for every operator of every
+    // glyph.
+
+    /** Lines to the relative points on the stack before [end]. */
+    private fun lines(end: Int) {
+        var i = 0
+        while (i < end) {
+            lineTo(x + stack[i], y + stack[i + 1])
+            i += 2
+        }
+    }
+
+    /** Curves of the relative coordinates on the stack before [end], six for each. */
+    private fun relativeCurves(end: Int) {
+        var i = 0
+        while (i < end) {
+            relativeCurve(i)
+            i += 6
         }
     }
 

@@ -26,16 +26,20 @@ import kotlin.math.roundToInt
  * The outlines are not moved: CFF draws them relative to the origin, with no left side bearing to
  * apply. Contours are reversed, since CFF draws outer contours counter-clockwise and TrueType
  * clockwise.
+ *
+ * Not thread-safe: one pen, with its arrays, converts every glyph, so that converting the tens of
+ * thousands of glyphs of a CJK font does not allocate and grow new arrays for each of them. A glyph
+ * that fails to convert leaves the pen in the middle of it, which is fine since the font is then
+ * rejected and no other glyph is read.
  */
 internal class CffOutlines(
     private val font: CffFont,
     unitsPerEm: Int,
-    private val limits: FontLimits,
+    limits: FontLimits,
 ) : OutlineSource {
-    private val tolerance = unitsPerEm / 1000.0
+    private val pen = QuadraticPen(limits.maxGlyphPoints, unitsPerEm / 1000.0)
 
     override fun outline(glyphId: Int): Outline {
-        val pen = QuadraticPen(limits.maxGlyphPoints, tolerance)
         Type2Charstring(font.globalSubrs, font.localSubrs(glyphId), pen)
             .run(font.charStrings.item(glyphId))
         return pen.build()
@@ -48,6 +52,8 @@ internal class CffOutlines(
  *
  * Closing a contour drops its last point if it is on the curve where the contour starts, since
  * TrueType closes contours by itself; a contour of one point, which draws nothing, is dropped.
+ *
+ * [build] starts the next glyph, keeping the arrays. Not thread-safe.
  */
 private class QuadraticPen(private val maxPoints: Int, tolerance: Double) : CubicPen {
     private val builder = OutlineBuilder(maxPoints)
@@ -78,7 +84,12 @@ private class QuadraticPen(private val maxPoints: Int, tolerance: Double) : Cubi
     }
 
     override fun curveTo(x1: Double, y1: Double, x2: Double, y2: Double, x: Double, y: Double) {
-        for (value in doubleArrayOf(x1, y1, x2, y2, x, y)) checkCoordinate(value)
+        checkCoordinate(x1)
+        checkCoordinate(y1)
+        checkCoordinate(x2)
+        checkCoordinate(y2)
+        checkCoordinate(x)
+        checkCoordinate(y)
         val count = curves.approximate(this.x, this.y, x1, y1, x2, y2, x, y)
         for (i in 0 until count) point(curves.points[2 * i], curves.points[2 * i + 1], on = false)
         point(x, y, on = true)
@@ -90,8 +101,10 @@ private class QuadraticPen(private val maxPoints: Int, tolerance: Double) : Cubi
         closeContour()
     }
 
+    /** The outline of the glyph drawn since the last call. */
     fun build(): Outline {
         closeContour()
+        emitted = 0
         return builder.build()
     }
 

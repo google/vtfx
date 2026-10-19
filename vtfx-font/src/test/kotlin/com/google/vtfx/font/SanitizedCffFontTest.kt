@@ -448,6 +448,18 @@ class SanitizedCffFontTest {
     }
 
     @Test
+    fun pointLimitCountsThePointsOfEachGlyphAlone() {
+        val font = TestCffFont(glyphs = listOf("endchar", "$square endchar", "$square endchar"))
+
+        val contents = SanitizedContents(sanitize(font, FontLimits(maxGlyphPoints = 4)))
+
+        assertEquals(
+            listOf(listOf(square(100, 0, 300)), listOf(square(100, 0, 300))),
+            listOf(contents.contours(1), contents.contours(2)),
+        )
+    }
+
+    @Test
     fun sanitizingASanitizedCffFontGivesTheSameBytes() {
         val first =
             sanitize(glyph("100 100 rmoveto 276 0 224 224 0 276 rrcurveto -500 0 rlineto endchar"))
