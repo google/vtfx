@@ -158,7 +158,7 @@ class RenderConsistencyTest {
         TextPaints(
             style,
             density,
-            TextTypefaces.resolve(style.font.toFontFamily(), fontFamilyResolver),
+            resolveTextTypefaces(style.font, fontFamilyResolver),
         )
 
     /**

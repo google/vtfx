@@ -157,6 +157,20 @@ internal fun rememberTextTypefaces(
         is TerminalFont.Sanitized -> remember(font) { sanitizedTypefaces(font) }
     }
 
+/**
+ * The typefaces that [font] resolves to now, outside a composition, for the tests that draw as the
+ * terminal does. A font that loads asynchronously is a fallback until it has loaded.
+ */
+internal fun resolveTextTypefaces(
+    font: TerminalFont,
+    resolver: FontFamily.Resolver,
+): TextTypefaces =
+    when (font) {
+        is TerminalFont.System -> TextTypefaces.resolve(font.toFontFamily(), resolver)
+        is TerminalFont.Resources -> TextTypefaces.resolve(font.toFontFamily(), resolver)
+        is TerminalFont.Sanitized -> sanitizedTypefaces(font)
+    }
+
 /** The Compose font family of this font. */
 internal fun TerminalFont.System.toFontFamily(): FontFamily =
     GENERIC_FAMILIES[family]

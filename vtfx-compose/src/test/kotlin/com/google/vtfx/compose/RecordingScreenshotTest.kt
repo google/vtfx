@@ -57,11 +57,7 @@ class RecordingScreenshotTest {
                         TextPaints(
                             it,
                             LocalDensity.current,
-                            TextTypefaces.resolve(
-                                // The default font of TerminalStyle, a system font.
-                                (it.font as TerminalFont.System).toFontFamily(),
-                                LocalFontFamilyResolver.current,
-                            ),
+                            resolveTextTypefaces(it.font, LocalFontFamilyResolver.current),
                         )
                     }
                 )
