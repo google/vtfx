@@ -79,6 +79,7 @@ Added to [0002](0002-resource-limits.md):
 
 - Images with a negative z-index are drawn under the text, the others over it, before the selection and the cursor. Images under the text are also under the backgrounds of cells, which kitty does only below a z-index of -1073741824: the display caches each line with its backgrounds, and drawing between the two would give up the cache.
 - An image is drawn from its anchor, scaled to its size in cells, and cut at the edges of the grid.
+- Each display (a session shown by a `Terminal`) keeps its own bitmaps: each session numbers its images from 1, so bitmaps shared across sessions would show one session's image in place of another's.
 
 ### Unicode placeholders
 

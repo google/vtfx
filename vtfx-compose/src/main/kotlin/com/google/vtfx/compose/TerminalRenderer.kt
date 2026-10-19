@@ -216,14 +216,15 @@ internal class TerminalRenderer(
     private val underlineCenter =
         metrics.baseline + paints.regular.underlinePosition + lineThickness / 2
 
-    /** The bitmaps of the images drawn, and the rectangles and paint to draw them with. */
-    private val images = ImageBitmaps()
+    /** The rectangles and paint to draw images with. */
     private val imageSource = android.graphics.Rect()
     private val imageTarget = android.graphics.RectF()
     private val imagePaint = Paint(Paint.FILTER_BITMAP_FLAG)
 
     fun DrawScope.draw(
         snapshot: TerminalSnapshot,
+        /** The bitmaps of the images of [snapshot]'s display. */
+        images: ImageBitmaps,
         /**
          * The links that patterns found, underlined over the lines. OSC 8 hyperlinks are underlined
          * with their text.
@@ -242,7 +243,7 @@ internal class TerminalRenderer(
         drawRect(defaultBackground)
         images.startFrame()
         // Images with a negative z-index go under the text (docs/decisions/0038).
-        drawImages(snapshot, underText = true)
+        drawImages(snapshot, images, underText = true)
         val nativeCanvas = drawContext.canvas.nativeCanvas
         if (nativeCanvas.isHardwareAccelerated) {
             lineCache.startFrame(snapshot.columns, reverse)
@@ -269,8 +270,8 @@ internal class TerminalRenderer(
                 drawDecorations(line, row, defaultForeground, defaultBackground)
             }
         }
-        drawImages(snapshot, underText = false)
-        drawImageTiles(snapshot)
+        drawImages(snapshot, images, underText = false)
+        drawImageTiles(snapshot, images)
         images.endFrame()
         // Over the cached lines, since a match depends on the rows that autowrap joins to a line.
         drawLinkUnderlines(links, snapshot, defaultForeground, defaultBackground)
@@ -322,7 +323,11 @@ internal class TerminalRenderer(
      * well, which kitty does only below a z-index of -1073741824: the lines are recorded with their
      * backgrounds.
      */
-    private fun DrawScope.drawImages(snapshot: TerminalSnapshot, underText: Boolean) {
+    private fun DrawScope.drawImages(
+        snapshot: TerminalSnapshot,
+        images: ImageBitmaps,
+        underText: Boolean,
+    ) {
         val placements = snapshot.imagePlacements
         if (placements.isEmpty()) return
         val canvas = drawContext.canvas.nativeCanvas
@@ -359,7 +364,7 @@ internal class TerminalRenderer(
      * of its virtual placement, keeping the aspect ratio, and centered (docs/decisions/0038). The
      * whole image is drawn at the box's place, cut to the cell.
      */
-    private fun DrawScope.drawImageTiles(snapshot: TerminalSnapshot) {
+    private fun DrawScope.drawImageTiles(snapshot: TerminalSnapshot, images: ImageBitmaps) {
         val tiles = snapshot.imageTiles
         if (tiles.isEmpty()) return
         val canvas = drawContext.canvas.nativeCanvas

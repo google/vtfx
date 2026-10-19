@@ -26,6 +26,8 @@ import com.google.vtfx.core.TerminalImage
  * The bitmaps of the images that frames draw (docs/decisions/0038), made once per image. A bitmap
  * that no frame drew for [KEEP_FRAMES] frames goes, so that the bitmaps of deleted images do not
  * stay; images that come back, scrolled into view again for example, are made again.
+ *
+ * One per display: the keys of images are unique only within a session.
  */
 internal class ImageBitmaps {
     private class Entry(val bitmap: Bitmap, var frame: Int)

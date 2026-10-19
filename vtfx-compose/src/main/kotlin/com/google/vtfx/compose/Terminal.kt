@@ -209,6 +209,9 @@ internal fun Terminal(
         remember(paints, style, metrics, density) {
             TerminalRenderer(paints, style, metrics, density)
         }
+    // Per display: each session numbers its images from 1, so another session's bitmaps would show
+    // in place of this one's images (docs/decisions/0038).
+    val images = remember(display) { ImageBitmaps() }
     var focused by remember { mutableStateOf(false) }
     SideEffect {
         session.reportedColors = style.colors.reportedColors
@@ -390,6 +393,7 @@ internal fun Terminal(
             with(renderer) {
                 draw(
                     snapshot,
+                    images,
                     links,
                     session.edit { it.composingText },
                     session.ambiguousWidth,

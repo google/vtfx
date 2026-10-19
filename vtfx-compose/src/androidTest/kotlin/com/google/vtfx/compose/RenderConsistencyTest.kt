@@ -114,6 +114,7 @@ class RenderConsistencyTest {
                 with(renderer) {
                     draw(
                         snapshot,
+                        ImageBitmaps(),
                         links = emptyList(),
                         session.edit { it.composingText },
                         session.ambiguousWidth,
