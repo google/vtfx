@@ -24,6 +24,11 @@ import java.io.ByteArrayOutputStream
  * Line breaks (CR LF, CR, LF) become CR and HT is kept. Every other C0 control, DEL, and C1 control
  * is dropped, so that text can never contain ESC and thus never form a control sequence, such as
  * the end of a bracketed paste. Unpaired surrogates become U+FFFD.
+ *
+ * `ImeEditor` in vtfx-input keeps a copy of the rule for dropping controls, so that its input
+ * history matches what the host receives (ime-contract.md invariant 3); this rule stays here so
+ * that the gate does not depend on code outside security review. `DroppedControlsAgreementTest` in
+ * vtfx-session pins that the two agree for every UTF-16 code unit; change both together.
  */
 internal object OutboundText {
     fun encode(text: String): ByteArray {

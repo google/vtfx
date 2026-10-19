@@ -445,6 +445,10 @@ public class ImeEditor(
          * buffer holds only what the host receives (invariant 3). Line breaks and HT are kept.
          * Otherwise a later edit would send DEL for characters that never reached the host, and
          * delete the host's text before the input history.
+         *
+         * A copy of the rule in the gate's `OutboundText`, which must not depend on this module or
+         * on any other code outside security review. `DroppedControlsAgreementTest` in vtfx-session
+         * pins that the two agree for every UTF-16 code unit; change both together.
          */
         private fun withoutDroppedControls(text: CharSequence): String =
             text

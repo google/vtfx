@@ -65,6 +65,8 @@ When sending committed text, `sendText` in `vtfx-gate` performs the following co
 
 `ImeEditor` also does not put control characters that are not sent into the editing buffer (the input history and the composing text). This keeps the input history matching what was sent (invariant 3), so that later edits do not send DELs for characters that never reached the host ([decisions/0004](../decisions/0004-ime-editor-details.md)).
 
+So the rule for dropping control characters has two copies, in `ImeEditor` and in the gate's `OutboundText`. They are kept apart rather than shared, since the gate must not depend on code outside security review ([decisions/0041](../decisions/0041-security-review-by-module.md)) and `vtfx-input` does not depend on the gate. `DroppedControlsAgreementTest` in `vtfx-session` checks that they agree for every UTF-16 code unit. An unpaired surrogate stays in the editing buffer and is sent as U+FFFD; both are one code point, so a later edit sends one DEL for it.
+
 This removal of control characters is not a defense against a malicious IME, because the IME can send Esc and the like with `sendKeyEvent`. Its purpose is to prevent unintended control sequences and to keep the rules for sending text in one place.
 
 ### 4.3 Assumptions and constraints
