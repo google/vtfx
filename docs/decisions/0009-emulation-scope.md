@@ -27,8 +27,9 @@ Take the proposal of [conformance-references.md](../research/conformance-referen
 | ANSI modes | IRM (4), LNM (20) | `spec/core`, `TerminalTest` |
 | DEC modes | 1, 5, 6, 7, 9, 12, 25, 47, 66, 1000, 1002, 1003, 1004, 1005, 1006, 1015, 1047, 1048, 1049, 2004, 2026 | `TerminalTest`, `EmulationCoverageTest` |
 | Cursor shape | DECSCUSR (0–6) | `EmulationCoverageTest`, screenshots |
-| Queries | DA1, DECID, DA2, DSR 5, DSR 6, DECXCPR, DECRQM, DECRQSS (`m`, `r`, ` q`), XTVERSION, XTWINOPS 18, `?` of OSC 4 / 10 / 11 / 12 | `EmulationCoverageTest`, the gate's `RepliesAndMouseTest`, `AttackTest` |
+| Queries | DA1, DECID, DA2, DSR 5, DSR 6, DECXCPR, DECRQM, DECRQSS (`m`, `r`, ` q`), XTVERSION, XTWINOPS 14, 16 (sizes in pixels; added 2026-10-16, [0038](0038-kitty-graphics.md)), XTWINOPS 18, `?` of OSC 4 / 10 / 11 / 12 | `EmulationCoverageTest`, the gate's `RepliesAndMouseTest`, `AttackTest` |
 | OSC | 0, 2 (title), 8 (hyperlinks), 52 (clipboard; the policy is 0006) | `EmulationCoverageTest`, `AttackTest` |
+| Images | The kitty graphics protocol (APC `G`): direct transmission, display, placements, deletion, queries, and Unicode placeholders. The scope and the limits are in [0038](0038-kitty-graphics.md) (added 2026-10-16) | `GraphicsTest`, `GraphicsRecordingTest`, `ResourceExhaustionTest`, the gate's `RepliesAndMouseTest` and `AttackTest`, screenshots |
 | Title stack | 0 and 2 of XTWINOPS 22 (save) and 23 (restore). Only titles are pushed. The limits on depth and length are in 0002 (added 2026-10-13) | `EmulationCoverageTest.SavedTitles` |
 | Mouse | Tracking (9, 1000, 1002, 1003) and encodings (default, 1005, 1006, 1015). The gate assembles the reports (`HostWriter.sendMouse`). Connecting it to touch interaction is M9 | `RepliesAndMouseTest` |
 | synchronized output | 2026. While set, drawing is held back, and drawing happens when it is reset. If it is not reset within 200 ms of starting to hold back, drawing happens even if output continues | `TerminalSessionTest` |
@@ -45,7 +46,7 @@ Take the proposal of [conformance-references.md](../research/conformance-referen
 | Setting colors (setting OSC 4, 10, 11, 12; 104, 110–112) | Colors are decided by the app's style. Queries are answered. |
 | Protection attribute for selective erase (DECSCA) | Major apps do not use it. DECSED and DECSEL become normal erases. |
 | Displaying blinking characters, cursor blinking | Drawing is M9 or later. The model keeps the blinking state. |
-| Printing (MC), sounds other than the bell, images such as sixel (requirement 4.2) | Outside the scope of terminal emulation. |
+| Printing (MC), sounds other than the bell, images other than the kitty graphics protocol, such as sixel (requirement 4.2) | Outside the scope of terminal emulation. The kitty graphics protocol was added on 2026-10-16 ([0038](0038-kitty-graphics.md)); sixel may come later. |
 | C1 control characters (8-bit) | Ignored, as in 0001. |
 | XTGETTCAP (DCS + q) | Replies would include terminfo strings. The TERM policy (0010) is enough. |
 | Rectangle editing and column operations (DECCRA, DECERA, DECFRA, DECSERA, DECIC, DECDC, DECBI, DECFI) | VT400 and later features that major apps do not use. |

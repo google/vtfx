@@ -24,9 +24,9 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
         clipboard = AndroidClipboard(application),
         urlOpener = AndroidUrlOpener(application),
         listener = object : TerminalSessionListener {
-            override fun onResize(columns: Int, rows: Int) {
-                // Tell the host with SSH window-change or the PTY's TIOCSWINSZ.
-                channel.resize(columns, rows)
+            override fun onResize(columns: Int, rows: Int, widthPixels: Int, heightPixels: Int) {
+                // Tell the host with SSH window-change or the PTY's TIOCSWINSZ, pixels included.
+                channel.resize(columns, rows, widthPixels, heightPixels)
             }
         },
     )
@@ -36,6 +36,8 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
 - `connection` is the app's connection to the host (`HostConnection`). `TerminalSession` passes it to vtfx-gate right away, and all bytes vtfx sends to the host (keys, IME input, pastes, replies to queries, mouse) are assembled by vtfx-gate and passed to `HostConnection.write` ([decisions/0027](decisions/0027-session-takes-connection.md)).
 - `HostConnection.write` is called one call at a time in order, from the thread that called the operation for user input (the main thread for input from `Terminal`), and from the thread that called `feed` for replies to host queries. vtfx holds no locks other than the one that serializes the calls. It must not block. If sending can block, queue it and send on another thread. On Android, user input arrives on the main thread, and replies to queries are sent within `feed`, so blocking also stops the thread reading host output. It must not throw. The app handles failures such as a dropped connection. Do not call vtfx from within `write`. Even for a host that replies locally right away, calling `feed` within `write` causes `IllegalStateException`, so pass the output in a separate task (`Handler.post` and so on) ([decisions/0024](decisions/0024-thread-conventions.md)). When implementing `ClipboardAccess` and `UrlOpener` yourself, also make them work when called from any thread.
 - If `clipboard` and `urlOpener` are omitted, the clipboard and opening URLs are denied.
+- `onResize` has two overloads. Override the one with pixels to pass the size of the text area in pixels to the host as well: programs that show images (the kitty graphics protocol) choose the size of an image from it. The pixels are 0 until a `Terminal` has given the size of its cells. The overload without pixels is enough when the host does not take pixels.
+- The kitty graphics protocol is on by default, with 32 MiB for the decoded pixels of the images (`TerminalLimits.maxImageBytes`). Images are sent in the host output, so only direct data works, which is what programs send over SSH. Set `maxImageBytes` to 0 to turn the protocol off ([decisions/0038](decisions/0038-kitty-graphics.md)).
 - The policy for requests with external effects can be changed with `GatePolicy`. The default is the safe side (OSC 52 reads are denied, writes are allowed with a limit, and the URLs that can be opened are http and https; [decisions/0006](decisions/0006-gate-defaults.md)). To relax it, the app specifies it explicitly.
 - Match the width of East Asian Ambiguous (`ambiguousWidth`) with the host's setting (vim's `ambiwidth` and so on) ([decisions/0011](decisions/0011-unicode.md)).
 - The constructor arguments (`ambiguousWidth`, `limits`, `policy`, `clipboard`, `urlOpener`, `listener`) cannot be changed later. When the user changes the width, the number of scrollback lines, or permission for OSC 52 in a settings screen, create a new session. The screen and scrollback are not carried over, so applying it from the next connection is natural.

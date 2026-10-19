@@ -73,12 +73,18 @@ Added to [0002](0002-resource-limits.md):
 - Each screen has its own images, so the images of the main screen stay while a program runs on the alternate screen, as in kitty.
 - The size in cells of a placement without `c` and `r` is its size in pixels divided by the size of a cell, rounded up, taken when it is placed. The terminal model needs the size of a cell for that, which the display gives to the session (`TerminalSession.resize`); a session without a display takes 10 × 20 pixels. Once placed, a placement keeps its size in cells; if the font changes, the image is scaled with the cells, so that the model never depends on the display.
 - The cursor moves as in kitty (Background), unless `C=1`.
+- A transmission that is still in chunks when the screen changes (entering or leaving the alternate screen) is refused with `EINVAL` when it ends, since its images would belong to a screen that is no longer shown.
+
+### Drawing
+
+- Images with a negative z-index are drawn under the text, the others over it, before the selection and the cursor. Images under the text are also under the backgrounds of cells, which kitty does only below a z-index of -1073741824: the display caches each line with its backgrounds, and drawing between the two would give up the cache.
+- An image is drawn from its anchor, scaled to its size in cells, and cut at the edges of the grid.
 
 ### Unicode placeholders
 
 - U+10EEEE is one cell wide even when East Asian Ambiguous characters are wide (it is a private use character, which UAX #11 classifies as Ambiguous). The diacritics that encode its row, column, and the high byte of the image id are combining characters, kept in the cell's cluster like others.
 - The table of diacritics is generated from `third_party/unicode` by the same rule kitty uses (combining class 230, without decomposition, without 19 characters that normalization can join), limited to characters of Unicode 6.0 or earlier with `DerivedAge.txt`, which gives the same 297 characters in the same order as kitty's `rowcolumn-diacritics.txt`. No file is taken from kitty, which is GPL-3.0.
-- The display draws a placeholder cell as the part of the image that its row and column select, with the image fitted into the virtual placement's columns and rows keeping its aspect ratio. The foreground color gives the image id (8 bits for an indexed color, 24 for a direct color, and the high byte from the third diacritic); the underline color gives the placement id. Missing diacritics are inferred from the cell to the left, by the rules of the protocol.
+- The display draws a placeholder cell as the part of the image that its row and column select, with the image fitted into the virtual placement's columns and rows keeping its aspect ratio, and centered in them, as in kitty. The foreground color gives the image id (8 bits for an indexed color, 24 for a direct color, and the high byte from the third diacritic); the underline color gives the placement id. Missing diacritics are inferred from the cell to the left, by the rules of the protocol.
 - Placeholder cells are not text: `LineSnapshot.textAt` and `text()` report them as blank, so that copying, accessibility, and searching do not see private use characters.
 
 ### API

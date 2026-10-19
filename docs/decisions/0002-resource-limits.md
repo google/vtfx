@@ -24,7 +24,7 @@ Host output is not trustworthy. It must not be able to make the terminal use mem
 | Columns, rows | 2048 | Not configurable (`TerminalLimits.MAX_DIMENSION`) | `resize` and the like throw (an error of the app) |
 | Scrollback lines | 10,000 by default (at most 1,000,000) | `TerminalLimits.scrollbackLines` | The oldest lines are dropped |
 | Scrollback memory | 96 bytes per line and 13 bytes per cell, for `scrollbackLines` lines of the current width, by the estimate of `CompactLine` (15.8 MiB for 10,000 lines of 120 columns) | Follows `scrollbackLines` and the width | The oldest lines are dropped, even before there are `scrollbackLines` of them. The newest line is kept even if it alone is over the budget |
-| Length of OSC and DCS strings | 256 Ki UTF-16 units by default (at most 16 Mi) | `TerminalLimits.maxStringLength` | The whole string is dropped (not truncated and executed) |
+| Length of OSC, DCS, and APC strings | 256 Ki UTF-16 units by default (at most 16 Mi). APC since 2026-10-16 ([0038](0038-kitty-graphics.md)) | `TerminalLimits.maxStringLength` | The whole string is dropped (not truncated and executed) |
 | Number of parameters | 32 | Not configurable | The 33rd and later are dropped |
 | Parameter values | 65535 | Not configurable | Set to 65535 |
 | Combining characters per cell | 32 UTF-16 units | Not configurable | Later combining characters are dropped |
@@ -33,6 +33,9 @@ Host output is not trustworthy. It must not be able to make the terminal use mem
 | Length of OSC 8 ids | 250 UTF-16 units (as VTE limits it) | Not configurable (`Emulator.MAX_LINK_ID_LENGTH`) | Not made a link |
 | Saved titles (XTWINOPS 22) | 10. The total length up to the limit of OSC and DCS strings | The count is not configurable (`Emulator.MAX_SAVED_TITLES`). The length is `TerminalLimits.maxStringLength` | The oldest are dropped |
 | Number of hyperlinks held at once | 4096 | Not configurable | Links not referenced by any cell are dropped, and if that is still not enough, the new link is not attached. The search for referenced links (looking at every cell of the screen and scrollback) happens at most once per 2048 requests for new links, and if the table is full in between, new links are not attached |
+| Pixels of the images of the kitty graphics protocol | 32 MiB of decoded pixels by default, for both screens together (at most 1 GiB; 0 turns the protocol off). Added 2026-10-16 ([0038](0038-kitty-graphics.md)) | `TerminalLimits.maxImageBytes` | The oldest images are dropped, those without placements first. An image larger than the limit by itself is refused with `EFBIG` |
+| Width and height of an image | 10000 pixels each (as kitty) | Not configurable | Refused with `EFBIG` before anything is allocated |
+| Images and placements | 1024 of each per screen | Not configurable | The oldest are dropped |
 
 Why the hyperlink search is thinned out: when the table is full, searching on every request for a new link would let a few bytes of OSC 8 make the terminal look at the whole scrollback each time (found in M12; `linksInUseAreNotSearchedForEveryNewLink` in `EmulationCoverageTest`). With thinning, the work of the search is linear in the number of bytes of OSC 8 input. In exchange, after references disappear from a full table, new links are not attached until the next search.
 
