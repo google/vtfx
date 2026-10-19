@@ -672,6 +672,42 @@ class TerminalSessionTest {
     }
 
     @Test
+    fun anEditAfterOutputMovedToAnotherLineErasesNothingEvenBeforeTheFeedReturns() {
+        // The edit takes the input lock while the feed that moved to another line waits for it
+        // behind a thread inside the connection. DELs from the history of the previous line would
+        // erase the host's new prompt.
+        val writing = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val received = StringBuffer()
+        val session =
+            TerminalSession({
+                if (String(it, Charsets.UTF_8) == " ") {
+                    writing.countDown()
+                    release.await(TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
+                }
+                received.append(String(it, Charsets.UTF_8))
+            })
+        session.sendText("ls")
+        session.feed("ls".toByteArray())
+        val typing = Thread { session.sendText(" ") }
+        typing.start()
+        writing.await(TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
+        val editing = Thread { session.edit { it.replaceText(0, 3, "cat") } }
+        editing.start()
+        awaitBlocked(editing)
+        val feeding = Thread { session.feed("ls \r\n$ ".toByteArray()) }
+        feeding.start()
+        awaitBlocked(feeding)
+
+        release.countDown()
+        typing.join()
+        editing.join()
+        feeding.join()
+
+        assertEquals("ls ", received.toString())
+    }
+
+    @Test
     fun theListenerIsCalledWithoutTheSessionLocks() {
         // A listener that waits for another thread using the session would otherwise deadlock.
         lateinit var listening: TerminalSession

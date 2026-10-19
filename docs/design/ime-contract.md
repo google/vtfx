@@ -87,6 +87,8 @@ This removal of control characters is not a defense against a malicious IME, bec
 
 BS (`KEYCODE_DEL`) does not reset. BS is treated as an edit that erases the last code point of the input history (6.3).
 
+A reset that host output triggers applies to every edit made after the output was received, also to an edit on another thread that runs before the receive (`TerminalSession.feed`) returns.
+
 ### 5.2 Reset procedure
 
 1. When there is composing text, delay the reset until it is gone, because `restartInput` forcibly commits the composition. The exception is the limit of the input history (invariant 5): the composing text is then committed and sent first, as `restartInput` would commit it.

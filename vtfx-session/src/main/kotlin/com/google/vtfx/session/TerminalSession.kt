@@ -239,6 +239,14 @@ public class TerminalSession(
     private var resetRequested = false
 
     /**
+     * Whether the host's output moved the cursor to another line, so that the IME editing model is
+     * reset before the next input operation. Guarded by [lock]. Set by [feed], which then runs an
+     * input operation to apply it, unless another one takes the input lock first and applies it
+     * before its edit.
+     */
+    private var hostResetPending = false
+
+    /**
      * The thread running an input operation, or null. Written with [lock] held; read without it
      * only to compare with the current thread, which is the only thread that can store itself.
      */
@@ -389,6 +397,10 @@ public class TerminalSession(
                 val stickyModifiersBefore = stickyModifiersState
                 editingThread = Thread.currentThread()
                 try {
+                    if (hostResetPending) {
+                        hostResetPending = false
+                        editor.requestReset()
+                    }
                     result = operation(editor)
                     if (resetRequested) {
                         resetRequested = false
@@ -478,10 +490,14 @@ public class TerminalSession(
                 // Following the echo of long input over autowrapped rows is not a move to another
                 // line, while switching the screen or a reset is (docs/design/ime-contract.md
                 // section 5.1). Counting them during the write also catches a switch there and
-                // back.
-                terminal.lineChanges != lineChangesBefore
+                // back. The reset is marked here, with the lock held, so that an input operation
+                // that runs before this feed takes the input lock applies it before its edit.
+                val moved = terminal.lineChanges != lineChangesBefore
+                if (moved) hostResetPending = true
+                moved
             }
-        if (moved) input { it.requestReset() }
+        // Applies the reset, unless an input operation on another thread already did.
+        if (moved) input {}
         for (observer in observers) observer.onOutput(
             scrolledLines,
             scrollbackShrank,
