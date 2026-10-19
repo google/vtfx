@@ -177,6 +177,8 @@ class RepositoryRestrictedApisTest(unittest.TestCase):
         ("import kotlin.reflect.full.declaredMemberProperties", None),
         ("public class AndroidClipboard(context: Context) : ClipboardAccess {", "vtfx-gate-android"),
         ("public class AndroidUrlOpener(private val context: Context) : UrlOpener {", "vtfx-gate-android"),
+        ("package com.google.vtfx.font.gate", "vtfx-font-gate"),
+        ("package  com.google.vtfx.font.gate.sub", "vtfx-font-gate"),
     ]
 
     def setUp(self):
@@ -236,6 +238,44 @@ class RepositoryRestrictedApisTest(unittest.TestCase):
     def test_accepts_fake_clipboard_in_tests(self):
         self.write("vtfx-compose/src/test/kotlin/com/google/vtfx/compose/TerminalStateTest.kt",
                    "        object : ClipboardAccess {\n")
+        result = self.run_check()
+        self.assertEqual(result.returncode, 0, result.stdout)
+
+    def test_rejects_verifier_package_in_font(self):
+        self.write("vtfx-font/src/main/kotlin/com/google/vtfx/font/gate/CanonicalVerifier.kt",
+                   "package com.google.vtfx.font.gate\n")
+        result = self.run_check()
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("vtfx-font/src/main/kotlin/com/google/vtfx/font/gate/CanonicalVerifier.kt:1:", result.stdout)
+
+    def test_rejects_verifier_package_in_font_tests(self):
+        self.write("vtfx-font/src/test/kotlin/com/google/vtfx/font/gate/Shadow.kt", "package com.google.vtfx.font.gate\n")
+        result = self.run_check()
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("vtfx-font/src/test/kotlin/com/google/vtfx/font/gate/Shadow.kt:1:", result.stdout)
+
+    def test_accepts_verifier_package_in_font_gate_tests(self):
+        self.write("vtfx-font-gate/src/test/kotlin/com/google/vtfx/font/gate/CanonicalVerifierTest.kt",
+                   "package com.google.vtfx.font.gate\n")
+        result = self.run_check()
+        self.assertEqual(result.returncode, 0, result.stdout)
+
+    def test_accepts_typefaces_package_in_font_gate_android(self):
+        self.write("vtfx-font-gate-android/src/main/kotlin/com/google/vtfx/font/gate/android/SanitizedTypefaces.kt",
+                   "package com.google.vtfx.font.gate.android\n")
+        result = self.run_check()
+        self.assertEqual(result.returncode, 0, result.stdout)
+
+    def test_rejects_typefaces_package_in_compose(self):
+        self.write("vtfx-compose/src/main/kotlin/com/google/vtfx/font/gate/android/SanitizedTypefaces.kt",
+                   "package com.google.vtfx.font.gate.android\n")
+        result = self.run_check()
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("vtfx-compose/src/main/kotlin/com/google/vtfx/font/gate/android/SanitizedTypefaces.kt:1:", result.stdout)
+
+    def test_accepts_shared_font_package_in_font(self):
+        self.write("vtfx-font/src/main/kotlin/com/google/vtfx/font/Reader.kt",
+                   "package com.google.vtfx.font\n\nimport com.google.vtfx.font.gateway.Other\n")
         result = self.run_check()
         self.assertEqual(result.returncode, 0, result.stdout)
 

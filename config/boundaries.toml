@@ -83,6 +83,13 @@ reason = "Only vtfx-gate may call the clipboard and the URL opener, which vtfx-g
 allowed_paths = ["vtfx-gate/**", "vtfx-gate-android/**", "vtfx-session/src/main/kotlin/com/google/vtfx/session/TerminalSession.kt", "*/src/test/**"]
 
 [[restricted_apis]]
+# vtfx-font shares com.google.vtfx.font with vtfx-font-gate, so the verifier has a package of its own,
+# and vtfx-font-gate-android has a subpackage of it.
+pattern = '\bpackage\s+com\.google\.vtfx\.font\.gate\b'
+reason = "Only the font gate modules may declare classes in com.google.vtfx.font.gate and its subpackages: a class of the same name in another module could replace a reviewed one on the class path (docs/decisions/0041)."
+allowed_paths = ["vtfx-font-gate/**", "vtfx-font-gate-android/**"]
+
+[[restricted_apis]]
 pattern = '\bjava\.lang\.(reflect|invoke)\b|\bkotlin\.reflect\.(full|jvm)\b|\bClass\.forName\b|\.getDeclared(Field|Method|Constructor)s?\b'
 reason = "Reflection can bypass visibility, which the module boundaries rely on."
 allowed_paths = []
