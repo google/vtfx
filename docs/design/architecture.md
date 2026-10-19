@@ -192,6 +192,7 @@ Tests, fixtures, and goldens owned by humans are gathered in dedicated directori
 - The public API uses Kotlin's explicit API mode to make the public surface explicit.
 - Compatibility of the public API is checked by `check` by comparing ABI dumps and dumps of the Kotlin signatures (each module's `api/`) (requirement 6.5, [decisions/0016](../decisions/0016-public-api.md)).
 - minSdk starts at 34 (Android 14), because `InputConnection.replaceText`, which the IME contract uses, was added in API 34. Later decisions are also made per feature (requirement 6.4).
+  - Lowering it to 29 (Android 10) was decided in [decisions/0039](../decisions/0039-minsdk-29.md). Until the work listed there is done, the build still uses 34.
 
 ## 8. What this document does not decide
 
