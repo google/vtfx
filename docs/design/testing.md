@@ -23,6 +23,7 @@ This document defines the structure of the tests that support the autonomous dev
 | `<module>/src/test/resources/spec-expected-failures.txt` | Agents | The list of spec tests that do not pass yet (section 6) |
 | `spec-proposals/` | Agents | Spec tests proposed to humans for addition. Written in the same format as `spec/`. The same content is also run as tests owned by agents. |
 | `vtfx-compose/src/test/screenshots/` | Agents | Provisional goldens (section 5) |
+| `vtfx-font-gate/src/test/resources/com/google/vtfx/font/gate/canonical/` | Agents | Canonical fonts that `FontFile.sanitize` writes, which the tests of `vtfx-font-gate` check the verifier with. `CanonicalFixturesTest` in `vtfx-font` checks that sanitizing still writes them, so they are also a golden of the canonical form ([decisions/0040](../decisions/0040-sanitized-user-fonts.md)). Under security review with the rest of `vtfx-font-gate` |
 
 `spec/` and `tools/ime-probe/traces/` are listed under `oracle` in `config/protected-paths.toml`, and changes to them are reported.
 

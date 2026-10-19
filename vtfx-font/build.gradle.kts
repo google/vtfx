@@ -26,3 +26,22 @@ dependencies {
     // The public API returns SanitizedFont and takes FontLimits.
     api(project(":vtfx-font-gate"))
 }
+
+// CanonicalFixturesTest checks that this module writes the canonical fonts that vtfx-font-gate's
+// tests check the verifier with. It reads them as files: those tests cannot depend on this module
+// (config/boundaries.toml), and the files are inputs, so that changing one runs the test again.
+tasks.named<Test>("test") {
+    val fixtures =
+        layout.settingsDirectory.dir(
+            "vtfx-font-gate/src/test/resources/com/google/vtfx/font/gate/canonical"
+        )
+    inputs
+        .dir(fixtures)
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+        .withPropertyName("canonicalFixtures")
+    systemProperty("vtfx.canonicalFixtures", fixtures.asFile.absolutePath)
+    systemProperty(
+        "vtfx.canonicalFixturesActual",
+        layout.buildDirectory.dir("canonical-fixtures").get().asFile.absolutePath,
+    )
+}
