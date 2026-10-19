@@ -57,7 +57,7 @@ The writer produces, and the verifier accepts, exactly this:
 
 ### Limits and cost
 
-- `FontLimits` (like `TerminalLimits`, [0002](0002-resource-limits.md)) bounds the input (64 MiB by default; one weight of the Noto Sans CJK OTC is about 20 MB), the output (64 MiB), the points of one glyph and of the whole font after conversion and flattening, the depth of composite glyphs (8), and the work of one charstring (operators executed; the argument stack of 48 and the subroutine depth of 10 come from the CFF specification).
+- `FontLimits` (like `TerminalLimits`, [0002](0002-resource-limits.md)) bounds the input (64 MiB by default; one weight of the Noto Sans CJK OTC is about 20 MB), the output (64 MiB, which also bounds the points of the whole font), and the points of one glyph after conversion and flattening (16384). Fixed limits, which no real font comes near, bound the faces of a collection (256), the depth of composite glyphs (8) and the components that flattening one glyph visits, the code points that `cmap` maps and its variation sequences, and the work of one charstring (operators executed; the argument stack of 48 and the subroutine depth of 10 come from the CFF specification).
 - The readers and the writer work glyph by glyph; the font is not held as an object model. The canonical bytes are held once, in a read-only buffer that `Font.Builder` takes without copying.
 - `sanitize` can take seconds for a CJK font on a phone, so it is a blocking function for a background thread, run once when the user imports a font. It checks `Thread.interrupted()` and stops with `InterruptedException`. `vtfx-font` stays without dependencies, so it does not use coroutines.
 

@@ -1,0 +1,78 @@
+public final class com/google/vtfx/font/FaceInfo {
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFamilyName ()Ljava/lang/String;
+	public final fun getIndex ()I
+	public final fun getOutlineFormat-KXJ4Ao8 ()I
+	public final fun getStyleName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun isSupported ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/google/vtfx/font/FontFile {
+	public static final field INSTANCE Lcom/google/vtfx/font/FontFile;
+	public final fun inspect ([BLcom/google/vtfx/font/FontLimits;)Ljava/util/List;
+}
+
+public final class com/google/vtfx/font/FontLimits {
+	public static final field Companion Lcom/google/vtfx/font/FontLimits$Companion;
+	public fun <init> ()V
+	public fun <init> (III)V
+	public synthetic fun <init> (IIIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMaxGlyphPoints ()I
+	public final fun getMaxInputBytes ()I
+	public final fun getMaxOutputBytes ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/google/vtfx/font/FontLimits$Companion {
+	public final fun getMAX_BYTES ()I
+	public final fun getMAX_GLYPH_POINTS ()I
+}
+
+public final class com/google/vtfx/font/InvalidFontException : java/lang/Exception {
+	public final fun getKind-yDlMGn0 ()I
+}
+
+public final class com/google/vtfx/font/InvalidFontException$Kind {
+	public static final field Companion Lcom/google/vtfx/font/InvalidFontException$Kind$Companion;
+	public static final synthetic fun box-impl (I)Lcom/google/vtfx/font/InvalidFontException$Kind;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (ILjava/lang/Object;)Z
+	public static final fun equals-impl0 (II)Z
+	public fun hashCode ()I
+	public static fun hashCode-impl (I)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (I)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()I
+}
+
+public final class com/google/vtfx/font/InvalidFontException$Kind$Companion {
+	public final fun getMalformed-yDlMGn0 ()I
+	public final fun getTooComplex-yDlMGn0 ()I
+	public final fun getTooLarge-yDlMGn0 ()I
+	public final fun getUnsupported-yDlMGn0 ()I
+}
+
+public final class com/google/vtfx/font/OutlineFormat {
+	public static final field Companion Lcom/google/vtfx/font/OutlineFormat$Companion;
+	public static final synthetic fun box-impl (I)Lcom/google/vtfx/font/OutlineFormat;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (ILjava/lang/Object;)Z
+	public static final fun equals-impl0 (II)Z
+	public fun hashCode ()I
+	public static fun hashCode-impl (I)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (I)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()I
+}
+
+public final class com/google/vtfx/font/OutlineFormat$Companion {
+	public final fun getCff-KXJ4Ao8 ()I
+	public final fun getCff2-KXJ4Ao8 ()I
+	public final fun getNone-KXJ4Ao8 ()I
+	public final fun getTrueType-KXJ4Ao8 ()I
+}
+

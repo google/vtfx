@@ -30,7 +30,7 @@ cd "$(dirname "$0")/.."
 
 duration="${1:-10m}"
 [ "$#" -gt 0 ] && shift
-modules="${*:-vtfx-core vtfx-gate vtfx-input}"
+modules="${*:-vtfx-core vtfx-gate vtfx-input vtfx-font}"
 log="build/reports/fuzzing-log.tsv"
 output="$(mktemp)"
 trap 'rm -f "$output"' EXIT
@@ -41,6 +41,7 @@ target_of() {
     vtfx-core) echo "vtfx-core:TerminalFuzzTest.write" ;;
     vtfx-gate) echo "vtfx-gate:GateFuzzTest.hostOutput" ;;
     vtfx-input) echo "vtfx-input:ImeFuzzTest.calls" ;;
+    vtfx-font) echo "vtfx-font:FontFuzzTest.fontFile" ;;
     *) echo "No fuzz test in module $1." >&2; exit 2 ;;
   esac
 }

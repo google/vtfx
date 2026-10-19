@@ -93,6 +93,7 @@ In the middle of development, many spec tests do not pass yet. Agents cannot cha
   - `TerminalFuzzTest` in `vtfx-core`: Checks the invariants of the parser and the screen model with host output and resizes.
   - `GateFuzzTest` in `vtfx-gate`: Passes host output through a real `Terminal` and checks that replies have only known shapes, that the amount of replies is linear in the output, that no URL is opened, and the limit on clipboard writes. It also pastes the same bytes and checks that they do not escape bracketed paste.
   - `ImeFuzzTest` in `vtfx-input`: Checks the invariants of the editing model and the limit on DELs with sequences of IME calls (the same checks as `HostileImeTest`).
+  - `FontFuzzTest` in `vtfx-font`: Reads arbitrary bytes as a font file and checks that the only exception is `InvalidFontException` ([decisions/0040](../decisions/0040-sanitized-user-fonts.md)).
 - The fixed corpus is replayed in the usual `test` task, and the `fuzz` task (which `check` depends on; configured in `vtfx.fuzz` in `build-logic`) fuzzes for 30 seconds. The fuzz tasks of the modules run in parallel ([decisions/0028](../decisions/0028-parallel-fuzzing.md)). Long fuzzing is done with `scripts/fuzz.sh <duration> [module...]`, and the results are appended to `build/reports/fuzzing-log.tsv`. Details, and the relation to the determinism of gates, are in [decisions/0003](../decisions/0003-fuzzing-gate.md).
 
 ## 8. e2e on the emulator

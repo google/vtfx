@@ -38,7 +38,7 @@ This document defines the module structure, responsibilities, direction of depen
                      ★ = subject to security review
 ```
 
-Dependencies are allowed only in the direction of the arrows. `vtfx-core` does not depend on other vtfx modules. Besides the arrows in the figure, `vtfx-compose` also depends on `vtfx-core`, `vtfx-input`, `vtfx-gate`, and `vtfx-gate-android` to use their types.
+Dependencies are allowed only in the direction of the arrows. `vtfx-core` does not depend on other vtfx modules, and neither does `vtfx-font`, which is not in the figure. Besides the arrows in the figure, `vtfx-compose` also depends on `vtfx-core`, `vtfx-input`, `vtfx-gate`, and `vtfx-gate-android` to use their types.
 
 | Module | Kind | Responsibility (one sentence) | Review |
 |---|---|---|---|
@@ -48,6 +48,7 @@ Dependencies are allowed only in the direction of the arrows. `vtfx-core` does n
 | `vtfx-gate-android` | Android | Performs the operations `vtfx-gate` allowed with Android APIs (clipboard, Intent). | **Needed** |
 | `vtfx-session` | JVM | Ties together the terminal, the IME editing model, and requests to the host, and provides a terminal session without a UI. | Not needed |
 | `vtfx-compose` | Android | Displays the session as a Compose UI and receives input. | Not needed |
+| `vtfx-font` | JVM | Reads fonts that users choose and writes them again in one canonical form, which is all that reaches the platform's native font code ([decisions/0040](../decisions/0040-sanitized-user-fonts.md)). | Not needed |
 
 Apps depend on `vtfx-compose`. `vtfx-compose` exposes with `api` `vtfx-core`, `vtfx-gate`, and `vtfx-session` for the types the public API uses (`TerminalSession`, `HostConnection`, `KeyStroke`, `TerminalSnapshot`, and so on), and `vtfx-gate-android` so that apps can use `AndroidClipboard` and `AndroidUrlOpener`. `vtfx-input`, which has no public API, is `implementation`. JVM programs without a UI depend on `vtfx-session`. The inside of each module is `internal`, and `public` declarations used only between modules (the terminal model's `Terminal`, the IME editing model's `ImeEditor`, `TerminalGate`, and so on) are marked `@InternalVtfxApi` and excluded from the public API ([decisions/0016](../decisions/0016-public-api.md)).
 
@@ -55,7 +56,7 @@ Apps depend on `vtfx-compose`. `vtfx-compose` exposes with `api` `vtfx-core`, `v
 
 The thread conventions are defined in [decisions/0024](../decisions/0024-thread-conventions.md). The main points are as follows.
 
-- Modules that do not depend on Android (`vtfx-core`, `vtfx-input`, `vtfx-gate`, `vtfx-session`) do not assume a particular thread. Only `vtfx-gate-android` and `vtfx-compose` deal with the main thread.
+- Modules that do not depend on Android (`vtfx-core`, `vtfx-input`, `vtfx-gate`, `vtfx-session`, `vtfx-font`) do not assume a particular thread. Only `vtfx-gate-android` and `vtfx-compose` deal with the main thread.
 - The KDoc of each public type says whether it is immutable, thread-safe, not thread-safe (the caller serializes), or main-thread-only.
 - Unless stated otherwise, the app's code is called synchronously on the same thread as the call that triggered it. It is not called while holding an internal lock, and reentry from the app's code is detected and rejected. Exceptions from the app's code are not swallowed.
 
@@ -175,10 +176,11 @@ As in requirement 6.1, in the initial phase the verification is at the level of 
 | Target | Tests | Gate? |
 |---|---|---|
 | `vtfx-core` | JVM unit tests. Spec tests owned by humans (`spec/core`). Replay tests that compare recordings of real apps with a reference terminal. | Yes |
-| `vtfx-core`, `vtfx-gate`, `vtfx-input` | Fuzzing (detecting exceptions, non-terminating states, memory exhaustion, and each module's invariants). | A 30-second run each. Long runs are separate |
+| `vtfx-core`, `vtfx-gate`, `vtfx-input`, `vtfx-font` | Fuzzing (detecting exceptions, non-terminating states, memory exhaustion, and each module's invariants). | A 30-second run each. Long runs are separate |
 | `vtfx-input` | IME trace replay tests (`spec/ime`). Tests with hostile IME calls. | Yes |
 | `vtfx-gate` | Table-driven tests of key encoding. Unit tests of replies, pastes, and policies, including malicious inputs. | Yes |
 | `vtfx-compose` | Unit tests with Robolectric, and screenshot tests (agents manage provisional goldens, and humans approve them). | Yes |
+| `vtfx-font` | Unit tests with fonts that test code builds. | Yes |
 | Whole | e2e on the emulator (IME e2e with a real IME, and rendering e2e with hardware acceleration), esctest2. | No (reports only) |
 
 Details are in [testing.md](testing.md).

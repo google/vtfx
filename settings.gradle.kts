@@ -47,5 +47,7 @@ include(":vtfx-session")
 
 include(":vtfx-compose")
 
+include(":vtfx-font")
+
 // A sample app with a pseudo host, for manual checks and the emulator end-to-end tests.
 include(":vtfx-sample")

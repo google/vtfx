@@ -26,6 +26,9 @@
 [modules.vtfx-core]
 allowed_dependencies = []
 
+[modules.vtfx-font]
+allowed_dependencies = []
+
 [modules.vtfx-input]
 allowed_dependencies = ["vtfx-core"]
 

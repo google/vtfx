@@ -1,0 +1,60 @@
+public final class com.google.vtfx.font.FaceInfo {
+    public final val familyName: kotlin.String?
+    public final val index: kotlin.Int
+    public final val isSupported: kotlin.Boolean
+    public final val outlineFormat: com.google.vtfx.font.OutlineFormat
+    public final val styleName: kotlin.String?
+    public open fun hashCode(): kotlin.Int
+    public open fun toString(): kotlin.String
+    public open operator fun equals(other: kotlin.Any?): kotlin.Boolean
+}
+
+public object com.google.vtfx.font.FontFile {
+    public final fun inspect(input: kotlin.ByteArray, limits: com.google.vtfx.font.FontLimits): kotlin.collections.List<com.google.vtfx.font.FaceInfo>
+}
+
+public final class com.google.vtfx.font.FontLimits {
+    public constructor(maxInputBytes: kotlin.Int = ..., maxOutputBytes: kotlin.Int = ..., maxGlyphPoints: kotlin.Int = ...)
+    public final val maxGlyphPoints: kotlin.Int
+    public final val maxInputBytes: kotlin.Int
+    public final val maxOutputBytes: kotlin.Int
+    public open fun hashCode(): kotlin.Int
+    public open fun toString(): kotlin.String
+    public open operator fun equals(other: kotlin.Any?): kotlin.Boolean
+}
+
+public companion object com.google.vtfx.font.FontLimits.Companion {
+    public final val MAX_BYTES: kotlin.Int
+    public final val MAX_GLYPH_POINTS: kotlin.Int
+}
+
+public final class com.google.vtfx.font.InvalidFontException : java.lang.Exception {
+    public final val kind: com.google.vtfx.font.InvalidFontException.Kind
+}
+
+public final value class com.google.vtfx.font.InvalidFontException.Kind {
+    public open fun hashCode(): kotlin.Int
+    public open fun toString(): kotlin.String
+    public open operator fun equals(other: kotlin.Any?): kotlin.Boolean
+}
+
+public companion object com.google.vtfx.font.InvalidFontException.Kind.Companion {
+    public final val Malformed: com.google.vtfx.font.InvalidFontException.Kind
+    public final val TooComplex: com.google.vtfx.font.InvalidFontException.Kind
+    public final val TooLarge: com.google.vtfx.font.InvalidFontException.Kind
+    public final val Unsupported: com.google.vtfx.font.InvalidFontException.Kind
+}
+
+public final value class com.google.vtfx.font.OutlineFormat {
+    public open fun hashCode(): kotlin.Int
+    public open fun toString(): kotlin.String
+    public open operator fun equals(other: kotlin.Any?): kotlin.Boolean
+}
+
+public companion object com.google.vtfx.font.OutlineFormat.Companion {
+    public final val Cff2: com.google.vtfx.font.OutlineFormat
+    public final val Cff: com.google.vtfx.font.OutlineFormat
+    public final val None: com.google.vtfx.font.OutlineFormat
+    public final val TrueType: com.google.vtfx.font.OutlineFormat
+}
+

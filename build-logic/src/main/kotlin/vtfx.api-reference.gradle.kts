@@ -40,6 +40,7 @@ dependencies {
             "vtfx-gate-android",
             "vtfx-session",
             "vtfx-compose",
+            "vtfx-font",
         )) {
         "dokka"(project(":$module"))
     }
