@@ -76,3 +76,38 @@ public final class com/google/vtfx/font/OutlineFormat$Companion {
 	public final fun getTrueType-KXJ4Ao8 ()I
 }
 
+public final class com/google/vtfx/font/SanitizedFont {
+	public static final field Companion Lcom/google/vtfx/font/SanitizedFont$Companion;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSize ()I
+	public final fun getWidthClass-NVJfhDY ()I
+	public fun hashCode ()I
+	public final fun toByteArray ()[B
+	public final fun toByteBuffer ()Ljava/nio/ByteBuffer;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/google/vtfx/font/SanitizedFont$Companion {
+	public final fun fromCanonical ([BLcom/google/vtfx/font/FontLimits;)Lcom/google/vtfx/font/SanitizedFont;
+	public final fun sanitize ([BILcom/google/vtfx/font/FontLimits;)Lcom/google/vtfx/font/SanitizedFont;
+}
+
+public final class com/google/vtfx/font/WidthClass {
+	public static final field Companion Lcom/google/vtfx/font/WidthClass$Companion;
+	public static final synthetic fun box-impl (I)Lcom/google/vtfx/font/WidthClass;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (ILjava/lang/Object;)Z
+	public static final fun equals-impl0 (II)Z
+	public fun hashCode ()I
+	public static fun hashCode-impl (I)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (I)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()I
+}
+
+public final class com/google/vtfx/font/WidthClass$Companion {
+	public final fun getDualWidth-NVJfhDY ()I
+	public final fun getMonospaced-NVJfhDY ()I
+	public final fun getProportional-NVJfhDY ()I
+}
+

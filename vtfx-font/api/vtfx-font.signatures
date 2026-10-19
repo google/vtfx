@@ -58,3 +58,30 @@ public companion object com.google.vtfx.font.OutlineFormat.Companion {
     public final val TrueType: com.google.vtfx.font.OutlineFormat
 }
 
+public final class com.google.vtfx.font.SanitizedFont {
+    public final fun toByteArray(): kotlin.ByteArray
+    public final fun toByteBuffer(): java.nio.ByteBuffer
+    public final val size: kotlin.Int
+    public final val widthClass: com.google.vtfx.font.WidthClass
+    public open fun hashCode(): kotlin.Int
+    public open fun toString(): kotlin.String
+    public open operator fun equals(other: kotlin.Any?): kotlin.Boolean
+}
+
+public companion object com.google.vtfx.font.SanitizedFont.Companion {
+    public final fun fromCanonical(canonical: kotlin.ByteArray, limits: com.google.vtfx.font.FontLimits): com.google.vtfx.font.SanitizedFont
+    public final fun sanitize(input: kotlin.ByteArray, faceIndex: kotlin.Int, limits: com.google.vtfx.font.FontLimits): com.google.vtfx.font.SanitizedFont
+}
+
+public final value class com.google.vtfx.font.WidthClass {
+    public open fun hashCode(): kotlin.Int
+    public open fun toString(): kotlin.String
+    public open operator fun equals(other: kotlin.Any?): kotlin.Boolean
+}
+
+public companion object com.google.vtfx.font.WidthClass.Companion {
+    public final val DualWidth: com.google.vtfx.font.WidthClass
+    public final val Monospaced: com.google.vtfx.font.WidthClass
+    public final val Proportional: com.google.vtfx.font.WidthClass
+}
+

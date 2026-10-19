@@ -21,10 +21,11 @@
 # Changes to this file require security review.
 
 [security_review]
-description = "Code with external effects, and build and dependency configuration."
+description = "Code with external effects, the check of fonts before native code reads them, and build and dependency configuration."
 paths = [
     "vtfx-gate/**",
     "vtfx-gate-android/**",
+    "vtfx-font/src/main/kotlin/com/google/vtfx/font/CanonicalVerifier.kt",
     "settings.gradle.kts",
     "build.gradle.kts",
     "**/build.gradle.kts",
