@@ -1,6 +1,6 @@
 # Security review by whole modules
 
-- Status: Provisional (2026-10-19, review by whole modules and the names `vtfx-font-gate` and `vtfx-font-gate-android` decided by a human; the verifier's own package added on 2026-10-19, not yet reviewed)
+- Status: Provisional (2026-10-19, review by whole modules and the names `vtfx-font-gate` and `vtfx-font-gate-android` decided by a human; the verifier's own package, and its tests in `vtfx-font-gate`, added on 2026-10-19, not yet reviewed)
 - Date: 2026-10-19
 - Related: Requirement 6.1, section 2 of [architecture.md](../design/architecture.md), [0016](0016-public-api.md), [0037](0037-api-shape-before-1.0.md), [0040](0040-sanitized-user-fonts.md), `config/protected-paths.toml`, `config/boundaries.toml`
 
@@ -42,7 +42,9 @@ No version of vtfx has been released yet (there are no tags), and [0037](0037-ap
 
 ### Tests
 
-The verifier's tests (`CanonicalVerifierTest`) and the fuzz test stay in `vtfx-font`, since the fonts that they check are written by its writer; they reach the verifier through `SanitizedFont.fromCanonical`, which runs only it. `vtfx-font-gate` has no tests of its own.
+The verifier's tests are in `vtfx-font-gate`, under review with the code that they check, so that a change that weakens them is reviewed too. `CanonicalVerifierTest` reaches the verifier through `SanitizedFont.fromCanonical`, which runs only it, with canonical fonts kept as files in `vtfx-font-gate/src/test/resources/com/google/vtfx/font/gate/canonical/`, and with changes to them whose checksums the test computes again.
+
+The fonts are written by `vtfx-font`, which `vtfx-font-gate`'s tests cannot depend on: `config/boundaries.toml` would need a dependency of `vtfx-font-gate` on `vtfx-font`, and `check_boundaries.py` does not tell the dependencies of tests apart. So `CanonicalFixturesTest` in `vtfx-font` checks that `FontFile.sanitize` still writes the files byte for byte, which also makes them a golden of the canonical form. `vtfx-font` keeps only the checks that need its readers or its writer: `VerifierCrossCheckTest`, which checks that the fonts that the verifier accepts are those that sanitizing leaves as they are, and the fuzz test.
 
 ### Known cost
 
@@ -55,6 +57,8 @@ The verifier's tests (`CanonicalVerifierTest`) and the fuzz test stay in `vtfx-f
 - **Put the whole of `vtfx-font` under review**: one line in the configuration, but the readers, the charstring interpreter, and the curve approximation, where most changes happen, would all need security review, against the point of 0040's verifier, and the review would be spread thin.
 - **Keep listing files, and add `SanitizedFont.kt`, `InvalidFontException.kt`, and `FontLimits.kt`**: the list would have to follow every refactoring by hand, and nothing would stop new code that the verifier relies on from landing in an unlisted file.
 - **Other names**: `vtfx-font-canonical` or `vtfx-font-verifier` (accurate, but say nothing of review; the second is narrower than the contents), or keeping `vtfx-font` for the small module and renaming the readers `vtfx-font-sanitizer` (the fewest changes for apps, but the name does not say what is reviewed).
+- **Let the tests of `vtfx-font-gate` depend on `vtfx-font`**, so that they build the fonts that they check: `config/boundaries.toml` would need a dependency of `vtfx-font-gate` on `vtfx-font`, which `check_boundaries.py` could not tell apart from one of the reviewed code on the code that it reviews.
+- **Keep the verifier's tests in `vtfx-font`**: they would build their fonts, but a change that weakens them would not be reviewed, and the fuzz test there passes raw bytes, almost all of which fail the first check of a checksum.
 - **Make `SanitizedTypefaces.regular` public API**, so that `vtfx-font-gate-android` needs no dependency on `vtfx-core`: apps would get an API that they do not need, which the public API check would then hold.
 
 ## Impact of reversing

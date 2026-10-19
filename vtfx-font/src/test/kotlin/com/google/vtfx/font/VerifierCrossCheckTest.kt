@@ -16,18 +16,16 @@
 
 package com.google.vtfx.font
 
-import com.google.vtfx.font.InvalidFontException.Kind
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import org.junit.jupiter.api.Test
 
 /**
- * The verifier of vtfx-font-gate, through [SanitizedFont.fromCanonical], which runs only it. The
- * tests are here rather than in vtfx-font-gate, since the fonts that they check are written by this
- * module.
+ * Cross-checks of the verifier of vtfx-font-gate, which [SanitizedFont.fromCanonical] runs, with
+ * the readers and the writer of this module: the fonts that the verifier accepts are those that
+ * sanitizing leaves as they are. The verifier's own tests are in vtfx-font-gate.
  */
-class CanonicalVerifierTest {
+class VerifierCrossCheckTest {
     private val limits = FontLimits()
 
     /** A canonical font with composite glyphs, variation sequences, and an empty glyph. */
@@ -57,16 +55,6 @@ class CanonicalVerifierTest {
             )
             .toByteArray()
 
-    private fun verifyFailure(font: ByteArray): Kind =
-        assertFailsWith<InvalidFontException> { SanitizedFont.fromCanonical(font, limits) }.kind
-
-    /** The offset of table [name] in [font]. */
-    private fun tableOffset(font: ByteArray, name: String): Int {
-        val reader = Reader(font)
-        val index = (0 until 10).first { reader.s32(12 + it * 16) == tag(name) }
-        return reader.index32(12 + index * 16 + 8)
-    }
-
     /** [font] with the checksums made right again after a change. */
     private fun withChecksums(font: ByteArray): ByteArray {
         val out = font.copyOf()
@@ -92,123 +80,6 @@ class CanonicalVerifierTest {
 
     private fun putU32(bytes: ByteArray, at: Int, value: Int) {
         for (i in 0 until 4) bytes[at + i] = (value ushr (24 - i * 8)).toByte()
-    }
-
-    @Test
-    fun sanitizedFontPasses() {
-        assertEquals(
-            WidthClass.Monospaced,
-            SanitizedFont.fromCanonical(canonical, limits).widthClass,
-        )
-    }
-
-    @Test
-    fun wrongTableChecksumIsMalformed() {
-        val font = canonical.copyOf()
-        font[12 + 4] = (font[12 + 4] + 1).toByte()
-
-        assertEquals(Kind.Malformed, verifyFailure(font))
-    }
-
-    @Test
-    fun wrongChecksumAdjustmentIsMalformed() {
-        val font = canonical.copyOf()
-        val head = tableOffset(font, "head")
-        font[head + 11] = (font[head + 11] + 1).toByte()
-
-        assertEquals(Kind.Malformed, verifyFailure(font))
-    }
-
-    @Test
-    fun byteAfterTheTablesIsMalformed() {
-        assertEquals(Kind.Malformed, verifyFailure(canonical + 0))
-    }
-
-    @Test
-    fun truncatedFontIsMalformed() {
-        assertEquals(Kind.Malformed, verifyFailure(canonical.copyOf(canonical.size - 4)))
-    }
-
-    @Test
-    fun fontLargerThanTheOutputLimitIsTooLarge() {
-        val kind =
-            assertFailsWith<InvalidFontException> {
-                    SanitizedFont.fromCanonical(canonical, FontLimits(maxOutputBytes = 100))
-                }
-                .kind
-
-        assertEquals(Kind.TooLarge, kind)
-    }
-
-    @Test
-    fun glyphWithMorePointsThanTheLimitIsMalformed() {
-        val kind =
-            assertFailsWith<InvalidFontException> {
-                    SanitizedFont.fromCanonical(canonical, FontLimits(maxGlyphPoints = 4))
-                }
-                .kind
-
-        assertEquals(Kind.Malformed, kind)
-    }
-
-    @Test
-    fun glyphWithFewerPointsThanTheGlyphBeforeItPasses() {
-        // Glyphs share the arrays of points, so the bounding box of glyph 1 would take in the
-        // points of glyph 0 at (0, 0) if the verifier read past its own four.
-        val input =
-            TestTrueTypeFont(
-                    glyphs =
-                        listOf(
-                            TestGlyph.Simple(listOf(square(0, 0, 1000), square(100, 100, 800))),
-                            TestGlyph.Simple(listOf(square(300, 300, 100))),
-                        ),
-                    characters = mapOf(0x41 to 1),
-                )
-                .build()
-        // Written without the verifier, which FontFile.sanitize ends in.
-        val font = CanonicalWriter.write(FaceParts.read(Sfnt.face(input, 0), limits), limits)
-
-        val loaded = SanitizedFont.fromCanonical(font, limits)
-
-        assertContentEquals(font, loaded.toByteArray())
-    }
-
-    @Test
-    fun overlapFlagOfAGlyphIsMalformed() {
-        val font = canonical.copyOf()
-        // The first flag of glyph 0, a square of one contour: after the header, one end point, and
-        // the length of the instructions.
-        val flag = tableOffset(font, "glyf") + 10 + 2 + 2
-        font[flag] = (font[flag].toInt() or 0x40).toByte()
-
-        assertEquals(Kind.Malformed, verifyFailure(withChecksums(font)))
-    }
-
-    @Test
-    fun compositeGlyphIsMalformed() {
-        val font = canonical.copyOf()
-        val glyf = tableOffset(font, "glyf")
-        font[glyf] = 0xFF.toByte()
-        font[glyf + 1] = 0xFF.toByte()
-
-        assertEquals(Kind.Malformed, verifyFailure(withChecksums(font)))
-    }
-
-    @Test
-    fun instructionsAreMalformed() {
-        val font = canonical.copyOf()
-        val instructionLength = tableOffset(font, "glyf") + 10 + 2
-        font[instructionLength + 1] = 1
-
-        assertEquals(Kind.Malformed, verifyFailure(withChecksums(font)))
-    }
-
-    @Test
-    fun fontRevisionOtherThanOneIsMalformed() {
-        val font = canonical.copyOf()
-        font[tableOffset(font, "head") + 7] = 1
-
-        assertEquals(Kind.Malformed, verifyFailure(withChecksums(font)))
     }
 
     /**

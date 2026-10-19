@@ -185,7 +185,8 @@ As in requirement 6.1, in the initial phase the verification is at the level of 
 | `vtfx-input` | IME trace replay tests (`spec/ime`). Tests with hostile IME calls. | Yes |
 | `vtfx-gate` | Table-driven tests of key encoding. Unit tests of replies, pastes, and policies, including malicious inputs. | Yes |
 | `vtfx-compose` | Unit tests with Robolectric, and screenshot tests (agents manage provisional goldens, and humans approve them). | Yes |
-| `vtfx-font` | Unit tests with fonts that test code builds, including those of the verifier of `vtfx-font-gate`, which has no tests of its own. | Yes |
+| `vtfx-font` | Unit tests with fonts that test code builds. A golden of the canonical form: the fonts that `vtfx-font-gate`'s tests use are what sanitizing writes. Cross-checks of the verifier of `vtfx-font-gate` with the readers and the writer. | Yes |
+| `vtfx-font-gate` | Unit tests of the verifier with canonical fonts that `vtfx-font` writes, kept as files, and with changes to them. | Yes |
 | Whole | e2e on the emulator (IME e2e with a real IME, and rendering e2e with hardware acceleration), esctest2. | No (reports only) |
 
 Details are in [testing.md](testing.md).
