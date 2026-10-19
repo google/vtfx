@@ -26,7 +26,7 @@ android {
 
     defaultConfig {
         // The same as the library (vtfx.android-library).
-        minSdk = 34
+        minSdk = 29
         targetSdk = 37
     }
 

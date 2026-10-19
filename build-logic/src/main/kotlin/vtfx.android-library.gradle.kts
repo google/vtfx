@@ -25,9 +25,8 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        // See docs/REQUIREMENTS.md section 6.4. API 34 is the first with
-        // InputConnection.replaceText, which the IME contract relies on.
-        minSdk = 34
+        // See docs/REQUIREMENTS.md section 6.4 and docs/decisions/0039-minsdk-29.md.
+        minSdk = 29
     }
 
     compileOptions {

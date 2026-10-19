@@ -191,8 +191,7 @@ Tests, fixtures, and goldens owned by humans are gathered in dedicated directori
 - CI is GitHub Actions. However, workflows only call the check script, which can also run locally, so that nothing depends on CI.
 - The public API uses Kotlin's explicit API mode to make the public surface explicit.
 - Compatibility of the public API is checked by `check` by comparing ABI dumps and dumps of the Kotlin signatures (each module's `api/`) (requirement 6.5, [decisions/0016](../decisions/0016-public-api.md)).
-- minSdk starts at 34 (Android 14), because `InputConnection.replaceText`, which the IME contract uses, was added in API 34. Later decisions are also made per feature (requirement 6.4).
-  - Lowering it to 29 (Android 10) was decided in [decisions/0039](../decisions/0039-minsdk-29.md). Until the work listed there is done, the build still uses 34.
+- minSdk is 29 (Android 10), weighed per feature (requirement 6.4, [decisions/0039](../decisions/0039-minsdk-29.md)). It started at 34, the first API level with `InputConnection.replaceText`. 29 is the first with `RenderNode`, which the line cache uses, and with foreground-only clipboard reads. On API 29 to 33, IMEs correct text without `replaceText`, the sensitive mark on the rows has no effect, and the clipboard has no copy preview; the decision accepts these gaps. The two IME calls newer than 29 are guarded in `TerminalInputConnection` (sections 3 and 6 of [ime-contract.md](ime-contract.md)).
 
 ## 8. What this document does not decide
 

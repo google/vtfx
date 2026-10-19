@@ -38,7 +38,7 @@ The references (ctlseqs, DEC STD 070, and others) are stated explicitly, and the
 > [!NOTE]
 > vtfx is not published to Maven Central yet, and the public API may change before 1.0.
 
-Apps depend on `vtfx-compose`, which brings in the other modules. minSdk is 34.
+Apps depend on `vtfx-compose`, which brings in the other modules. minSdk is 29.
 
 ```kotlin
 val session = TerminalSession(

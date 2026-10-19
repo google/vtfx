@@ -8,7 +8,7 @@ Apps depend on `vtfx-compose`. `vtfx-compose` transitively exposes the other mod
 
 Declarations marked `@InternalVtfxApi` are not public API ([decisions/0016](decisions/0016-public-api.md)). Apps must not opt in.
 
-minSdk is 34 (section 7 of [architecture.md](design/architecture.md)).
+minSdk is 29 (section 7 of [architecture.md](design/architecture.md)).
 
 The public API assumes use from Kotlin. Use from Java is out of scope (requirement 4.2).
 
@@ -162,7 +162,7 @@ Some IMEs hold English words as composing text until a space and do not send the
 
 Host output can contain secrets (displayed API keys, keys, and so on). vtfx handles terminal content as follows ([decisions/0015](decisions/0015-accessibility.md)).
 
-- **Accessibility services**: Each displayed row is exposed for screen readers. However, rows are marked as sensitive data, so they are visible only to services that declare `isAccessibilityTool` (TalkBack and so on), and not to other accessibility services.
+- **Accessibility services**: Each displayed row is exposed for screen readers. However, rows are marked as sensitive data, so they are visible only to services that declare `isAccessibilityTool` (TalkBack and so on), and not to other accessibility services. The mark works on Android 14 (API 34) and later. On API 29 to 33, the platform cannot tell a tool from another service, and the rows are visible to every accessibility service ([decisions/0039](decisions/0039-minsdk-29.md)). Apps that show secrets can take this into account, for example by setting their own minSdk to 34.
 - **Content Capture** (the mechanism by which OS intelligence features receive the text on the screen): vtfx does not stop it. Compose's Content Capture does not look at the sensitive mark, and the means of stopping it affects the whole process, so the app decides. Apps that handle secrets can set `ContentCaptureManager.isEnabled = false` (`androidx.compose.ui.contentcapture`; `@ExperimentalComposeUiApi` in Compose UI 1.12).
 - **Screen sharing and screen recording**: vtfx does not hide content. Apps that want to hide it add `Modifier.sensitiveContent()` to the `modifier` of `Terminal` (Android 15 and later; the terminal part is hidden while sharing).
 

@@ -33,7 +33,7 @@ This document defines, for each `InputConnection` call from the IME, what vtfx s
 | `inputType` (direct input) | `TYPE_CLASS_TEXT` \| `TYPE_TEXT_VARIATION_VISIBLE_PASSWORD` \| `TYPE_TEXT_FLAG_NO_SUGGESTIONS` | When the app enables `TerminalSession.directInput`. Makes even IMEs that hold English words as composing text commit one character at a time (requirement 5.3, [decisions/0017](../decisions/0017-ime-scope.md)). Switching commits the composing text and resets. |
 | `imeOptions` | `IME_ACTION_NONE` \| `IME_FLAG_NO_FULLSCREEN` \| `IME_FLAG_NO_EXTRACT_UI` \| `IME_FLAG_NO_PERSONALIZED_LEARNING` | Personalized learning is always disabled, because input to a terminal can contain secrets such as passwords (requirement 6.1). The app cannot change it. |
 | `initialSelStart`, `initialSelEnd` | The length of the editing buffer | Invariant 1. |
-| Initial surrounding text | The input history | Passed with `setInitialSurroundingText`. |
+| Initial surrounding text | The input history | Passed with `setInitialSurroundingText` on API 30 and later. On API 29, which lacks it, the IME gets the input history with the queries in 6.2 ([decisions/0039](../decisions/0039-minsdk-29.md)). |
 
 ## 4. Rules for sending
 
@@ -115,6 +115,7 @@ BS (`KEYCODE_DEL`) does not reset. BS is treated as an edit that erases the last
 Notes:
 
 - Even if `newCursorPosition` (`pos`) is not 1, the cursor is placed at the end (invariant 1).
+- Only IMEs on API 34 and later call `replaceText`, which was added in API 34. IMEs on API 29 to 33 correct text with `setComposingRegion`, `setSelection`, or `deleteSurroundingText` followed by `commitText`, as the rows above specify. No IME was measured on those versions yet ([decisions/0039](../decisions/0039-minsdk-29.md)).
 - Why edits outside the range are rejected: rejecting makes nothing happen, while accepting produces wrong output (`Dont` + `Don't ` with the measured "none" policy, and so on).
 - Why only `deleteSurroundingText` allows the outside: a deletion outside can be interpreted as the user's intent of pressing BS, and sending DELs does what was intended. A replacement cannot be reproduced correctly because the content outside is unknown.
 - DELs for a deletion outside the range are limited to the limit of the input history (section 10). The IME cannot see text before the input history, so deleting more than that is not the user's intent. Without a limit, an untrusted IME could make the host receive any number of DELs.
@@ -128,7 +129,7 @@ Notes:
 | `getTextBeforeCursor(n, flags)` | The `n` characters before the start of the selection (if the selection is empty, the last `n` characters of the editing buffer) |
 | `getTextAfterCursor(n, flags)` | The empty string |
 | `getSelectedText(flags)` | The selected text. `null` if the selection is empty |
-| `getSurroundingText(before, after, flags)` | The last `before` characters of the editing buffer, and the cursor position at the end |
+| `getSurroundingText(before, after, flags)` | The last `before` characters of the editing buffer, and the cursor position at the end. Only IMEs on API 31 and later call it, since it was added in API 31 |
 | `getExtractedText(request, flags)` | The whole editing buffer (the fullscreen input UI is disabled) |
 | `getCursorCapsMode(reqModes)` | 0 (no automatic capitalization) |
 

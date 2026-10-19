@@ -76,6 +76,26 @@ class TerminalInputConnectionTest {
     }
 
     @Test
+    @Config(sdk = [MIN_SDK])
+    fun editorInfoBeforeApi30HasNoInitialSurroundingText() {
+        session.edit { it.commitText("ab") }
+        val info = EditorInfo()
+        session.edit { TerminalInputConnection.configure(info, it) }
+        assertEquals(InputType.TYPE_CLASS_TEXT, info.inputType)
+        assertEquals(
+            EditorInfo.IME_ACTION_NONE or
+                EditorInfo.IME_FLAG_NO_FULLSCREEN or
+                EditorInfo.IME_FLAG_NO_EXTRACT_UI or
+                EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING,
+            info.imeOptions,
+        )
+        assertEquals(2, info.initialSelStart)
+        assertEquals(2, info.initialSelEnd)
+        // The IME asks for the input history instead.
+        assertEquals("ab", connection.getTextBeforeCursor(10, 0).toString())
+    }
+
+    @Test
     fun directInputAsksForPlainCharacters() {
         val info = EditorInfo()
         session.edit { TerminalInputConnection.configure(info, it, directInput = true) }
@@ -108,6 +128,10 @@ class TerminalInputConnectionTest {
     }
 
     @Test fun editsWithoutReplaceTextAreDelegated() = assertEditsWithoutReplaceText()
+
+    @Test
+    @Config(sdk = [MIN_SDK])
+    fun editsWithoutReplaceTextAreDelegatedOnMinSdk() = assertEditsWithoutReplaceText()
 
     /**
      * The edits of IMEs before API 34, which correct text without `replaceText`
