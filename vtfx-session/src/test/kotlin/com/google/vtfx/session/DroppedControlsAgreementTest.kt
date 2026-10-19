@@ -34,6 +34,11 @@ import org.junit.jupiter.api.Test
  * The copies stay apart on purpose: the gate must not depend on code outside security review
  * (docs/decisions/0041), and vtfx-input must not depend on the gate (`config/boundaries.toml`). The
  * session has both, so the agreement is tested here, through the session's real wiring.
+ *
+ * Committed text passes the editor's rule and then the gate's, so what the host receives of it
+ * shows only what the gate drops and the editor keeps. A paste passes the gate's rule alone, so
+ * comparing what the editor keeps of a commit with what the host receives of the same text pasted
+ * also shows what the editor drops and the gate keeps.
  */
 class DroppedControlsAgreementTest {
     /** What the editor kept in its edit buffer and what the host received, decoded as UTF-8. */
@@ -50,6 +55,14 @@ class DroppedControlsAgreementTest {
         return Commit(kept, sent.toString(Charsets.UTF_8))
     }
 
+    /** Pastes [text] to a new session, whose host has not enabled bracketed paste. */
+    private fun pasteToNewSession(text: String): String {
+        val sent = ByteArrayOutputStream()
+        val session = TerminalSession({ sent.write(it) })
+        session.paste(text)
+        return sent.toString(Charsets.UTF_8)
+    }
+
     private fun Char.label(): String = "U+%04X".format(code)
 
     @Test
@@ -59,6 +72,18 @@ class DroppedControlsAgreementTest {
 
         val mismatches = codeUnits.filter {
             commitToNewSession("a${it}b").let { c -> c.kept != c.received }
+        }
+
+        assertEquals(emptyList(), mismatches.map { it.label() })
+    }
+
+    @Test
+    fun theEditorKeepsWhatTheGateLetsThrough_forEveryCodeUnitButSurrogatesAndLineBreaks() {
+        val codeUnits =
+            ('\u0000'..'\uffff').filter { !it.isSurrogate() && it != '\r' && it != '\n' }
+
+        val mismatches = codeUnits.filter {
+            commitToNewSession("a${it}b").kept != pasteToNewSession("a${it}b")
         }
 
         assertEquals(emptyList(), mismatches.map { it.label() })
