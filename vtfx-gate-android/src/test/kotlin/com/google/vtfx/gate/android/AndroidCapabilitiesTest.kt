@@ -21,6 +21,7 @@ import android.content.ClipDescription
 import android.content.ClipboardManager
 import android.content.Intent
 import android.net.Uri
+import com.google.vtfx.gate.OpenUrlResult
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -74,5 +75,34 @@ class AndroidCapabilitiesTest {
         AndroidUrlOpener(application).open("HTTPS://Example.com/A")
         val intent = shadowOf(application).nextStartedActivity
         assertEquals(Uri.parse("https://Example.com/A"), intent.data)
+    }
+
+    @Test
+    fun openingAUrlThatAnAppTakesReturnsOpened() {
+        // Robolectric starts every activity unless asked to check that one takes the intent.
+        val opener = AndroidUrlOpener(application)
+
+        val result = opener.open("https://example.com/a")
+
+        assertEquals(OpenUrlResult.Opened, result)
+    }
+
+    @Test
+    fun openingAUrlThatNoAppTakesReturnsNoApp() {
+        shadowOf(application).checkActivities(true)
+        val opener = AndroidUrlOpener(application)
+
+        val result = opener.open("https://example.com/a")
+
+        assertEquals(OpenUrlResult.NoApp, result)
+    }
+
+    @Test
+    fun openingAUrlThatTheSystemRefusesReturnsRefused() {
+        val opener = AndroidUrlOpener(PermissionDeniedContext(application))
+
+        val result = opener.open("https://example.com/a")
+
+        assertEquals(OpenUrlResult.Refused, result)
     }
 }

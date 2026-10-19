@@ -2,7 +2,7 @@ public final class com.google.vtfx.session.TerminalSession {
     public constructor(connection: com.google.vtfx.gate.HostConnection, columns: kotlin.Int = ..., rows: kotlin.Int = ..., limits: com.google.vtfx.core.TerminalLimits = ..., ambiguousWidth: com.google.vtfx.core.AmbiguousWidth = ..., policy: com.google.vtfx.gate.GatePolicy = ..., clipboard: com.google.vtfx.gate.ClipboardAccess? = ..., urlOpener: com.google.vtfx.gate.UrlOpener? = ..., listener: com.google.vtfx.session.TerminalSessionListener = ...)
     public final fun canOpenUrl(url: kotlin.String): kotlin.Boolean
     public final fun feed(bytes: kotlin.ByteArray, offset: kotlin.Int = ..., length: kotlin.Int = ...): kotlin.Unit
-    public final fun openUrl(url: kotlin.String): kotlin.Boolean
+    public final fun openUrl(url: kotlin.String): com.google.vtfx.gate.OpenUrlResult
     public final fun paste(text: kotlin.String): kotlin.Unit
     public final fun pasteFromClipboard(): kotlin.Unit
     public final fun resize(columns: kotlin.Int, rows: kotlin.Int, cellWidth: kotlin.Int = ..., cellHeight: kotlin.Int = ...): kotlin.Unit

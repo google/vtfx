@@ -24,6 +24,7 @@ import com.google.vtfx.core.KeyStroke
 import com.google.vtfx.core.TerminalKey
 import com.google.vtfx.gate.ClipboardAccess
 import com.google.vtfx.gate.GatePolicy
+import com.google.vtfx.gate.OpenUrlResult
 import com.google.vtfx.gate.ReportedColors
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.CountDownLatch
@@ -493,16 +494,33 @@ class TerminalSessionTest {
     @Test
     fun hyperlinksAreFoundAndOpenedThroughTheGate() {
         val opened = mutableListOf<String>()
-        val linked = TerminalSession({}, urlOpener = { opened += it })
+        val linked =
+            TerminalSession(
+                {},
+                urlOpener = {
+                    opened += it
+                    OpenUrlResult.Opened
+                },
+            )
         linked.feed(
             "\u001b]8;;https://example.com\u0007x\u001b]8;;javascript:alert(1)\u0007y".toByteArray()
         )
         val line = linked.snapshot().line(0)
         assertEquals("https://example.com", line.hyperlinkAt(0)?.uri)
         assertEquals(null, line.hyperlinkAt(5))
-        assertEquals(true, linked.openUrl(line.hyperlinkAt(0)!!.uri))
-        assertEquals(false, linked.openUrl(line.hyperlinkAt(1)!!.uri))
+        assertEquals(OpenUrlResult.Opened, linked.openUrl(line.hyperlinkAt(0)!!.uri))
+        assertEquals(OpenUrlResult.NotAllowed, linked.openUrl(line.hyperlinkAt(1)!!.uri))
         assertEquals(listOf("https://example.com"), opened)
+    }
+
+    @Test
+    fun openUrlReturnsWhatTheUrlOpenerReported() {
+        // A device without an app for the URL.
+        val linked = TerminalSession({}, urlOpener = { OpenUrlResult.NoApp })
+
+        val result = linked.openUrl("https://example.com")
+
+        assertEquals(OpenUrlResult.NoApp, result)
     }
 
     @Test
@@ -525,7 +543,14 @@ class TerminalSessionTest {
     @Test
     fun whetherAUrlCanBeOpenedIsKnownBeforeOpeningIt() {
         val opened = mutableListOf<String>()
-        val linked = TerminalSession({}, urlOpener = { opened += it })
+        val linked =
+            TerminalSession(
+                {},
+                urlOpener = {
+                    opened += it
+                    OpenUrlResult.Opened
+                },
+            )
         assertTrue(linked.canOpenUrl("https://example.com"))
         assertFalse(linked.canOpenUrl("javascript:alert(1)"))
         assertFalse(TerminalSession({}).canOpenUrl("https://example.com"))

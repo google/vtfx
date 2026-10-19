@@ -20,7 +20,9 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import com.google.vtfx.gate.OpenUrlResult
 import com.google.vtfx.gate.UrlOpener
+import com.google.vtfx.gate.UrlOpenerResult
 
 /**
  * Opens URLs in a browser. vtfx-gate checks the URL before calling this; this class only performs
@@ -34,18 +36,27 @@ public class AndroidUrlOpener(private val context: Context) : UrlOpener {
      * Opens [url] with ACTION_VIEW. CATEGORY_BROWSABLE restricts the target to activities that
      * accept links from a browser, so that a URL cannot start an app's internal activity. The
      * scheme is put in lower case, as the gate compares it, since Android matches schemes
-     * case-sensitively. Nothing happens if no app can open it.
+     * case-sensitively.
+     *
+     * Returns [OpenUrlResult.NoApp] if no app opens it, and [OpenUrlResult.Refused] if the system
+     * refuses to start the app that does, such as one whose activity requires a permission. Other
+     * exceptions from the system propagate.
      */
-    override fun open(url: String) {
+    override fun open(url: String): UrlOpenerResult {
         val intent =
             Intent(Intent.ACTION_VIEW, Uri.parse(url).normalizeScheme()).apply {
                 addCategory(Intent.CATEGORY_BROWSABLE)
                 if (context !is android.app.Activity) addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-        try {
+        // Only the failures that startActivity documents become results; anything else is a
+        // programming error and propagates (docs/decisions/0043).
+        return try {
             context.startActivity(intent)
+            OpenUrlResult.Opened
         } catch (_: ActivityNotFoundException) {
-            // The gate already decided to open it; there is just no app for it.
+            OpenUrlResult.NoApp
+        } catch (_: SecurityException) {
+            OpenUrlResult.Refused
         }
     }
 }

@@ -35,6 +35,7 @@ import com.google.vtfx.gate.GatePolicy
 import com.google.vtfx.gate.HostConnection
 import com.google.vtfx.gate.HostWriter
 import com.google.vtfx.gate.MouseReport
+import com.google.vtfx.gate.OpenUrlResult
 import com.google.vtfx.gate.ReportedColors
 import com.google.vtfx.gate.TerminalGate
 import com.google.vtfx.gate.UrlOpener
@@ -602,16 +603,19 @@ public class TerminalSession(
     )
 
     /**
-     * Opens [url] if the URL schemes of the gate's policy allow it, and returns whether it did.
-     * Call it only for an explicit action of the user, after showing them the URL, for example in a
-     * confirmation dialog for a tapped link, so that a link cannot pass for another site.
+     * Opens [url] if the URL schemes of the gate's policy allow it, and returns what came of it:
+     * [OpenUrlResult.NotAllowed] if the session has no `urlOpener` or the policy does not allow the
+     * URL, and otherwise what the `urlOpener` reported, such as [OpenUrlResult.NoApp]. Call it only
+     * for an explicit action of the user, after showing them the URL, for example in a confirmation
+     * dialog for a tapped link, so that a link cannot pass for another site.
      */
-    public fun openUrl(url: String): Boolean = gate.openUrl(url)
+    public fun openUrl(url: String): OpenUrlResult = gate.openUrl(url)
 
     /**
-     * Returns whether [openUrl] would open [url]: the session has a `urlOpener`, and the URL
-     * schemes of the gate's policy allow it. Check it before asking the user to confirm a link, so
-     * as not to ask about one that cannot be opened.
+     * Returns whether [openUrl] would try to open [url] rather than return
+     * [OpenUrlResult.NotAllowed]: the session has a `urlOpener`, and the URL schemes of the gate's
+     * policy allow it. Check it before asking the user to confirm a link, so as not to ask about
+     * one that vtfx does not allow.
      */
     public fun canOpenUrl(url: String): Boolean = gate.canOpenUrl(url)
 

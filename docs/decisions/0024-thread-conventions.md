@@ -38,6 +38,7 @@ Rules common to calls of callbacks, listeners, and interfaces the app implements
 2. **Locks**: The app's code is not called while holding the library's internal locks. Only locks for serializing calls are an exception, and holding them is stated explicitly (`HostWriter`, the input lock of `TerminalSession`).
 3. **Reentry**: The app's code does not call the object that called it. Where it can be detected, it is detected with `check` and becomes `IllegalStateException`. However, notifications called after releasing locks and finishing processing can explicitly allow calling the object that called them (`TerminalSessionListener`; [0026](0026-session-module.md)).
 4. **Exceptions**: The app's code does not throw. If it does, the exception is propagated to the caller as a programming error, not swallowed. The state of the object after it propagates is not guaranteed.
+   - 2026-10-19: [0043](0043-url-open-results.md) applies this to failures that the platform documents for what the app's code does, such as no app to open a URL: they are not exceptions in this sense. The interface returns them as values (`UrlOpener.open` returns a result), and the implementation converts only the exceptions it expects for them (`ActivityNotFoundException` and `SecurityException` from `startActivity` in `AndroidUrlOpener`) and lets any other propagate. vtfx catches nothing around the call.
 
 ### Application per module
 

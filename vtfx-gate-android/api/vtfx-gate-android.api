@@ -6,6 +6,6 @@ public final class com/google/vtfx/gate/android/AndroidClipboard : com/google/vt
 
 public final class com/google/vtfx/gate/android/AndroidUrlOpener : com/google/vtfx/gate/UrlOpener {
 	public fun <init> (Landroid/content/Context;)V
-	public fun open (Ljava/lang/String;)V
+	public fun open (Ljava/lang/String;)Lcom/google/vtfx/gate/UrlOpenerResult;
 }
 

@@ -91,22 +91,25 @@ public class TerminalGate(
 
     /**
      * Opens a hyperlink. Must be called only for an explicit action of the user, after the UI
-     * showed them [url] (requirement 6.1: spoofed links). Returns whether it was opened: false if
-     * the scheme is not allowed, the URL is malformed, it has characters, userinfo, or a host that
-     * is not ASCII that could make the URL shown differ from where it goes
-     * (docs/decisions/0006-gate-defaults.md), or there is no [UrlOpener].
+     * showed them [url] (requirement 6.1: spoofed links). Returns what the [UrlOpener] reported, or
+     * [OpenUrlResult.NotAllowed] without calling it if the scheme is not allowed, the URL is
+     * malformed, it has characters, userinfo, or a host that is not ASCII that could make the URL
+     * shown differ from where it goes (docs/decisions/0006-gate-defaults.md), or there is no
+     * [UrlOpener].
      */
-    public fun openUrl(url: String): Boolean {
-        val opener = urlOpener ?: return false
-        if (!isAllowedUrl(url)) return false
-        opener.open(url)
-        return true
+    public fun openUrl(url: String): OpenUrlResult {
+        val opener = urlOpener ?: return OpenUrlResult.NotAllowed
+        if (!isAllowedUrl(url)) return OpenUrlResult.NotAllowed
+        return opener.open(url)
     }
 
-    /** Returns whether [openUrl] would open [url]: there is a [UrlOpener], and it is allowed. */
+    /**
+     * Returns whether [openUrl] would pass [url] to the [UrlOpener] rather than return
+     * [OpenUrlResult.NotAllowed]: there is a [UrlOpener], and the URL is allowed.
+     */
     public fun canOpenUrl(url: String): Boolean = urlOpener != null && isAllowedUrl(url)
 
-    /** Returns whether [url] would be opened by [openUrl]. */
+    /** Returns whether [openUrl] allows [url], whether or not there is a [UrlOpener]. */
     public fun isAllowedUrl(url: String): Boolean {
         if (url.isEmpty() || url.length > MAX_URL_LENGTH) return false
         // Whitespace, controls, format characters (such as bidi overrides and zero-width

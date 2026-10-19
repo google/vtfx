@@ -33,17 +33,53 @@ public interface ClipboardAccess {
     public fun read(): String?
 }
 
+// How "must not throw" applies to the failures of opening a URL is in docs/decisions/0043.
 /**
  * Opens URLs in another app, implemented by vtfx-gate-android. vtfx calls it only after the
  * [GatePolicy] allowed the URL.
  *
  * Called on the thread that asked to open the URL, the main thread with `TerminalSession`, without
- * a lock of vtfx held. Implementations must be thread-safe and must not throw.
+ * a lock of vtfx held. Implementations must be thread-safe. They return the failures that the
+ * platform documents for opening a URL, such as no app to open it, as a result, and must not throw.
  */
 public fun interface UrlOpener {
-    /** Opens [url], which vtfx has checked against the [GatePolicy]. */
-    public fun open(url: String)
+    /**
+     * Opens [url], which vtfx has checked against the [GatePolicy], and returns what came of it.
+     */
+    public fun open(url: String): UrlOpenerResult
 }
+
+// Closed: a new kind of result is added only in a major version, so that apps can match it
+// exhaustively (docs/decisions/0043).
+/**
+ * What came of asking vtfx to open a URL: [NotAllowed] if vtfx did not try, or what the [UrlOpener]
+ * reported ([UrlOpenerResult]).
+ */
+public sealed interface OpenUrlResult {
+    /**
+     * vtfx did not try to open the URL: the [GatePolicy] does not allow it, or there is no
+     * [UrlOpener].
+     */
+    public data object NotAllowed : OpenUrlResult
+
+    /** An app was started to open the URL. */
+    public data object Opened : UrlOpenerResult
+
+    /** No app opens the URL. */
+    public data object NoApp : UrlOpenerResult
+
+    /**
+     * The system refused to start the app that opens the URL, for example because that app requires
+     * a permission.
+     */
+    public data object Refused : UrlOpenerResult
+}
+
+/**
+ * What a [UrlOpener] did with a URL that vtfx allowed: [OpenUrlResult.Opened],
+ * [OpenUrlResult.NoApp], or [OpenUrlResult.Refused].
+ */
+public sealed interface UrlOpenerResult : OpenUrlResult
 
 // The defaults are chosen in docs/decisions/0006.
 /**

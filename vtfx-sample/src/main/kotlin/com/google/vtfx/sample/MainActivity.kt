@@ -52,6 +52,7 @@ import com.google.vtfx.compose.TerminalStyle
 import com.google.vtfx.compose.rememberTerminalState
 import com.google.vtfx.core.LinkPattern
 import com.google.vtfx.font.SanitizedFamily
+import com.google.vtfx.gate.OpenUrlResult
 import com.google.vtfx.session.TerminalSession
 
 class MainActivity : ComponentActivity() {
@@ -130,8 +131,14 @@ class MainActivity : ComponentActivity() {
             .setTitle(R.string.open_link_title)
             .setMessage(url)
             .setPositiveButton(R.string.open_link) { _, _ ->
-                if (!session.openUrl(url))
-                    Toast.makeText(this, R.string.link_refused, Toast.LENGTH_SHORT).show()
+                val failure =
+                    when (session.openUrl(url)) {
+                        OpenUrlResult.Opened -> null
+                        OpenUrlResult.NotAllowed -> R.string.link_refused
+                        OpenUrlResult.NoApp -> R.string.link_no_app
+                        OpenUrlResult.Refused -> R.string.link_refused_by_system
+                    }
+                if (failure != null) Toast.makeText(this, failure, Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()

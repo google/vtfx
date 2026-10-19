@@ -58,7 +58,10 @@ class AttackTest {
             HostWriter { sent += String(it, Charsets.UTF_8) },
             policy,
             clipboard,
-            urlOpener = { opened += it },
+            urlOpener = {
+                opened += it
+                OpenUrlResult.Opened
+            },
         )
 
     private fun host(
@@ -265,8 +268,8 @@ class AttackTest {
         @Test
         fun onlyAllowedSchemesOpen() {
             val gate = gate()
-            assertTrue(gate.openUrl("https://example.com/a?b#c"))
-            assertTrue(gate.openUrl("HTTP://example.com"))
+            assertEquals(OpenUrlResult.Opened, gate.openUrl("https://example.com/a?b#c"))
+            assertEquals(OpenUrlResult.Opened, gate.openUrl("HTTP://example.com"))
             for (url in
                 listOf(
                     "javascript:alert(1)",
@@ -275,7 +278,7 @@ class AttackTest {
                     "content://x",
                     "mailto:a@b",
                 )) {
-                assertFalse(gate.openUrl(url), url)
+                assertEquals(OpenUrlResult.NotAllowed, gate.openUrl(url), url)
             }
             assertEquals(listOf("https://example.com/a?b#c", "HTTP://example.com"), opened)
         }
@@ -514,15 +517,18 @@ class AttackTest {
 
         @Test
         fun extraSchemesCanBeAllowed() {
-            assertTrue(gate(GatePolicy(urlSchemes = setOf("mailto"))).openUrl("mailto:a@b"))
+            assertEquals(
+                OpenUrlResult.Opened,
+                gate(GatePolicy(urlSchemes = setOf("mailto"))).openUrl("mailto:a@b"),
+            )
         }
 
         @Test
         fun schemesAreAllowedInAnyCase() {
             val policy = GatePolicy(urlSchemes = setOf("HTTPS", "Mailto"))
             assertEquals(setOf("https", "mailto"), policy.urlSchemes)
-            assertTrue(gate(policy).openUrl("https://a"))
-            assertTrue(gate(policy).openUrl("MAILTO:a@b"))
+            assertEquals(OpenUrlResult.Opened, gate(policy).openUrl("https://a"))
+            assertEquals(OpenUrlResult.Opened, gate(policy).openUrl("MAILTO:a@b"))
         }
     }
 

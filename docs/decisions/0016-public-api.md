@@ -29,6 +29,7 @@ Requirement 6.5 asks for keeping the public API to the minimum needed, mechanica
 - From 1.0 on, changes that break compatibility are made only in major versions. An API to be removed is first replaced with `@Deprecated` (WARNING) pointing to its replacement, becomes ERROR after at least one minor version, and is removed in the next major version.
   - 2026-10-16: [0036](0036-adding-parameters.md) keeps the previous signature as a hidden overload when a parameter is added from 1.0 on.
   - 2026-10-16: [0037](0037-api-shape-before-1.0.md) removes data classes and public `const val`s from what the public API returns and exposes, and lists the closed enums: `UnderlineStyle` and `CursorShape` take new entries only in a major version. The other enums and sealed types that vtfx returns are shaped so that apps cannot match them exhaustively; those that apps give to vtfx may grow in a minor version.
+  - 2026-10-19: [0043](0043-url-open-results.md) adds the closed sealed type `OpenUrlResult` (with its subtype `UrlOpenerResult`), which `openUrl` returns and `UrlOpener` implementations return a part of: a new kind of result is added only in a major version.
 - `@InternalVtfxApi` declarations may change without notice in any version.
 - When to start guaranteeing stability (1.0) is decided by humans once the publishing (Maven) policy is decided ("Publishing" in [review-queue.md](../review-queue.md)).
 

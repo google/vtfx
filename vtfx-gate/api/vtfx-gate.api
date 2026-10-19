@@ -23,7 +23,41 @@ public abstract interface class com/google/vtfx/gate/HostConnection {
 	public abstract fun write ([B)V
 }
 
+public abstract interface class com/google/vtfx/gate/OpenUrlResult {
+}
+
+public final class com/google/vtfx/gate/OpenUrlResult$NoApp : com/google/vtfx/gate/UrlOpenerResult {
+	public static final field INSTANCE Lcom/google/vtfx/gate/OpenUrlResult$NoApp;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/google/vtfx/gate/OpenUrlResult$NotAllowed : com/google/vtfx/gate/OpenUrlResult {
+	public static final field INSTANCE Lcom/google/vtfx/gate/OpenUrlResult$NotAllowed;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/google/vtfx/gate/OpenUrlResult$Opened : com/google/vtfx/gate/UrlOpenerResult {
+	public static final field INSTANCE Lcom/google/vtfx/gate/OpenUrlResult$Opened;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/google/vtfx/gate/OpenUrlResult$Refused : com/google/vtfx/gate/UrlOpenerResult {
+	public static final field INSTANCE Lcom/google/vtfx/gate/OpenUrlResult$Refused;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public abstract interface class com/google/vtfx/gate/UrlOpener {
-	public abstract fun open (Ljava/lang/String;)V
+	public abstract fun open (Ljava/lang/String;)Lcom/google/vtfx/gate/UrlOpenerResult;
+}
+
+public abstract interface class com/google/vtfx/gate/UrlOpenerResult : com/google/vtfx/gate/OpenUrlResult {
 }
 

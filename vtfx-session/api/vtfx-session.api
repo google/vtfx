@@ -9,7 +9,7 @@ public final class com/google/vtfx/session/TerminalSession {
 	public final fun getScrollbackSize ()I
 	public final fun getStickyModifiers-wcG754k ()I
 	public final fun getTitle ()Ljava/lang/String;
-	public final fun openUrl (Ljava/lang/String;)Z
+	public final fun openUrl (Ljava/lang/String;)Lcom/google/vtfx/gate/OpenUrlResult;
 	public final fun paste (Ljava/lang/String;)V
 	public final fun pasteFromClipboard ()V
 	public final fun resize (IIII)V

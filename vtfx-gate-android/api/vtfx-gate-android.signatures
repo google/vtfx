@@ -6,6 +6,6 @@ public final class com.google.vtfx.gate.android.AndroidClipboard : com.google.vt
 
 public final class com.google.vtfx.gate.android.AndroidUrlOpener : com.google.vtfx.gate.UrlOpener {
     public constructor(context: android.content.Context)
-    public open fun open(url: kotlin.String): kotlin.Unit
+    public open fun open(url: kotlin.String): com.google.vtfx.gate.UrlOpenerResult
 }
 

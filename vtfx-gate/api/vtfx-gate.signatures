@@ -20,7 +20,37 @@ public fun interface com.google.vtfx.gate.HostConnection {
     public abstract fun write(bytes: kotlin.ByteArray): kotlin.Unit
 }
 
+public sealed interface com.google.vtfx.gate.OpenUrlResult {
+}
+
+public data object com.google.vtfx.gate.OpenUrlResult.NoApp : com.google.vtfx.gate.UrlOpenerResult {
+    public open fun hashCode(): kotlin.Int
+    public open fun toString(): kotlin.String
+    public open operator fun equals(other: kotlin.Any?): kotlin.Boolean
+}
+
+public data object com.google.vtfx.gate.OpenUrlResult.NotAllowed : com.google.vtfx.gate.OpenUrlResult {
+    public open fun hashCode(): kotlin.Int
+    public open fun toString(): kotlin.String
+    public open operator fun equals(other: kotlin.Any?): kotlin.Boolean
+}
+
+public data object com.google.vtfx.gate.OpenUrlResult.Opened : com.google.vtfx.gate.UrlOpenerResult {
+    public open fun hashCode(): kotlin.Int
+    public open fun toString(): kotlin.String
+    public open operator fun equals(other: kotlin.Any?): kotlin.Boolean
+}
+
+public data object com.google.vtfx.gate.OpenUrlResult.Refused : com.google.vtfx.gate.UrlOpenerResult {
+    public open fun hashCode(): kotlin.Int
+    public open fun toString(): kotlin.String
+    public open operator fun equals(other: kotlin.Any?): kotlin.Boolean
+}
+
 public fun interface com.google.vtfx.gate.UrlOpener {
-    public abstract fun open(url: kotlin.String): kotlin.Unit
+    public abstract fun open(url: kotlin.String): com.google.vtfx.gate.UrlOpenerResult
+}
+
+public sealed interface com.google.vtfx.gate.UrlOpenerResult : com.google.vtfx.gate.OpenUrlResult {
 }
 
