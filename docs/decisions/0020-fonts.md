@@ -2,7 +2,7 @@
 
 - Status: Approved (2026-10-13, decided in a discussion with a human)
 - Date: 2026-10-13
-- Related: Requirements 6.1 and 6.5 (customizability, safe defaults), [0016](0016-public-api.md), `TerminalFont` in `vtfx-compose`, `config/boundaries.toml`
+- Related: Requirements 6.1 and 6.5 (customizability, safe defaults), [0016](0016-public-api.md), [0040](0040-sanitized-user-fonts.md) (fonts chosen by users, sanitized in Kotlin: the future extension below, carried out), `TerminalFont` in `vtfx-compose`, `config/boundaries.toml`
 
 ## Background
 
