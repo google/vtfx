@@ -1,6 +1,6 @@
 # Security review by whole modules
 
-- Status: Provisional (2026-10-19, review by whole modules and the names `vtfx-font-gate` and `vtfx-font-gate-android` decided by a human)
+- Status: Provisional (2026-10-19, review by whole modules and the names `vtfx-font-gate` and `vtfx-font-gate-android` decided by a human; the verifier's own package added on 2026-10-19, not yet reviewed)
 - Date: 2026-10-19
 - Related: Requirement 6.1, section 2 of [architecture.md](../design/architecture.md), [0016](0016-public-api.md), [0037](0037-api-shape-before-1.0.md), [0040](0040-sanitized-user-fonts.md), `config/protected-paths.toml`, `config/boundaries.toml`
 
@@ -27,7 +27,8 @@ A boundary drawn around files has to be redrawn by hand whenever code moves betw
 | `vtfx-font` | JVM, depends on `vtfx-font-gate` | The readers, the CFF interpreter, the curve approximation, the writer, `FontFile` | Not needed |
 | `vtfx-font-gate-android` | Android, depends on `vtfx-font-gate` (and `vtfx-core`, at compile time only, for `InternalVtfxApi`) | `SanitizedTypefaces.regular`, which makes the regular typeface of a list of `SanitizedFamily`s | Needed |
 
-- The package of `vtfx-font-gate` stays `com.google.vtfx.font`, so the types that apps use keep their names; the package is split across `vtfx-font` and `vtfx-font-gate`, which the JVM allows. Files with top-level functions have different names in the two modules, so that their facade classes do not clash. The verifier has its own private functions that throw, and the readers theirs (`Failures.kt`), so the verifier still shares no code with them.
+- The public types of `vtfx-font-gate` (`SanitizedFont`, `SanitizedFamily`, `InvalidFontException`, `FontLimits`, `WidthClass`) stay in `com.google.vtfx.font`, so the types that apps use keep their names; that package is split across `vtfx-font` and `vtfx-font-gate`, which the JVM allows. Files with top-level functions in it have different names in the two modules, so that their facade classes do not clash.
+- The verifier (`CanonicalVerifier`, with its private classes and top-level declarations) is in a package of its own, `com.google.vtfx.font.gate`, which no other module declares. In the split package, a class that `vtfx-font` declares with the name of one of the verifier's classes (`com.google.vtfx.font.CanonicalVerifier`, or the facade class of the verifier's file) compiles, and replaces the reviewed class wherever `vtfx-font` comes first on the class path: tried on 2026-10-19, a `vtfx-font` copy that accepted everything made `SanitizedFont.fromCanonical` in `vtfx-font`'s own tests accept malformed fonts. An Android app's build rejects the two classes when it merges dex files, but a JVM program that uses `vtfx-font` without a UI does not. The public types that stay in the split package can still be replaced in the same way. The verifier has its own private functions that throw, and the readers theirs (`Failures.kt`), so the verifier still shares no code with them.
 - `config/boundaries.toml` allows the font APIs in `vtfx-font-gate-android/**` instead of the one file of `vtfx-compose`. The module holds that one file, and the whole of it is under review.
 - `vtfx-compose` derives the bold and italic typefaces from the regular one with `Typeface.create`, which reads no font data, so it no longer uses the font APIs.
 
@@ -58,4 +59,4 @@ The verifier's tests (`CanonicalVerifierTest`) and the fuzz test stay in `vtfx-f
 
 ## Impact of reversing
 
-Merge `vtfx-font-gate` back into `vtfx-font` and `vtfx-font-gate-android` back into `vtfx-compose`; restore `SanitizedFont.sanitize`, the internal constructor of `InvalidFontException`, and `SanitizedFamily` in `vtfx-compose`; list the files again in `protected-paths.toml` and `boundaries.toml`.
+Merge `vtfx-font-gate` back into `vtfx-font` and `vtfx-font-gate-android` back into `vtfx-compose`; move `CanonicalVerifier` back to `com.google.vtfx.font`; restore `SanitizedFont.sanitize`, the internal constructor of `InvalidFontException`, and `SanitizedFamily` in `vtfx-compose`; list the files again in `protected-paths.toml` and `boundaries.toml`.

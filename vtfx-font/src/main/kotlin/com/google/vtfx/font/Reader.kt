@@ -21,8 +21,8 @@ package com.google.vtfx.font
  * Positions are relative to [start]. A read outside the range is a malformed font, never an
  * exception of the JVM, so that every way a font can be wrong ends in [InvalidFontException].
  *
- * The readers of the input use this; [CanonicalVerifier] does not, so that a bug here cannot hide
- * one there.
+ * The readers of the input use this; the verifier of vtfx-font-gate (`CanonicalVerifier`) does not,
+ * so that a bug here cannot hide one there.
  */
 internal class Reader(private val data: ByteArray, private val start: Int, val length: Int) {
     init {

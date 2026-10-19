@@ -16,6 +16,7 @@
 
 package com.google.vtfx.font
 
+import com.google.vtfx.font.gate.CanonicalVerifier
 import java.nio.Buffer
 import java.nio.ByteBuffer
 import java.security.MessageDigest

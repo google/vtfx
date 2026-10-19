@@ -18,8 +18,9 @@ package com.google.vtfx.font
 
 /**
  * Writes the canonical form of a face (docs/decisions/0040) from its [FaceParts]: every value is
- * either one of those, which [FaceParts.read] checked, or computed here from the outlines.
- * [CanonicalVerifier] checks the result; this writer does not need to be trusted.
+ * either one of those, which [FaceParts.read] checked, or computed here from the outlines. The
+ * verifier of vtfx-font-gate (`CanonicalVerifier`) checks the result; this writer does not need to
+ * be trusted.
  */
 internal object CanonicalWriter {
     /** The range of coordinates, which keeps every difference between two of them in 16 bits. */
