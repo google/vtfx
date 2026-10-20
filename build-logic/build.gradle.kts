@@ -41,4 +41,6 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    // RepositoryClassRulesTest checks the rules of the repository.
+    inputs.file("../config/boundaries.toml").withPathSensitivity(PathSensitivity.NONE)
 }

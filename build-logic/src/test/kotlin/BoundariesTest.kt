@@ -22,6 +22,8 @@ class BoundariesTest {
     private val boundaries =
         Boundaries.parse(
             """
+            bootstrap_methods = []
+
             [modules.vtfx-core]
             allowed_dependencies = []
             check_classes = true
@@ -163,6 +165,8 @@ class BoundariesTest {
         assertFailsWith<IllegalArgumentException> {
             Boundaries.parse(
                 """
+                bootstrap_methods = []
+
                 [modules.vtfx-gate]
                 allowed_dependencies = ["vtfx-core"]
                 check_classes = true
@@ -176,6 +180,8 @@ class BoundariesTest {
         assertFailsWith<IllegalArgumentException> {
             Boundaries.parse(
                 """
+                bootstrap_methods = []
+
                 [modules.vtfx-core]
                 allowed_dependencies = []
                 check_classes = true
@@ -190,6 +196,8 @@ class BoundariesTest {
         assertFailsWith<IllegalArgumentException> {
             Boundaries.parse(
                 """
+                bootstrap_methods = []
+
                 [modules.vtfx-core]
                 allowed_dependencies = []
                 check_classes = true
@@ -204,7 +212,7 @@ class BoundariesTest {
     @Test
     fun parse_moduleWithoutAllowedDependencies_throws() {
         assertFailsWith<IllegalArgumentException> {
-            Boundaries.parse("[modules.vtfx-core]\ncheck_classes = true\n")
+            Boundaries.parse("bootstrap_methods = []\n[modules.vtfx-core]\ncheck_classes = true\n")
         }
     }
 

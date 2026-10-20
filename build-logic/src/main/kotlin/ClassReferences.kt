@@ -38,7 +38,10 @@ import org.objectweb.asm.signature.SignatureVisitor
  *   uses, and in bootstrap methods. Arrays are reduced to their element types; primitive types are
  *   left out.
  * @property members every field and method that the class uses: in instructions, method handles,
- *   and bootstrap methods.
+ *   and the arguments of bootstrap methods.
+ * @property bootstraps the bootstrap methods of dynamic call sites and constants, such as the
+ *   factory of lambdas that the compiler uses. The types of their own descriptors, which name
+ *   classes of `java/lang/invoke`, are not in [types].
  */
 class ClassReferences(
     val name: String,
@@ -46,6 +49,7 @@ class ClassReferences(
     val interfaces: List<String>,
     val types: Set<String>,
     val members: Set<MemberReference>,
+    val bootstraps: Set<MemberReference>,
 ) {
     companion object {
         /** Reads the references of the class file [bytes]. Debug information is not read. */
@@ -58,6 +62,7 @@ class ClassReferences(
                 collector.interfaces,
                 collector.types - collector.name,
                 collector.members,
+                collector.bootstraps,
             )
         }
     }
@@ -90,6 +95,7 @@ private class Collector : ClassVisitor(API) {
     var interfaces: List<String> = emptyList()
     val types = mutableSetOf<String>()
     val members = mutableSetOf<MemberReference>()
+    val bootstraps = mutableSetOf<MemberReference>()
 
     private val annotations =
         object : AnnotationVisitor(API) {
@@ -257,7 +263,7 @@ private class Collector : ClassVisitor(API) {
             vararg bootstrapMethodArguments: Any?,
         ) {
             addDescriptor(descriptor)
-            addHandle(bootstrapMethodHandle)
+            addBootstrap(bootstrapMethodHandle)
             bootstrapMethodArguments.forEach(::addConstant)
         }
 
@@ -314,13 +320,18 @@ private class Collector : ClassVisitor(API) {
         addMember(handle.owner, handle.name, handle.desc, kind)
     }
 
+    private fun addBootstrap(handle: Handle) {
+        bootstraps +=
+            MemberReference(handle.owner, handle.name, handle.desc, MemberReference.Kind.METHOD)
+    }
+
     private fun addConstant(value: Any?) {
         when (value) {
             is Type -> addType(value)
             is Handle -> addHandle(value)
             is ConstantDynamic -> {
                 addDescriptor(value.descriptor)
-                addHandle(value.bootstrapMethod)
+                addBootstrap(value.bootstrapMethod)
                 for (index in 0 until value.bootstrapMethodArgumentCount) {
                     addConstant(value.getBootstrapMethodArgument(index))
                 }

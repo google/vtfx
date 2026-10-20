@@ -21,6 +21,15 @@
 #
 # Changes to this file require security review (config/protected-paths.toml).
 
+# The bootstrap methods that dynamic call sites and constants may use: those that the Kotlin and
+# Java compilers use for lambdas and string concatenation. Their descriptors name classes of
+# java/lang/invoke, which restricted_classes below does not allow otherwise.
+bootstrap_methods = [
+    "java/lang/invoke/LambdaMetafactory.altMetafactory",
+    "java/lang/invoke/LambdaMetafactory.metafactory",
+    "java/lang/invoke/StringConcatFactory.makeConcatWithConstants",
+]
+
 # Every project of the build must be listed here, with the modules it may depend on. The build logic
 # checks the dependencies of every configuration of every project, as declared and as resolved, so
 # dependencies added by plugins, on resolution, or by substitution are seen too; the tests have no
@@ -80,6 +89,128 @@ allowed_modules = ["vtfx-gate"]
 classes = ["com/google/vtfx/gate/ClipboardAccess", "com/google/vtfx/gate/UrlOpener"]
 reason = "Only vtfx-gate may call the clipboard and the URL opener, which vtfx-gate-android implements. TerminalSession only hands them over (docs/decisions/0042)."
 allowed_modules = ["vtfx-gate", "vtfx-gate-android"]
+
+# Classes and members that only the listed modules may refer to at all, in the main classes of every
+# module with check_classes = true (docs/decisions/0044). Names are internal names of the JVM
+# (android/content/Intent). "classes" includes their nested classes; "packages" includes their
+# subpackages; "members" are owner.name, or owner.name(descriptor for the descriptors that start so,
+# used through the owner or any of its subtypes. Kotlin's top-level declarations are members of
+# their file's class (CompositionLocalsKt.getLocalClipboard for LocalClipboard).
+[[restricted_classes]]
+# Includes Compose's clipboard (LocalClipboardManager, LocalClipboard, ClipEntry).
+classes = [
+    "android/content/ClipboardManager",
+    "android/content/ClipData",
+    "android/text/ClipboardManager",
+    "androidx/compose/ui/platform/AndroidClipboard",
+    "androidx/compose/ui/platform/AndroidClipboardManager",
+    "androidx/compose/ui/platform/ClipEntry",
+    "androidx/compose/ui/platform/Clipboard",
+    "androidx/compose/ui/platform/ClipboardManager",
+]
+members = [
+    "androidx/compose/ui/platform/CompositionLocalsKt.getLocalClipboard",
+    "androidx/compose/ui/platform/CompositionLocalsKt.getLocalClipboardManager",
+]
+reason = "Clipboard access must go through vtfx-gate-android."
+allowed_modules = ["vtfx-gate-android"]
+
+[[restricted_classes]]
+# Includes Compose's URL opening (LocalUriHandler, UriHandler, LinkAnnotation.Url) and AndroidX's
+# sharing and Custom Tabs (ShareCompat, CustomTabsIntent), which open other apps without naming Intent.
+classes = [
+    "android/app/PendingIntent",
+    "android/content/Intent",
+    "androidx/browser/customtabs/CustomTabsIntent",
+    "androidx/compose/ui/platform/AndroidUriHandler",
+    "androidx/compose/ui/platform/UriHandler",
+    "androidx/compose/ui/text/LinkAnnotation$Url",
+    "androidx/core/app/ShareCompat",
+]
+members = [
+    "android/content/Context.startActivities",
+    "android/content/Context.startActivity",
+    "android/content/Context.startIntentSender",
+    "androidx/compose/ui/platform/CompositionLocalsKt.getLocalUriHandler",
+]
+reason = "Opening other apps (e.g. URLs) must go through vtfx-gate-android."
+allowed_modules = ["vtfx-gate-android"]
+
+[[restricted_classes]]
+# Apps make them and hand them to the session, which hands them to vtfx-gate.
+classes = ["com/google/vtfx/gate/android/AndroidClipboard", "com/google/vtfx/gate/android/AndroidUrlOpener"]
+reason = "Only the app may make the implementations of the clipboard and the URL opener; vtfx code reaches them through vtfx-gate (docs/decisions/0042)."
+allowed_modules = ["vtfx-gate-android"]
+
+[[restricted_classes]]
+members = ["android/content/Context.getSystemService(Ljava/lang/String;)"]
+reason = "A system service named by a string gets past the rules on its class; name the class (getSystemService(Class))."
+allowed_modules = []
+
+[[restricted_classes]]
+packages = ["java/lang/reflect", "java/lang/invoke", "kotlin/reflect/full", "kotlin/reflect/jvm", "dalvik/system"]
+classes = ["java/lang/ClassLoader"]
+members = [
+    "java/lang/Class.forName",
+    "java/lang/Class.getConstructor",
+    "java/lang/Class.getConstructors",
+    "java/lang/Class.getDeclaredConstructor",
+    "java/lang/Class.getDeclaredConstructors",
+    "java/lang/Class.getDeclaredField",
+    "java/lang/Class.getDeclaredFields",
+    "java/lang/Class.getDeclaredMethod",
+    "java/lang/Class.getDeclaredMethods",
+    "java/lang/Class.getField",
+    "java/lang/Class.getFields",
+    "java/lang/Class.getMethod",
+    "java/lang/Class.getMethods",
+]
+reason = "Reflection and loading classes can bypass visibility and these rules, which the module boundaries rely on."
+allowed_modules = []
+
+[[restricted_classes]]
+classes = ["java/lang/Process", "java/lang/ProcessBuilder", "java/lang/ProcessHandle", "java/lang/Runtime"]
+reason = "vtfx does not start processes (docs/REQUIREMENTS.md section 4.2)."
+allowed_modules = []
+
+[[restricted_classes]]
+packages = ["android/webkit", "java/net", "javax/net", "okhttp3"]
+classes = ["android/app/DownloadManager"]
+reason = "vtfx does not access the network. The app owns the connection to the host."
+allowed_modules = []
+
+[[restricted_classes]]
+# vtfx-font-gate-android makes typefaces from SanitizedFont alone, whose bytes passed the verifier of
+# vtfx-font-gate (docs/decisions/0040, 0041); the module is under security review.
+packages = ["android/graphics/fonts", "androidx/compose/ui/text/googlefonts"]
+classes = [
+    "android/graphics/Typeface$Builder",
+    "android/graphics/Typeface$CustomFallbackBuilder",
+    "android/os/ParcelFileDescriptor",
+    "androidx/compose/ui/text/font/AndroidFont",
+    "androidx/compose/ui/text/font/AndroidFontKt",
+    "androidx/compose/ui/text/font/LoadedFontFamily",
+]
+members = [
+    "android/graphics/Typeface.createFromAsset",
+    "android/graphics/Typeface.createFromFile",
+    "androidx/compose/ui/text/font/AndroidTypeface_androidKt.FontFamily",
+]
+reason = "vtfx draws only fonts of the system, of the app's package, or sanitized by vtfx-font (TerminalFont); font files from elsewhere may be malicious (docs/decisions/0020, 0040)."
+allowed_modules = ["vtfx-font-gate-android"]
+
+[[restricted_classes]]
+classes = ["android/graphics/BitmapFactory", "android/graphics/ImageDecoder"]
+reason = "Images from the host must not reach the platform's native decoders; vtfx decodes them itself (docs/decisions/0038)."
+allowed_modules = []
+
+# Packages, with their subpackages, in which only the listed modules may declare classes.
+[[reserved_packages]]
+# vtfx-font-gate keeps all its classes in a package of its own, which it shares with no other module,
+# and vtfx-font-gate-android has a subpackage of it.
+package = "com/google/vtfx/font/gate"
+modules = ["vtfx-font-gate", "vtfx-font-gate-android"]
+reason = "A class of the same name in another module could replace a reviewed one on the class path (docs/decisions/0041)."
 
 # APIs that may only appear in the listed paths. Patterns are Python regular expressions matched
 # against each line of Kotlin and Java sources. Paths are fnmatch patterns relative to the

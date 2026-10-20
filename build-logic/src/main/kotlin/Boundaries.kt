@@ -26,8 +26,60 @@ class Boundaries
 private constructor(
     private val modules: Map<String, Module>,
     private val restrictedMembers: List<RestrictedMembers>,
+    private val restrictedClasses: List<RestrictedClasses>,
+    private val reservedPackages: List<ReservedPackage>,
+    private val bootstrapMethods: List<MemberPattern>,
 ) {
     private class Module(val allowedDependencies: Set<String>, val checkClasses: Boolean)
+
+    /**
+     * Classes and members that only [allowedModules] may refer to at all: the classes named in
+     * [classes] (with their nested classes), those in [packages] (with their subpackages), and the
+     * [members] used through any subtype of their owners.
+     */
+    private class RestrictedClasses(
+        val classes: Set<String>,
+        val packages: Set<String>,
+        val members: List<MemberPattern>,
+        val reason: String,
+        val allowedModules: Set<String>,
+    ) {
+        fun containsClass(name: String): Boolean =
+            classes.any { name == it || name.startsWith("$it$") } ||
+                packages.any { name.startsWith("$it/") }
+    }
+
+    /** A package, with its subpackages, in which only [modules] may declare classes. */
+    private class ReservedPackage(
+        val packageName: String,
+        val modules: Set<String>,
+        val reason: String,
+    )
+
+    /**
+     * Members named `owner.name`, of any descriptor, or `owner.name(...` for the descriptors that
+     * start with what follows the name.
+     */
+    private class MemberPattern(val owner: String, val name: String, val descriptorPrefix: String) {
+        fun matches(member: MemberReference, hierarchy: ClassHierarchy): Boolean =
+            member.name == name &&
+                member.descriptor.startsWith(descriptorPrefix) &&
+                hierarchy.isSubtype(member.owner, owner)
+
+        override fun toString(): String = "$owner.$name$descriptorPrefix"
+
+        companion object {
+            fun parse(text: String, where: String): MemberPattern {
+                val owner = text.substringBefore('.', missingDelimiterValue = "")
+                val rest = text.substringAfter('.')
+                val name = rest.substringBefore('(')
+                require(owner.isNotEmpty() && name.isNotEmpty()) {
+                    "$where: '$text' is not owner.name or owner.name(descriptor"
+                }
+                return MemberPattern(owner, name, rest.removePrefix(name))
+            }
+        }
+    }
 
     /**
      * Classes whose fields and methods only [allowedModules] may use. Other modules may still name
@@ -104,17 +156,40 @@ private constructor(
                 "module '$module' is not declared in config/boundaries.toml"
             }
         if (!declared.checkClasses) return emptyList()
-        val rules = restrictedMembers.filter { module !in it.allowedModules }
+        val memberRules = restrictedMembers.filter { module !in it.allowedModules }
+        val classRules = restrictedClasses.filter { module !in it.allowedModules }
+        val packages = reservedPackages.filter { module !in it.modules }
         return classes.flatMap { references ->
-            references.members
-                .sortedBy { it.toString() }
-                .flatMap { member ->
-                    rules
+            val name = references.name
+            val members = references.members.sortedBy { it.toString() }
+            packages
+                .filter { name.startsWith("${it.packageName}/") }
+                .map {
+                    "$name is in ${it.packageName}, which only ${it.modules} may declare: ${it.reason}"
+                } +
+                references.types.sorted().flatMap { type ->
+                    classRules
+                        .filter { it.containsClass(type) }
+                        .map { "$name refers to $type: ${it.reason}" }
+                } +
+                members.flatMap { member ->
+                    memberRules
                         .filter { rule ->
                             rule.classes.any { hierarchy.isSubtype(member.owner, it) }
                         }
-                        .map { "${references.name} uses $member: ${it.reason}" }
-                }
+                        .map { "$name uses $member: ${it.reason}" } +
+                        classRules
+                            .filter { rule -> rule.members.any { it.matches(member, hierarchy) } }
+                            .map { "$name uses $member: ${it.reason}" }
+                } +
+                references.bootstraps
+                    .filter { bootstrap ->
+                        bootstrapMethods.none { it.matches(bootstrap, hierarchy) }
+                    }
+                    .sortedBy { it.toString() }
+                    .map {
+                        "$name uses the bootstrap method $it, which bootstrap_methods does not list"
+                    }
         }
     }
 
@@ -160,11 +235,73 @@ private constructor(
                             .also { it.requireModules(modules, "$where.allowed_modules") },
                     )
                 }
-            return Boundaries(modules, restrictedMembers)
+            val restrictedClasses =
+                root.optionalArray("restricted_classes").mapIndexed { index, rule ->
+                    val where = "restricted_classes[$index]"
+                    require(rule.isObject) { "$where must be a table" }
+                    rule.requireKeys(RESTRICTED_CLASSES_KEYS, where)
+                    RestrictedClasses(
+                            rule.optionalStrings("classes", where),
+                            rule.optionalStrings("packages", where),
+                            rule.optionalStrings("members", where).map {
+                                MemberPattern.parse(it, "$where.members")
+                            },
+                            rule.requireField("reason", where).text("$where.reason"),
+                            rule
+                                .requireField("allowed_modules", where)
+                                .strings("$where.allowed_modules")
+                                .also { it.requireModules(modules, "$where.allowed_modules") },
+                        )
+                        .also {
+                            require(
+                                it.classes.isNotEmpty() ||
+                                    it.packages.isNotEmpty() ||
+                                    it.members.isNotEmpty()
+                            ) {
+                                "$where names no classes, packages, or members"
+                            }
+                        }
+                }
+            val reservedPackages =
+                root.optionalArray("reserved_packages").mapIndexed { index, rule ->
+                    val where = "reserved_packages[$index]"
+                    require(rule.isObject) { "$where must be a table" }
+                    rule.requireKeys(RESERVED_PACKAGES_KEYS, where)
+                    ReservedPackage(
+                        rule.requireField("package", where).text("$where.package"),
+                        rule.requireField("modules", where).strings("$where.modules").also {
+                            it.requireModules(modules, "$where.modules")
+                        },
+                        rule.requireField("reason", where).text("$where.reason"),
+                    )
+                }
+            val bootstrapMethods =
+                root
+                    .requireField("bootstrap_methods", "the top level")
+                    .strings("bootstrap_methods")
+                    .map { MemberPattern.parse(it, "bootstrap_methods") }
+            return Boundaries(
+                modules,
+                restrictedMembers,
+                restrictedClasses,
+                reservedPackages,
+                bootstrapMethods,
+            )
         }
 
         // restricted_apis is read by scripts/check_boundaries.py.
-        private val TOP_LEVEL_KEYS = setOf("modules", "restricted_members", "restricted_apis")
+        private val TOP_LEVEL_KEYS =
+            setOf(
+                "modules",
+                "restricted_members",
+                "restricted_classes",
+                "reserved_packages",
+                "bootstrap_methods",
+                "restricted_apis",
+            )
+        private val RESTRICTED_CLASSES_KEYS =
+            setOf("classes", "packages", "members", "reason", "allowed_modules")
+        private val RESERVED_PACKAGES_KEYS = setOf("package", "modules", "reason")
         private val MODULE_KEYS = setOf("allowed_dependencies", "check_classes")
         private val RESTRICTED_MEMBERS_KEYS = setOf("classes", "reason", "allowed_modules")
 
@@ -180,6 +317,11 @@ private constructor(
             val node = get(name) ?: return emptyList()
             require(node.isArray) { "$name must be an array of tables" }
             return node.toList()
+        }
+
+        private fun JsonNode.optionalStrings(name: String, where: String): Set<String> {
+            val node = get(name) ?: return emptySet()
+            return node.strings("$where.$name")
         }
 
         private fun JsonNode.strings(where: String): Set<String> {

@@ -23,6 +23,8 @@ class ClassViolationsTest {
     private val boundaries =
         Boundaries.parse(
             """
+            bootstrap_methods = []
+
             [modules.vtfx-gate]
             allowed_dependencies = []
             check_classes = true
