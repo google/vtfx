@@ -16,6 +16,8 @@
 
 package vtfx.tools.imeprobe
 
+import android.annotation.TargetApi
+import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.view.KeyEvent
@@ -80,18 +82,27 @@ class ProbeInputConnection(
     private fun describe(value: Any?): Any = when (value) {
         null -> JSONObject.NULL
         is Boolean, is Int -> value
-        is SurroundingText -> JSONObject()
-            .put("text", value.text.toString())
-            .put("selStart", value.selectionStart)
-            .put("selEnd", value.selectionEnd)
-            .put("offset", value.offset)
         is ExtractedText -> JSONObject()
             .put("text", value.text?.toString())
             .put("startOffset", value.startOffset)
             .put("selStart", value.selectionStart)
             .put("selEnd", value.selectionEnd)
         is Unit -> JSONObject.NULL
-        else -> value.toString()
+        else -> if (Build.VERSION.SDK_INT >= 31) Api31.describe(value) else value.toString()
+    }
+
+    // SurroundingText is API 31. Checking for it only from API 31 keeps describe() working on API 29
+    // and 30, where the class does not exist.
+    @TargetApi(31)
+    private object Api31 {
+        fun describe(value: Any): Any = when (value) {
+            is SurroundingText -> JSONObject()
+                .put("text", value.text.toString())
+                .put("selStart", value.selectionStart)
+                .put("selEnd", value.selectionEnd)
+                .put("offset", value.offset)
+            else -> value.toString()
+        }
     }
 
     override fun beginBatchEdit(): Boolean = call("beginBatchEdit", {}) {

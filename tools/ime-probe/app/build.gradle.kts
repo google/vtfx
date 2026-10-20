@@ -24,8 +24,8 @@ android {
 
     defaultConfig {
         applicationId = "vtfx.tools.imeprobe"
-        // Low enough to run on real devices that testers may have.
-        minSdk = 33
+        // The minSdk of vtfx, so that IMEs can be recorded on every version vtfx supports.
+        minSdk = 29
         targetSdk = 37
         versionCode = 1
         versionName = "1"
