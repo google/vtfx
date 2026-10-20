@@ -72,9 +72,9 @@ See the [embedding guide](docs/usage.md) for the details, and `vtfx-sample` for 
 | `vtfx-font` | Reads fonts that users choose and writes them again in one canonical form (JVM) |
 | `vtfx-font-gate` | **Security boundary.** Checks the canonical form, which is all that reaches the platform's native font code (JVM) |
 | `vtfx-font-gate-android` | **Security boundary.** Makes typefaces from checked fonts |
-| `vtfx-sample` | A sample app |
+| `vtfx-sample` | A sample app with a fake host, for manual checks and the emulator e2e |
 
-The structure, the direction of dependencies, and how the boundary is checked are described in [docs/design/architecture.md](docs/design/architecture.md). Design decisions are recorded in [docs/decisions/](docs/decisions/README.md).
+Each module's kind and review status, the direction of dependencies, and how the boundary is checked are described in [docs/design/architecture.md](docs/design/architecture.md) (the modules in section 2). Design decisions are recorded in [docs/decisions/](docs/decisions/README.md).
 
 ## Contributing
 

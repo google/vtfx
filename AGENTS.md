@@ -68,17 +68,7 @@ The paths listed under `security_review` in `config/protected-paths.toml` are su
 
 ## Modules
 
-| Module | Kind | Responsibility |
-|---|---|---|
-| `vtfx-core` | JVM | Interprets host output and updates the terminal state. Has no means of sending to the host. |
-| `vtfx-input` | JVM | Converts key input and IME edits into input to the host. |
-| `vtfx-gate` | JVM | Assembles the bytes sent to the host, and decides on requests with external effects (subject to security review) |
-| `vtfx-gate-android` | Android | Executes permitted requests with Android APIs (subject to security review) |
-| `vtfx-session` | JVM | The terminal session. Ties together the terminal, input, and requests to the host. Usable without a UI. |
-| `vtfx-compose` | Android | The Compose UI. Rendering, input, and accessibility |
-| `vtfx-font` | JVM | Reads fonts that users choose and writes them again in one canonical form |
-| `vtfx-font-gate` | JVM | Checks the canonical form of fonts before the platform's native code reads them (subject to security review) |
-| `vtfx-font-gate-android` | Android | Makes typefaces from checked fonts (subject to security review) |
+The modules, their kinds and responsibilities, and which of them are subject to security review (those named with `gate`) are listed in section 2 of [docs/design/architecture.md](docs/design/architecture.md).
 
 - The direction of dependencies follows `config/boundaries.toml`. The `checkBoundaries` task of the root project, part of `./gradlew build`, checks it ([docs/decisions/0044](docs/decisions/0044-boundaries-in-gradle-and-classes.md)).
 - When adding a new module, add it to both `settings.gradle.kts` and `config/boundaries.toml`.
