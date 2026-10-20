@@ -1,5 +1,7 @@
 # Research: measured IME calls from Gboard (emulator)
 
+Status: Record. It records measurements made before the repository was published (2026-10-15) and is not kept up to date. The current contract is in [ime-contract.md](../design/ime-contract.md), and the decisions it led to are [0004](../decisions/0004-ime-editor-details.md) and [0017](../decisions/0017-ime-scope.md).
+
 These are the results of recording the `InputConnection` calls that reach a custom editor View, with Gboard on the emulator.
 
 ## 1. Environment

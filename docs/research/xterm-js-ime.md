@@ -1,5 +1,7 @@
 # Research: IME handling in xterm.js
 
+Status: Record. It records research on the xterm.js commit below and is not kept up to date. What vtfx does is in [ime-contract.md](../design/ime-contract.md) and section 3.2 of [architecture.md](../design/architecture.md), and the decisions are [0004](../decisions/0004-ime-editor-details.md) and [0017](../decisions/0017-ime-scope.md).
+
 Target: xterm.js master `c58ea3637f3968e0e6e79cd92cf9aace7ef89ee2` (2026-08-30)
 
 All file paths are relative to the root of the xterm.js repository.

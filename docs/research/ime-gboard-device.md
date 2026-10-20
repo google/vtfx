@@ -1,5 +1,7 @@
 # Research: measured English input with Gboard on a real device
 
+Status: Record. It records measurements made before the repository was published (2026-10-15) and is not kept up to date. The current contract is in [ime-contract.md](../design/ime-contract.md), and the decisions it led to are [0004](../decisions/0004-ime-editor-details.md) and [0017](../decisions/0017-ime-scope.md).
+
 In [ime-gboard-emulator.md](ime-gboard-emulator.md), Gboard on the emulator had no English language model, so predictive text and autocorrect could not be verified. This document fills that gap on a real device.
 
 ## 1. Environment
