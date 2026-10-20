@@ -1,6 +1,9 @@
 # Proposal: references to conform to
 
-A proposal for "the references to conform to" in requirement 5.1. It was decided in [decisions/0001](../decisions/0001-parser.md), [0009](../decisions/0009-emulation-scope.md), and [0010](../decisions/0010-term-terminfo.md); where they differ from this document, the decisions take precedence.
+> [!NOTE]
+> A record of the proposal as written on 2026-10-12, kept for its reasoning; it is not kept up to date. It led to [decisions/0001](../decisions/0001-parser.md), [0009](../decisions/0009-emulation-scope.md), and [0010](../decisions/0010-term-terminfo.md), and the references in use are in section 1 of [design/emulation.md](../design/emulation.md). Section 3 was not carried out as proposed: esctest2 runs for reports and is not a gate, DECRQCRA is not supported in any build (the esctest harness computes it in the test code), and no vttest goldens exist (section 11 of [testing.md](../design/testing.md)).
+
+A proposal for "the references to conform to" in requirement 5.1.
 
 ## 1. Layers
 
