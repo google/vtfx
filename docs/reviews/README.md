@@ -143,8 +143,7 @@ Closed reports and their reproduction tests are not kept in the tree, to keep th
 
 ## 4. List of reports
 
-Only open reports are listed.
+Only open reports are listed. There are none at the moment.
 
 | Report | Target | State |
 |---|---|---|
-| [2026-10-16-abi.md](2026-10-16-abi.md) | `919b29e9a753ec6cd0bfa52ce7e53105ba744e02` | Open |

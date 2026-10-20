@@ -444,7 +444,7 @@ object KotlinSignatures {
                     append(p.name).append(": ")
                     append(type(p.varargElementType ?: p.type, types))
                     // The value is in the body of the function, so a change of it needs no review;
-                    // whether there is one does (docs/reviews/2026-10-16-abi.md, R1).
+                    // whether there is one does: removing it breaks callers compiled earlier.
                     if (p.declaresDefaultValue) append(" = ...")
                 }
             }
