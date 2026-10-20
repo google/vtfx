@@ -115,7 +115,7 @@ Runs the following in this order, and fails if any one fails.
 3. License headers (`addlicense -check`, run with `go run github.com/google/addlicense@v1.2.0` on the files tracked by git; files that are not Google's own source code are excluded. [decisions/0018](../decisions/0018-distribution.md))
 4. Tests of the scripts themselves (`python3 -m unittest discover -s scripts/tests`)
 5. The generated sources are up to date: `scripts/generate_unicode_tables.py --check` regenerates the character width tables of `vtfx-core` and the default-ignorable code points of `vtfx-gate` from `third_party/unicode` and compares them with the committed files ([decisions/0029](../decisions/0029-import-without-gradle.md))
-6. `./gradlew build` (Kotlin formatting check, the module boundaries: the dependencies between modules and what the compiled main classes of each module refer to ([decisions/0044](../decisions/0044-boundaries-in-gradle-and-classes.md)), compilation, unit tests, spec tests, lint, and the public API compatibility check. Formatting is [decisions/0023](../decisions/0023-code-style.md))
+6. `./gradlew build` (Kotlin formatting check, the module boundaries: the dependencies between modules and what the compiled main classes of each module refer to ([boundaries.md](boundaries.md), [decisions/0044](../decisions/0044-boundaries-in-gradle-and-classes.md)), compilation, unit tests, spec tests, lint, and the public API compatibility check. Formatting is [decisions/0023](../decisions/0023-code-style.md))
 
 Long fuzzing and the emulator e2e take time, so they are not included. They run with separate scripts (sections 7 and 8). Short fuzzing is included in the `check` of `./gradlew build` in step 6 (section 7, [decisions/0003](../decisions/0003-fuzzing-gate.md)).
 
@@ -150,4 +150,4 @@ The correspondence between the "attack types to prevent" in requirement 6.1 and 
 
 The IME is not trusted, so `HostileImeTest` (random) and `ImeFuzzTest` (fuzzing) in `vtfx-input` check the invariants of the editing model and what the host receives against sequences of calls with arbitrary arguments. The limit on DELs for deletions outside the range and splitting many DELs (`TerminalSessionTest.manyDeletesFromTheImeAreSentInParts`) are also checked here. `DroppedControlsAgreementTest` in `vtfx-session` checks, for every UTF-16 code unit, that the input history keeps what the host receives of committed text, and what the host receives of the same text pasted, which the gate's rule alone handles, since `ImeEditor` and the gate each have a copy of the rule for dropping control characters (ime-contract.md section 4.2).
 
-The limits are in [decisions/0002](../decisions/0002-resource-limits.md), and the default policies of the gate are in [decisions/0006](../decisions/0006-gate-defaults.md).
+The limits are in section 10 of [emulation.md](emulation.md), and the default policies of the gate are in [gate-policy.md](gate-policy.md).

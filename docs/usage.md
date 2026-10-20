@@ -33,14 +33,14 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
 }
 ```
 
-- `connection` is the app's connection to the host (`HostConnection`). `TerminalSession` passes it to vtfx-gate right away, and all bytes vtfx sends to the host (keys, IME input, pastes, replies to queries, mouse) are assembled by vtfx-gate and passed to `HostConnection.write` ([decisions/0027](decisions/0027-session-takes-connection.md)).
-- `HostConnection.write` must not block, throw, or call back into vtfx; its KDoc says on which threads it is called and why. If sending can block, queue the bytes and send them on another thread. For a host that replies locally right away, pass its output to `feed` in a separate task (`Handler.post` and so on), since calling `feed` within `write` throws `IllegalStateException` ([decisions/0024](decisions/0024-thread-conventions.md)). When implementing `ClipboardAccess` and `UrlOpener` yourself, follow their KDoc: both are called on any thread, and `UrlOpener.open` returns the failures that the platform documents as a `UrlOpenerResult` instead of throwing ([decisions/0043](decisions/0043-url-open-results.md)).
+- `connection` is the app's connection to the host (`HostConnection`). `TerminalSession` passes it to vtfx-gate right away, and all bytes vtfx sends to the host (keys, IME input, pastes, replies to queries, mouse) are assembled by vtfx-gate and passed to `HostConnection.write` (section 2.1 of [session-and-threads.md](design/session-and-threads.md), section 2 of [gate-policy.md](design/gate-policy.md)).
+- `HostConnection.write` must not block, throw, or call back into vtfx; its KDoc says on which threads it is called and why. If sending can block, queue the bytes and send them on another thread. For a host that replies locally right away, pass its output to `feed` in a separate task (`Handler.post` and so on), since calling `feed` within `write` throws `IllegalStateException` (section 1.3 of [session-and-threads.md](design/session-and-threads.md)). When implementing `ClipboardAccess` and `UrlOpener` yourself, follow their KDoc: both are called on any thread, and `UrlOpener.open` returns the failures that the platform documents as a `UrlOpenerResult` instead of throwing (section 5.3 of [gate-policy.md](design/gate-policy.md)).
 - If `clipboard` and `urlOpener` are omitted, the clipboard and opening URLs are denied.
-- When starting the host's session, set `TERM=xterm-256color` and `COLORTERM=truecolor` (in SSH's pty-req and environment requests, or in the PTY's environment). vtfx supports truecolor SGR and the `xterm-256color` terminfo except for a few features, which [decisions/0010](decisions/0010-term-terminfo.md) lists, and ships no terminfo of its own.
+- When starting the host's session, set `TERM=xterm-256color` and `COLORTERM=truecolor` (in SSH's pty-req and environment requests, or in the PTY's environment). vtfx supports truecolor SGR and the `xterm-256color` terminfo except for a few features, which section 6 of [emulation.md](design/emulation.md) lists, and ships no terminfo of its own.
 - `onResize` has two overloads. Override the one with pixels to pass the size of the text area in pixels to the host as well: programs that show images (the kitty graphics protocol) choose the size of an image from it. The pixels are 0 until a `Terminal` has given the size of its cells. The overload without pixels is enough when the host does not take pixels.
-- The kitty graphics protocol is on by default, with 32 MiB for the decoded pixels of the images (`TerminalLimits.maxImageBytes`). Images are sent in the host output, so only direct data works, which is what programs send over SSH. Set `maxImageBytes` to 0 to turn the protocol off ([decisions/0038](decisions/0038-kitty-graphics.md)).
-- The policy for requests with external effects can be changed with `GatePolicy`. The default is the safe side (OSC 52 reads and writes are denied, writes are limited in length when allowed, and the URLs that can be opened are http and https; [decisions/0006](decisions/0006-gate-defaults.md)). To relax it, the app specifies it explicitly: for example, `GatePolicy(allowClipboardWrite = true)` lets remote copy in tmux and vim set the clipboard.
-- Match the width of East Asian Ambiguous (`ambiguousWidth`) with the host's setting (vim's `ambiwidth` and so on) ([decisions/0011](decisions/0011-unicode.md)).
+- The kitty graphics protocol is on by default, with 32 MiB for the decoded pixels of the images (`TerminalLimits.maxImageBytes`). Images are sent in the host output, so only direct data works, which is what programs send over SSH. Set `maxImageBytes` to 0 to turn the protocol off (section 9 of [emulation.md](design/emulation.md)).
+- The policy for requests with external effects can be changed with `GatePolicy`. The default is the safe side (OSC 52 reads and writes are denied, writes are limited in length when allowed, and the URLs that can be opened are http and https; sections 4 and 5 of [gate-policy.md](design/gate-policy.md)). To relax it, the app specifies it explicitly: for example, `GatePolicy(allowClipboardWrite = true)` lets remote copy in tmux and vim set the clipboard.
+- Match the width of East Asian Ambiguous (`ambiguousWidth`) with the host's setting (vim's `ambiwidth` and so on) (section 7 of [emulation.md](design/emulation.md)).
 - The constructor arguments (`ambiguousWidth`, `limits`, `policy`, `clipboard`, `urlOpener`, `listener`) cannot be changed later. When the user changes the width, the number of scrollback lines, or permission for OSC 52 in a settings screen, create a new session. The screen and scrollback are not carried over, so applying it from the next connection is natural.
 - The session lives longer than the `Activity`, so do not refer to the `Activity` or `View`s from `listener`. Copy notifications into the `ViewModel`'s state, and have the UI read it (e.g. `SampleViewModel` in `vtfx-sample`).
 
@@ -51,7 +51,7 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
 session.feed(bytes, 0, length)
 ```
 
-`TerminalSession` is thread-safe, and any operation may be called from any thread. `TerminalSessionListener` is called on the thread of the triggering call, without holding the session's lock. Bells and titles come on the thread that called `feed`, and `onResize` on the main thread, where `Terminal` changes the session's size. To update the UI, the app forwards to the main thread ([decisions/0026](decisions/0026-session-module.md)). Notifications of the size, title, and modifiers report the latest value, so even when changed from multiple threads, the last value delivered is the current value. In that case, it may be delivered on a different thread from the one that made the change.
+`TerminalSession` is thread-safe, and any operation may be called from any thread. `TerminalSessionListener` is called on the thread of the triggering call, without holding the session's lock. Bells and titles come on the thread that called `feed`, and `onResize` on the main thread, where `Terminal` changes the session's size. To update the UI, the app forwards to the main thread (section 2.5 of [session-and-threads.md](design/session-and-threads.md)). Notifications of the size, title, and modifiers report the latest value, so even when changed from multiple threads, the last value delivered is the current value. In that case, it may be delivered on a different thread from the one that made the change.
 
 ## 4. Displaying
 
@@ -64,17 +64,17 @@ Terminal(
 )
 ```
 
-- The number of columns and rows is determined by the size of the Composable, and `onResize` is called when it changes. Give `Terminal` a size with its `modifier` (`fillMaxSize()`, `weight(1f)`, and so on). Where the constraints leave the size free, it takes 80 × 24 cells, or as much of that as the constraints allow, as `Text` sizes to its content. Laid out with no width or height, it logs a warning (tag `vtfx`) and leaves the session's size as it was ([decisions/0032](decisions/0032-keys-and-layout.md)). When the size changes continuously, as during the IME animation, it is called only once, after it has settled for 150 ms ([decisions/0013](decisions/0013-resize-and-lifecycle.md)).
+- The number of columns and rows is determined by the size of the Composable, and `onResize` is called when it changes. Give `Terminal` a size with its `modifier` (`fillMaxSize()`, `weight(1f)`, and so on). Where the constraints leave the size free, it takes 80 × 24 cells, or as much of that as the constraints allow, as `Text` sizes to its content. Laid out with no width or height, it logs a warning (tag `vtfx`) and leaves the session's size as it was (section 10.1 of [compose-input.md](design/compose-input.md)). When the size changes continuously, as during the IME animation, it is called only once, after it has settled for 150 ms (section 3.2 of [session-and-threads.md](design/session-and-threads.md)).
 - Until displayed, the size is the `columns` and `rows` of `TerminalSession` (80 × 24 by default). When `Terminal` is first laid out, it resizes the session at once, and `onResize` is called with the size that fits even if it is the same as the session's; after that, only when the size changes. So the host can either start with the session's size and follow `onResize`, or wait for the first `onResize` and start with that size, so that it does not start at a size it is resized from right away.
-- A tap shows the keyboard. A vertical swipe scrolls back through scrollback. A long press selects and shows a menu with Copy, Paste, and Select all ([decisions/0012](decisions/0012-touch-and-selection.md)).
-- With a mouse (Chromebooks, DeX, tablets with a mouse): the wheel scrolls; a drag selects, a double click selects a word, a triple click a line, and Shift+click extends the selection; a right click shows the same menu, or calls `onContextClick` if the app passes it (for its own menu, with the position of the click). When the host asks for mouse reports (vim's `mouse=a`, tmux, htop), clicks, the wheel, and motion go to the host instead; holding Shift gives the mouse back to the terminal, as in xterm, and so does scrolling back: while the display shows the scrollback, the mouse and touches are the terminal's, until the display is back at the bottom ([decisions/0031](decisions/0031-desktop-pointer-and-terminal-state.md)).
+- A tap shows the keyboard. A vertical swipe scrolls back through scrollback. A long press selects and shows a menu with Copy, Paste, and Select all (sections 2 and 4 of [compose-input.md](design/compose-input.md)).
+- With a mouse (Chromebooks, DeX, tablets with a mouse): the wheel scrolls; a drag selects, a double click selects a word, a triple click a line, and Shift+click extends the selection; a right click shows the same menu, or calls `onContextClick` if the app passes it (for its own menu, with the position of the click). When the host asks for mouse reports (vim's `mouse=a`, tmux, htop), clicks, the wheel, and motion go to the host instead; holding Shift gives the mouse back to the terminal, as in xterm, and so does scrolling back: while the display shows the scrollback, the mouse and touches are the terminal's, until the display is back at the bottom (section 3 of [compose-input.md](design/compose-input.md)).
 - To move focus to the terminal from the app, add `Modifier.focusRequester(requester)` to the `modifier` of `Terminal` and call `requester.requestFocus()`. Input from a physical keyboard then reaches the terminal. There is no public means of showing the software keyboard yet (a tap shows it).
 - The appearance is changed with `TerminalStyle` (colors, font, the locale for Han glyphs, cursor shape, and `padding`). `padding` is space between the edges of `Terminal` and the grid, drawn in the terminal's background color; `start` and `end` follow the layout direction, and the columns and rows fit inside it. Use it rather than `Modifier.padding`, which would leave the space in the colors behind `Terminal`. `TerminalColors.cursorText` sets the color of the text under a block cursor; by default it is the background color.
-- Underline styles (SGR 4:1 to 4:5: single, double, curly, dotted, dashed), underline colors (SGR 58), and overline (SGR 53) are drawn. A program that reads the screen without the UI gets the underline color from `LineSnapshot.underlineColorAt` ([decisions/0030](decisions/0030-underline-color-and-decorations.md)).
+- Underline styles (SGR 4:1 to 4:5: single, double, curly, dotted, dashed), underline colors (SGR 58), and overline (SGR 53) are drawn. A program that reads the screen without the UI gets the underline color from `LineSnapshot.underlineColorAt` (section 8 of [emulation.md](design/emulation.md)).
 
 ### Selection and copying
 
-For the app's own Copy command or shortcut (a menu item, Ctrl+Shift+C), pass a `TerminalState` to `Terminal` ([decisions/0031](decisions/0031-desktop-pointer-and-terminal-state.md)).
+For the app's own Copy command or shortcut (a menu item, Ctrl+Shift+C), pass a `TerminalState` to `Terminal` (section 5 of [compose-input.md](design/compose-input.md)).
 
 ```kotlin
 val state = rememberTerminalState()
@@ -101,7 +101,7 @@ DropdownMenuItem(
 TerminalStyle(font = TerminalFont.Resources(R.font.hackgen_regular, bold = R.font.hackgen_bold))
 ```
 
-Fonts are parsed by native code inside the app's process, so a malicious font file can take over the app (and the keys and connections it holds). So a font file that a user chose is never drawn as it is: `vtfx-font`, which `vtfx-compose` exposes, reads it in Kotlin and writes a new font in a simple form, which `vtfx-font-gate` checks, and only that reaches native code ([decisions/0040](decisions/0040-sanitized-user-fonts.md), [decisions/0041](decisions/0041-security-review-by-module.md)). Files, URIs, and downloaded fonts are not accepted otherwise ([decisions/0020](decisions/0020-fonts.md)).
+Fonts are parsed by native code inside the app's process, so a malicious font file can take over the app (and the keys and connections it holds). So a font file that a user chose is never drawn as it is: `vtfx-font`, which `vtfx-compose` exposes, reads it in Kotlin and writes a new font in a simple form, which `vtfx-font-gate` checks, and only that reaches native code (sections 2 and 4 to 6 of [fonts.md](design/fonts.md)). Files, URIs, and downloaded fonts are not accepted otherwise (section 1 of [fonts.md](design/fonts.md)).
 
 ```kotlin
 // When the user imports a font, on a background thread: it can take seconds for a CJK font.
@@ -123,12 +123,12 @@ TerminalStyle(font = TerminalFont.Sanitized(listOf(SanitizedFamily(latin), Sanit
 
 ### Links
 
-Link clicks are passed to `onLinkClick` as `TerminalLinkClick`: the `TerminalLink` (`click.link`), and how the user clicked it (below). There are two kinds of links, both shown underlined ([decisions/0019](decisions/0019-extensibility.md)). For both, **show the destination (`link.url`) to the user and get confirmation before** calling `session.openUrl(link.url)` (requirement 6.1).
+Link clicks are passed to `onLinkClick` as `TerminalLinkClick`: the `TerminalLink` (`click.link`), and how the user clicked it (below). There are two kinds of links, both shown underlined (section 6.1 of [compose-input.md](design/compose-input.md)). For both, **show the destination (`link.url`) to the user and get confirmation before** calling `session.openUrl(link.url)` (requirement 6.1).
 
 - `TerminalLink.Explicit`: an OSC 8 hyperlink. The host decides both the link text (`link.text`) and the destination, so they do not necessarily match. Showing the text and the destination side by side makes discrepancies easier to notice.
 - `TerminalLink.Matched`: text that matched `linkPatterns` (by default `LinkPattern.Urls`, the `http` and `https` URLs written in the text). The matched text can still differ from what the user sees; the KDoc of `Terminal` says how.
 
-`openUrl` returns an `OpenUrlResult`, a closed type that apps can match exhaustively; its KDoc says what each result means ([decisions/0043](decisions/0043-url-open-results.md)). Tell the user when the URL was not opened, so that a confirmed link does not seem to do nothing.
+`openUrl` returns an `OpenUrlResult`, a closed type that apps can match exhaustively; its KDoc says what each result means (section 5.3 of [gate-policy.md](design/gate-policy.md)). Tell the user when the URL was not opened, so that a confirmed link does not seem to do nothing.
 
 ```kotlin
 val failure = when (session.openUrl(url)) {
@@ -158,7 +158,7 @@ Terminal(viewModel.session, linkPatterns = listOf(LinkPattern.Urls, crbug), onLi
 ```
 
 - Values inserted into the template are percent-encoded, so that text from the host cannot change the structure of the URL. To include path separators, write a group for each part (e.g. `https://github.com/{1}/{2}`). The KDoc of `LinkPattern` has the details.
-- **vtfx sets no limit on the effort of matching**: the regular expressions run on the main thread against text the host decides, every time the display changes, and the host can make a pattern with nested or overlapping repetition freeze the screen. Follow the KDoc of `LinkPattern` for patterns to use and to avoid ([decisions/0019](decisions/0019-extensibility.md)).
+- **vtfx sets no limit on the effort of matching**: the regular expressions run on the main thread against text the host decides, every time the display changes, and the host can make a pattern with nested or overlapping repetition freeze the screen. Follow the KDoc of `LinkPattern` for patterns to use and to avoid (section 6.3 of [compose-input.md](design/compose-input.md)).
 - Where links overlap, an OSC 8 link takes precedence over the patterns, and an earlier pattern over a later one; the KDoc of `Terminal` has the rules.
 
 ### Intercepting keys
@@ -176,7 +176,7 @@ Terminal(
 )
 ```
 
-`Modifier.onPreviewKeyEvent` on an ancestor of `Terminal` does not work for this: it sees only the keys the IME passed on, and IMEs such as Gboard take the keys of a physical keyboard and send them through the IME connection. Keys from a software keyboard and keys sent with `session.sendKey` do not go through `onPreImeKeyEvent` either ([decisions/0032](decisions/0032-keys-and-layout.md)).
+`Modifier.onPreviewKeyEvent` on an ancestor of `Terminal` does not work for this: it sees only the keys the IME passed on, and IMEs such as Gboard take the keys of a physical keyboard and send them through the IME connection. Keys from a software keyboard and keys sent with `session.sendKey` do not go through `onPreImeKeyEvent` either (section 7.2 of [compose-input.md](design/compose-input.md)).
 
 ## 5. Extra key bar
 
@@ -188,11 +188,11 @@ A bar for keys not on the software keyboard (Esc, Tab, arrows, Ctrl, and so on) 
 
 ### Direct input
 
-Some IMEs hold English words as composing text until a space and do not send them to the host. This is a problem for apps that act on each key, like vim's normal mode, so `session.directInput = true` asks the IME for character input without predictive text. Many IMEs do not offer Japanese or Korean in this case, so let the user switch it (e.g. "Direct" on the extra key bar of `vtfx-sample`; [decisions/0017](decisions/0017-ime-scope.md)). Gboard's English sends one character at a time even with the default.
+Some IMEs hold English words as composing text until a space and do not send them to the host. This is a problem for apps that act on each key, like vim's normal mode, so `session.directInput = true` asks the IME for character input without predictive text. Many IMEs do not offer Japanese or Korean in this case, so let the user switch it (e.g. "Direct" on the extra key bar of `vtfx-sample`; section 13 of [ime-contract.md](design/ime-contract.md)). Gboard's English sends one character at a time even with the default.
 
 ## 6. How far terminal content is shown
 
-Host output can contain secrets (displayed API keys, keys, and so on). vtfx handles terminal content as follows ([decisions/0015](decisions/0015-accessibility.md)).
+Host output can contain secrets (displayed API keys, keys, and so on). vtfx handles terminal content as follows (section 11 of [compose-input.md](design/compose-input.md)).
 
 - **Accessibility services**: Each displayed row is exposed for screen readers. However, rows are marked as sensitive data, so they are visible only to services that declare `isAccessibilityTool` (TalkBack and so on), and not to other accessibility services. The mark works on Android 14 (API 34) and later. On API 29 to 33, the platform cannot tell a tool from another service, and the rows are visible to every accessibility service ([decisions/0039](decisions/0039-minsdk-29.md)). Apps that show secrets can take this into account, for example by setting their own minSdk to 34.
 - **Content Capture** (the mechanism by which OS intelligence features receive the text on the screen): vtfx does not stop it. Compose's Content Capture does not look at the sensitive mark, and the means of stopping it affects the whole process, so the app decides. Apps that handle secrets can set `ContentCaptureManager.isEnabled = false` (`androidx.compose.ui.contentcapture`; `@ExperimentalComposeUiApi` in Compose UI 1.12).
@@ -206,7 +206,7 @@ Host output can contain secrets (displayed API keys, keys, and so on). vtfx hand
 
 ## 8. Using without a UI
 
-`TerminalSession` is in the JVM library `vtfx-session` and works without Android and Compose ([decisions/0026](decisions/0026-session-module.md)). JVM programs can emulate a terminal, and apps can use the same session as production in their own unit tests (JUnit without Robolectric).
+`TerminalSession` is in the JVM library `vtfx-session` and works without Android and Compose (section 2.1 of [session-and-threads.md](design/session-and-threads.md)). JVM programs can emulate a terminal, and apps can use the same session as production in their own unit tests (JUnit without Robolectric).
 
 ```kotlin
 val sent = ByteArrayOutputStream()
@@ -226,5 +226,8 @@ assertEquals("ls\r", sent.toString())
 ## 9. Related documents
 
 - The contract of the interaction with the IME: [design/ime-contract.md](design/ime-contract.md)
-- The range of supported escape sequences: [decisions/0009](decisions/0009-emulation-scope.md); TERM and terminfo: [decisions/0010](decisions/0010-term-terminfo.md)
-- Resource limits: [decisions/0002](decisions/0002-resource-limits.md)
+- Terminal emulation (supported escape sequences, TERM and terminfo, character widths, images, resource limits): [design/emulation.md](design/emulation.md)
+- Interaction in the Compose UI: [design/compose-input.md](design/compose-input.md)
+- Threads, the session, resize, and lifecycle: [design/session-and-threads.md](design/session-and-threads.md)
+- The policy of the gate: [design/gate-policy.md](design/gate-policy.md)
+- Fonts: [design/fonts.md](design/fonts.md)

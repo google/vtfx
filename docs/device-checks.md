@@ -38,7 +38,7 @@ adb -s SERIAL shell am start -S -n com.google.vtfx.sample/.MainActivity --ez log
 
 ## 2. IMEs other than Gboard, voice input, handwriting input
 
-[decisions/0017](decisions/0017-ime-scope.md). Gboard (English, Japanese, Korean) was checked with the emulator e2e (`scripts/e2e_ime.py`).
+Section 13 of [ime-contract.md](design/ime-contract.md). Gboard (English, Japanese, Korean) was checked with the emulator e2e (`scripts/e2e_ime.py`).
 
 The targets are three: Samsung Keyboard, SwiftKey, and Simeji. For each, start the app with logHostInput enabled, and tap the terminal to show the keyboard.
 
@@ -66,7 +66,7 @@ Connect a USB or Bluetooth keyboard.
 
 ### 3.1 Intercepting app shortcuts
 
-"Key interception" in [decisions/0019](decisions/0019-extensibility.md) and [decisions/0032](decisions/0032-keys-and-layout.md). The sample app receives `Ctrl+Shift+K` with `onPreImeKeyEvent` of `Terminal`, before the IME, and shows the toast "Ctrl+Shift+K was taken by the app.".
+Section 7.2 of [compose-input.md](design/compose-input.md). The sample app receives `Ctrl+Shift+K` with `onPreImeKeyEvent` of `Terminal`, before the IME, and shows the toast "Ctrl+Shift+K was taken by the app.".
 
 On the emulator (Pixel 9 Pro AVD, API 36 Google Play image, the preinstalled Gboard in English), keys injected with `adb shell input keyboard keycombination` were caught: the toast appeared and nothing reached the host, while `Ctrl+C` still reached it as `03`. With the earlier sample, which used `Modifier.onPreviewKeyEvent`, Gboard consumed the same keys and resent them through `InputConnection` (`Ctrl+Shift+K` reached the host as `0b`). Check the same with a real physical keyboard, and with Gboard's Japanese, which the emulator did not have.
 
@@ -92,7 +92,7 @@ In Settings → System → Keyboard → Physical keyboard, set the layout to Ger
 
 ## 4. TalkBack
 
-[decisions/0015](decisions/0015-accessibility.md). On the emulator, only the node bounds and the tree structure were checked (because input from `adb` does not go through explore by touch).
+Section 11 of [compose-input.md](design/compose-input.md). On the emulator, only the node bounds and the tree structure were checked (because input from `adb` does not go through explore by touch).
 
 The row nodes are marked as sensitive data. TalkBack declares `isAccessibilityTool`, so it should be able to read them. If it cannot, the mark may be the cause.
 
@@ -137,7 +137,7 @@ What to tell us: the device model and Android version, and the JSON lines output
 
 ## 6. Han glyphs
 
-[decisions/0011](decisions/0011-unicode.md). On the emulator (Android 17, system locale en-US), it was confirmed that with each of `--es locale ja` and `--es locale zh-CN`, the second line of the `unicode` command (骨 直 角 説) is drawn with Japanese and Chinese glyphs respectively.
+Section 7.3 of [emulation.md](design/emulation.md). On the emulator (Android 17, system locale en-US), it was confirmed that with each of `--es locale ja` and `--es locale zh-CN`, the second line of the `unicode` command (骨 直 角 説) is drawn with Japanese and Chinese glyphs respectively.
 
 What remains is whether it switches in the same way on devices where the manufacturer installed its own CJK font (Samsung and others). On a device whose system language is not Japanese, check the following.
 
@@ -149,7 +149,7 @@ Type `unicode` and check that the second line has Japanese glyphs (the bottom le
 
 ## 7. Mouse and touchpad
 
-[decisions/0031](decisions/0031-desktop-pointer-and-terminal-state.md). Only Compose's injected mouse events on Robolectric were checked (`TerminalMouseTest`). Use a Chromebook, Samsung DeX, or a tablet with a USB or Bluetooth mouse, start the sample app with `--ez logHostInput true`, and type `links`, then `help` a few times so that there is scrollback.
+Section 3 of [compose-input.md](design/compose-input.md). Only Compose's injected mouse events on Robolectric were checked (`TerminalMouseTest`). Use a Chromebook, Samsung DeX, or a tablet with a USB or Bluetooth mouse, start the sample app with `--ez logHostInput true`, and type `links`, then `help` a few times so that there is scrollback.
 
 | # | Action | Expected |
 |---|---|---|
@@ -172,7 +172,7 @@ What to tell us: the device, the Android version, the mouse or touchpad, and eac
 
 ## 8. Images
 
-[decisions/0038](decisions/0038-kitty-graphics.md). Images of the kitty graphics protocol were checked only on the JVM, with recordings of real programs and screenshot tests. The sample app has no SSH, so it can only replay recordings; checking real programs needs an app that embeds vtfx and connects over SSH to a host with `kitten icat`, timg, and yazi.
+Section 9 of [emulation.md](design/emulation.md). Images of the kitty graphics protocol were checked only on the JVM, with recordings of real programs and screenshot tests. The sample app has no SSH, so it can only replay recordings; checking real programs needs an app that embeds vtfx and connects over SSH to a host with `kitten icat`, timg, and yazi.
 
 | # | Action | Expected |
 |---|---|---|
@@ -199,7 +199,7 @@ If the new IME suggests words that continue the text typed before switching, it 
 
 ## 10. Links taken by a protected activity
 
-[decisions/0043](decisions/0043-url-open-results.md). `AndroidUrlOpener.open` converts `SecurityException` from `startActivity` into `OpenUrlResult.Refused` and lets other exceptions propagate. The unit test only makes a context throw `SecurityException`; what is not known is whether the system throws that exception, or another one, when the activity that takes the link requires a permission. Robolectric does not model it.
+Sections 5.3 and 6 of [gate-policy.md](design/gate-policy.md). `AndroidUrlOpener.open` converts `SecurityException` from `startActivity` into `OpenUrlResult.Refused` and lets other exceptions propagate. The unit test only makes a context throw `SecurityException`; what is not known is whether the system throws that exception, or another one, when the activity that takes the link requires a permission. Robolectric does not model it.
 
 This needs a second app with an activity that takes the link's URL (an app that verified the link's domain, so that no chooser appears) and declares `android:permission`, which the sample app does not hold.
 
@@ -211,7 +211,7 @@ If the sample app crashes, tell us the exception in logcat.
 
 ## 11. Imported fonts
 
-[decisions/0040](decisions/0040-sanitized-user-fonts.md). Sanitized fonts have no hinting, and sanitizing a CJK font takes seconds. On the x86_64 emulator, face 0 of Noto Serif CJK (65535 glyphs, CFF) took about 10 s in a release build and about 60 s in a debuggable one, where Android's runtime optimizes much less, measured before later optimizations of the verifier and the conversion. `SystemFontsTest` (an instrumented test) logs the time of every font of the device.
+[fonts.md](design/fonts.md). Sanitized fonts have no hinting, and sanitizing a CJK font takes seconds. On the x86_64 emulator, face 0 of Noto Serif CJK (65535 glyphs, CFF) took about 10 s in a release build and about 60 s in a debuggable one, where Android's runtime optimizes much less, measured before later optimizations of the verifier and the conversion. `SystemFontsTest` (an instrumented test) logs the time of every font of the device.
 
 Use a low-end phone and a device with a low density, and copy the font files to the device (for example to Downloads).
 
@@ -225,7 +225,7 @@ What to tell us: the device, the Android version, the density, whether the build
 
 ## 12. Copying all the text
 
-[decisions/0031](decisions/0031-desktop-pointer-and-terminal-state.md). Copying all the text copies at most the newest 10,000 lines, cut to 256 Ki characters (`TerminalDisplay.selectedText`), so that the system clipboard can take it. Robolectric's clipboard has no Binder limit, so whether the copy reaches the system clipboard and its preview without `TransactionTooLargeException` was not checked.
+Section 4 of [compose-input.md](design/compose-input.md). Copying all the text copies at most the newest 10,000 lines, cut to 256 Ki characters (`TerminalDisplay.selectedText`), so that the system clipboard can take it. Robolectric's clipboard has no Binder limit, so whether the copy reaches the system clipboard and its preview without `TransactionTooLargeException` was not checked.
 
 | # | Action | Expected |
 |---|---|---|
