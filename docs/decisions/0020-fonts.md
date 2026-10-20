@@ -21,7 +21,7 @@ Even for a file the user chose themselves, the user cannot judge its contents. A
 3. Added to `restricted_apis` in `config/boundaries.toml` a rule that the repository's sources do not use APIs that create fonts from files and the like (`Typeface.createFrom*`, `Typeface.Builder`, `android.graphics.fonts`, `AndroidFont`, `GoogleFont`, `Font(File)`, and so on). Only tests that simulate asynchronous fonts are allowed.
 4. Features that let users import their own fonts cannot be used for vtfx's terminal display. Apps that want to let users choose bundle the candidates.
 
-[0040](0040-sanitized-user-fonts.md) added a third kind, `Sanitized`, for fonts that users choose, which vtfx reads and writes again in Kotlin, and allowed the font APIs in the one place that makes typefaces of them; font files are still not accepted as they are. [0044](0044-boundaries-in-gradle-and-classes.md) replaced `restricted_apis` with `restricted_classes`, a check of the compiled main classes, which allows the font APIs only in `vtfx-font-gate-android`.
+[0040](0040-sanitized-user-fonts.md) added a third kind, `Sanitized`, for fonts that users choose, which vtfx reads and writes again in Kotlin, and allowed the font APIs in the one place that makes typefaces of them; font files are still not accepted as they are. [0044](0044-boundaries-in-gradle-and-classes.md) replaced `restricted_apis` with `restricted_classes`, a check of the compiled main classes, which allows the font APIs only in `vtfx-font-gate-android`. The current rules are in section 1 of [fonts.md](../design/fonts.md).
 
 ## Future extension: validating and rebuilding fonts
 

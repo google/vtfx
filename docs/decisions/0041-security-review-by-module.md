@@ -2,7 +2,7 @@
 
 - Status: Provisional (review by whole modules and the names `vtfx-font-gate` and `vtfx-font-gate-android` decided by a human on 2026-10-19; the verifier's own package, its tests in `vtfx-font-gate`, and the move of the public types to that package not yet reviewed)
 - Date: 2026-10-19
-- Related: Requirement 6.1, section 2 of [architecture.md](../design/architecture.md), [0016](0016-public-api.md), [0037](0037-api-shape-before-1.0.md), [0040](0040-sanitized-user-fonts.md), `config/protected-paths.toml`, `config/boundaries.toml`
+- Related: Requirement 6.1, section 2 of [architecture.md](../design/architecture.md), section 2 of [fonts.md](../design/fonts.md), [0016](0016-public-api.md), [0037](0037-api-shape-before-1.0.md), [0040](0040-sanitized-user-fonts.md), `config/protected-paths.toml`, `config/boundaries.toml`
 
 ## Background
 
@@ -19,18 +19,11 @@ A boundary drawn around files has to be redrawn by hand whenever code moves betw
 
 - **Security review covers whole modules.** `config/protected-paths.toml` lists code only as `<module>/**`, besides build configuration and scripts; no single source files. Code that needs review, and what it relies on, lives in a module of its own.
 - **The modules under review are named with `gate`**, as `vtfx-gate` and `vtfx-gate-android` are: a gate decides what may cross a boundary, whether to the host and the outside world or into the platform's native code.
-- `vtfx-font` is split in three:
-
-| Module | Kind | Contents | Review |
-|---|---|---|---|
-| `vtfx-font-gate` | JVM, no dependencies | `CanonicalVerifier`, `SanitizedFont` (`fromCanonical` only), `SanitizedFamily`, `InvalidFontException`, `FontLimits`, `WidthClass` | Needed |
-| `vtfx-font` | JVM, depends on `vtfx-font-gate` | The readers, the CFF interpreter, the curve approximation, the writer, `FontFile` | Not needed |
-| `vtfx-font-gate-android` | Android, depends on `vtfx-font-gate` (and `vtfx-core`, at compile time only, for `InternalVtfxApi`) | `SanitizedTypefaces.regular`, which makes the regular typeface of a list of `SanitizedFamily`s | Needed |
-
-- All of `vtfx-font-gate` is in a package of its own, `com.google.vtfx.font.gate`: the verifier (`CanonicalVerifier`, with its private classes and top-level declarations) and the public types (`SanitizedFont`, `SanitizedFamily`, `InvalidFontException`, `FontLimits`, `WidthClass`). `config/boundaries.toml` reserves that package and its subpackages for `vtfx-font-gate` and `vtfx-font-gate-android` (whose package is `com.google.vtfx.font.gate.android`), so no other module can declare a class there. A package split across modules would let any of them replace a reviewed class: a class that `vtfx-font` declares with the name of one in `vtfx-font-gate` compiles, and replaces the reviewed class wherever `vtfx-font` comes first on the class path, so that, for example, a copy of `SanitizedFont` whose `fromCanonical` skips the verifier would make malformed fonts pass. An Android app's build rejects the duplicate class when it merges dex files, but a JVM program that uses `vtfx-font` without a UI does not. The verifier has its own private functions that throw, and the readers theirs (`Failures.kt`), so the verifier shares no code with them.
+- `vtfx-font` is split in three: `vtfx-font-gate` (JVM, no dependencies, under review) holds the verifier and the public types that its guarantee relies on (`SanitizedFont`, with `fromCanonical` only, `SanitizedFamily`, `InvalidFontException`, `FontLimits`, `WidthClass`); `vtfx-font` (JVM, not under review) keeps the readers, the CFF interpreter, the curve approximation, the writer, and `FontFile`; `vtfx-font-gate-android` (Android, under review) holds the one file that makes typefaces from `SanitizedFont`s. The modules are described in section 2 of [fonts.md](../design/fonts.md).
+- **All of `vtfx-font-gate` is in a package of its own**, `com.google.vtfx.font.gate`, and `config/boundaries.toml` reserves it and its subpackages for the two font gate modules. A package split across modules would let any of them replace a reviewed class: a class that `vtfx-font` declares with the name of one in `vtfx-font-gate` compiles, and replaces the reviewed class wherever `vtfx-font` comes first on the class path, so that, for example, a copy of `SanitizedFont` whose `fromCanonical` skips the verifier would make malformed fonts pass. An Android app's build rejects the duplicate class when it merges dex files, but a JVM program that uses `vtfx-font` without a UI does not. The verifier has its own private functions that throw, and the readers theirs, so the verifier still shares no code with them.
 - The same holds for `vtfx-gate` and `vtfx-gate-android`, whose classes are all in `com.google.vtfx.gate` and its subpackage `com.google.vtfx.gate.android`: `config/boundaries.toml` reserves that package for the two modules in the same way, so that no other module can replace, for example, `Replies`, which builds every reply to the host (at a human's request).
-- `config/boundaries.toml` allows the font APIs in `vtfx-font-gate-android/**` instead of the one file of `vtfx-compose`. The module holds that one file, and the whole of it is under review.
-- `vtfx-compose` derives the bold and italic typefaces from the regular one with `Typeface.create`, which reads no font data, so it no longer uses the font APIs.
+- `config/boundaries.toml` allows the font APIs in `vtfx-font-gate-android` instead of the one file of `vtfx-compose`. The module holds that one file, and the whole of it is under review. `vtfx-compose` derives the bold and italic typefaces from the regular one with `Typeface.create`, which reads no font data, so it no longer uses the font APIs.
+- **The verifier's tests are in `vtfx-font-gate`**, under review with the code that they check, so that a change that weakens them is reviewed too. They take canonical fonts kept as files, since `vtfx-font-gate` cannot depend on `vtfx-font`, even in its tests (tests have no list of their own, [0044](0044-boundaries-in-gradle-and-classes.md)), and a test in `vtfx-font` checks that sanitizing still writes those files byte for byte. The fuzz test of the verifier changes those fonts and computes their checksums again, so that the changed fonts reach the checks of every table rather than fail the first checksum, as almost all raw bytes do. The tests are described in section 10 of [fonts.md](../design/fonts.md).
 
 ### Changes to the public API
 
@@ -39,19 +32,11 @@ Version 0.1.0 was published only as the source repository: no artifacts were upl
 - `SanitizedFont.sanitize` becomes `FontFile.sanitize`, beside `FontFile.inspect`: `vtfx-font-gate` cannot call the readers, which depend on it. It ends in `SanitizedFont.fromCanonical`, so the verifier is still the only way to a `SanitizedFont`.
 - `InvalidFontException` gets a public constructor, since the readers throw it from another module. Apps have no reason to construct one, and one that they construct proves nothing.
 - `SanitizedFamily` moves from `com.google.vtfx.compose` to `com.google.vtfx.font.gate` in `vtfx-font-gate`, since `vtfx-font-gate-android` takes it. It loses Compose's `@Immutable`, which no composable parameter relied on: the parameters have the type `TerminalFont`, which keeps it.
-- The public types of `vtfx-font-gate` (`SanitizedFont`, `SanitizedFamily`, `InvalidFontException`, `FontLimits`, `WidthClass`) move from `com.google.vtfx.font` to `com.google.vtfx.font.gate`, so that no package is split between `vtfx-font` and `vtfx-font-gate`. Apps change their imports; the names of the types stay.
+- The public types of `vtfx-font-gate` move from `com.google.vtfx.font` to `com.google.vtfx.font.gate`, so that no package is split between `vtfx-font` and `vtfx-font-gate`. Apps change their imports; the names of the types stay.
 
-### Tests
+### Accepted costs
 
-The verifier's tests are in `vtfx-font-gate`, under review with the code that they check, so that a change that weakens them is reviewed too. `CanonicalVerifierTest` reaches the verifier through `SanitizedFont.fromCanonical`, which runs only it, with canonical fonts kept as files in `vtfx-font-gate/src/test/resources/com/google/vtfx/font/gate/canonical/`, and with changes to them whose checksums the test computes again. `VerifierFuzzTest` fuzzes the verifier in the same way: its input is a list of changes to one of the fonts, after which it computes the checksums again, so that the changed fonts reach the checks of every table rather than fail the first checksum, as almost all raw bytes do.
-
-The fonts are written by `vtfx-font`, which `vtfx-font-gate`'s tests cannot depend on: `config/boundaries.toml` would need a dependency of `vtfx-font-gate` on `vtfx-font`, since the dependencies of tests are checked against the same list as those of the main code (tests have no list of their own, [0044](0044-boundaries-in-gradle-and-classes.md)). So `CanonicalFixturesTest` in `vtfx-font` checks that `FontFile.sanitize` still writes the files byte for byte, which also makes them a golden of the canonical form. `vtfx-font` keeps only the checks that need its readers or its writer: `VerifierCrossCheckTest`, which checks that the fonts that the verifier accepts are those that sanitizing leaves as they are, and the fuzz test.
-
-### Known cost
-
-`FontFile.sanitize` now goes through `fromCanonical`, which copies the bytes before checking them, so sanitizing holds one more copy of the output (up to `FontLimits.maxOutputBytes`) for a moment. Checking the bytes in the final direct buffer instead, so that the bytes checked are exactly those that native code reads, would remove the copy; it is a separate change to `vtfx-font-gate`.
-
-`SanitizedTypefaces` is the first `InternalVtfxApi` declaration of an Android module, and the ABI dump of the Android modules (`DumpAbiTask` in `build-logic`) does not leave it out: the filters that the task passes to the Build Tools API have no effect, even one that names the class. So `vtfx-font-gate-android.api` lists it, while the Kotlin signatures, which the other check dumps, leave it out. Fixing the task is a separate change to `build-logic`.
+`FontFile.sanitize` goes through `fromCanonical`, which copies the bytes before checking them, so sanitizing holds one more copy of the output for a moment. `SanitizedTypefaces`, the first `InternalVtfxApi` declaration of an Android module, is listed in the ABI dump of `vtfx-font-gate-android`, whose task does not leave such declarations out. Both are described in section 11 of [fonts.md](../design/fonts.md), and fixing either is a separate change.
 
 ## Alternatives considered
 
