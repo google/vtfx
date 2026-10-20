@@ -237,7 +237,7 @@ If the app crashes, tell us the exception in logcat.
 
 ## 13. IMEs on API 29 to 33
 
-[decisions/0039](decisions/0039-minsdk-29.md), sections 3 and 6.1 of [ime-contract.md](design/ime-contract.md). IMEs on Android 10 to 13 do not call `replaceText`, and on API 29 get no initial surrounding text, so they correct text through the other paths of the contract, which only the unit tests check. No traces were recorded on those versions, and whether the current Gboard installs on API 29 is not known.
+[decisions/0039](decisions/0039-minsdk-29.md), sections 3 and 6.1 of [ime-contract.md](design/ime-contract.md). IMEs on Android 10 to 13 do not call `replaceText`, and on API 29 get no initial surrounding text, so they correct text through the other paths of the contract. On Android 10, rows 13.1 to 13.3 were checked with Gboard 8.0 on the emulator and Gboard 18.4 on a real device, and 13.4 could not be tried ([research/ime-gboard-api29.md](research/ime-gboard-api29.md)); Android 11 to 13 were not checked.
 
 Use Gboard on devices with Android 10, 11, 12, and 13, and start the sample app with logHostInput enabled (section 1).
 

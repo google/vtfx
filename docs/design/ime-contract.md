@@ -119,7 +119,7 @@ A reset that host output triggers applies to every edit made after the output wa
 Notes:
 
 - Even if `newCursorPosition` (`pos`) is not 1, the cursor is placed at the end (invariant 1).
-- Only IMEs on API 34 and later call `replaceText`, which was added in API 34. IMEs on API 29 to 33 correct text with `setComposingRegion`, `setSelection`, or `deleteSurroundingText` followed by `commitText`, as the rows above specify. No IME was measured on those versions yet ([decisions/0039](../decisions/0039-minsdk-29.md)).
+- Only IMEs on API 34 and later call `replaceText`, which was added in API 34. IMEs on API 29 to 33 correct text with `setComposingRegion`, `setSelection`, or `deleteSurroundingText` followed by `commitText`, as the rows above specify. On API 29, Gboard's corrections reached the host correctly, checked by the bytes sent; no calls were traced on those versions yet ([decisions/0039](../decisions/0039-minsdk-29.md), [research/ime-gboard-api29.md](../research/ime-gboard-api29.md)).
 - Why edits outside the range are rejected: rejecting makes nothing happen, while accepting produces wrong output (`Dont` + `Don't ` with the measured "none" policy, and so on).
 - Why only `deleteSurroundingText` allows the outside: a deletion outside can be interpreted as the user's intent of pressing BS, and sending DELs does what was intended. A replacement cannot be reproduced correctly because the content outside is unknown.
 - DELs for a deletion outside the range are limited to the limit of the input history (section 10). The IME cannot see text before the input history, so deleting more than that is not the user's intent. Without a limit, an untrusted IME could make the host receive any number of DELs.
