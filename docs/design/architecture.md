@@ -104,7 +104,7 @@ Only this module can create bytes to send to the host.
   - `sendReply(query, colors)`: The reply to `ReplyRequested`. The reply string is built, for the corresponding query, only from constants and numbers from the terminal state. Strings sent by the host are not included in replies.
   - `sendMouse(report, tracking, encoding)`, `sendFocus(focused)`: Mouse and focus reports, only when the host requested them.
 - **Policy**: Allows or denies requests such as reading and writing the clipboard and opening URLs according to the app's settings (`GatePolicy`). The default is the safe side (requirement 6.5).
-  - Example: Reading with OSC 52 is denied by default. Writing is allowed, with a length limit.
+  - Example: Reading and writing with OSC 52 are both denied by default; when the app allows writing, it has a length limit ([decisions/0006](../decisions/0006-gate-defaults.md)).
   - Example: Hyperlinks are opened only on an explicit action by the user. The actual URL is shown before opening.
 - **The user's copy and paste**: `TerminalGate.copyToClipboard` and `readClipboardForPaste` perform them for explicit actions of the user, to which the OSC 52 policy does not apply; the pasted text is then sent with `sendPaste`. `TerminalSession` hands the clipboard and the URL opener to the gate and does not call them itself ([decisions/0042](../decisions/0042-user-clipboard-through-gate.md)).
 - Performing capabilities is delegated to interfaces implemented by `vtfx-gate-android` (`ClipboardAccess`, `UrlOpener`). `vtfx-gate` itself does not depend on Android.

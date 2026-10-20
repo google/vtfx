@@ -881,7 +881,7 @@ class TerminalSessionTest {
         session =
             TerminalSession(
                 { snapshotOnAnotherThread("host write") },
-                policy = GatePolicy(allowClipboardRead = true),
+                policy = GatePolicy(allowClipboardWrite = true, allowClipboardRead = true),
                 clipboard = clipboard,
             )
         val thread = Thread {

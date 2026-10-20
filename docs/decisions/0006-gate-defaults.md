@@ -1,8 +1,8 @@
 # Defaults of the gate's replies and policies
 
-- Status: Approved (2026-10-13, approved by a human in the final review; on 2026-10-20 a human approved the gate's own check of the selection)
+- Status: Approved (2026-10-13, approved by a human in the final review; on 2026-10-20 a human changed the default of OSC 52 writes to denied and approved the gate's own check of the selection)
 - Date: 2026-10-12
-- Related: Requirements 6.1 and 6.5 (safe defaults), 3.3 of [architecture.md](../design/architecture.md), `vtfx-gate`
+- Related: Requirements 6.1 and 6.5 (safe defaults), 3.3 of [architecture.md](../design/architecture.md), [0039](0039-minsdk-29.md), `vtfx-gate`
 
 ## Background
 
@@ -29,10 +29,12 @@ Of the attack types in requirement 6.1, replies to the host, the clipboard, open
 
 | Request | Default | Reason |
 |---|---|---|
-| Write | Allowed, up to 64 Ki (UTF-16 units). If exceeded, the whole is dropped. | Used by remote copy in tmux and vim. The limit keeps the load from huge data in check. |
+| Write | Denied. When an app allows it, up to 64 Ki (UTF-16 units); if exceeded, the whole is dropped. | Before Android 13 the OS shows no preview of the clipboard, so a host could replace what the user copied without the user noticing (pastejacking). The limit keeps the load from huge data in check. |
 | Read | Denied | The clipboard may contain passwords and the like copied in other apps. |
 
 Even when reading is allowed, the content is returned encoded in base64, so it is never interpreted as control sequences. The gate parses the selection parameter with its own list of xterm's targets (`c`, `p`, `q`, `s`, `0` to `7`, at most 16 of them), not with the list in `vtfx-core`, which is not under security review, and refuses both reads and writes whose selection does not parse. The reply to a read spells the selection again from the gate's constants, in `Replies` with every other reply, so no text from the host is part of it. (2026-10-20, approved by a human)
+
+Writes were allowed by default until 2026-10-20, when the human nya changed the default to denied. Allowing them relied on the preview of the clipboard that the OS shows on each copy, through which the user would notice a rewrite, but that preview exists only from Android 13 (API 33), and [0039](0039-minsdk-29.md) set the minimum to API 29: on API 29 to 32 a host could silently replace the clipboard, against the safe defaults of requirement 6.5. Apps that want remote copy in tmux and vim set `GatePolicy(allowClipboardWrite = true)`.
 
 Written content is not marked sensitive (`ClipDescription.EXTRA_IS_SENSITIVE`) (2026-10-13, decided by a human). On Android 13 and later, the OS shows a preview of the clipboard on each copy. With the mark, the content is masked, so the user can tell that the host rewrote the clipboard with OSC 52 but cannot see what it was rewritten to. Showing the content lets the user notice the rewrite. When a secret is copied (OSC 52 from a password manager on the host and so on), it is shown in the preview for a few seconds, but OSC 52 has no means of telling whether the content is secret, and the terminal side cannot mask only part of it. Most copies are not secret, so the choice was to show everything. When the user selects and copies ([0012](0012-touch-and-selection.md)), it goes through the same `ClipboardAccess`, so it is likewise not marked. Originally the mark was set.
 
@@ -53,7 +55,8 @@ Written content is not marked sensitive (`ClipDescription.EXTRA_IS_SENSITIVE`) (
 ## Alternatives considered
 
 - **Remove only the end sequence from pastes**: Escapes and malfunctions through the C1 CSI (U+009B) or other sequences containing ESC would remain. Removing all control characters is simpler and more reliable.
-- **Deny OSC 52 writes by default too**: Safe, but copying with tmux's OSC 52 would stop working. Following the example in architecture.md, they are allowed with a limit.
+- **Allow OSC 52 writes by default, with a limit** (the decision until 2026-10-20): copying with tmux's OSC 52 works without configuration, but on API 29 to 32 the user cannot notice a rewrite of the clipboard.
+- **Allow writes by default only on API 33 and later**: the default of `GatePolicy`, a JVM class, would depend on the platform it runs on, and the same app would behave differently by device.
 
 ## Impact of reversing
 

@@ -41,8 +41,8 @@ import java.util.Base64
  * Input format, so that seeds can be written by hand:
  * - Byte 0: the number of columns, 1 + (byte % 80).
  * - Byte 1: the number of rows, 1 + (byte % 24).
- * - Byte 2: bit 0 allows clipboard reads, bit 1 reports colors, and the rest is the limit of
- *   clipboard writes, (byte shr 2) % 16.
+ * - Byte 2: bit 0 allows clipboard reads, bit 1 reports colors, bits 2 to 5 are the limit of
+ *   clipboard writes, and bit 6 allows clipboard writes.
  * - Bytes 3 and 4: the width of a cell in pixels, big-endian, % 1001. Bytes 5 and 6: the height,
  *   the same way. The cell size is set, as a display sets it, only if both are nonzero, so that the
  *   replies to XTWINOPS 14 and 16 are made and their ranges checked.
@@ -58,8 +58,9 @@ class GateFuzzTest {
         val flags = input[2].toInt() and 0xFF
         val policy =
             GatePolicy(
-                allowClipboardRead = flags and 1 != 0,
+                allowClipboardWrite = flags and 0x40 != 0,
                 maxClipboardWriteLength = (flags shr 2) % 16,
+                allowClipboardRead = flags and 1 != 0,
             )
         val reportsColors = flags and 2 != 0
         val cellWidth = input.uint16At(3) % 1001
@@ -104,6 +105,9 @@ class GateFuzzTest {
         val replyBytes = replies.sumOf { it.length }
         check(replyBytes <= MAX_REPLY_BYTES_PER_INPUT_BYTE * output.size) {
             "$replyBytes reply bytes for ${output.size}"
+        }
+        check(policy.allowClipboardWrite || clipboardWrites.isEmpty()) {
+            "clipboard written without permission"
         }
         for (text in clipboardWrites) check(text.length <= policy.maxClipboardWriteLength) {
             "clipboard write of ${text.length}"

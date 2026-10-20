@@ -226,21 +226,27 @@ class AttackTest {
 
         @Test
         fun writeIsAllowedUpToTheLimit() {
-            val gate = gate(GatePolicy(maxClipboardWriteLength = 5))
+            val gate = gate(GatePolicy(allowClipboardWrite = true, maxClipboardWriteLength = 5))
             host(gate, "\u001b]52;c;${base64("12345")}\u0007\u001b]52;c;${base64("123456")}\u0007")
             assertEquals(listOf("12345"), clipboard.writes)
         }
 
+        // Before Android 13 the OS shows no preview of the clipboard, so a host could replace it
+        // unnoticed (docs/decisions/0006).
         @Test
-        fun writeCanBeDisabled() {
-            host(gate(GatePolicy(allowClipboardWrite = false)), "\u001b]52;c;${base64("x")}\u0007")
+        fun writeIsDeniedByDefault() {
+            host(gate(), "\u001b]52;c;${base64("x")}\u0007")
             assertEquals(emptyList(), clipboard.writes)
         }
 
         @Test
         fun writeLongerThanTheStringLimitIsDiscardedByTheModel() {
             val limits = TerminalLimits(maxStringLength = 100)
-            host(gate(), "\u001b]52;c;${base64("x".repeat(200))}\u0007", limits)
+            host(
+                gate(GatePolicy(allowClipboardWrite = true)),
+                "\u001b]52;c;${base64("x".repeat(200))}\u0007",
+                limits,
+            )
             assertEquals(emptyList(), clipboard.writes)
         }
 
@@ -249,7 +255,7 @@ class AttackTest {
             val gate =
                 TerminalGate(
                     HostWriter { sent += String(it) },
-                    GatePolicy(allowClipboardRead = true),
+                    GatePolicy(allowClipboardWrite = true, allowClipboardRead = true),
                 )
             host(gate, "\u001b]52;c;?\u0007\u001b]52;c;${base64("x")}\u0007")
             assertEquals(emptyList(), sent)

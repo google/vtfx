@@ -26,7 +26,7 @@ Apps on the host decide which sequences to send by looking at the terminfo that 
 | `kmous`, `XM` (SGR mouse) | Supported. Correspondence with touch interaction is in 0012 |
 | `BE`, `BD`, `PS`, `PE` (bracketed paste) | Supported |
 | `fe`, `fd` (focus events) | Supported |
-| `Ms` (OSC 52) | Writing is allowed with a limit, reading is denied by default (0006) |
+| `Ms` (OSC 52) | Supported; reading and writing are denied by default, and writing has a limit when the app allows it (0006) |
 | `RV`, `XR`, `u6`–`u9` (queries) | Supported |
 | `E3` (erasing scrollback) | Supported |
 | `flash` (toggling DECSCNM) | Supported |
