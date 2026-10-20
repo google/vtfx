@@ -171,20 +171,22 @@ The checks of the module boundaries read Gradle's model of the build and the com
 
 ## 6. Test structure
 
+The tests of each module are listed below. Where the oracles live, the gate rules, and how each kind of test runs are in [testing.md](testing.md), which is binding on what gates; "Gate?" says whether `scripts/check.sh` runs the tests as a gate (section 9 of [testing.md](testing.md)).
+
 | Target | Tests | Gate? |
 |---|---|---|
-| `vtfx-core` | JVM unit tests. Spec tests owned by humans (`spec/core`). Replay tests that compare recordings of real apps with a reference terminal. | Yes |
-| `vtfx-core`, `vtfx-gate`, `vtfx-input`, `vtfx-font`, `vtfx-font-gate` | Fuzzing (detecting exceptions, non-terminating states, memory exhaustion, and each module's invariants). | A 30-second run each. Long runs are separate |
-| `vtfx-input` | IME trace replay tests (`spec/ime`). Tests with hostile IME calls. | Yes |
-| `vtfx-gate` | Table-driven tests of key encoding. Unit tests of replies, pastes, and policies, including malicious inputs. | Yes |
-| `vtfx-compose` | Unit tests with Robolectric, and screenshot tests (agents manage provisional goldens, and humans approve them). | Yes |
-| `vtfx-font` | Unit tests with fonts that test code builds. A golden of the canonical form: the fonts that `vtfx-font-gate`'s tests use are what sanitizing writes. Cross-checks of the verifier of `vtfx-font-gate` with the readers and the writer. | Yes |
-| `vtfx-font-gate` | Unit tests of the verifier with canonical fonts that `vtfx-font` writes, kept as files, and with changes to them. | Yes |
-| Whole | e2e on the emulator (IME e2e with a real IME, and rendering e2e with hardware acceleration), esctest2. | No (reports only) |
-
-Details are in [testing.md](testing.md).
-
-Tests, fixtures, and goldens owned by humans are gathered in dedicated directories, and CI reports changes by agents (requirement 7.2).
+| `vtfx-core` | JVM unit tests. Spec tests owned by humans (`spec/core`, section 3 of [testing.md](testing.md)). Replay tests of recordings of real apps (section 10 of [testing.md](testing.md)). | Yes |
+| `vtfx-core`, `vtfx-gate`, `vtfx-input`, `vtfx-font`, `vtfx-font-gate` | Fuzzing, one target per module (section 7 of [testing.md](testing.md)). | A 30-second run each. Long runs are separate |
+| `vtfx-input` | IME trace replay tests (`spec/ime`, section 4 of [testing.md](testing.md)). Tests with hostile IME calls. | Yes |
+| `vtfx-gate` | Table-driven tests of key encoding. Unit tests of replies, pastes, and policies, including malicious inputs (section 12 of [testing.md](testing.md)). | Yes |
+| `vtfx-gate-android` | Unit tests with Robolectric of the clipboard and of opening URLs. | Yes |
+| `vtfx-session` | JVM unit tests of `TerminalSession`, including its threads and notifications. | Yes |
+| `vtfx-compose` | Unit tests with Robolectric, and screenshot tests (section 5 of [testing.md](testing.md)). | Yes |
+| `vtfx-font` | Unit tests with fonts that test code builds, a golden of the canonical form, and cross-checks with the verifier of `vtfx-font-gate` (section 2 of [testing.md](testing.md)). | Yes |
+| `vtfx-font-gate` | Unit tests of the verifier with canonical fonts kept as files, and with changes to them. | Yes |
+| `vtfx-font-gate-android` | No unit tests of its own; `SystemFontsTest` in the rendering e2e loads sanitized fonts through it. | No (reports only) |
+| `vtfx-sample` | Unit tests of the fake host. | Yes |
+| Whole | e2e on the emulator (IME e2e with a real IME, and rendering e2e with hardware acceleration; section 8 of [testing.md](testing.md)), esctest2 (section 11 of [testing.md](testing.md)). | No (reports only) |
 
 ## 7. Toolchain
 
