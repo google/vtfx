@@ -30,9 +30,12 @@ dependencies {
     // Read the Kotlin signatures of the public API from the compiled classes (AbiDump.kt).
     implementation(libs.kotlin.metadata.jvm)
     implementation(libs.asm)
+    // Reads config/boundaries.toml (Boundaries.kt).
+    implementation(libs.jackson.dataformat.toml)
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
+    testImplementation(kotlin("test", libs.versions.kotlin.get()))
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 

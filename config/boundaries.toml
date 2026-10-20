@@ -12,17 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Module boundaries checked by scripts/check_boundaries.py.
+# Module boundaries checked by the build logic (build-logic/src/main/kotlin/vtfx.boundaries.gradle.kts,
+# docs/decisions/0044) and by scripts/check_boundaries.py.
 #
 # This is a guardrail against obvious mistakes, not an enforcement that cannot be bypassed (see
 # docs/REQUIREMENTS.md section 6.1). The rationale is in docs/design/architecture.md.
 #
 # Changes to this file require security review (config/protected-paths.toml).
 
-# Every module included in settings.gradle.kts must be listed here, with the modules it may depend
-# on via project(":..."). The check reads the whole build file, so calls spread across lines and the
-# named `path =` argument are seen; a project(...) or include(...) whose path is not a literal is
-# rejected, as are type-safe project accessors (projects.xxx).
+# Every project of the build must be listed here, with the modules it may depend on. The build logic
+# checks the dependencies of every configuration of every project, as declared and as resolved, so
+# dependencies added by plugins, on resolution, or by substitution are seen too; the tests have no
+# list of their own. scripts/check_boundaries.py also reads the build files: it sees calls spread
+# across lines and the named `path =` argument, and rejects a project(...) or include(...) whose
+# path is not a literal, as well as type-safe project accessors (projects.xxx).
 [modules.vtfx-core]
 allowed_dependencies = []
 

@@ -27,6 +27,8 @@ androidx-test-runner = "1.7.0"
 espresso = "3.7.0"
 ktfmt = "0.64"
 asm = "9.9"
+# The version of Jackson that AGP already puts on the classpath of build-logic.
+jackson = "2.15.3"
 
 [libraries]
 android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
@@ -37,6 +39,7 @@ dokka-gradle-plugin = { module = "org.jetbrains.dokka:dokka-gradle-plugin", vers
 ktfmt = { module = "com.facebook:ktfmt", version.ref = "ktfmt" }
 kotlin-metadata-jvm = { module = "org.jetbrains.kotlin:kotlin-metadata-jvm", version.ref = "kotlin" }
 asm = { module = "org.ow2.asm:asm", version.ref = "asm" }
+jackson-dataformat-toml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-toml", version.ref = "jackson" }
 
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
 activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity-compose" }

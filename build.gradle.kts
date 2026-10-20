@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-// The root project aggregates the API reference of the library modules, and formats the Kotlin
-// sources of the whole build.
+// The root project aggregates the API reference of the library modules, formats the Kotlin sources
+// of the whole build, and checks the module boundaries of every project.
 plugins {
     id("vtfx.api-reference")
     id("vtfx.ktfmt")
+    id("vtfx.boundaries")
 }
 
 // The tests of the build logic, such as the dump of the Kotlin signatures of the public API, run
