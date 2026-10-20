@@ -22,12 +22,15 @@
 import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.variant.AndroidComponentsExtension
 import com.android.build.api.variant.ScopedArtifacts
+import org.gradle.api.artifacts.ArtifactView
+import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 
 plugins {
     base
 }
 
 val androidPlugins = listOf("com.android.library", "com.android.application")
+val artifactType = Attribute.of("artifactType", String::class.java)
 
 val boundariesFile = layout.projectDirectory.file("config/boundaries.toml")
 
@@ -60,6 +63,11 @@ subprojects {
                 module.set(moduleName)
                 classDirectories.from(main.map { it.output.classesDirs })
                 classpath.from(main.map { it.compileClasspath })
+                projectClasspath.from(
+                    configurations.named(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME).flatMap {
+                        projectFiles(it.incoming.artifactView {})
+                    }
+                )
             }
         checkBoundaries.configure { dependsOn(checkClasses) }
     }
@@ -80,6 +88,14 @@ subprojects {
                         classpath.from(
                             variant.compileClasspath,
                             components.sdkComponents.bootClasspath,
+                        )
+                        projectClasspath.from(
+                            projectFiles(
+                                variant.compileConfiguration.incoming.artifactView {
+                                    // What AGP makes of the classes of a library for compiling.
+                                    attributes.attribute(artifactType, "android-classes-jar")
+                                }
+                            )
                         )
                     }
                 variant.artifacts
@@ -121,3 +137,9 @@ gradle.projectsEvaluated {
         }
     }
 }
+
+/** The files of [view] that come from the projects of the build. */
+fun projectFiles(view: ArtifactView): Provider<List<File>> =
+    view.artifacts.resolvedArtifacts.map { artifacts ->
+        artifacts.filter { it.id.componentIdentifier is ProjectComponentIdentifier }.map { it.file }
+    }

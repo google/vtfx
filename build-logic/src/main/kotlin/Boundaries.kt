@@ -29,8 +29,49 @@ private constructor(
     private val restrictedClasses: List<RestrictedClasses>,
     private val reservedPackages: List<ReservedPackage>,
     private val bootstrapMethods: List<MemberPattern>,
+    private val baseline: Allowlist,
 ) {
-    private class Module(val allowedDependencies: Set<String>, val checkClasses: Boolean)
+    /**
+     * A module. [allowlist] is null for a module whose classes may still refer to any class outside
+     * the project that the other rules allow.
+     */
+    private class Module(
+        val allowedDependencies: Set<String>,
+        val checkClasses: Boolean,
+        val allowlist: Allowlist?,
+    )
+
+    /**
+     * The classes outside the project that classes may refer to, with all their members: the
+     * [classes] named (not their nested classes) and those directly in [packages] (not in their
+     * subpackages). [types] may only be named as types, and [members] only used: the owner of a
+     * member, and its subtypes, may be named as types too.
+     */
+    private class Allowlist(
+        val classes: Set<String>,
+        val packages: Set<String>,
+        val types: Set<String>,
+        val members: List<MemberPattern>,
+    ) {
+        fun allowsClass(name: String): Boolean =
+            name in classes || name.substringBeforeLast('/', missingDelimiterValue = "") in packages
+
+        fun allowsType(name: String, hierarchy: ClassHierarchy): Boolean =
+            allowsClass(name) ||
+                name in types ||
+                members.any { hierarchy.isSubtype(name, it.owner) }
+
+        fun allowsMember(member: MemberReference, hierarchy: ClassHierarchy): Boolean =
+            allowsClass(member.owner) || members.any { it.matches(member, hierarchy) }
+
+        operator fun plus(other: Allowlist): Allowlist =
+            Allowlist(
+                classes + other.classes,
+                packages + other.packages,
+                types + other.types,
+                members + other.members,
+            )
+    }
 
     /**
      * Classes and members that only [allowedModules] may refer to at all: the classes named in
@@ -142,20 +183,17 @@ private constructor(
     }
 
     /**
-     * The violations in [classes], the main classes of [module]: uses of the members of restricted
-     * classes, directly or through a subtype, which [hierarchy] tells. None if the module's classes
-     * are not checked (`check_classes = false`).
+     * The violations of the restrictions in [classes], the main classes of [module], whose
+     * supertypes [hierarchy] tells: references to restricted classes and members, classes declared
+     * in reserved packages, and bootstrap methods not listed. None if the module's classes are not
+     * checked (`check_classes = false`).
      */
     fun classViolations(
         module: String,
         classes: List<ClassReferences>,
         hierarchy: ClassHierarchy,
     ): List<String> {
-        val declared =
-            requireNotNull(modules[module]) {
-                "module '$module' is not declared in config/boundaries.toml"
-            }
-        if (!declared.checkClasses) return emptyList()
+        if (!module(module).checkClasses) return emptyList()
         val memberRules = restrictedMembers.filter { module !in it.allowedModules }
         val classRules = restrictedClasses.filter { module !in it.allowedModules }
         val packages = reservedPackages.filter { module !in it.modules }
@@ -193,6 +231,55 @@ private constructor(
         }
     }
 
+    /**
+     * The references in [classes], the main classes of [module], to classes outside the project
+     * that the baseline and the allowlist of the module do not allow. [projectClasses] are the
+     * classes of the modules that [module] depends on, which only [classViolations] restricts. None
+     * if the module's classes are not checked, or it has no allowlist.
+     */
+    fun allowlistViolations(
+        module: String,
+        classes: List<ClassReferences>,
+        projectClasses: Set<String>,
+        hierarchy: ClassHierarchy,
+    ): List<String> {
+        val declared = module(module)
+        if (!declared.checkClasses) return emptyList()
+        val allowlist = baseline + (declared.allowlist ?: return emptyList())
+        val internal = projectClasses + classes.map { it.name }
+        return classes.flatMap { references ->
+            val name = references.name
+            references.types
+                .filter { it !in internal && !allowlist.allowsType(it, hierarchy) }
+                .sorted()
+                .map { "$name refers to $it, which the allowlist of $module does not allow" } +
+                references.members
+                    .mapNotNull { externalMember(it, internal, hierarchy) }
+                    .filter { !allowlist.allowsMember(it, hierarchy) }
+                    .distinct()
+                    .sortedBy { it.toString() }
+                    .map { "$name uses $it, which the allowlist of $module does not allow" }
+        }
+    }
+
+    private fun module(name: String): Module =
+        requireNotNull(modules[name]) { "module '$name' is not declared in config/boundaries.toml" }
+
+    /**
+     * The member outside the project that a use of [member] reaches, or null if it is a member of
+     * the project. A use through a class of the project reaches a member that the class may inherit
+     * from a class outside it, which is then what an allowlist must allow.
+     */
+    private fun externalMember(
+        member: MemberReference,
+        internal: Set<String>,
+        hierarchy: ClassHierarchy,
+    ): MemberReference? {
+        if (member.owner !in internal) return member
+        val declaring = hierarchy.declaringClass(member.owner, member.name, member.descriptor)
+        return if (declaring in internal) null else member.copy(owner = declaring)
+    }
+
     companion object {
         /** Reads the text of `config/boundaries.toml`. Fails on anything it does not understand. */
         fun parse(text: String): Boundaries {
@@ -213,6 +300,9 @@ private constructor(
                             module
                                 .requireField("check_classes", where)
                                 .boolean("$where.check_classes"),
+                            module.get("allowed_references")?.let {
+                                allowlist(it, "$where.allowed_references")
+                            },
                         )
                 }
             for ((name, module) in modules) {
@@ -280,12 +370,31 @@ private constructor(
                     .requireField("bootstrap_methods", "the top level")
                     .strings("bootstrap_methods")
                     .map { MemberPattern.parse(it, "bootstrap_methods") }
+            val baseline =
+                allowlist(
+                    root.requireField("baseline_references", "the top level"),
+                    "baseline_references",
+                )
             return Boundaries(
                 modules,
                 restrictedMembers,
                 restrictedClasses,
                 reservedPackages,
                 bootstrapMethods,
+                baseline,
+            )
+        }
+
+        private fun allowlist(node: JsonNode, where: String): Allowlist {
+            require(node.isObject) { "$where must be a table" }
+            node.requireKeys(ALLOWLIST_KEYS, where)
+            return Allowlist(
+                node.requireField("classes", where).strings("$where.classes"),
+                node.requireField("packages", where).strings("$where.packages"),
+                node.requireField("types", where).strings("$where.types"),
+                node.requireField("members", where).strings("$where.members").map {
+                    MemberPattern.parse(it, "$where.members")
+                },
             )
         }
 
@@ -297,12 +406,15 @@ private constructor(
                 "restricted_classes",
                 "reserved_packages",
                 "bootstrap_methods",
+                "baseline_references",
                 "restricted_apis",
             )
+        private val ALLOWLIST_KEYS = setOf("classes", "packages", "types", "members")
         private val RESTRICTED_CLASSES_KEYS =
             setOf("classes", "packages", "members", "reason", "allowed_modules")
         private val RESERVED_PACKAGES_KEYS = setOf("package", "modules", "reason")
-        private val MODULE_KEYS = setOf("allowed_dependencies", "check_classes")
+        private val MODULE_KEYS =
+            setOf("allowed_dependencies", "check_classes", "allowed_references")
         private val RESTRICTED_MEMBERS_KEYS = setOf("classes", "reason", "allowed_modules")
 
         private fun JsonNode.requireKeys(known: Set<String>, where: String) {

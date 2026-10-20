@@ -30,6 +30,93 @@ bootstrap_methods = [
     "java/lang/invoke/StringConcatFactory.makeConcatWithConstants",
 ]
 
+# The classes outside the project that the classes of every module with an allowlist may refer to
+# (docs/decisions/0044): the language, the compiler's output, and data structures, none of which
+# reaches the system. "classes" are allowed with all their members, but not their nested classes;
+# "packages" allow the classes directly in them, not in their subpackages; "types" may only be named
+# as types; "members" (owner.name, or owner.name(descriptor) may be used, and their owners named.
+# Not here, so that a module must list them with a reason: kotlin.io (files and the console),
+# kotlin.concurrent, kotlin.reflect, java.lang.System, Runtime, ClassLoader, and java.io.
+[baseline_references]
+classes = [
+    "java/lang/Appendable",
+    "java/lang/ArithmeticException",
+    "java/lang/Boolean",
+    "java/lang/Byte",
+    "java/lang/CharSequence",
+    "java/lang/Character",
+    "java/lang/ClassCastException",
+    "java/lang/Comparable",
+    "java/lang/Deprecated",
+    "java/lang/Double",
+    "java/lang/Enum",
+    "java/lang/Exception",
+    "java/lang/Float",
+    "java/lang/IllegalArgumentException",
+    "java/lang/IllegalStateException",
+    "java/lang/IndexOutOfBoundsException",
+    "java/lang/Integer",
+    "java/lang/Iterable",
+    "java/lang/Long",
+    "java/lang/Math",
+    "java/lang/NoSuchFieldError",
+    "java/lang/NullPointerException",
+    "java/lang/Number",
+    "java/lang/Object",
+    "java/lang/RuntimeException",
+    "java/lang/Short",
+    "java/lang/String",
+    "java/lang/StringBuilder",
+    "java/lang/UnsupportedOperationException",
+    "java/lang/Void",
+    "java/lang/annotation/Annotation",
+    "java/lang/annotation/ElementType",
+    "java/lang/annotation/Retention",
+    "java/lang/annotation/RetentionPolicy",
+    "java/lang/annotation/Target",
+    "java/util/ArrayList",
+    "java/util/Arrays",
+    "java/util/Collection",
+    "java/util/Collections",
+    "java/util/Comparator",
+    "java/util/HashMap",
+    "java/util/HashSet",
+    "java/util/IdentityHashMap",
+    "java/util/Iterator",
+    "java/util/LinkedHashMap",
+    "java/util/LinkedHashSet",
+    "java/util/List",
+    "java/util/ListIterator",
+    "java/util/Map",
+    "java/util/Map$Entry",
+    "java/util/NoSuchElementException",
+    "java/util/Objects",
+    "java/util/Set",
+    "java/util/TreeMap",
+    "java/util/TreeSet",
+    "org/jetbrains/annotations/NotNull",
+    "org/jetbrains/annotations/Nullable",
+]
+packages = [
+    "kotlin",
+    "kotlin/annotation",
+    "kotlin/collections",
+    "kotlin/comparisons",
+    "kotlin/enums",
+    "kotlin/internal",
+    "kotlin/jvm",
+    "kotlin/jvm/functions",
+    "kotlin/jvm/internal",
+    "kotlin/math",
+    "kotlin/ranges",
+    "kotlin/sequences",
+    "kotlin/text",
+]
+# Enum.valueOf takes the Class of the enum.
+types = ["java/lang/Class"]
+# The thread checks of docs/decisions/0021.
+members = ["java/lang/Thread.currentThread"]
+
 # Every project of the build must be listed here, with the modules it may depend on. The build logic
 # checks the dependencies of every configuration of every project, as declared and as resolved, so
 # dependencies added by plugins, on resolution, or by substitution are seen too; the tests have no
@@ -38,13 +125,49 @@ bootstrap_methods = [
 allowed_dependencies = []
 check_classes = true
 
+[modules.vtfx-core.allowed_references]
+classes = [
+    "java/util/Base64",
+    "java/util/Base64$Decoder",
+    "java/util/regex/Matcher",
+    "java/util/regex/Pattern",
+    "java/util/zip/CRC32",
+    # Inflates the zlib data of images of the kitty graphics protocol (docs/decisions/0038), with the
+    # platform's native zlib.
+    "java/util/zip/DataFormatException",
+    "java/util/zip/Inflater",
+]
+packages = []
+types = ["java/nio/charset/Charset"]
+members = []
+
 [modules.vtfx-font]
 allowed_dependencies = ["vtfx-font-gate"]
 check_classes = true
 
+[modules.vtfx-font.allowed_references]
+classes = ["java/lang/InterruptedException"]
+packages = []
+types = []
+# Sanitizing stops when the thread is interrupted.
+members = ["java/lang/Thread.interrupted"]
+
 [modules.vtfx-font-gate]
 allowed_dependencies = []
 check_classes = true
+
+[modules.vtfx-font-gate.allowed_references]
+classes = [
+    "java/io/ByteArrayOutputStream",
+    # The canonical font is kept in a read-only direct buffer, which the platform's typefaces read
+    # (docs/decisions/0041).
+    "java/nio/Buffer",
+    "java/nio/ByteBuffer",
+]
+packages = []
+types = []
+# The checksum that identifies a canonical font.
+members = ["java/security/MessageDigest.digest", "java/security/MessageDigest.getInstance"]
 
 # vtfx-core only for the InternalVtfxApi annotation (compileOnly).
 [modules.vtfx-font-gate-android]
@@ -55,9 +178,21 @@ check_classes = true
 allowed_dependencies = ["vtfx-core"]
 check_classes = true
 
+[modules.vtfx-input.allowed_references]
+classes = []
+packages = []
+types = []
+members = []
+
 [modules.vtfx-gate]
 allowed_dependencies = ["vtfx-core"]
 check_classes = true
+
+[modules.vtfx-gate.allowed_references]
+classes = ["java/io/ByteArrayOutputStream", "java/util/Base64", "java/util/Base64$Encoder"]
+packages = []
+types = ["java/nio/charset/Charset"]
+members = ["java/util/Locale.ROOT"]
 
 [modules.vtfx-gate-android]
 allowed_dependencies = ["vtfx-gate"]
@@ -66,6 +201,16 @@ check_classes = true
 [modules.vtfx-session]
 allowed_dependencies = ["vtfx-core", "vtfx-input", "vtfx-gate"]
 check_classes = true
+
+[modules.vtfx-session.allowed_references]
+classes = [
+    "java/util/concurrent/CopyOnWriteArrayList",
+    "java/util/concurrent/locks/Lock",
+    "java/util/concurrent/locks/ReentrantLock",
+]
+packages = []
+types = []
+members = []
 
 [modules.vtfx-compose]
 allowed_dependencies = ["vtfx-core", "vtfx-input", "vtfx-gate", "vtfx-gate-android", "vtfx-session", "vtfx-font", "vtfx-font-gate", "vtfx-font-gate-android"]

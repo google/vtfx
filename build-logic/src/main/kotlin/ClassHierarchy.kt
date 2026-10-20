@@ -18,6 +18,10 @@ import java.io.Closeable
 import java.io.File
 import java.util.zip.ZipFile
 import org.objectweb.asm.ClassReader
+import org.objectweb.asm.ClassVisitor
+import org.objectweb.asm.FieldVisitor
+import org.objectweb.asm.MethodVisitor
+import org.objectweb.asm.Opcodes
 
 /**
  * The supertypes of the classes that [find] reads the class files of, by internal name
@@ -25,7 +29,9 @@ import org.objectweb.asm.ClassReader
  * has no supertypes.
  */
 class ClassHierarchy(private val find: (String) -> ByteArray?) {
-    private val supertypes = HashMap<String, List<String>>()
+    private class ClassInfo(val supertypes: List<String>, val members: Set<String>)
+
+    private val infos = HashMap<String, ClassInfo>()
 
     /** Whether [name] is [other], or a class or interface that extends or implements it. */
     fun isSubtype(name: String, other: String): Boolean {
@@ -41,11 +47,72 @@ class ClassHierarchy(private val find: (String) -> ByteArray?) {
         return false
     }
 
-    private fun directSupertypes(name: String): List<String> =
-        supertypes.getOrPut(name) {
+    /**
+     * The class that declares the field or method [name] with [descriptor] that a use through
+     * [owner] reaches: [owner] itself or the nearest of its supertypes, superclasses before
+     * interfaces. Fails if none declares it.
+     */
+    fun declaringClass(owner: String, name: String, descriptor: String): String {
+        val member = name + descriptor
+        val visited = mutableSetOf(owner)
+        val pending = ArrayDeque(listOf(owner))
+        while (pending.isNotEmpty()) {
+            val current = pending.removeFirst()
+            val info = info(current)
+            if (member in info.members) return current
+            for (supertype in info.supertypes) {
+                if (visited.add(supertype)) pending.addLast(supertype)
+            }
+        }
+        error("no supertype of $owner, nor $owner itself, declares $member")
+    }
+
+    private fun directSupertypes(name: String): List<String> = info(name).supertypes
+
+    private fun info(name: String): ClassInfo =
+        infos.getOrPut(name) {
             val bytes = checkNotNull(find(name)) { "class $name is not on the class path" }
-            val reader = ClassReader(bytes)
-            listOfNotNull(reader.superName) + reader.interfaces
+            val members = mutableSetOf<String>()
+            var supertypes = emptyList<String>()
+            ClassReader(bytes)
+                .accept(
+                    object : ClassVisitor(Opcodes.ASM9) {
+                        override fun visit(
+                            version: Int,
+                            access: Int,
+                            name: String,
+                            signature: String?,
+                            superName: String?,
+                            interfaces: Array<out String>?,
+                        ) {
+                            supertypes = listOfNotNull(superName) + interfaces.orEmpty()
+                        }
+
+                        override fun visitField(
+                            access: Int,
+                            name: String,
+                            descriptor: String,
+                            signature: String?,
+                            value: Any?,
+                        ): FieldVisitor? {
+                            members += name + descriptor
+                            return null
+                        }
+
+                        override fun visitMethod(
+                            access: Int,
+                            name: String,
+                            descriptor: String,
+                            signature: String?,
+                            exceptions: Array<out String>?,
+                        ): MethodVisitor? {
+                            members += name + descriptor
+                            return null
+                        }
+                    },
+                    ClassReader.SKIP_CODE or ClassReader.SKIP_DEBUG or ClassReader.SKIP_FRAMES,
+                )
+            ClassInfo(supertypes, members)
         }
 }
 

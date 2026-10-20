@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import java.io.File
 import java.util.zip.ZipFile
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
@@ -119,6 +120,9 @@ abstract class CheckClassReferencesTask : DefaultTask() {
     /** What the classes are compiled against, to find the supertypes of the classes they use. */
     @get:Classpath abstract val classpath: ConfigurableFileCollection
 
+    /** The part of [classpath] that comes from the modules of the project. */
+    @get:Classpath abstract val projectClasspath: ConfigurableFileCollection
+
     @TaskAction
     fun run() {
         val directories = classDirectories.files + variantDirectories.get().map { it.asFile }
@@ -143,13 +147,37 @@ abstract class CheckClassReferencesTask : DefaultTask() {
                 }
         val classes = classFiles.map { ClassReferences.read(it) }.sortedBy { it.name }
         val boundaries = Boundaries.parse(this.boundaries.get().asFile.readText())
+        val projectClasses = projectClasspath.files.flatMap(::classNames).toSet()
         val violations =
             ClassPath(directories.toList() + jars + classpath.files).use { classPath ->
-                boundaries.classViolations(module.get(), classes, ClassHierarchy(classPath::find))
+                val hierarchy = ClassHierarchy(classPath::find)
+                boundaries.classViolations(module.get(), classes, hierarchy) +
+                    boundaries.allowlistViolations(module.get(), classes, projectClasses, hierarchy)
             }
         failOn(violations)
     }
 }
+
+/** The internal names of the classes in [file], a directory or a jar. */
+private fun classNames(file: File): List<String> =
+    when {
+        !file.exists() -> emptyList()
+        file.isDirectory ->
+            file
+                .walk()
+                .filter { it.isFile && it.extension == "class" }
+                .map { it.relativeTo(file).invariantSeparatorsPath.removeSuffix(".class") }
+                .toList()
+        else ->
+            ZipFile(file).use { zip ->
+                zip.entries()
+                    .asSequence()
+                    .map { it.name }
+                    .filter { it.endsWith(".class") && !it.startsWith("META-INF/") }
+                    .map { it.removeSuffix(".class") }
+                    .toList()
+            }
+    }
 
 private fun failOn(violations: List<String>) {
     val distinct = violations.distinct()

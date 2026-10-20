@@ -23,6 +23,7 @@ class BoundariesTest {
         Boundaries.parse(
             """
             bootstrap_methods = []
+            baseline_references = { classes = [], packages = [], types = [], members = [] }
 
             [modules.vtfx-core]
             allowed_dependencies = []
@@ -166,6 +167,7 @@ class BoundariesTest {
             Boundaries.parse(
                 """
                 bootstrap_methods = []
+                baseline_references = { classes = [], packages = [], types = [], members = [] }
 
                 [modules.vtfx-gate]
                 allowed_dependencies = ["vtfx-core"]
@@ -181,6 +183,7 @@ class BoundariesTest {
             Boundaries.parse(
                 """
                 bootstrap_methods = []
+                baseline_references = { classes = [], packages = [], types = [], members = [] }
 
                 [modules.vtfx-core]
                 allowed_dependencies = []
@@ -197,6 +200,7 @@ class BoundariesTest {
             Boundaries.parse(
                 """
                 bootstrap_methods = []
+                baseline_references = { classes = [], packages = [], types = [], members = [] }
 
                 [modules.vtfx-core]
                 allowed_dependencies = []
@@ -212,7 +216,9 @@ class BoundariesTest {
     @Test
     fun parse_moduleWithoutAllowedDependencies_throws() {
         assertFailsWith<IllegalArgumentException> {
-            Boundaries.parse("bootstrap_methods = []\n[modules.vtfx-core]\ncheck_classes = true\n")
+            Boundaries.parse(
+                "bootstrap_methods = []\nbaseline_references = { classes = [], packages = [], types = [], members = [] }\n[modules.vtfx-core]\ncheck_classes = true\n"
+            )
         }
     }
 

@@ -24,6 +24,7 @@ class ClassViolationsTest {
         Boundaries.parse(
             """
             bootstrap_methods = []
+            baseline_references = { classes = [], packages = [], types = [], members = [] }
 
             [modules.vtfx-gate]
             allowed_dependencies = []
