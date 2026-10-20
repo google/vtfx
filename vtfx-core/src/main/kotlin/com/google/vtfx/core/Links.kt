@@ -339,30 +339,13 @@ public class LinkFinder(private val patterns: List<LinkPattern>) {
 
     /** Finds the links in [rows], with rows counted from the first. */
     private fun findInRows(rows: Rows): List<FoundLink> {
-        val lines = rows.lines
-        val text = StringBuilder()
-        // The cell of each character of text, as row * columns + column.
-        val columns = lines[0].columns
-        val cells = IntArrayList()
-        for ((row, line) in lines.withIndex()) {
-            // The blank that autowrap left before a wide character on the next row is not text.
-            val end =
-                if (row < lines.lastIndex && line.endsWithWidePadding(lines[row + 1]))
-                    line.columns - 1
-                else line.columns
-            for (column in 0 until end) {
-                if (line.widthAt(column) == 0) continue
-                val cellText = line.textAt(column) ?: " "
-                text.append(cellText)
-                repeat(cellText.length) { cells.add(row * columns + column) }
-            }
-        }
-        val string = text.toString()
+        val text = LineText(rows.lines)
+        val string = text.text
         return match(string)
             .filter {
                 !(rows.isCutAbove && it.start == 0) && !(rows.isCutBelow && it.end == string.length)
             }
-            .mapNotNull { toLink(lines, string, cells, it) }
+            .mapNotNull { toLink(text, it) }
     }
 
     /**
@@ -409,47 +392,23 @@ public class LinkFinder(private val patterns: List<LinkPattern>) {
      * Returns the link of [match], or null if it covers a hyperlink or a concealed cell (SGR 8),
      * whose text the display does not show: the URL would then differ from what the user sees.
      */
-    private fun toLink(
-        lines: List<LineSnapshot>,
-        text: String,
-        cells: IntArrayList,
-        match: TextMatch,
-    ): FoundLink? {
-        val columns = lines[0].columns
-        val spans = mutableListOf<CellSpan>()
-        var index = match.start
-        while (index < match.end) {
-            val row = cells[index] / columns
-            val line = lines[row]
-            val start = cells[index] % columns
-            var end = start
-            while (index < match.end && cells[index] / columns == row) {
-                val column = cells[index] % columns
-                end = maxOf(end, column + line.widthAt(column))
-                index++
-            }
+    private fun toLink(text: LineText, match: TextMatch): FoundLink? {
+        val spans = text.spans(match.start, match.end)
+        for (span in spans) {
+            val line = text.lines[span.row]
             if (
-                (start until end).any {
+                (span.start until span.end).any {
                     line.hyperlinkAt(it) != null || line.styleAt(it).isInvisible
                 }
             ) {
                 return null
             }
-            spans += CellSpan(row, start, end)
         }
-        return FoundLink(text.substring(match.start, match.end), match.url, match.pattern, spans)
+        return FoundLink(
+            text.text.substring(match.start, match.end),
+            match.url,
+            match.pattern,
+            spans,
+        )
     }
-}
-
-/** A growable list of ints without boxing. */
-private class IntArrayList {
-    private var values = IntArray(256)
-    private var size = 0
-
-    fun add(value: Int) {
-        if (size == values.size) values = values.copyOf(size * 2)
-        values[size++] = value
-    }
-
-    operator fun get(index: Int): Int = values[index]
 }
