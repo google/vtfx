@@ -20,9 +20,25 @@ import java.io.Serializable
 
 /**
  * The module boundaries declared in `config/boundaries.toml` (docs/decisions/0044): for each module
- * of the build, the modules it may depend on.
+ * of the build, the modules it may depend on, and what its compiled classes may refer to.
  */
-class Boundaries private constructor(private val allowedDependencies: Map<String, Set<String>>) {
+class Boundaries
+private constructor(
+    private val modules: Map<String, Module>,
+    private val restrictedMembers: List<RestrictedMembers>,
+) {
+    private class Module(val allowedDependencies: Set<String>, val checkClasses: Boolean)
+
+    /**
+     * Classes whose fields and methods only [allowedModules] may use. Other modules may still name
+     * the classes as types, for example to pass an instance on.
+     */
+    private class RestrictedMembers(
+        val classes: Set<String>,
+        val reason: String,
+        val allowedModules: Set<String>,
+    )
+
     /**
      * The violations of a build whose projects have [projectPaths]: every project must be declared,
      * and every declared module must be a project.
@@ -30,11 +46,11 @@ class Boundaries private constructor(private val allowedDependencies: Map<String
     fun moduleViolations(projectPaths: Set<String>): List<String> {
         val projects = projectPaths.map { it.removePrefix(":") }.toSet()
         val undeclared =
-            (projects - allowedDependencies.keys).sorted().map {
+            (projects - modules.keys).sorted().map {
                 "project ':$it' is not declared in config/boundaries.toml"
             }
         val missing =
-            (allowedDependencies.keys - projects).sorted().map {
+            (modules.keys - projects).sorted().map {
                 "module '$it' of config/boundaries.toml is not a project of the build"
             }
         return undeclared + missing
@@ -67,53 +83,123 @@ class Boundaries private constructor(private val allowedDependencies: Map<String
             }
         if (from == to) return null
         val allowed =
-            allowedDependencies[from.moduleName]
+            modules[from.moduleName]?.allowedDependencies
                 ?: return "$from is not declared in config/boundaries.toml"
         if (to.moduleName in allowed) return null
         return "'${from.moduleName}' must not depend on '${to.moduleName}'"
+    }
+
+    /**
+     * The violations in [classes], the main classes of [module]: uses of the members of restricted
+     * classes, directly or through a subtype, which [hierarchy] tells. None if the module's classes
+     * are not checked (`check_classes = false`).
+     */
+    fun classViolations(
+        module: String,
+        classes: List<ClassReferences>,
+        hierarchy: ClassHierarchy,
+    ): List<String> {
+        val declared =
+            requireNotNull(modules[module]) {
+                "module '$module' is not declared in config/boundaries.toml"
+            }
+        if (!declared.checkClasses) return emptyList()
+        val rules = restrictedMembers.filter { module !in it.allowedModules }
+        return classes.flatMap { references ->
+            references.members
+                .sortedBy { it.toString() }
+                .flatMap { member ->
+                    rules
+                        .filter { rule ->
+                            rule.classes.any { hierarchy.isSubtype(member.owner, it) }
+                        }
+                        .map { "${references.name} uses $member: ${it.reason}" }
+                }
+        }
     }
 
     companion object {
         /** Reads the text of `config/boundaries.toml`. Fails on anything it does not understand. */
         fun parse(text: String): Boundaries {
             val root = TomlMapper().readTree(text)
-            val unknownTables = root.fieldNames().asSequence().toSet() - TOP_LEVEL_KEYS
-            require(unknownTables.isEmpty()) { "unknown keys at the top level: $unknownTables" }
-            val modules = root.requireField("modules", "the top level")
-            require(modules.isObject) { "modules must be a table" }
-            val allowedDependencies =
-                modules.properties().associate { (name, module) ->
-                    require(module.isObject) { "modules.$name must be a table" }
-                    val unknown = module.fieldNames().asSequence().toSet() - MODULE_KEYS
-                    require(unknown.isEmpty()) { "unknown keys in modules.$name: $unknown" }
+            root.requireKeys(TOP_LEVEL_KEYS, "the top level")
+            val modulesNode = root.requireField("modules", "the top level")
+            require(modulesNode.isObject) { "modules must be a table" }
+            val modules =
+                modulesNode.properties().associate { (name, module) ->
+                    val where = "modules.$name"
+                    require(module.isObject) { "$where must be a table" }
+                    module.requireKeys(MODULE_KEYS, where)
                     name to
-                        module
-                            .requireField("allowed_dependencies", "modules.$name")
-                            .strings("modules.$name.allowed_dependencies")
+                        Module(
+                            module
+                                .requireField("allowed_dependencies", where)
+                                .strings("$where.allowed_dependencies"),
+                            module
+                                .requireField("check_classes", where)
+                                .boolean("$where.check_classes"),
+                        )
                 }
-            for ((name, allowed) in allowedDependencies) {
-                val unknown = allowed - allowedDependencies.keys
-                require(unknown.isEmpty()) {
-                    "modules.$name.allowed_dependencies names undeclared modules: $unknown"
-                }
+            for ((name, module) in modules) {
+                module.allowedDependencies.requireModules(
+                    modules,
+                    "modules.$name.allowed_dependencies",
+                )
             }
-            return Boundaries(allowedDependencies)
+            val restrictedMembers =
+                root.optionalArray("restricted_members").mapIndexed { index, rule ->
+                    val where = "restricted_members[$index]"
+                    require(rule.isObject) { "$where must be a table" }
+                    rule.requireKeys(RESTRICTED_MEMBERS_KEYS, where)
+                    RestrictedMembers(
+                        rule.requireField("classes", where).strings("$where.classes"),
+                        rule.requireField("reason", where).text("$where.reason"),
+                        rule
+                            .requireField("allowed_modules", where)
+                            .strings("$where.allowed_modules")
+                            .also { it.requireModules(modules, "$where.allowed_modules") },
+                    )
+                }
+            return Boundaries(modules, restrictedMembers)
         }
 
         // restricted_apis is read by scripts/check_boundaries.py.
-        private val TOP_LEVEL_KEYS = setOf("modules", "restricted_apis")
-        private val MODULE_KEYS = setOf("allowed_dependencies")
+        private val TOP_LEVEL_KEYS = setOf("modules", "restricted_members", "restricted_apis")
+        private val MODULE_KEYS = setOf("allowed_dependencies", "check_classes")
+        private val RESTRICTED_MEMBERS_KEYS = setOf("classes", "reason", "allowed_modules")
+
+        private fun JsonNode.requireKeys(known: Set<String>, where: String) {
+            val unknown = fieldNames().asSequence().toSet() - known
+            require(unknown.isEmpty()) { "unknown keys in $where: $unknown" }
+        }
 
         private fun JsonNode.requireField(name: String, where: String): JsonNode =
             requireNotNull(get(name)) { "$where has no $name" }
 
+        private fun JsonNode.optionalArray(name: String): List<JsonNode> {
+            val node = get(name) ?: return emptyList()
+            require(node.isArray) { "$name must be an array of tables" }
+            return node.toList()
+        }
+
         private fun JsonNode.strings(where: String): Set<String> {
             require(isArray) { "$where must be an array" }
-            return map {
-                require(it.isTextual) { "$where must hold strings only" }
-                it.textValue()
-            }
-                .toSet()
+            return map { it.text(where) }.toSet()
+        }
+
+        private fun JsonNode.text(where: String): String {
+            require(isTextual) { "$where must hold strings only" }
+            return textValue()
+        }
+
+        private fun JsonNode.boolean(where: String): Boolean {
+            require(isBoolean) { "$where must be true or false" }
+            return booleanValue()
+        }
+
+        private fun Set<String>.requireModules(modules: Map<String, Module>, where: String) {
+            val unknown = this - modules.keys
+            require(unknown.isEmpty()) { "$where names undeclared modules: $unknown" }
         }
     }
 }

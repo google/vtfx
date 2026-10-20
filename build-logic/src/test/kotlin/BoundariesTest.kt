@@ -24,9 +24,11 @@ class BoundariesTest {
             """
             [modules.vtfx-core]
             allowed_dependencies = []
+            check_classes = true
 
             [modules.vtfx-gate]
             allowed_dependencies = ["vtfx-core"]
+            check_classes = true
             """
         )
 
@@ -163,6 +165,7 @@ class BoundariesTest {
                 """
                 [modules.vtfx-gate]
                 allowed_dependencies = ["vtfx-core"]
+                check_classes = true
                 """
             )
         }
@@ -175,6 +178,7 @@ class BoundariesTest {
                 """
                 [modules.vtfx-core]
                 allowed_dependencies = []
+                check_classes = true
                 allowed_test_dependencies = []
                 """
             )
@@ -188,6 +192,7 @@ class BoundariesTest {
                 """
                 [modules.vtfx-core]
                 allowed_dependencies = []
+                check_classes = true
 
                 [exceptions]
                 paths = []
@@ -198,7 +203,9 @@ class BoundariesTest {
 
     @Test
     fun parse_moduleWithoutAllowedDependencies_throws() {
-        assertFailsWith<IllegalArgumentException> { Boundaries.parse("[modules.vtfx-core]\n") }
+        assertFailsWith<IllegalArgumentException> {
+            Boundaries.parse("[modules.vtfx-core]\ncheck_classes = true\n")
+        }
     }
 
     private fun project(path: String) = DependencyNode.Project(path)

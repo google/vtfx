@@ -19,9 +19,15 @@
 // leave itself out by not applying a convention plugin. The root project itself is not checked: it
 // only aggregates the API reference, and ships nothing.
 
+import com.android.build.api.artifact.ScopedArtifact
+import com.android.build.api.variant.AndroidComponentsExtension
+import com.android.build.api.variant.ScopedArtifacts
+
 plugins {
     base
 }
+
+val androidPlugins = listOf("com.android.library", "com.android.application")
 
 val boundariesFile = layout.projectDirectory.file("config/boundaries.toml")
 
@@ -41,6 +47,53 @@ subprojects {
             boundaries.set(boundariesFile)
         }
     checkBoundaries.configure { dependsOn(checkDependencies) }
+
+    // What the main classes refer to. Test classes are not checked: they are not shipped.
+    val moduleName = name
+    pluginManager.withPlugin("java") {
+        val main = extensions.getByType<SourceSetContainer>().named("main")
+        val checkClasses =
+            tasks.register<CheckClassReferencesTask>("checkClassReferences") {
+                description =
+                    "Checks what the main classes refer to against config/boundaries.toml."
+                boundaries.set(boundariesFile)
+                module.set(moduleName)
+                classDirectories.from(main.map { it.output.classesDirs })
+                classpath.from(main.map { it.compileClasspath })
+            }
+        checkBoundaries.configure { dependsOn(checkClasses) }
+    }
+    for (android in androidPlugins) {
+        pluginManager.withPlugin(android) {
+            val components =
+                extensions.getByName("androidComponents") as AndroidComponentsExtension<*, *, *>
+            components.onVariants { variant ->
+                val checkClasses =
+                    tasks.register<CheckClassReferencesTask>(
+                        "checkClassReferences${variant.name.replaceFirstChar { it.uppercase() }}"
+                    ) {
+                        description =
+                            "Checks what the classes of the ${variant.name} variant refer to " +
+                                "against config/boundaries.toml."
+                        boundaries.set(boundariesFile)
+                        module.set(moduleName)
+                        classpath.from(
+                            variant.compileClasspath,
+                            components.sdkComponents.bootClasspath,
+                        )
+                    }
+                variant.artifacts
+                    .forScope(ScopedArtifacts.Scope.PROJECT)
+                    .use(checkClasses)
+                    .toGet(
+                        ScopedArtifact.CLASSES,
+                        CheckClassReferencesTask::variantJars,
+                        CheckClassReferencesTask::variantDirectories,
+                    )
+                checkBoundaries.configure { dependsOn(checkClasses) }
+            }
+        }
+    }
 }
 
 // Once every project is evaluated, the plugins have created all their configurations (AGP creates
@@ -48,6 +101,12 @@ subprojects {
 gradle.projectsEvaluated {
     subprojects {
         val module = this
+        if ((androidPlugins + "java").none { module.pluginManager.hasPlugin(it) }) {
+            throw GradleException(
+                "Project ${module.path} applies neither the java plugin nor an Android plugin, so " +
+                    "the boundary check cannot read its classes (docs/decisions/0044)."
+            )
+        }
         tasks.named<CheckDependenciesTask>("checkDependencies") {
             edges.addAll(module.declaredDependencyEdges())
             // The resolved graphs show what the declarations do not: dependencies added when a

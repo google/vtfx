@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import java.util.zip.ZipFile
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -25,11 +26,17 @@ import org.gradle.api.artifacts.component.ProjectComponentSelector
 import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.artifacts.result.UnresolvedDependencyResult
+import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.Directory
+import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
+import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
@@ -74,6 +81,72 @@ abstract class CheckDependenciesTask : DefaultTask() {
     fun run() {
         val violations =
             Boundaries.parse(boundaries.get().asFile.readText()).dependencyViolations(edges.get())
+        failOn(violations)
+    }
+}
+
+/**
+ * Fails if the main classes of a module refer to what `config/boundaries.toml` does not allow the
+ * module to ([Boundaries.classViolations]).
+ */
+@DisableCachingByDefault(because = "A check with no outputs")
+abstract class CheckClassReferencesTask : DefaultTask() {
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val boundaries: RegularFileProperty
+
+    /** The name of the module in `config/boundaries.toml`. */
+    @get:Input abstract val module: Property<String>
+
+    /** Directories of classes, for the JVM modules. */
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val classDirectories: ConfigurableFileCollection
+
+    /**
+     * Directories of classes of a variant, for the Android modules (AGP's
+     * `ScopedArtifact.CLASSES`).
+     */
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val variantDirectories: ListProperty<Directory>
+
+    /** Jars of classes of a variant, for the Android modules (AGP's `ScopedArtifact.CLASSES`). */
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val variantJars: ListProperty<RegularFile>
+
+    /** What the classes are compiled against, to find the supertypes of the classes they use. */
+    @get:Classpath abstract val classpath: ConfigurableFileCollection
+
+    @TaskAction
+    fun run() {
+        val directories = classDirectories.files + variantDirectories.get().map { it.asFile }
+        val jars = variantJars.get().map { it.asFile }
+        val classFiles =
+            directories.flatMap { directory ->
+                directory
+                    .walk()
+                    .filter { it.isFile && it.extension == "class" }
+                    .map { it.readBytes() }
+            } +
+                jars.flatMap { jar ->
+                    ZipFile(jar).use { zip ->
+                        zip.entries()
+                            .asSequence()
+                            .filter {
+                                it.name.endsWith(".class") && !it.name.startsWith("META-INF/")
+                            }
+                            .map { entry -> zip.getInputStream(entry).use { it.readBytes() } }
+                            .toList()
+                    }
+                }
+        val classes = classFiles.map { ClassReferences.read(it) }.sortedBy { it.name }
+        val boundaries = Boundaries.parse(this.boundaries.get().asFile.readText())
+        val violations =
+            ClassPath(directories.toList() + jars + classpath.files).use { classPath ->
+                boundaries.classViolations(module.get(), classes, ClassHierarchy(classPath::find))
+            }
         failOn(violations)
     }
 }

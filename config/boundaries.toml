@@ -27,35 +27,59 @@
 # list of their own.
 [modules.vtfx-core]
 allowed_dependencies = []
+check_classes = true
 
 [modules.vtfx-font]
 allowed_dependencies = ["vtfx-font-gate"]
+check_classes = true
 
 [modules.vtfx-font-gate]
 allowed_dependencies = []
+check_classes = true
 
 # vtfx-core only for the InternalVtfxApi annotation (compileOnly).
 [modules.vtfx-font-gate-android]
 allowed_dependencies = ["vtfx-font-gate", "vtfx-core"]
+check_classes = true
 
 [modules.vtfx-input]
 allowed_dependencies = ["vtfx-core"]
+check_classes = true
 
 [modules.vtfx-gate]
 allowed_dependencies = ["vtfx-core"]
+check_classes = true
 
 [modules.vtfx-gate-android]
 allowed_dependencies = ["vtfx-gate"]
+check_classes = true
 
 [modules.vtfx-session]
 allowed_dependencies = ["vtfx-core", "vtfx-input", "vtfx-gate"]
+check_classes = true
 
 [modules.vtfx-compose]
 allowed_dependencies = ["vtfx-core", "vtfx-input", "vtfx-gate", "vtfx-gate-android", "vtfx-session", "vtfx-font", "vtfx-font-gate", "vtfx-font-gate-android"]
+check_classes = true
 
-# The sample app uses only the public API, as a third-party app would.
+# The sample app uses only the public API, as a third-party app would. Its classes are not checked:
+# an app may use any capability (docs/decisions/0044).
 [modules.vtfx-sample]
 allowed_dependencies = ["vtfx-compose"]
+check_classes = false
+
+# Classes whose fields and methods only the listed modules may use, directly or through a subtype.
+# Other modules may still name them as types, for example to pass an instance on. Checked in the main
+# classes of every module with check_classes = true (docs/decisions/0044).
+[[restricted_members]]
+classes = ["com/google/vtfx/gate/HostConnection"]
+reason = "Only vtfx-gate may use the connection to the host. TerminalSession only hands it over (docs/decisions/0027)."
+allowed_modules = ["vtfx-gate"]
+
+[[restricted_members]]
+classes = ["com/google/vtfx/gate/ClipboardAccess", "com/google/vtfx/gate/UrlOpener"]
+reason = "Only vtfx-gate may call the clipboard and the URL opener, which vtfx-gate-android implements. TerminalSession only hands them over (docs/decisions/0042)."
+allowed_modules = ["vtfx-gate", "vtfx-gate-android"]
 
 # APIs that may only appear in the listed paths. Patterns are Python regular expressions matched
 # against each line of Kotlin and Java sources. Paths are fnmatch patterns relative to the
