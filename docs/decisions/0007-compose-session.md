@@ -34,13 +34,13 @@
 
 ### Rendering
 
-- Runs of ASCII with the same style are drawn at once, and other characters are drawn per cell. Characters not in the monospace font (CJK and so on) are drawn with a fallback font whose widths do not fit the cells. Performance optimization is done in M11.
+- Runs of ASCII with the same style are drawn at once, and other characters are drawn per cell. Characters not in the monospace font (CJK and so on) are drawn with a fallback font whose widths do not fit the cells. Performance optimization was done in M11 ([0014](0014-performance.md)).
 - Composing text is drawn overlaid from the terminal's cursor cell, wrapping at the right edge. An underline shows that it has not been sent.
 - In reverse video (DECSCNM), the foreground color is used for the cursor color, because the default cursor color becomes the same as the background.
 
 ### Accessibility
 
-- The text of the displayed screen is exposed as the `text` of Compose semantics. It is computed only when semantics are requested (when there is an accessibility service or a test), and invalidated when the screen changes. The details of reading (change notifications, ranges) are decided in M12.
+- The text of the displayed screen is exposed as the `text` of Compose semantics. It is computed only when semantics are requested (when there is an accessibility service or a test), and invalidated when the screen changes. The details of reading (change notifications, ranges) were decided in M12 ([0015](0015-accessibility.md)).
 
 ### Test environment
 
@@ -53,4 +53,4 @@
 
 ## Impact of reversing
 
-The public API (the arguments of `TerminalSession`, `TerminalSessionListener`) is revisited in M13. It was revisited in M13, and the public surface and compatibility policy were recorded in [0016](0016-public-api.md). To change the threading approach, change `TerminalSession`.
+The public API (the arguments of `TerminalSession`, `TerminalSessionListener`) was revisited in M13, and the public surface and compatibility policy were recorded in [0016](0016-public-api.md). To change the threading approach, change `TerminalSession`.

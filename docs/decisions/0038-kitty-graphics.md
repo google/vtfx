@@ -1,12 +1,12 @@
 # The kitty graphics protocol
 
-- Status: Provisional
+- Status: Provisional (2026-10-20, a human, nya, decided that the protocol stays enabled by default and that the requirements be rewritten to put it in scope; the rest of this decision is not yet reviewed)
 - Date: 2026-10-16
-- Related: Requirement 4.2 (image protocols), 5.1, 6.1, 6.2, 6.5, [0001](0001-parser.md), [0002](0002-resource-limits.md), [0006](0006-gate-defaults.md), [0009](0009-emulation-scope.md), [0013](0013-resize-and-lifecycle.md), [0014](0014-performance.md), the kitty documentation (`graphics-protocol.rst`, kitty 0.48)
+- Related: Requirements 4.1 and 4.2 (image protocols), 5.1, 6.1, 6.2, 6.5, [0001](0001-parser.md), [0002](0002-resource-limits.md), [0006](0006-gate-defaults.md), [0009](0009-emulation-scope.md), [0013](0013-resize-and-lifecycle.md), [0014](0014-performance.md), the kitty documentation (`graphics-protocol.rst`, kitty 0.48)
 
 ## Background
 
-Requirement 4.2 left image protocols such as sixel and kitty out of scope "in the initial stage", and [0009](0009-emulation-scope.md) listed images among the unsupported features. The initial development is over, and on 2026-10-16 a human asked for the kitty graphics protocol to be implemented. Programs that show images in the terminal (image viewers such as `kitten icat` and timg, `fastfetch`, file managers such as yazi, editors such as Neovim with snacks.nvim) use it, and through tmux too, by its Unicode placeholders.
+Requirement 4.2 left image protocols such as sixel and kitty out of scope "in the initial stage" (on 2026-10-20, at a human's decision, the requirements were rewritten to put this protocol, by direct transmission, in scope in 4.1), and [0009](0009-emulation-scope.md) listed images among the unsupported features. The initial development is over, and on 2026-10-16 a human asked for the kitty graphics protocol to be implemented. Programs that show images in the terminal (image viewers such as `kitten icat` and timg, `fastfetch`, file managers such as yazi, editors such as Neovim with snacks.nvim) use it, and through tmux too, by its Unicode placeholders.
 
 vtfx runs mostly on Android over SSH, so the images are on the host, and only the data sent in the escape codes themselves can reach the terminal. Host output is untrusted (requirement 6.1): the protocol lets the host make the terminal decode images, hold their pixels, and send replies.
 

@@ -22,8 +22,9 @@ Of the attack types in requirement 6.1, replies to the host, the clipboard, open
 - Replies are built only from constants and numbers taken from the terminal state. No path is created by which strings sent by the host are included in replies. `TerminalQuery` is a type that holds no host strings.
 - The following queries are not answered (the model does not emit `ReplyRequested`).
   - Reports of the window title and icon name (XTWINOPS 20, 21): a classic command injection path. They will not be implemented in the future either.
-  - Checksums of the screen contents (DECRQCRA): a means of guessing the screen contents. Whether to enable it only in test builds for esctest is decided in M7.
-  - DECRQSS, XTGETTCAP, DECRQM, and color queries (OSC 4, 10, 11): the supported scope is decided in M6. Replies are likewise built only from constants and the terminal state.
+  - Checksums of the screen contents (DECRQCRA): a means of guessing the screen contents. It is not enabled for esctest either: the esctest harness computes it in the test code ([0009](0009-emulation-scope.md)).
+  - XTGETTCAP: replies would include terminfo strings ([0009](0009-emulation-scope.md)).
+- DECRQSS (`m`, `r`, ` q`), DECRQM, and the queries of OSC 4, 10, 11, and 12 are answered, in the scope that [0009](0009-emulation-scope.md) decided. Their replies are likewise built only from constants and the terminal state.
 
 ### Clipboard (OSC 52)
 

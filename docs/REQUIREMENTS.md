@@ -43,6 +43,7 @@ The biggest point of differentiation from existing libraries is **limiting, by d
 - Notifying the host of terminal size changes
 - Scrollback, text selection and copy
 - A UI-independent terminal emulation API, usable from Kotlin programs on the JVM.
+- Images by the kitty graphics protocol, with the image data sent in the escape sequences (direct transmission). Enabled by default, and bounded by resource limits (`TerminalLimits.maxImageBytes`) like other host output ([decisions/0038](decisions/0038-kitty-graphics.md)).
 
 ### 4.2 Out of scope
 
@@ -50,8 +51,8 @@ The biggest point of differentiation from existing libraries is **limiting, by d
 - UI on platforms other than Android (rendering, input, IME)
 - Runtimes other than the JVM (Kotlin Multiplatform native, JavaScript, and so on)
 - Use from Java. The public API assumes use from Kotlin and may use Kotlin features such as value classes, default arguments, and `@RequiresOptIn`.
+- Other image protocols, such as sixel, and the parts of the kitty graphics protocol that read files or shared memory of the device or animate images
 - The following are also out of scope in the initial stage.
-  - Image protocols such as sixel / kitty
   - Ligatures
   - bidi / RTL
 

@@ -28,7 +28,7 @@ vtfx-core, vtfx-input, and vtfx-gate do not assume a particular thread (the main
 | Immutable | Usable from any thread. |
 | Thread-safe | May be called from multiple threads at the same time. |
 | Not thread-safe | Do not call concurrently. Which thread it is called from does not matter. The caller serializes (with a lock or anything else that creates a happens-before relation between calls). |
-| Main-thread-only | Calling from a thread other than the main thread fails a run-time check ([0021](0021-thread-checks.md)). |
+| Main-thread-only | Call only on the main thread. Nothing checks it at run time (2026-10-20, correction: this said that a call from another thread fails a run-time check, but [0021](0021-thread-checks.md), which added the checks, was withdrawn on 2026-10-14 and the checks were removed). |
 
 ### Principle 3: Rules for calling the app's code
 

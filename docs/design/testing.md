@@ -1,6 +1,6 @@
 # Test strategy
 
-Status: Proposal (not approved)
+Status: Living document. It describes the current design and is kept in sync with the implementation; design choices and their reasons are recorded in [decisions/](../decisions/README.md). Its gate rules are binding: agents may tighten them, and only a human may relax them.
 
 This document defines the structure of the tests that support the autonomous development loop, where oracles live and their formats, and the rules for gates (requirement 7.2). The tests for each module are listed in section 6 of [architecture.md](architecture.md).
 

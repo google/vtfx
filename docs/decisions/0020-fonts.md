@@ -18,7 +18,9 @@ Even for a file the user chose themselves, the user cannot judge its contents. A
   - `System(family)`: the name of a system font (`monospace` and so on). System fonts are part of the OS and are protected by OS updates. Unknown names become the system's default font.
   - `Resources(regular, bold, italic, boldItalic)`: fonts in the app's `res/font`. They are part of the app's signed package and are as trustworthy as the app's code.
 - Files, URIs, `Typeface`, custom `AndroidFont`, and downloadable fonts are not accepted. This removes paths by which vtfx parses untrusted font files.
+  - 2026-10-19: [0040](0040-sanitized-user-fonts.md) added a third kind, `Sanitized(families)`: fonts that users choose, read and written again in Kotlin, whose bytes pass a verifier before native code reads them. Font files are still not accepted as they are.
 - Added to `restricted_apis` in `config/boundaries.toml` a rule that the repository's sources do not use APIs that create fonts from files and the like (`Typeface.createFrom*`, `Typeface.Builder`, `android.graphics.fonts`, `AndroidFont`, `GoogleFont`, `Font(File)`, and so on). Only tests that simulate asynchronous fonts are allowed.
+  - 2026-10-20: [0044](0044-boundaries-in-gradle-and-classes.md) replaced `restricted_apis`, a check of the source text, with `restricted_classes`, a check of the compiled main classes of the library modules; tests are not checked. The rule allows the font APIs only in `vtfx-font-gate-android` ([0040](0040-sanitized-user-fonts.md), [0041](0041-security-review-by-module.md)).
 - Features that let users import their own fonts cannot be used for vtfx's terminal display. Apps that want to let users choose bundle the candidates.
 
 ## Future extension: validating and rebuilding fonts

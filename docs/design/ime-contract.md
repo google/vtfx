@@ -1,6 +1,6 @@
 # IME contract
 
-Status: Proposal (not approved)
+Status: Living document. It describes the current design and is kept in sync with the implementation; design choices and their reasons are recorded in [decisions/](../decisions/README.md).
 
 This document defines, for each `InputConnection` call from the IME, what vtfx sends to the host, what it displays, and what it returns (requirement 5.3). It is based on the structure in [architecture.md](architecture.md) and the measurements in [ime-gboard-emulator.md](../research/ime-gboard-emulator.md) and [ime-gboard-device.md](../research/ime-gboard-device.md).
 

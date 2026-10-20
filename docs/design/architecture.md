@@ -1,6 +1,6 @@
 # vtfx architecture
 
-Status: Proposal (not approved)
+Status: Living document. It describes the current design and is kept in sync with the implementation; design choices and their reasons are recorded in [decisions/](../decisions/README.md).
 
 This document defines the module structure, responsibilities, direction of dependencies, and security boundaries that satisfy [REQUIREMENTS.md](../REQUIREMENTS.md). The details of individual APIs and the contract for each IME call are covered in separate documents.
 
