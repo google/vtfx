@@ -177,7 +177,7 @@ When the app arms sticky modifiers (`TerminalSession.stickyModifiers`) while the
 
 ## 8. Threads
 
-IME calls arrive on the UI thread. `vtfx-compose` operates the editing model of `vtfx-input` through the lock of `TerminalSession` in `vtfx-session`. Sends from an extra key bar and resets caused by host output may come from other threads ([decisions/0026](../decisions/0026-session-module.md)). The editing model itself does not assume a particular thread and only requires being called from one thread at a time ([decisions/0024](../decisions/0024-thread-conventions.md)). Sending is handed to `HostWriter`, and writing to the host may be done across threads.
+IME calls arrive on the UI thread. `vtfx-compose` operates the editing model of `vtfx-input` through the lock of `TerminalSession` in `vtfx-session`. Sends from an extra key bar and resets caused by host output may come from other threads (section 2.2 of [session-and-threads.md](session-and-threads.md), [decisions/0026](../decisions/0026-session-module.md)). The editing model itself does not assume a particular thread and only requires being called from one thread at a time (section 1.4 of [session-and-threads.md](session-and-threads.md), [decisions/0024](../decisions/0024-thread-conventions.md)). Sending is handed to `HostWriter`, and writing to the host may be done across threads.
 
 ## 9. Verification
 

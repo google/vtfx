@@ -58,11 +58,11 @@ Apps depend on `vtfx-compose`. `vtfx-compose` exposes with `api` `vtfx-core`, `v
 
 ### 2.1 Threads
 
-The thread conventions are defined in [decisions/0024](../decisions/0024-thread-conventions.md). The main points are as follows.
+The thread conventions are described in section 1 of [session-and-threads.md](session-and-threads.md) ([decisions/0024](../decisions/0024-thread-conventions.md)). The main points are as follows.
 
-- Modules that do not depend on Android (`vtfx-core`, `vtfx-input`, `vtfx-gate`, `vtfx-session`, `vtfx-font`, `vtfx-font-gate`) do not assume a particular thread. Only `vtfx-gate-android` and `vtfx-compose` deal with the main thread.
+- Modules that do not depend on Android (`vtfx-core`, `vtfx-input`, `vtfx-gate`, `vtfx-session`, `vtfx-font`, `vtfx-font-gate`) do not assume a particular thread. Only `vtfx-gate-android`, `vtfx-compose`, and `vtfx-font-gate-android` deal with the main thread.
 - The KDoc of each public type says whether it is immutable, thread-safe, not thread-safe (the caller serializes), or main-thread-only.
-- Unless stated otherwise, the app's code is called synchronously on the same thread as the call that triggered it. It is not called while holding an internal lock, and reentry from the app's code is detected and rejected. Exceptions from the app's code are not swallowed.
+- Unless stated otherwise, the app's code is called synchronously on the same thread as the call that triggered it. It is not called while holding an internal lock, except locks that only serialize calls, and reentry from the app's code is detected and rejected where it can be. Exceptions from the app's code are not swallowed.
 
 ## 3. Each module
 
@@ -121,28 +121,17 @@ Only this module can create bytes to send to the host. What it sends, how it rep
 - **Input**: The `InputConnection` adapter (connected to the IME through a `View` placed behind the terminal; [decisions/0008](../decisions/0008-ime-view-and-selection.md)), physical keyboards, and touch interactions (scrolling, mouse reporting, text selection, link taps; [decisions/0012](../decisions/0012-touch-and-selection.md), [decisions/0019](../decisions/0019-extensibility.md)). The app can switch to direct input, which asks the IME for input without predictive text ([decisions/0017](../decisions/0017-ime-scope.md)).
 - **IME display**: Overlays composing text at the cursor position, and tells the IME the position of the candidate window with `CursorAnchorInfo`.
 - **Accessibility**: Exposes the displayed terminal content as Compose semantics nodes per line (requirement 6.3, [decisions/0015](../decisions/0015-accessibility.md)). It is a separate path from the IME, and they do not constrain each other.
-- **Size**: Computes the number of rows and columns from the display size. The terminal size changes only after the size has stayed unchanged for 150 ms, so the host is notified once. The same mechanism works for the IME show/hide, rotation, and multi-window animations (requirement 5.5, [decisions/0013](../decisions/0013-resize-and-lifecycle.md)).
-- **Session**: The app owns the `TerminalSession` (`vtfx-session`, 3.6). It lives outside the Composable, so it survives configuration changes. The Composable only connects to the session and displays it. The display state (the scrollback position, the selection, invalidating rendering, batching resizes, waiting for synchronized output) is held by a `TerminalDisplay` per `Terminal`, and goes away with the Composable. Session changes are notified outside the lock, from the thread that made the change, so `TerminalDisplay` forwards them to the main thread ([decisions/0026](../decisions/0026-session-module.md)).
+- **Size**: Computes the number of rows and columns from the display size. The first size is applied to the session at once, and later sizes only after the size has stayed unchanged for 150 ms, so the host is notified once. The same mechanism works for the IME show/hide, rotation, and multi-window animations (requirement 5.5, section 3 of [session-and-threads.md](session-and-threads.md), [decisions/0013](../decisions/0013-resize-and-lifecycle.md)).
+- **Session**: The app owns the `TerminalSession` (`vtfx-session`, 3.6). It lives outside the Composable, so it survives configuration changes. The Composable only connects to the session and displays it. The display state (the scrollback position, the selection, invalidating rendering, batching resizes, waiting for synchronized output) is held by a `TerminalDisplay` per `Terminal`, and goes away with the Composable. Session changes are notified outside the lock, from the thread that made the change, so `TerminalDisplay` forwards them to the main thread (sections 2.1 and 4 of [session-and-threads.md](session-and-threads.md), [decisions/0026](../decisions/0026-session-module.md)).
 - **Extra key bar**: Not included in the library. So that apps can build an extra key bar, there is a public API for sending key input to the session (requirement 5.4).
 
 ### 3.6 vtfx-session
 
 - **Session**: `TerminalSession` ties together the terminal of `vtfx-core`, the IME editing model of `vtfx-input`, and the `TerminalGate` of `vtfx-gate`, and interprets host output, sends user input, and handles host requests (requirements 3 and 4.1, [decisions/0026](../decisions/0026-session-module.md)). It does not depend on Android or Compose, so JVM programs can emulate a terminal without a UI, and app tests can use the same session as production.
-- **Threads**: It is thread-safe and does not assume a thread. One lock guards the state, and another lock serializes user input up to sending, so that it reaches the host in the order the editing model produced it. The app's code (listeners, the clipboard, opening URLs) is called outside the locks, on the thread of the call that triggered it ([decisions/0024](../decisions/0024-thread-conventions.md)).
-- **Reentry**: `feed` from inside `HostConnection.write` is rejected. `ClipboardAccess.read` (for pasting from the clipboard) is called before taking any lock.
-- **Notifications**: `TerminalSessionListener` is called on the thread of the triggering call, after the locks are released, and may call the session. Bells are batched to one notification per `feed`. Value notifications (`onResize`, `onTitleChanged`, `onStickyModifiersChanged`) report the latest value, so that even when the value is changed from several threads, the last notification is the current value ([decisions/0026](../decisions/0026-session-module.md)).
-- **Lifetime**: It holds no resources besides memory and schedules no timers, so there is no `close()`; dropping it lets GC collect it.
-- **Boundary with the display**: It has no timers and no display state. The display (`vtfx-compose`) receives screen changes, sent input, and requests to restart the IME through an observer used only between modules (`SessionObserver`; several may be registered), and IME operations, including reading the composing text for drawing, go through the session's lock with `edit`. The contents are divided as follows.
+- **Threads**: It is thread-safe and does not assume a thread. One lock guards the state, and another serializes user input up to sending. The app's code is called on the thread of the call that triggered it, outside the lock that guards the state. It has no timers and no display state, and holds no resources besides memory, so there is no `close()`.
+- **Boundary with the display**: The display (`vtfx-compose`) holds the display state, batches resizes, and receives the session's changes through an observer used only between modules.
 
-| vtfx-session (`TerminalSession`) | vtfx-compose (`TerminalDisplay` per `Terminal`) |
-|---|---|
-| The terminal, `TerminalGate`, `feed`, and handling requests to the gate (outside the lock) | Forwarding notifications to the main thread |
-| Bells and titles, and their notifications | Invalidating rendering |
-| `ImeEditor`, and deciding to reset the input history (5.1 of [ime-contract.md](ime-contract.md)) | The connection with the IME's `View` |
-| Sending keys, text, pastes, mouse reports, and focus reports; opening URLs | The scrollback position, following scrollback, the selection, and copying it |
-| `stickyModifiers`, `directInput` | Batching resizes over 150 ms ([decisions/0013](../decisions/0013-resize-and-lifecycle.md)) |
-| `resize` (applied immediately), `snapshot`, modes | Waiting up to 200 ms to draw during synchronized output |
-| Answering color queries with the colors the display set (not answered without a display) | Setting the colors and the default cursor shape of `TerminalStyle` |
+The locks, the reentry checks, the notifications, the division between the session and the display, resizing, and the lifetime are described in sections 2 to 4 of [session-and-threads.md](session-and-threads.md).
 
 ## 4. Data flow
 
