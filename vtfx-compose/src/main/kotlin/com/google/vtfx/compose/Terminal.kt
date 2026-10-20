@@ -117,7 +117,8 @@ import kotlinx.coroutines.flow.collectLatest
  * keyboard and sends them itself.
  *
  * A long press selects the word under it, and shows a menu to copy, paste, and select all. The app
- * reads and changes the selection through [state], for its own Copy command or shortcut.
+ * reads and changes the selection through [state], for its own Copy command or shortcut, and
+ * searches the text through it, for its own search field.
  *
  * With a mouse, the primary button selects: a drag selects the text it goes over, a double click a
  * word, and a triple click a line, and Shift+click extends the selection; a click without a drag is
@@ -135,8 +136,8 @@ import kotlinx.coroutines.flow.collectLatest
  *   `weight`, to fill the space instead. Laid out with no width or height, it logs a warning and
  *   leaves the session's size as it was. A `focusRequester` here lets the app focus the terminal,
  *   which then gets the hardware keys; a tap also shows the software keyboard.
- * @param state The selection, which the app can read and change. By default, a state that the app
- *   cannot reach.
+ * @param state The selection and the search, which the app can read and change. By default, a state
+ *   that the app cannot reach.
  * @param style The appearance of the terminal.
  * @param linkPatterns The text to show as links, besides OSC 8 hyperlinks, in order of priority. By
  *   default, the URLs in the text. The patterns run on the main thread when the display changes,
@@ -399,6 +400,7 @@ internal fun Terminal(
                     session.ambiguousWidth,
                     focused,
                     display.selection,
+                    display.visibleMatches(snapshot),
                     cursorOn,
                 )
             }

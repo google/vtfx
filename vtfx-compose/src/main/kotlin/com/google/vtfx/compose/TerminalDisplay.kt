@@ -28,6 +28,9 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.google.vtfx.core.InternalVtfxApi
+import com.google.vtfx.core.SearchIndex
+import com.google.vtfx.core.SearchMatch
+import com.google.vtfx.core.SearchQuery
 import com.google.vtfx.core.TerminalSnapshot
 import com.google.vtfx.session.SessionObserver
 import com.google.vtfx.session.TerminalSession
@@ -35,8 +38,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * The state of a [Terminal] composable's display of a session: what it shows of the scrollback, the
- * selection, when it redraws, and when the terminal follows its size. The session holds the state
- * of the terminal; this holds what belongs to one display of it, and goes away with the composable.
+ * selection, the search, when it redraws, and when the terminal follows its size. The session holds
+ * the state of the terminal; this holds what belongs to one display of it, and goes away with the
+ * composable.
  *
  * Confined to the main thread. The session's notifications, which come on the thread that caused
  * them, are passed to the main thread.
@@ -157,6 +161,135 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
      */
     fun observeEditorVersion(): Int = editorVersion
 
+    // --- Search (docs/decisions/0047) ---
+
+    /** The search of this display, or null. */
+    private var searchIndex: SearchIndex? = null
+
+    /** The match that the display moved to, or null. */
+    private var currentMatch: SearchMatch? = null
+
+    /** Incremented when the matches or the current one may have changed, to redraw them. */
+    private var searchVersion by mutableIntStateOf(0)
+
+    /** What the search found, or null if there is no search. */
+    var searchResult: TerminalSearchResult? by mutableStateOf(null)
+        private set
+
+    /**
+     * Searches for [query], or ends the search if null. The current match becomes the nearest one
+     * at or above the current match, or above the bottom of the display if there is none, or else
+     * the first one below; the display scrolls to show it.
+     */
+    fun search(query: SearchQuery?) {
+        if (query == null) {
+            searchIndex = null
+            currentMatch = null
+            publishSearch()
+            return
+        }
+        val index = searchIndex?.withQuery(query) ?: SearchIndex(query)
+        searchIndex = index
+        readLines(index)
+        val snapshot = displaySnapshot()
+        val bottom = snapshot.firstLine + snapshot.rows - 1
+        currentMatch =
+            nearest(index.matches, currentMatch ?: SearchMatch(bottom, snapshot.columns, bottom, 0))
+        reveal(index)
+        publishSearch()
+    }
+
+    /** Moves to the match below the current one, or from the last to the first. */
+    fun findNext() = move(1)
+
+    /** Moves to the match above the current one, or from the first to the last. */
+    fun findPrevious() = move(-1)
+
+    private fun move(step: Int) {
+        val index = searchIndex ?: return
+        val matches = index.matches
+        if (matches.isEmpty()) return
+        val current = currentMatch
+        val position = if (current == null) -1 else matches.indexOf(current)
+        currentMatch =
+            when {
+                position >= 0 -> matches[Math.floorMod(position + step, matches.size)]
+                step > 0 -> matches.first()
+                else -> matches.last()
+            }
+        reveal(index)
+        publishSearch()
+    }
+
+    /** Returns the matches that [snapshot] shows, oldest first, and the current one, if any. */
+    fun visibleMatches(snapshot: TerminalSnapshot): VisibleMatches? {
+        searchVersion
+        val index = searchIndex ?: return null
+        val matches = index.matches
+        val top = snapshot.firstLine
+        val bottom = top + snapshot.rows - 1
+        // The matches are ordered and do not overlap, so their last lines are ordered too.
+        var first = 0
+        var last = matches.size
+        while (first < last) {
+            val middle = (first + last) / 2
+            if (matches[middle].lastLine < top) first = middle + 1 else last = middle
+        }
+        var end = first
+        while (end < matches.size && matches[end].firstLine <= bottom) end++
+        return VisibleMatches(matches.subList(first, end), currentMatch)
+    }
+
+    /** Brings the search up to date after the terminal changed, without scrolling. */
+    private fun updateSearch() {
+        val index = searchIndex ?: return
+        readLines(index)
+        val current = currentMatch
+        if (current != null && current !in index.matches) {
+            currentMatch = nearest(index.matches, current)
+        }
+        publishSearch()
+    }
+
+    private fun readLines(index: SearchIndex) {
+        while (index.update(session.searchLines(index.nextLine, SEARCH_READ_LINES))) {
+            // Each read holds the session's lock only for a part of the scrollback.
+        }
+    }
+
+    /**
+     * Returns the last of [matches] that starts at or before [anchor], or the first one if none
+     * does, or null if there are none.
+     */
+    private fun nearest(matches: List<SearchMatch>, anchor: SearchMatch): SearchMatch? =
+        matches.lastOrNull { !anchor.startsBefore(it) } ?: matches.firstOrNull()
+
+    /** Scrolls the display to show the current match, near its middle, if it does not show it. */
+    private fun reveal(index: SearchIndex) {
+        val match = currentMatch ?: return
+        val snapshot = displaySnapshot()
+        val top = snapshot.firstLine
+        if (match.firstLine >= top && match.lastLine < top + snapshot.rows) return
+        val offset = index.screenLine - (match.firstLine - snapshot.rows / 2)
+        scrollBy(offset.coerceIn(0L, session.scrollbackSize.toLong()).toInt() - scrollOffset)
+    }
+
+    private fun publishSearch() {
+        searchVersion++
+        val index = searchIndex
+        val current = currentMatch
+        val result =
+            if (index == null) null
+            else
+                TerminalSearchResult(
+                    matchCount = index.matches.size,
+                    isMatchCountCapped = index.isCapped,
+                    currentMatchIndex =
+                        if (current == null) null else index.matches.indexOf(current),
+                )
+        if (result != searchResult) searchResult = result
+    }
+
     /** Called after the user typed or edited. The display returns to the bottom. */
     fun notifyEditorChanged() {
         editorVersion++
@@ -244,6 +377,7 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
                 version++
                 changeCount++
                 selection = null
+                updateSearch()
                 inputHost?.onScreenChanged()
             }
         }
@@ -264,6 +398,12 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
         /** How long to wait for the end of a synchronized update (mode 2026) before drawing. */
         const val SYNCHRONIZED_OUTPUT_TIMEOUT_MILLIS = 200L
 
+        /**
+         * The lines of the scrollback that a search reads with the session's lock held, so that
+         * reading the whole scrollback does not hold up output for long.
+         */
+        const val SEARCH_READ_LINES = 1000
+
         /** The most lines that copying all the text reads. */
         const val MAX_COPIED_LINES = 10_000
 
@@ -277,6 +417,9 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
         const val MAX_COPIED_LENGTH = 256 * 1024
     }
 }
+
+/** The matches of a search that a display shows, and the current match, if any. */
+internal class VisibleMatches(val matches: List<SearchMatch>, val current: SearchMatch?)
 
 /** What a display needs from the view that hosts the IME connection. */
 internal interface InputHost {

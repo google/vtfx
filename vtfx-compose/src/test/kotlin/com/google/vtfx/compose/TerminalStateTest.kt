@@ -201,6 +201,77 @@ class TerminalStateTest {
     }
 
     @Test
+    fun searchResultRecomposesWhenTheSearchChanges() {
+        var observed: TerminalSearchResult? = null
+        composeRule.setContent {
+            observed = state.searchResult
+            Terminal(display, Modifier.size(300.dp, 200.dp), state)
+        }
+        composeRule.waitForIdle()
+        session.feed("foo bar foo".toByteArray())
+        composeRule.waitForIdle()
+
+        composeRule.runOnIdle { state.search("foo", ignoreCase = false) }
+        composeRule.waitForIdle()
+
+        assertEquals(TerminalSearchResult(2, false, 1), observed)
+    }
+
+    @Test
+    fun searchIgnoresCaseWhenAsked() {
+        show("Foo foo")
+
+        composeRule.runOnIdle { state.search("FOO", ignoreCase = true) }
+
+        composeRule.runOnIdle { assertEquals(2, state.searchResult?.matchCount) }
+    }
+
+    @Test
+    fun searchingForEmptyTextEndsTheSearch() {
+        show("foo")
+        composeRule.runOnIdle { state.search("foo", ignoreCase = false) }
+
+        composeRule.runOnIdle { state.search("", ignoreCase = false) }
+
+        composeRule.runOnIdle { assertNull(state.searchResult) }
+    }
+
+    @Test
+    fun clearSearchEndsTheSearch() {
+        show("foo")
+        composeRule.runOnIdle { state.search("foo", ignoreCase = false) }
+
+        composeRule.runOnIdle { state.clearSearch() }
+
+        composeRule.runOnIdle { assertNull(state.searchResult) }
+    }
+
+    @Test
+    fun findNextAndFindPreviousMoveThroughTheMatches() {
+        show("foo\r\nfoo\r\nfoo")
+        composeRule.runOnIdle { state.search("foo", ignoreCase = false) }
+
+        composeRule.runOnIdle {
+            state.findPrevious()
+            state.findPrevious()
+            state.findNext()
+        }
+
+        composeRule.runOnIdle { assertEquals(1, state.searchResult?.currentMatchIndex) }
+    }
+
+    @Test
+    fun aStateWithoutATerminalHasNoSearch() {
+        val state = TerminalState()
+
+        state.search("foo", ignoreCase = false)
+        state.findNext()
+        state.findPrevious()
+
+        assertNull(state.searchResult)
+    }
+
+    @Test
     fun aStateActsOnTheTerminalThatEnteredLastUntilItLeaves() {
         val other = TerminalDisplay(TerminalSession({}, clipboard = clipboard))
         var showOther by mutableStateOf(true)

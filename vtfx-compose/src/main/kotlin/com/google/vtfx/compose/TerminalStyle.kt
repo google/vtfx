@@ -51,6 +51,16 @@ public class TerminalColors(
     /** Drawn over selected text. Translucent, so that the text shows through. */
     public val selection: Color,
     /**
+     * Drawn over the matches of a search ([TerminalState.search]), under the selection.
+     * Translucent, so that the text shows through.
+     */
+    public val searchMatch: Color,
+    /**
+     * Drawn over the current match of a search instead of
+     * [searchMatch][TerminalColors.searchMatch]. Translucent, so that the text shows through.
+     */
+    public val searchCurrentMatch: Color,
+    /**
      * The color of the text, and its underline, under a focused block cursor. [Color.Unspecified],
      * the default, draws it in [background][TerminalColors.background], so that the cell looks
      * inverted. In reverse video (DECSCNM), the cursor and its text take the default colors of the
@@ -87,9 +97,20 @@ public class TerminalColors(
         cursor: Color = this.cursor,
         palette: List<Color> = this.palette,
         selection: Color = this.selection,
+        searchMatch: Color = this.searchMatch,
+        searchCurrentMatch: Color = this.searchCurrentMatch,
         cursorText: Color = this.cursorText,
     ): TerminalColors =
-        TerminalColors(foreground, background, cursor, palette, selection, cursorText)
+        TerminalColors(
+            foreground,
+            background,
+            cursor,
+            palette,
+            selection,
+            searchMatch,
+            searchCurrentMatch,
+            cursorText,
+        )
 
     override fun equals(other: Any?): Boolean =
         other is TerminalColors &&
@@ -98,14 +119,27 @@ public class TerminalColors(
             other.cursor == cursor &&
             other.palette == palette &&
             other.selection == selection &&
+            other.searchMatch == searchMatch &&
+            other.searchCurrentMatch == searchCurrentMatch &&
             other.cursorText == cursorText
 
     override fun hashCode(): Int =
-        listOf(foreground, background, cursor, palette, selection, cursorText).hashCode()
+        listOf(
+                foreground,
+                background,
+                cursor,
+                palette,
+                selection,
+                searchMatch,
+                searchCurrentMatch,
+                cursorText,
+            )
+            .hashCode()
 
     override fun toString(): String =
         "TerminalColors(foreground=$foreground, background=$background, cursor=$cursor, " +
-            "palette=$palette, selection=$selection, cursorText=$cursorText)"
+            "palette=$palette, selection=$selection, searchMatch=$searchMatch, " +
+            "searchCurrentMatch=$searchCurrentMatch, cursorText=$cursorText)"
 
     /** Resolves [color] to a display color, using [default] for the default color. */
     internal fun resolve(color: TerminalColor, default: Color): Color =
@@ -125,6 +159,10 @@ public class TerminalColors(
          */
         private val SELECTION = Color(0x664D90FE)
 
+        /** Translucent yellow and orange, which show on both dark and light backgrounds. */
+        private val SEARCH_MATCH = Color(0x66FFD600)
+        private val SEARCH_CURRENT_MATCH = Color(0xAAFF8F00)
+
         /** Light text on a dark background, with xterm's default palette. */
         public val Dark: TerminalColors =
             TerminalColors(
@@ -133,6 +171,8 @@ public class TerminalColors(
                 cursor = Color(0xFFE5E5E5),
                 palette = XTERM_PALETTE,
                 selection = SELECTION,
+                searchMatch = SEARCH_MATCH,
+                searchCurrentMatch = SEARCH_CURRENT_MATCH,
             )
 
         /** Dark text on a light background, with xterm's default palette. */
@@ -143,6 +183,8 @@ public class TerminalColors(
                 cursor = Color(0xFF000000),
                 palette = XTERM_PALETTE,
                 selection = SELECTION,
+                searchMatch = SEARCH_MATCH,
+                searchCurrentMatch = SEARCH_CURRENT_MATCH,
             )
 
         private val XTERM_PALETTE: List<Color>

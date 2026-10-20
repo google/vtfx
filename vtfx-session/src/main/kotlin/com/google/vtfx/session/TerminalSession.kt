@@ -25,6 +25,7 @@ import com.google.vtfx.core.KeyModifiers
 import com.google.vtfx.core.KeyStroke
 import com.google.vtfx.core.LineSnapshot
 import com.google.vtfx.core.ProtocolLimits
+import com.google.vtfx.core.SearchLines
 import com.google.vtfx.core.Terminal
 import com.google.vtfx.core.TerminalEvent
 import com.google.vtfx.core.TerminalLimits
@@ -530,6 +531,19 @@ public class TerminalSession(
     @InternalVtfxApi
     public fun lines(maxLines: Int): List<LineSnapshot> =
         synchronized(lock) { terminal.lines(maxLines) }
+
+    /**
+     * Returns copies of lines for a display's search, from line [from], taken at once: at least
+     * [minLines] lines of the scrollback and more to the end of a line, or through the screen
+     * (`Terminal.searchLines`). A display reads [minLines] at a time, so that the lock is not held
+     * while the whole scrollback is copied.
+     *
+     * @throws IllegalArgumentException unless [minLines] is positive.
+     * @suppress
+     */
+    @InternalVtfxApi
+    public fun searchLines(from: Long, minLines: Int): SearchLines =
+        synchronized(lock) { terminal.searchLines(from, minLines) }
 
     /**
      * The number of lines in the scrollback that [snapshot] can show: none on the alternate screen,

@@ -234,6 +234,8 @@ internal class TerminalRenderer(
         ambiguousWidth: AmbiguousWidth,
         focused: Boolean,
         selection: TerminalSelection?,
+        /** The matches of a search that [snapshot] shows, highlighted under the selection. */
+        searchMatches: VisibleMatches?,
         /** False during the off phase of a blinking cursor. */
         cursorOn: Boolean = true,
     ) {
@@ -275,6 +277,7 @@ internal class TerminalRenderer(
         images.endFrame()
         // Over the cached lines, since a match depends on the rows that autowrap joins to a line.
         drawLinkUnderlines(links, snapshot, defaultForeground, defaultBackground)
+        searchMatches?.let { drawSearchMatches(it, snapshot) }
         selection?.let { drawSelection(it, snapshot) }
         // The cursor is in the screen's coordinates; the screen is shifted down when the display
         // shows the scrollback.
@@ -418,6 +421,25 @@ internal class TerminalRenderer(
                     Offset(span.start * metrics.width, top + y),
                     Offset(span.end * metrics.width, top + y),
                     thickness,
+                )
+            }
+        }
+    }
+
+    private fun DrawScope.drawSearchMatches(visible: VisibleMatches, snapshot: TerminalSnapshot) {
+        for (match in visible.matches) {
+            val color =
+                if (match == visible.current) colors.searchCurrentMatch else colors.searchMatch
+            val firstRow = match.firstLine - snapshot.firstLine
+            val lastRow = match.lastLine - snapshot.firstLine
+            for (row in maxOf(firstRow, 0L)..minOf(lastRow, snapshot.rows - 1L)) {
+                val from = if (row == firstRow) match.startColumn else 0
+                val to = if (row == lastRow) match.endColumn else snapshot.columns
+                fill.rect(
+                    this,
+                    color,
+                    Offset(from * metrics.width, row * metrics.height),
+                    Size((to - from) * metrics.width, metrics.height),
                 )
             }
         }

@@ -93,6 +93,34 @@ DropdownMenuItem(
 - `clearSelection()` drops the selection.
 - Use the state on the main thread, with one `Terminal` at a time. While it is not passed to a `Terminal` in the composition, it has no selection and its functions do nothing.
 
+### Search
+
+The app provides the search field; the terminal finds, highlights, and scrolls to the matches through the same `TerminalState` (section 13 of [compose-input.md](design/compose-input.md)).
+
+```kotlin
+var query by remember { mutableStateOf("") }
+TextField(
+    value = query,
+    onValueChange = {
+        query = it
+        state.search(it, ignoreCase = true) // As the user types; empty text ends the search.
+    },
+)
+val result = state.searchResult
+if (result != null) {
+    val count = if (result.isMatchCountCapped) "${result.matchCount}+" else "${result.matchCount}"
+    Text("${result.currentMatchIndex?.plus(1) ?: 0} / $count")
+}
+IconButton(onClick = { state.findPrevious() }) { /* Up */ }
+IconButton(onClick = { state.findNext() }) { /* Down */ }
+```
+
+- The search starts from the bottom and keeps the current match while the text still matches it. `findPrevious()` moves up and `findNext()` down, going round at the ends; each scrolls the terminal to the current match.
+- The text is matched as it is (no regular expressions), within a line, through the rows that autowrap joins. Concealed text is not matched, and only the newest 1,000 matches are kept.
+- The search follows the output and stays until `clearSearch()` or empty text, or until the `Terminal` leaves the composition. `searchResult` is Compose state.
+- The highlight colors are `TerminalColors.searchMatch` and `searchCurrentMatch`.
+- Keys such as Ctrl+Shift+F, Enter, and Shift+Enter are the app's: handle them with `onPreImeKeyEvent` and the search field.
+
 ### Fonts
 
 `TerminalStyle.font` takes system fonts (`TerminalFont.System("monospace")` and so on), fonts bundled in the app's `res/font` (`TerminalFont.Resources`), and fonts that users choose, sanitized (`TerminalFont.Sanitized`). Use a monospace font (the cell size is measured from the width of `M`).

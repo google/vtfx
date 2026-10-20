@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.LinkPattern
+import com.google.vtfx.core.SearchQuery
 import com.google.vtfx.session.TerminalSession
 import org.junit.Rule
 import org.junit.Test
@@ -189,6 +190,18 @@ class TerminalScreenshotTest {
     fun selection() {
         show(output = "first line\r\nsecond 日本語 line\r\nthird\r\n")
         display.selection = TerminalSelection(Cell(6, 0), Cell(10, 1))
+        composeRule.waitForIdle()
+        composeRule.onRoot().captureRoboImage()
+    }
+
+    /**
+     * The matches of a search, the current one (the newest, at the bottom) in its own color, one
+     * after wide characters, and one over rows that autowrap joins.
+     */
+    @Test
+    fun searchMatches() {
+        show(output = "line one\r\n日本語 line\r\n" + " ".repeat(36) + "line wraps\r\nline")
+        display.search(SearchQuery("line", ignoreCase = false))
         composeRule.waitForIdle()
         composeRule.onRoot().captureRoboImage()
     }

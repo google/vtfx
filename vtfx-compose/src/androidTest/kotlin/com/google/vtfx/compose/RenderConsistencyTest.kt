@@ -120,6 +120,7 @@ class RenderConsistencyTest {
                         session.ambiguousWidth,
                         focused = false,
                         selection = null,
+                        searchMatches = null,
                     )
                 }
             }

@@ -101,9 +101,26 @@ class TerminalStyleTest {
     @Test
     fun colorsWithTheSameValuesAreEqualAndKeepTheirPalette() {
         val palette = TerminalColors.Dark.palette.toMutableList()
-        val colors = TerminalColors(Color.White, Color.Black, Color.White, palette, Color.Blue)
+        val colors =
+            TerminalColors(
+                Color.White,
+                Color.Black,
+                Color.White,
+                palette,
+                Color.Blue,
+                Color.Yellow,
+                Color.Red,
+            )
         assertEquals(
-            TerminalColors(Color.White, Color.Black, Color.White, palette.toList(), Color.Blue),
+            TerminalColors(
+                Color.White,
+                Color.Black,
+                Color.White,
+                palette.toList(),
+                Color.Blue,
+                Color.Yellow,
+                Color.Red,
+            ),
             colors,
         )
         assertNotEquals(TerminalColors.Dark, TerminalColors.Light)
@@ -127,6 +144,18 @@ class TerminalStyleTest {
             withCursorText.hashCode(),
         )
         assertEquals(Color.Unspecified, TerminalColors.Dark.cursorText)
+    }
+
+    @Test
+    fun theSearchColorsArePartOfTheValue() {
+        val withSearchColors =
+            TerminalColors.Dark.copy(searchMatch = Color.Red, searchCurrentMatch = Color.Green)
+
+        assertNotEquals(TerminalColors.Dark, withSearchColors)
+        assertEquals(
+            TerminalColors.Dark.copy(searchMatch = Color.Red, searchCurrentMatch = Color.Green),
+            withSearchColors,
+        )
     }
 
     @Test

@@ -1,16 +1,18 @@
 public final class com/google/vtfx/compose/TerminalColors {
 	public static final field $stable I
 	public static final field Companion Lcom/google/vtfx/compose/TerminalColors$Companion;
-	public synthetic fun <init> (JJJLjava/util/List;JJILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (JJJLjava/util/List;JJLkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun copy-qC7N7yc (JJJLjava/util/List;JJ)Lcom/google/vtfx/compose/TerminalColors;
-	public static synthetic fun copy-qC7N7yc$default (Lcom/google/vtfx/compose/TerminalColors;JJJLjava/util/List;JJILjava/lang/Object;)Lcom/google/vtfx/compose/TerminalColors;
+	public synthetic fun <init> (JJJLjava/util/List;JJJJILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (JJJLjava/util/List;JJJJLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun copy-4gV7qlU (JJJLjava/util/List;JJJJ)Lcom/google/vtfx/compose/TerminalColors;
+	public static synthetic fun copy-4gV7qlU$default (Lcom/google/vtfx/compose/TerminalColors;JJJLjava/util/List;JJJJILjava/lang/Object;)Lcom/google/vtfx/compose/TerminalColors;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getBackground-0d7_KjU ()J
 	public final fun getCursor-0d7_KjU ()J
 	public final fun getCursorText-0d7_KjU ()J
 	public final fun getForeground-0d7_KjU ()J
 	public final fun getPalette ()Ljava/util/List;
+	public final fun getSearchCurrentMatch-0d7_KjU ()J
+	public final fun getSearchMatch-0d7_KjU ()J
 	public final fun getSelection-0d7_KjU ()J
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
@@ -102,12 +104,27 @@ public final class com/google/vtfx/compose/TerminalLinkClick {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class com/google/vtfx/compose/TerminalSearchResult {
+	public static final field $stable I
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCurrentMatchIndex ()Ljava/lang/Integer;
+	public final fun getMatchCount ()I
+	public fun hashCode ()I
+	public final fun isMatchCountCapped ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class com/google/vtfx/compose/TerminalState {
 	public static final field $stable I
 	public fun <init> ()V
+	public final fun clearSearch ()V
 	public final fun clearSelection ()V
 	public final fun copySelection ()Z
+	public final fun findNext ()V
+	public final fun findPrevious ()V
 	public final fun getHasSelection ()Z
+	public final fun getSearchResult ()Lcom/google/vtfx/compose/TerminalSearchResult;
+	public final fun search (Ljava/lang/String;Z)V
 	public final fun selectAll ()V
 }
 
