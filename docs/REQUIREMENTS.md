@@ -52,7 +52,7 @@ The biggest point of differentiation from existing libraries is **limiting, by d
 - Runtimes other than the JVM (Kotlin Multiplatform native, JavaScript, and so on)
 - Use from Java. The public API assumes use from Kotlin and may use Kotlin features such as value classes, default arguments, and `@RequiresOptIn`.
 - Other image protocols, such as sixel, and the parts of the kitty graphics protocol that read files or shared memory of the device or animate images
-- The following are also out of scope in the initial stage.
+- The following are also out of scope in phases 1 to 6 (7.1).
   - Ligatures
   - bidi / RTL
 
@@ -153,7 +153,7 @@ The following inputs are not trusted.
 - Most of the code does not need security review, and human review is limited to a part of the code.
 - Explicitly list the code subject to review.
 - Mechanically verify that the boundary is respected, and detect violations in CI.
-  - In the initial phase, the enforcement does not need to be impossible for an agent to circumvent. A guardrail-like check that keeps agents from making obviously wrong changes is enough.
+  - In phases 1 to 3 (7.1), the enforcement did not need to be impossible for an agent to circumvent: a guardrail-like check that keeps agents from making obviously wrong changes was enough. From phase 4, the check holds against changes written to get around it, within the limits of what review covers ([0044](decisions/0044-boundaries-in-gradle-and-classes.md)).
   - This is backed by keeping the whole git history so that it can be audited afterward.
 - Adding or changing dependencies and changing the build configuration are included in the review scope.
 
@@ -206,15 +206,31 @@ The following inputs are not trusted.
 2. Agents develop autonomously. Human review is minimized.
 3. Release after human review.
    - The review centers on the code under review in 6.1 and the public API in 6.5.
+   - Done: the repository was published on 2026-10-15 at version 0.1.0 after a human review of the whole tree ([0018](decisions/0018-distribution.md)).
+4. Continuous development after publication.
+   - Agents develop autonomously as in phase 2. What needs a human (decisions, work only humans can do, checks on real devices) is gathered in [review-queue.md](review-queue.md).
+   - Humans review the changes to the code under review in 6.1 periodically, and before every release.
+   - Ends when a human judges that the features and quality are enough for the author's own apps to adopt vtfx.
+5. Trial use with binary releases (0.x).
+   - Artifacts are published to Maven Central as 0.x versions. Breaking changes to the public API are still allowed (6.5).
+   - The author's own apps adopt vtfx. The checks on real devices are worked through, and the defects found in real use are fixed.
+   - Ends when vtfx has a record of use in real apps and no open issues in the public API remain.
+6. Stabilization for 1.0.
+   - 1.0 is when the stability of the public API starts to be guaranteed (6.5), under the compatibility policy that section 8 resolved. The public API is settled before it.
+   - Before 1.0 is released, humans review the whole tree, as in phase 3.
+7. Maintenance after 1.0.
+   - Versions follow semantic versioning: breaking changes only in a major version.
+   - Define how security vulnerabilities are reported and fixed, and whether contributions from outside are accepted.
+   - Reconsider what 4.2 leaves out of scope in phases 1 to 6.
 
-Current phase (annotation): the repository was published on 2026-10-15 at version 0.1.0 after a human review of the whole tree, which was phase 3 ([0018](decisions/0018-distribution.md)). Development continues autonomously as in phase 2, with the changes that need a human gathered in [review-queue.md](review-queue.md).
+Every release in phases 4 to 6 requires that humans have reviewed the changes to the code under review in 6.1 since the previous release, and that no item in section 1 (Decisions) of [review-queue.md](review-queue.md) is open.
 
 ### 7.2 Testing
 
 - **Protecting oracles**: The tests that support the autonomous loop must be trustworthy.
   - Agents cannot change the spec tests, fixtures, and screenshot goldens owned by humans.
   - They are distinguished from the tests agents add.
-  - The strength of protection follows the same thinking as the verification of the review scope in 6.1. In the initial phase, guardrail-like detection and auditing afterward are enough.
+  - The strength of protection follows the same thinking as the verification of the review scope in 6.1. Until phase 6 (7.1), guardrail-like detection and auditing afterward are enough.
 - **Deterministic gates**: The tests that gate the loop are deterministic.
   - Non-deterministic tests (such as e2e with a real IME) are not gates and are treated as reports.
 - **Emulator e2e**: Agents can run e2e tests on the Android emulator (mainly for the IME).
