@@ -33,6 +33,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
@@ -70,6 +74,7 @@ class MainActivity : ComponentActivity() {
         val locale = intent.getStringExtra(EXTRA_LOCALE)?.let { LocaleList(it) }
         setContent {
             val state = rememberTerminalState()
+            var searching by rememberSaveable { mutableStateOf(false) }
             val fontRequest = viewModel.fontRequest
             val pickFont =
                 rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -81,6 +86,7 @@ class MainActivity : ComponentActivity() {
                 if (fonts.isEmpty()) TerminalFont.System()
                 else TerminalFont.Sanitized(fonts.map { SanitizedFamily(it) })
             Column(Modifier.fillMaxSize().background(Color.Black).safeDrawingPadding()) {
+                if (searching) SearchBar(state, onClose = { searching = false })
                 Terminal(
                     viewModel.session,
                     Modifier.fillMaxWidth().weight(1f),
@@ -93,26 +99,39 @@ class MainActivity : ComponentActivity() {
                         ),
                     linkPatterns = LINK_PATTERNS,
                     onLinkClick = { click -> confirmOpening(viewModel.session, click.link.url) },
-                    onPreImeKeyEvent = { interceptShortcut(it, state) },
+                    onPreImeKeyEvent = {
+                        interceptShortcut(it, state, onFind = { searching = true })
+                    },
                 )
                 // The keys a software keyboard lacks, only while it is shown.
-                if (WindowInsets.isImeVisible) KeyBar(viewModel.session, viewModel.stickyModifiers)
+                if (WindowInsets.isImeVisible) {
+                    KeyBar(
+                        viewModel.session,
+                        viewModel.stickyModifiers,
+                        onFind = { searching = true },
+                    )
+                }
             }
         }
     }
 
     /**
      * Takes Ctrl+Shift+K before the IME and the terminal, as an app's own shortcut would
-     * (docs/usage.md), and Ctrl+Shift+C to copy the selection of [state]. A release is consumed
-     * with its press, so that the session sees neither.
+     * (docs/usage.md), Ctrl+Shift+C to copy the selection of [state], and Ctrl+Shift+F to call
+     * [onFind]. A release is consumed with its press, so that the session sees neither.
      */
-    private fun interceptShortcut(event: KeyEvent, state: TerminalState): Boolean {
+    private fun interceptShortcut(
+        event: KeyEvent,
+        state: TerminalState,
+        onFind: () -> Unit,
+    ): Boolean {
         if (!event.isCtrlPressed || !event.isShiftPressed) return false
         val press = event.type == KeyEventType.KeyDown
         when (event.key) {
             Key.K ->
                 if (press) Toast.makeText(this, R.string.shortcut_taken, Toast.LENGTH_SHORT).show()
             Key.C -> if (press) state.copySelection()
+            Key.F -> if (press) onFind()
             else -> return false
         }
         return true

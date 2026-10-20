@@ -31,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -44,12 +45,18 @@ import com.google.vtfx.session.TerminalSession
  * (requirement 5.4): [TerminalSession.sendKey] for keys, and [TerminalSession.stickyModifiers] for
  * Ctrl and Alt, which apply to the next key typed on the keyboard. "Direct" switches
  * [TerminalSession.directInput], for IMEs that would otherwise hold English words until a space.
+ * "Find" calls [onFind], to open a search bar.
  *
  * @param stickyModifiers The session's sticky modifiers, which the app follows with
  *   `TerminalSessionListener.onStickyModifiersChanged`.
  */
 @Composable
-fun KeyBar(session: TerminalSession, stickyModifiers: KeyModifiers, modifier: Modifier = Modifier) {
+fun KeyBar(
+    session: TerminalSession,
+    stickyModifiers: KeyModifiers,
+    onFind: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     // Only this key bar switches direct input, so it follows the session's state by itself.
     var directInput by remember(session) { mutableStateOf(session.directInput) }
     Row(modifier.fillMaxWidth().background(Color(0xFF202020))) {
@@ -65,6 +72,7 @@ fun KeyBar(session: TerminalSession, stickyModifiers: KeyModifiers, modifier: Mo
             session.directInput = !directInput
             directInput = session.directInput
         }
+        Key(stringResource(R.string.find)) { onFind() }
     }
 }
 

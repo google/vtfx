@@ -22,5 +22,7 @@
     <string name="link_refused">This kind of link is not allowed.</string>
     <string name="link_no_app">No app can open this link.</string>
     <string name="link_refused_by_system">The system did not let the app for this link open.</string>
+    <string name="close_search">Close</string>
+    <string name="find">Find</string>
     <string name="shortcut_taken">Ctrl+Shift+K was taken by the app.</string>
 </resources>

@@ -249,3 +249,17 @@ Use Gboard on devices with Android 10, 11, 12, and 13, and start the sample app 
 | 13.4 | In Japanese, type and commit `にほんご`, then reconvert it (select it and choose a candidate, if Gboard offers it) | `7f`s for the committed text, then the new text on commit |
 
 What to tell us: the Gboard version, the device and Android version, and each row's logcat output.
+
+## 14. Searching
+
+Section 13 of [compose-input.md](design/compose-input.md), [decisions/0047](decisions/0047-search.md). A search runs on the main thread: a new search lays out the text of the whole scrollback, a change of the text searches the text kept, and each redraw after output searches the new lines. These were timed only on the development machine's JVM, not on ART.
+
+| # | Action | Expected |
+|---|---|---|
+| 14.1 | In the sample app, fill the scrollback (for example, paste a long text of many lines and press Enter, several times; the fake host echoes it), then open the search bar with Find on the key bar or Ctrl+Shift+F | The search field takes the focus and the keyboard |
+| 14.2 | Type a word that appears many times, one letter at a time | The matches are highlighted as each letter is typed, the count follows, and the terminal does not freeze noticeably. Note any pause |
+| 14.3 | Tap ↑ and ↓ several times | The terminal scrolls to each match, the current one in orange |
+| 14.4 | While searching, paste more text so that output flows | The count grows, the display stays where it is, and typing in the field stays smooth |
+| 14.5 | Close the search bar | The highlights go |
+
+What to tell us: the device and Android version, and any pause or freeze, with roughly how long it lasted.

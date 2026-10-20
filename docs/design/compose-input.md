@@ -177,6 +177,7 @@ The following are verified only with Robolectric and the emulator, and are liste
 - The mouse and touchpads on a Chromebook, Samsung DeX, or a tablet with a mouse.
 - Copying all the text with a full scrollback through the system clipboard.
 - Reading and operating the rows with TalkBack.
+- The time that searching takes on the main thread (section 13).
 
 ## 13. Search
 
