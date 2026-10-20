@@ -1,6 +1,6 @@
 # What opening a URL returns
 
-- Status: Provisional
+- Status: Approved (2026-10-20, approved by a human in a review of the review queue)
 - Date: 2026-10-19
 - Related: Requirement 6.1, [gate-policy.md](../design/gate-policy.md), principle 3 of [0024](0024-thread-conventions.md), [0006](0006-gate-defaults.md), [0016](0016-public-api.md), [0037](0037-api-shape-before-1.0.md), [0042](0042-user-clipboard-through-gate.md), the item "Links taken by a protected activity" in [review-queue.md](../review-queue.md)
 

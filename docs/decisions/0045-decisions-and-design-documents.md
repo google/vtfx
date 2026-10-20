@@ -1,6 +1,6 @@
 # Decisions record reasons; design documents describe the current design
 
-- Status: Provisional
+- Status: Approved (2026-10-20, approved by a human in a review of the review queue)
 - Date: 2026-10-20
 - Related: [decisions/README.md](README.md), [AGENTS.md](../../AGENTS.md) ("Decisions", "Updating documents"), `scripts/check_doc_links.py`, section 9 of [testing.md](../design/testing.md)
 

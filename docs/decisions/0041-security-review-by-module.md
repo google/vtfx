@@ -1,6 +1,6 @@
 # Security review by whole modules
 
-- Status: Provisional (review by whole modules and the names `vtfx-font-gate` and `vtfx-font-gate-android` decided by a human on 2026-10-19; the verifier's own package, its tests in `vtfx-font-gate`, and the move of the public types to that package not yet reviewed)
+- Status: Approved (2026-10-20, approved by a human in a review of the review queue; review by whole modules and the names `vtfx-font-gate` and `vtfx-font-gate-android` had been decided by a human on 2026-10-19)
 - Date: 2026-10-19
 - Related: Requirement 6.1, section 2 of [architecture.md](../design/architecture.md), section 2 of [fonts.md](../design/fonts.md), [0016](0016-public-api.md), [0037](0037-api-shape-before-1.0.md), [0040](0040-sanitized-user-fonts.md), `config/protected-paths.toml`, `config/boundaries.toml`
 

@@ -1,6 +1,6 @@
 # Checking the module boundaries in Gradle's model and in compiled classes
 
-- Status: Provisional
+- Status: Approved (2026-10-20, approved by a human in a review of the review queue)
 - Date: 2026-10-20
 - Related: Requirement 6.1, section 5 of [architecture.md](../design/architecture.md), [0027](0027-session-takes-connection.md), [0035](0035-dependency-verification.md), [0041](0041-security-review-by-module.md), [0042](0042-user-clipboard-through-gate.md), [boundaries.md](../design/boundaries.md)
 

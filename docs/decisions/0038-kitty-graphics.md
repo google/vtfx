@@ -1,6 +1,6 @@
 # The kitty graphics protocol
 
-- Status: Provisional (2026-10-20, a human, nya, decided that the protocol stays enabled by default and that the requirements be rewritten to put it in scope; the rest of this decision is not yet reviewed)
+- Status: Approved (2026-10-20, approved by a human in a review of the review queue; earlier that day, a human, nya, had decided that the protocol stays enabled by default and that the requirements be rewritten to put it in scope)
 - Date: 2026-10-16
 - Related: Requirements 4.1 and 4.2 (image protocols), 5.1, 6.1, 6.2, 6.5, section 9 of [emulation.md](../design/emulation.md), [0001](0001-parser.md), [0002](0002-resource-limits.md), [0006](0006-gate-defaults.md), [0009](0009-emulation-scope.md), [0013](0013-resize-and-lifecycle.md), [0014](0014-performance.md), the kitty documentation (`graphics-protocol.rst`, kitty 0.48), [research/kitty-graphics-programs.md](../research/kitty-graphics-programs.md)
 

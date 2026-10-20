@@ -1,6 +1,6 @@
 # Sticky modifiers and the composing text
 
-- Status: Provisional
+- Status: Approved (2026-10-20, approved by a human in a review of the review queue)
 - Date: 2026-10-15
 - Related: Requirement 5.4, section 8 of [compose-input.md](../design/compose-input.md), [0012](0012-touch-and-selection.md), [ime-contract.md](../design/ime-contract.md) section 6.3, `TerminalSession.stickyModifiers`, `ImeEditor.sendPendingInput`
 
