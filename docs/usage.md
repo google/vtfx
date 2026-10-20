@@ -34,7 +34,7 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
 ```
 
 - `connection` is the app's connection to the host (`HostConnection`). `TerminalSession` passes it to vtfx-gate right away, and all bytes vtfx sends to the host (keys, IME input, pastes, replies to queries, mouse) are assembled by vtfx-gate and passed to `HostConnection.write` ([decisions/0027](decisions/0027-session-takes-connection.md)).
-- `HostConnection.write` is called one call at a time in order, from the thread that called the operation for user input (the main thread for input from `Terminal`), and from the thread that called `feed` for replies to host queries. vtfx holds no locks other than the one that serializes the calls. It must not block. If sending can block, queue it and send on another thread. On Android, user input arrives on the main thread, and replies to queries are sent within `feed`, so blocking also stops the thread reading host output. It must not throw. The app handles failures such as a dropped connection. Do not call vtfx from within `write`. Even for a host that replies locally right away, calling `feed` within `write` causes `IllegalStateException`, so pass the output in a separate task (`Handler.post` and so on) ([decisions/0024](decisions/0024-thread-conventions.md)). When implementing `ClipboardAccess` and `UrlOpener` yourself, also make them work when called from any thread. `UrlOpener.open` returns what came of opening the URL (`OpenUrlResult.Opened`, `NoApp`, or `Refused`) instead of throwing for the failures that the platform documents; other exceptions are programming errors and propagate to the caller ([decisions/0043](decisions/0043-url-open-results.md)).
+- `HostConnection.write` must not block, throw, or call back into vtfx; its KDoc says on which threads it is called and why. If sending can block, queue the bytes and send them on another thread. For a host that replies locally right away, pass its output to `feed` in a separate task (`Handler.post` and so on), since calling `feed` within `write` throws `IllegalStateException` ([decisions/0024](decisions/0024-thread-conventions.md)). When implementing `ClipboardAccess` and `UrlOpener` yourself, follow their KDoc: both are called on any thread, and `UrlOpener.open` returns the failures that the platform documents as a `UrlOpenerResult` instead of throwing ([decisions/0043](decisions/0043-url-open-results.md)).
 - If `clipboard` and `urlOpener` are omitted, the clipboard and opening URLs are denied.
 - `onResize` has two overloads. Override the one with pixels to pass the size of the text area in pixels to the host as well: programs that show images (the kitty graphics protocol) choose the size of an image from it. The pixels are 0 until a `Terminal` has given the size of its cells. The overload without pixels is enough when the host does not take pixels.
 - The kitty graphics protocol is on by default, with 32 MiB for the decoded pixels of the images (`TerminalLimits.maxImageBytes`). Images are sent in the host output, so only direct data works, which is what programs send over SSH. Set `maxImageBytes` to 0 to turn the protocol off ([decisions/0038](decisions/0038-kitty-graphics.md)).
@@ -115,7 +115,7 @@ TerminalStyle(font = TerminalFont.Sanitized(listOf(SanitizedFamily(latin), Sanit
 ```
 
 - TrueType and OpenType fonts with TrueType or CFF outlines, and collections of them (TTC, OTC), are read; WOFF, CFF2, and bitmap fonts are not. `InvalidFontException.kind` tells why a font was rejected.
-- What a terminal does not need is dropped: hinting, ligatures and other OpenType layout, color glyphs, and the font's names. A variable font becomes its default instance. CFF outlines are converted to TrueType ones, within 1/1000 of the em. Variation sequences (such as the forms of kanji in names) are kept.
+- What a terminal does not need, such as hinting and OpenType layout, is dropped; the KDoc of `SanitizedFont` lists it. CFF outlines are converted to TrueType ones.
 - For CJK, choose the face of the region (for example the JP face of Noto Sans CJK), since the regional forms of the other faces come from OpenType layout, which is dropped.
 - `TerminalFont.Sanitized` takes families in order, such as a Latin font and then a CJK font; characters in none of them come from the system's monospace font. `SanitizedFont.widthClass` tells whether a font is monospaced, or monospaced with double-width CJK characters.
 - `SanitizedFont.fromCanonical` checks the bytes again, so the place where the app keeps them does not need to be trusted.
@@ -125,9 +125,9 @@ TerminalStyle(font = TerminalFont.Sanitized(listOf(SanitizedFamily(latin), Sanit
 Link clicks are passed to `onLinkClick` as `TerminalLinkClick`: the `TerminalLink` (`click.link`), and how the user clicked it (below). There are two kinds of links, both shown underlined ([decisions/0019](decisions/0019-extensibility.md)). For both, **show the destination (`link.url`) to the user and get confirmation before** calling `session.openUrl(link.url)` (requirement 6.1).
 
 - `TerminalLink.Explicit`: an OSC 8 hyperlink. The host decides both the link text (`link.text`) and the destination, so they do not necessarily match. Showing the text and the destination side by side makes discrepancies easier to notice.
-- `TerminalLink.Matched`: text that matched `linkPatterns`. The default `LinkPattern.Urls` is `http` and `https` URLs written in the text, and `url` is the matched text. A match over text hidden with SGR 8 (conceal) is not a link, but the matched text can still differ from what the user sees: the host can draw part of it in the background's color, and it may go on beyond the display.
+- `TerminalLink.Matched`: text that matched `linkPatterns` (by default `LinkPattern.Urls`, the `http` and `https` URLs written in the text). The matched text can still differ from what the user sees; the KDoc of `Terminal` says how.
 
-`openUrl` returns an `OpenUrlResult`, which apps can match exhaustively ([decisions/0043](decisions/0043-url-open-results.md)): `Opened` when an app was started for the URL, `NotAllowed` when vtfx did not try (the URL is not allowed by `GatePolicy`, or the session has no `urlOpener`), `NoApp` when no app opens it, and `Refused` when the system did not let the app that opens it start, for example because that app requires a permission. Tell the user when it was not opened, so that a confirmed link does not seem to do nothing.
+`openUrl` returns an `OpenUrlResult`, a closed type that apps can match exhaustively; its KDoc says what each result means ([decisions/0043](decisions/0043-url-open-results.md)). Tell the user when the URL was not opened, so that a confirmed link does not seem to do nothing.
 
 ```kotlin
 val failure = when (session.openUrl(url)) {
@@ -149,16 +149,16 @@ onLinkClick = { click ->
 }
 ```
 
-Apps can add their own links with a regular expression and a URL template. `{0}` in the template is replaced with the whole match, and `{n}` with the nth group.
+Apps can add their own links with a regular expression and a URL template, in which `{0}` is the whole match and `{n}` the nth group.
 
 ```kotlin
 val crbug = LinkPattern(Regex("""\bcrbug/(\d+)"""), "https://crbug.com/{1}")
 Terminal(viewModel.session, linkPatterns = listOf(LinkPattern.Urls, crbug), onLinkClick = ...)
 ```
 
-- Values inserted into the template are percent-encoded. The host decides the matched text, so even if it contains `/` or `@`, the structure of the URL (the host or the path) does not change. To include path separators, write a group for each part (e.g. `https://github.com/{1}/{2}`). Values `.` and `..` are inserted as is, so opening the URL removes path segments (the host does not change).
-- Regular expressions run on the main thread against text the host decides, every time the display changes. **vtfx sets no limit on the effort of matching** (Android's regular expressions cannot be stopped midway). Do not use nested or overlapping repetition (`(a|aa)+b`, `(\w+)*x`, and so on); the host can make matching exponentially long with a few dozen characters, freezing the screen. Use patterns with little backtracking, like `\bcrbug/(\d+)`, and prefer character classes to alternation (`[\w-]+` rather than `(?:\w|-)+`) ([decisions/0019](decisions/0019-extensibility.md)).
-- If the same cell has an OSC 8 link, it takes precedence. If patterns overlap, the earlier one in the list takes precedence. Overlaps are decided first, from the text alone, so even if a match of an earlier pattern is removed because of OSC 8, matches of later patterns that overlap it do not become links.
+- Values inserted into the template are percent-encoded, so that text from the host cannot change the structure of the URL. To include path separators, write a group for each part (e.g. `https://github.com/{1}/{2}`). The KDoc of `LinkPattern` has the details.
+- **vtfx sets no limit on the effort of matching**: the regular expressions run on the main thread against text the host decides, every time the display changes, and the host can make a pattern with nested or overlapping repetition freeze the screen. Follow the KDoc of `LinkPattern` for patterns to use and to avoid ([decisions/0019](decisions/0019-extensibility.md)).
+- Where links overlap, an OSC 8 link takes precedence over the patterns, and an earlier pattern over a later one; the KDoc of `Terminal` has the rules.
 
 ### Intercepting keys
 
@@ -217,7 +217,7 @@ assertEquals("ls\r", sent.toString())
 ```
 
 - There are no timers and no thread assumptions, so tests can be written synchronously. Listeners are also called within the call.
-- There is no display, so change the size with `resize`. `onResize` is called on the first `resize`, even if the size is unchanged, and then when it changes.
+- There is no display, so change the size with `resize(columns, rows)`. `onResize` is called on the first `resize`, even if the size is unchanged, and then when it changes. To answer the host's queries for pixel sizes and to size images without a size in cells, also give the size of a cell in pixels (`resize(columns, rows, cellWidth, cellHeight)`); see the KDoc of `resize`.
 - Lines that scrolled off the screen can be read with `session.snapshot(scrollOffset)`. The number of lines that can be scrolled back is `session.scrollbackSize` (0 on the alternate screen).
 - Color queries (OSC 10, 11, 12, 4) are not answered. Once `Terminal` displays the session, they are answered with its colors.
 - Send keys and text with `sendKey`, `sendText`, and `paste`.
