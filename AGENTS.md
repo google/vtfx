@@ -11,6 +11,12 @@ The scope of work and the instructions given by the user take precedence.
 - [docs/design/architecture.md](docs/design/architecture.md): module structure, responsibilities, and security boundaries
 - [docs/design/ime-contract.md](docs/design/ime-contract.md): the contract for each IME call
 - [docs/design/testing.md](docs/design/testing.md): test structure, oracles, and gates
+- [docs/design/emulation.md](docs/design/emulation.md): terminal emulation: supported control functions, character widths, attributes, images, and resource limits
+- [docs/design/gate-policy.md](docs/design/gate-policy.md): what the gate sends to the host, and its policies for replies, the clipboard, and opening URLs
+- [docs/design/session-and-threads.md](docs/design/session-and-threads.md): thread conventions, the terminal session, resize, and lifecycle
+- [docs/design/compose-input.md](docs/design/compose-input.md): touch, mouse, selection, links, hardware keys, and accessibility in the Compose UI
+- [docs/design/fonts.md](docs/design/fonts.md): where fonts come from, font sanitizing, and the font modules
+- [docs/design/boundaries.md](docs/design/boundaries.md): how the build checks the module boundaries in `config/boundaries.toml`
 - [docs/decisions/README.md](docs/decisions/README.md): records of design decisions
 - [docs/review-queue.md](docs/review-queue.md): items waiting for a human
 - [docs/reviews/README.md](docs/reviews/README.md): the procedure of the code review feedback loop, and the list of open bug reports

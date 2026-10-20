@@ -4,6 +4,18 @@ Status: Living document. It describes the current design and is kept in sync wit
 
 This document defines the module structure, responsibilities, direction of dependencies, and security boundaries that satisfy [REQUIREMENTS.md](../REQUIREMENTS.md). The details of individual APIs and the contract for each IME call are covered in separate documents.
 
+The design documents in this directory:
+
+- [architecture.md](architecture.md) (this document): module structure, responsibilities, direction of dependencies, and security boundaries
+- [emulation.md](emulation.md): how `vtfx-core` interprets host output: references, supported control functions, `TERM`, character widths, attributes, images, and resource limits
+- [gate-policy.md](gate-policy.md): what `vtfx-gate` sends to the host, its policies for replies, the clipboard, and opening URLs, and what `vtfx-gate-android` does with allowed requests
+- [ime-contract.md](ime-contract.md): the editing model, the contract for each IME call, the view the IME connects to, and the target IMEs
+- [compose-input.md](compose-input.md): touch, the mouse, selection, links, hardware keys, the extra key bar, size, and accessibility of the `Terminal` composable
+- [session-and-threads.md](session-and-threads.md): thread conventions of all modules, the terminal session, resize, and lifecycle
+- [fonts.md](fonts.md): where fonts come from, sanitizing user-chosen fonts, and the font modules
+- [boundaries.md](boundaries.md): how the build checks the module boundaries declared in `config/boundaries.toml`
+- [testing.md](testing.md): test structure, oracles, and gates
+
 ## 1. Pillars of the design
 
 1. **Gather security capabilities in one place.** Untrusted input may flow anywhere. However, only small modules subject to review can perform operations that affect the outside (sending to the host, the clipboard, opening URLs). Other modules do not even hold the references needed to perform them.
