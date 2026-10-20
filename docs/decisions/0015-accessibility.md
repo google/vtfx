@@ -2,7 +2,7 @@
 
 - Status: Approved (2026-10-13, approved by a human in the final review. Rows are marked as sensitive data)
 - Date: 2026-10-12
-- Related: Requirement 6.3, 2.7 of [research/xterm-js-ime.md](../research/xterm-js-ime.md), `Terminal.kt` (`RowSemantics`), `TerminalInputView`
+- Related: Requirement 6.3, 2.7 of [research/xterm-js-ime.md](../research/xterm-js-ime.md), `Terminal.kt` (`RowSemantics`, `TerminalRowSemanticsNode`), `TerminalInputView`
 
 ## Background
 

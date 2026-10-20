@@ -1,6 +1,6 @@
 # Extensibility policy (correspondence with xterm.js addons)
 
-- Status: Approved (2026-10-13, approved by a human in the final review. The same day, the limit on matching effort was removed and made the app's responsibility. On 2026-10-14, matches over concealed text stopped being links, and key interception moved to a pre-IME callback because `onPreviewKeyEvent` misses the keys an IME takes)
+- Status: Approved (2026-10-13, approved by a human in the final review; the limit on matching effort and the links over concealed text were decided by a human afterwards); key interception with `onPreviewKeyEvent` superseded by [0032](0032-keys-and-layout.md), the parameter of `onLinkClick` by [0031](0031-desktop-pointer-and-terminal-state.md), and `TerminalLink` as a sealed type by [0037](0037-api-shape-before-1.0.md)
 - Date: 2026-10-12
 - Related: Requirements 4.1, 4.2, 6.1, and 6.5 (customizability, minimal surface), [0006](0006-gate-defaults.md), [0007](0007-compose-session.md), [0012](0012-touch-and-selection.md), [0016](0016-public-api.md)
 

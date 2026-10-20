@@ -1,6 +1,6 @@
 # Touch interaction, selection, extra key bar
 
-- Status: Approved (2026-10-13, approved by a human in the final review)
+- Status: Approved (2026-10-13, approved by a human in the final review); the copy path (copying through the session's `ClipboardAccess`) superseded by [0042](0042-user-clipboard-through-gate.md)
 - Date: 2026-10-12
 - Related: Requirement 5.4, `TerminalGestures`, `TerminalSelection`, `TerminalSession.stickyModifiers`
 
@@ -55,4 +55,4 @@ Requirement 5.4 asks for physical keyboards and modifier keys, touch scrolling a
 
 ## Impact of reversing
 
-Change the branches in `TerminalGestures` and the triggers for clearing the selection in `TerminalSession`.
+Change the branches in `TerminalGestures` and the triggers for clearing the selection in `TerminalDisplay`.
