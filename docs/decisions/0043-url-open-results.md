@@ -2,7 +2,7 @@
 
 - Status: Provisional
 - Date: 2026-10-19
-- Related: Requirement 6.1, principle 3 of [0024](0024-thread-conventions.md), [0006](0006-gate-defaults.md), [0016](0016-public-api.md), [0037](0037-api-shape-before-1.0.md), [0042](0042-user-clipboard-through-gate.md), the item "Links taken by a protected activity" in [review-queue.md](../review-queue.md)
+- Related: Requirement 6.1, [gate-policy.md](../design/gate-policy.md), principle 3 of [0024](0024-thread-conventions.md), [0006](0006-gate-defaults.md), [0016](0016-public-api.md), [0037](0037-api-shape-before-1.0.md), [0042](0042-user-clipboard-through-gate.md), the item "Links taken by a protected activity" in [review-queue.md](../review-queue.md)
 
 ## Background
 
@@ -11,6 +11,8 @@
 Both failures are documented outcomes of `startActivity`, not programming errors: they depend on which apps are installed, which the app cannot know beforehand. Principle 3 did not say how an interface that the app implements reports them.
 
 ## Decision
+
+The results and how `AndroidUrlOpener` produces them are described in sections 5.3 and 6 of [gate-policy.md](../design/gate-policy.md).
 
 1. `UrlOpener.open` returns a `UrlOpenerResult`: `OpenUrlResult.Opened` (an app was started), `OpenUrlResult.NoApp` (no app takes the URL), or `OpenUrlResult.Refused` (the system refused to start the app that takes it, for example because that app requires a permission).
 2. `TerminalGate.openUrl` and `TerminalSession.openUrl` return an `OpenUrlResult`: what the `UrlOpener` returned, unchanged, or `OpenUrlResult.NotAllowed` when the gate did not call it, because the policy does not allow the URL or there is no `UrlOpener` (the cases that returned `false` before). `UrlOpenerResult` is a subtype of `OpenUrlResult`, so an opener cannot return `NotAllowed` and the gate needs no check to pass the result on. `canOpenUrl` stays a `Boolean`: whether `openUrl` would get past `NotAllowed`.

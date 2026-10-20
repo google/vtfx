@@ -2,7 +2,7 @@
 
 - Status: Approved (2026-10-13, approved by a human in the final review; on 2026-10-20 a human changed the default of OSC 52 writes to denied and approved the gate's own check of the selection)
 - Date: 2026-10-12
-- Related: Requirements 6.1 and 6.5 (safe defaults), 3.3 of [architecture.md](../design/architecture.md), [0039](0039-minsdk-29.md), `vtfx-gate`
+- Related: Requirements 6.1 and 6.5 (safe defaults), 3.3 of [architecture.md](../design/architecture.md), [gate-policy.md](../design/gate-policy.md), [0039](0039-minsdk-29.md), `vtfx-gate`
 
 ## Background
 
@@ -10,55 +10,26 @@ Of the attack types in requirement 6.1, replies to the host, the clipboard, open
 
 ## Decision
 
-### Replies
+The resulting rules are described in [gate-policy.md](../design/gate-policy.md).
 
-| Query | Reply |
-|---|---|
-| DA1 (`CSI c`) | `CSI ? 62 ; 22 c` (VT220, ANSI color) |
-| DA2 (`CSI > c`) | `CSI > 0 ; 10 ; 1 c` (same as Windows Terminal) |
-| DSR 5 | `CSI 0 n` |
-| DSR 6, DECXCPR | `CSI row ; column R`, `CSI ? row ; column R` |
+1. **Replies** are built only from constants and numbers taken from the terminal state, and no path is created by which strings sent by the host are included in them (`TerminalQuery` holds no host strings). DA1 reports a VT220 with ANSI color and DA2 reports what Windows Terminal reports. Reports of the window title and icon name (XTWINOPS 20, 21), a classic command injection path, are not answered and will not be in the future; neither are checksums of the screen contents (DECRQCRA), a means of guessing them, nor XTGETTCAP, whose replies would include terminfo strings. Section 3 of gate-policy.md.
+2. **OSC 52 writes are denied by default.** Allowing them relied on the preview of the clipboard that the OS shows on each copy, through which the user would notice a rewrite, but that preview exists only from Android 13 (API 33), and [0039](0039-minsdk-29.md) set the minimum to API 29: on API 29 to 32 a host could silently replace the clipboard (pastejacking), against the safe defaults of requirement 6.5. When an app allows writes, they are limited to 64 Ki UTF-16 units, and a longer write is dropped as a whole, to keep the load from huge data in check. Section 4.1 of gate-policy.md.
+3. **OSC 52 reads are denied by default**: the clipboard may contain passwords and the like copied in other apps. When allowed, the content is returned in base64, so it is never interpreted as control sequences.
+4. **The gate parses the OSC 52 selection itself**, with its own list of xterm's targets, rather than trusting the list in `vtfx-core`, which is not under security review, and refuses requests whose selection does not parse. The reply to a read spells the selection again from the gate's constants, so no text from the host is part of it. Section 4.1 of gate-policy.md.
+5. **Written content is not marked sensitive** (`ClipDescription.EXTRA_IS_SENSITIVE`), decided by a human. On Android 13 and later, with the mark the preview masks the content, so the user can tell that the host rewrote the clipboard but cannot see what it was rewritten to; showing the content lets the user notice the rewrite. A secret copied with OSC 52 (from a password manager on the host and so on) is then shown in the preview for a few seconds, but OSC 52 has no means of telling whether the content is secret, the terminal cannot mask only part of it, and most copies are not secret. The user's own copy goes through the same `ClipboardAccess` and is likewise not marked. Section 4.3 of gate-policy.md.
+6. **URLs are opened only on an explicit action by the user**, after the UI has shown the actual URL; there is no path that opens one from host output alone. Only `http` and `https` are allowed by default. Section 5 of gate-policy.md.
+7. **URLs whose displayed form may differ from where they go are not opened**: those with whitespace, control characters, format characters, surrogates, or other default-ignorable code points, and `http` and `https` URLs with userinfo, a `\`, or a character that is not ASCII in the authority. The list of default-ignorable code points is generated from the UCD files in the repository rather than taken from the runtime, so that it does not depend on the runtime's Unicode version. Refusing every character that is not ASCII in the authority, rather than only confusable ones, keeps the check independent of a confusables table and of the runtime's Unicode version; a user who needs an internationalized domain can open its punycode form. Section 5.2 of gate-policy.md.
+8. **Pastes**: all control characters (C0, DEL, C1) other than HT and newlines are removed, and newlines become CR, even when not in bracketed paste mode. Since no ESC remains, the content cannot include the end of bracketed paste to escape. Section 2.1 of gate-policy.md.
 
-- Replies are built only from constants and numbers taken from the terminal state. No path is created by which strings sent by the host are included in replies. `TerminalQuery` is a type that holds no host strings.
-- The following queries are not answered (the model does not emit `ReplyRequested`).
-  - Reports of the window title and icon name (XTWINOPS 20, 21): a classic command injection path. They will not be implemented in the future either.
-  - Checksums of the screen contents (DECRQCRA): a means of guessing the screen contents. It is not enabled for esctest either: the esctest harness computes it in the test code ([0009](0009-emulation-scope.md)).
-  - XTGETTCAP: replies would include terminfo strings ([0009](0009-emulation-scope.md)).
-- DECRQSS (`m`, `r`, ` q`), DECRQM, and the queries of OSC 4, 10, 11, and 12 are answered, in the scope that [0009](0009-emulation-scope.md) decided. Their replies are likewise built only from constants and the terminal state.
-
-### Clipboard (OSC 52)
-
-| Request | Default | Reason |
-|---|---|---|
-| Write | Denied. When an app allows it, up to 64 Ki (UTF-16 units); if exceeded, the whole is dropped. | Before Android 13 the OS shows no preview of the clipboard, so a host could replace what the user copied without the user noticing (pastejacking). The limit keeps the load from huge data in check. |
-| Read | Denied | The clipboard may contain passwords and the like copied in other apps. |
-
-Even when reading is allowed, the content is returned encoded in base64, so it is never interpreted as control sequences. The gate parses the selection parameter with its own list of xterm's targets (`c`, `p`, `q`, `s`, `0` to `7`, at most 16 of them), not with the list in `vtfx-core`, which is not under security review, and refuses both reads and writes whose selection does not parse. The reply to a read spells the selection again from the gate's constants, in `Replies` with every other reply, so no text from the host is part of it. (2026-10-20, approved by a human)
-
-Writes were allowed by default until 2026-10-20, when the human nya changed the default to denied. Allowing them relied on the preview of the clipboard that the OS shows on each copy, through which the user would notice a rewrite, but that preview exists only from Android 13 (API 33), and [0039](0039-minsdk-29.md) set the minimum to API 29: on API 29 to 32 a host could silently replace the clipboard, against the safe defaults of requirement 6.5. Apps that want remote copy in tmux and vim set `GatePolicy(allowClipboardWrite = true)`.
-
-Written content is not marked sensitive (`ClipDescription.EXTRA_IS_SENSITIVE`) (2026-10-13, decided by a human). On Android 13 and later, the OS shows a preview of the clipboard on each copy. With the mark, the content is masked, so the user can tell that the host rewrote the clipboard with OSC 52 but cannot see what it was rewritten to. Showing the content lets the user notice the rewrite. When a secret is copied (OSC 52 from a password manager on the host and so on), it is shown in the preview for a few seconds, but OSC 52 has no means of telling whether the content is secret, and the terminal side cannot mask only part of it. Most copies are not secret, so the choice was to show everything. When the user selects and copies ([0012](0012-touch-and-selection.md)), it goes through the same `ClipboardAccess`, so it is likewise not marked. Originally the mark was set.
-
-### Opening URLs
-
-- There is no path that opens a URL from host output alone (OSC 8 and so on). `TerminalGate.openUrl` is called only on an explicit action by the user, after the UI has shown the actual URL (the caller's contract).
-- The schemes allowed by default are only `http` and `https`. `javascript:`, `file:`, `intent:`, `content:`, and others are not opened.
-- URLs containing whitespace, control characters, format characters (bidirectional controls and zero-width characters), or surrogates (characters outside the BMP) are not opened, because the displayed URL and the actual URL may differ.
-- URLs containing other default-ignorable code points are not opened either: the whole BMP list of Unicode 16.0's `Default_Ignorable_Code_Point` (for example U+034F, U+115F, U+1160, U+17B4, U+17B5, U+180B to U+180F, U+3164, U+FE00 to U+FE0F, U+FFA0, and the unassigned U+2065 and U+FFF0 to U+FFF8). They draw as nothing (U+3164 HANGUL FILLER) or change the character before them (variation selectors). The list is not taken from the runtime, so that it does not depend on the runtime's Unicode version: `scripts/generate_unicode_tables.py` generates it (`UnicodeDefaultIgnorables` in `vtfx-gate`, committed) from the copy of `DerivedCoreProperties.txt` in `third_party/unicode`, and `scripts/check.sh` fails if it is not up to date. (2026-10-15, decided by a human after a security review; generated from the UCD file at a human's request, replacing a list written by hand)
-- `http` and `https` URLs (in any case) with userinfo are not opened: an `@` in the authority, such as `https://good.example@evil.example`, makes the URL start with a host it does not go to, and a long userinfo can push the real host out of view. An `@` in the path, query, or fragment (`https://medium.com/@user`) is allowed. A `\` in the authority is refused too: browsers treat it as `/` there but other parsers do not, so they disagree on the host of `https://evil.example\@good.example`. As in browsers (the WHATWG URL Standard), the authority starts after any `/` and `\` that follow `scheme:`, with or without `//` (`https:good.example@evil.example` is refused), and ends at the first `/`, `?`, or `#`. Refusing `\` rather than ending the authority at it also refuses an `@` after it, whichever way a parser reads it. Other schemes are not checked for userinfo (`mailto:a@b` stays openable when allowed). (2026-10-15, decided by a human after a security review)
-- `http` and `https` URLs with a character that is not ASCII in the authority (the same range as for userinfo above) are not opened, because the host could look like another one: letters of other scripts (`https://apple.com` with U+0430 CYRILLIC SMALL LETTER A for the `a`, or a Greek omicron for an `o`), and characters that look like `.` or `/` but are mapped to `.` by browsers or stay in the host (U+FF0E FULLWIDTH FULL STOP, U+FF0F FULLWIDTH SOLIDUS, U+2215 DIVISION SLASH). A host in punycode (`https://xn--pple-43d.com`) is ASCII, so it is opened: the URL shown is where it goes. Characters that are not ASCII in the path, query, or fragment (`https://example.com/日本語`) are allowed, since they do not change the host. Refusing every character that is not ASCII rather than only confusable ones keeps the check independent of a confusables table and of the runtime's Unicode version; a user who needs an internationalized domain can open its punycode form. Other schemes are not checked (`mailto:` has no authority). (2026-10-19, decided by the agent; waiting for the security review of `vtfx-gate`)
-
-### Pastes
-
-- All control characters (C0, DEL, C1) other than HT and newlines are removed from pasted content, and newlines become CR. Since no ESC remains, the content cannot include the end of bracketed paste (`ESC [ 201 ~`) to escape.
-- The same conversion is done even when not in bracketed paste mode.
+The refusal of default-ignorable code points and of userinfo and `\` in item 7 was decided by a human after a security review; the list of default-ignorable code points is generated from the UCD file at a human's request. The refusal of characters that are not ASCII in the authority was decided by the agent after this decision was approved, and waits for the security review of `vtfx-gate`.
 
 ## Alternatives considered
 
 - **Remove only the end sequence from pastes**: Escapes and malfunctions through the C1 CSI (U+009B) or other sequences containing ESC would remain. Removing all control characters is simpler and more reliable.
-- **Allow OSC 52 writes by default, with a limit** (the decision until 2026-10-20): copying with tmux's OSC 52 works without configuration, but on API 29 to 32 the user cannot notice a rewrite of the clipboard.
+- **Allow OSC 52 writes by default, with a limit**: copying with tmux's OSC 52 works without configuration, but on API 29 to 32 the user cannot notice a rewrite of the clipboard.
 - **Allow writes by default only on API 33 and later**: the default of `GatePolicy`, a JVM class, would depend on the platform it runs on, and the same app would behave differently by device.
+- **Mark written content sensitive**: secrets would not be shown in the preview, but the user could not see what a host rewrote the clipboard to.
 
 ## Impact of reversing
 
-Change the defaults of `GatePolicy` and the constants of `Replies`. Update the expected values in `AttackTest` and `HostWriterTest`.
+Change the defaults of `GatePolicy`, the constants of `Replies`, and the checks of `TerminalGate`, and update [gate-policy.md](../design/gate-policy.md). Update the expected values in `AttackTest` and `HostWriterTest`.

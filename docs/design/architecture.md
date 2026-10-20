@@ -94,26 +94,26 @@ The thread conventions are defined in [decisions/0024](../decisions/0024-thread-
 
 ### 3.3 vtfx-gate (subject to review)
 
-Only this module can create bytes to send to the host.
+Only this module can create bytes to send to the host. What it sends, how it replies, and how it decides on the clipboard and URLs are described in [gate-policy.md](gate-policy.md).
 
 - **`HostWriter`**: The sole holder of the host connection (`HostConnection`) that the app passes. It limits what can be sent to a method per kind. `TerminalSession` creates it right away from the connection it receives. The whole class is `@InternalVtfxApi` ([decisions/0016](../decisions/0016-public-api.md), [decisions/0027](../decisions/0027-session-takes-connection.md)).
   - `sendKey(stroke, modes)`: A key. Encodes the key and modifiers into the same bytes as xterm according to the terminal modes (application cursor keys and so on). The input is only the user's key operation and modes that are enums or booleans, and there is no path by which an arbitrary string sent by the host can get mixed in ([decisions/0005](../decisions/0005-key-bytes-through-gate.md)).
   - `sendText(text)`: Text committed by the IME and the like. Decides the handling of control characters (turning `\n` into CR and so on) in one place.
-  - `sendDeletes(count)`: DELs that erase already-sent text in IME editing. The count has a limit.
+  - `sendDeletes(count)`: DELs that erase already-sent text in IME editing. The count has a limit (65536).
   - `sendPaste(text, bracketed)`: A paste. Removes control characters so that the end sequence of bracketed paste cannot be formed, and then brackets it (requirement 6.1, "Escaping from bracketed paste").
   - `sendReply(query, colors)`: The reply to `ReplyRequested`. The reply string is built, for the corresponding query, only from constants and numbers from the terminal state. Strings sent by the host are not included in replies.
   - `sendMouse(report, tracking, encoding)`, `sendFocus(focused)`: Mouse and focus reports, only when the host requested them.
 - **Policy**: Allows or denies requests such as reading and writing the clipboard and opening URLs according to the app's settings (`GatePolicy`). The default is the safe side (requirement 6.5).
-  - Example: Reading and writing with OSC 52 are both denied by default; when the app allows writing, it has a length limit ([decisions/0006](../decisions/0006-gate-defaults.md)).
-  - Example: Hyperlinks are opened only on an explicit action by the user. The actual URL is shown before opening.
-- **The user's copy and paste**: `TerminalGate.copyToClipboard` and `readClipboardForPaste` perform them for explicit actions of the user, to which the OSC 52 policy does not apply; the pasted text is then sent with `sendPaste`. `TerminalSession` hands the clipboard and the URL opener to the gate and does not call them itself ([decisions/0042](../decisions/0042-user-clipboard-through-gate.md)).
+  - Example: Reading and writing with OSC 52 are both denied by default; when the app allows writing, it has a length limit (section 4.1 of [gate-policy.md](gate-policy.md), [decisions/0006](../decisions/0006-gate-defaults.md)).
+  - Example: Hyperlinks are opened only on an explicit action by the user. The actual URL is shown before opening, and URLs whose displayed form may differ from where they go are refused (section 5 of [gate-policy.md](gate-policy.md)).
+- **The user's copy and paste**: `TerminalGate.copyToClipboard` and `readClipboardForPaste` perform them for explicit actions of the user, to which the OSC 52 policy does not apply; the pasted text is then sent with `sendPaste`. `TerminalSession` hands the clipboard and the URL opener to the gate and does not call them itself (section 4.2 of [gate-policy.md](gate-policy.md), [decisions/0042](../decisions/0042-user-clipboard-through-gate.md)).
 - Performing capabilities is delegated to interfaces implemented by `vtfx-gate-android` (`ClipboardAccess`, `UrlOpener`). `vtfx-gate` itself does not depend on Android.
-- `TerminalGate` receives `vtfx-core`'s `TerminalEvent`s, handles replies and clipboard requests, and decides on opening URLs by user action. The defaults are in [decisions/0006](../decisions/0006-gate-defaults.md).
+- `TerminalGate` receives `vtfx-core`'s `TerminalEvent`s, handles replies and clipboard requests, and decides on opening URLs by user action. The defaults are in [gate-policy.md](gate-policy.md), and the reasons for them in [decisions/0006](../decisions/0006-gate-defaults.md).
 
 ### 3.4 vtfx-gate-android (subject to review)
 
 - The only module that deals with `ClipboardManager` and the `Intent` that opens URLs.
-- A thin implementation that performs only the requests `vtfx-gate` allowed. It has no decision logic.
+- A thin implementation that performs only the requests `vtfx-gate` allowed. It has no decision logic. What `AndroidClipboard` and `AndroidUrlOpener` do is in section 6 of [gate-policy.md](gate-policy.md).
 
 ### 3.5 vtfx-compose (public API)
 

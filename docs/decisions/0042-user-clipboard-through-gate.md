@@ -2,7 +2,7 @@
 
 - Status: Approved (2026-10-19, decided by a human in a review of the review queue); items 2 and 3 superseded by [0044](0044-boundaries-in-gradle-and-classes.md)
 - Date: 2026-10-19
-- Related: Requirement 6.1, sections 1, 3.3, and 5 of [architecture.md](../design/architecture.md), [0006](0006-gate-defaults.md), [0007](0007-compose-session.md), [0012](0012-touch-and-selection.md), [0027](0027-session-takes-connection.md), [0031](0031-desktop-pointer-and-terminal-state.md), [0041](0041-security-review-by-module.md), `config/boundaries.toml`
+- Related: Requirement 6.1, sections 1, 3.3, and 5 of [architecture.md](../design/architecture.md), [gate-policy.md](../design/gate-policy.md), [0006](0006-gate-defaults.md), [0007](0007-compose-session.md), [0012](0012-touch-and-selection.md), [0027](0027-session-takes-connection.md), [0031](0031-desktop-pointer-and-terminal-state.md), [0041](0041-security-review-by-module.md), `config/boundaries.toml`
 
 ## Background
 
@@ -13,6 +13,8 @@ An audit of the security boundary (2026-10-19), which checked the compiled class
 Because of those calls, `config/boundaries.toml` could not name `ClipboardAccess` and `UrlOpener` either. A change to vtfx-session or vtfx-compose that called `UrlOpener.open` without the gate's URL check, or wrote host output to `ClipboardAccess`, passed `scripts/check_boundaries.py` and was not reported by `scripts/report_protected_changes.py`.
 
 ## Decision
+
+The user's copy and paste are described in section 4.2 of [gate-policy.md](../design/gate-policy.md).
 
 1. `TerminalGate` has `copyToClipboard(text)` and `readClipboardForPaste()` for the user's copy and paste. They are for explicit actions of the user, and the OSC 52 policy does not apply to them. `TerminalSession` calls them, sends the pasted text through the IME editing model and `HostWriter.sendPaste` as before, and does not keep the clipboard: it hands the clipboard and the URL opener to the gate when it is constructed, as it does the connection ([0027](0027-session-takes-connection.md)). The public API and the behavior do not change.
 2. `config/boundaries.toml` restricts `ClipboardAccess` and `UrlOpener` to `vtfx-gate`, `vtfx-gate-android` (which implements them), `TerminalSession.kt` (which only hands them over), and test sources (`*/src/test/**`). Tests implement fakes of them, and test code is not shipped.
