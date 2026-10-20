@@ -51,13 +51,13 @@ The lower bound of the supported scope is the features of the terminfo entry `xt
 | Resets | DECSTR, RIS. RIS keeps the scrollback, the title, and the saved titles, as xterm does | `TerminalTest`, `EmulationCoverageTest` |
 | Cursor shape | DECSCUSR (0–6) | `EmulationCoverageTest`, screenshots |
 | Queries | DA1, DECID, DA2, DSR 5, DSR 6, DECXCPR, DECRQM (ANSI and DEC modes), DECRQSS (`m`, `r`, ` q`), XTVERSION, XTWINOPS 14 (with 0 or 2) and 16 (sizes in pixels, section 9), XTWINOPS 18, `?` of OSC 4, 10, 11, and 12 | `EmulationCoverageTest`, `GraphicsTest`, the gate's `RepliesAndMouseTest`, `AttackTest` |
-| OSC | 0, 2 (title), 8 (hyperlinks), 52 (clipboard; the policy is in [decisions/0006](../decisions/0006-gate-defaults.md)) | `EmulationCoverageTest`, `AttackTest` |
+| OSC | 0, 2 (title), 8 (hyperlinks), 52 (clipboard; the policy is in section 4.1 of [gate-policy.md](gate-policy.md)) | `EmulationCoverageTest`, `AttackTest` |
 | Images | The kitty graphics protocol (APC `G`), section 9 | `GraphicsTest`, `GraphicsRecordingTest`, `ResourceExhaustionTest`, the gate's `RepliesAndMouseTest` and `AttackTest`, screenshots |
 | Title stack | 0 and 2 of XTWINOPS 22 (save) and 23 (restore). Only titles are pushed. The limits on depth and length are in section 10 | `EmulationCoverageTest.SavedTitles` |
 | Mouse | Tracking (9, 1000, 1002, 1003) and encodings (default, 1005, 1006, 1015). The gate assembles the reports (`HostWriter.sendMouse`); touch and pointer input are mapped to them as in [decisions/0012](../decisions/0012-touch-and-selection.md) and [decisions/0031](../decisions/0031-desktop-pointer-and-terminal-state.md) | `RepliesAndMouseTest` |
 | Synchronized output | 2026. While it is set, drawing is held back, and drawing happens when it is reset. If it is not reset within 200 ms of the first output held back, drawing happens even if output continues (`TerminalDisplay` in `vtfx-compose`) | `TerminalSessionTest`, `TerminalDisplayTest` |
 
-The replies to queries are built by `vtfx-gate` from the state, never from the request ([decisions/0006](../decisions/0006-gate-defaults.md)).
+The replies to queries are built by `vtfx-gate` from the state, never from the request (section 3 of [gate-policy.md](gate-policy.md)).
 
 ## 4. Not supported
 
@@ -112,7 +112,7 @@ The support for the features of `xterm-256color` (Debian, ncurses 6.5) is as fol
 | `kmous`, `XM` (SGR mouse) | Supported |
 | `BE`, `BD`, `PS`, `PE` (bracketed paste) | Supported |
 | `fe`, `fd` (focus events) | Supported |
-| `Ms` (OSC 52) | Supported; reading and writing are denied by default, and writing has a limit when the app allows it ([decisions/0006](../decisions/0006-gate-defaults.md)) |
+| `Ms` (OSC 52) | Supported; reading and writing are denied by default, and writing has a limit when the app allows it (section 4.1 of [gate-policy.md](gate-policy.md)) |
 | `RV`, `XR`, `u6`–`u9` (queries) | Supported |
 | `E3` (erasing the scrollback) | Supported |
 | `flash` (toggling DECSCNM) | Supported |
