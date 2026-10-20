@@ -25,26 +25,7 @@ Requirement 6.2 asks for being more efficient than WebView with xterm.js, and fo
 | Scrollback memory | 10,000 lines ≤ 5 MiB for typical output, and ≤ 16 MiB even in the worst case: any output, kept within it by the memory budget of the scrollback ([0002](0002-resource-limits.md)); with a different color in every one of 120 cells, all 10,000 lines are kept |
 | Rendering (UI thread, p50) | ≤ 25 ms in the scene where the whole screen changes every time, ≤ 10 ms in the scene where a log flows |
 
-The JVM values are from the development machine (Intel Core i5-8259U). Values on real devices (ART) have not been checked. Checking the rendering frame rate on a real device was put in the review queue.
-
-### Optimizations done
-
-| Change | Effect (development machine) |
-|---|---|
-| Look up character widths in a one-byte table over the BMP | Japanese 46 → 83 MB/s |
-| Write runs of printable ASCII in the ground state into cells all at once | ASCII 42 → 108 MB/s |
-| Make the screen rows a ring buffer, and do not move rows on full-screen scrolls | ASCII 108 → 200 MB/s |
-| Store scrollback lines compactly (drop trailing empty cells, collapse a uniform style into one). Do not reallocate `Line` on scroll | About 3 MiB for 10,000 lines (about 14 MiB before compaction) |
-| Draw characters with `Canvas.drawText` (stop laying out with Compose's `TextMeasurer`) | Frame p50 of full-screen updates 100 → 50 ms (emulator) |
-| Process CSI parameter bytes directly in the parsing loop, and clear parameters in constant time | SGR 56 → 70 MB/s |
-| Cache line drawings in `RenderNode`s keyed by content | UI thread drawing p50 of 6 ms in the scene where a log flows |
-| Share the strings of printable ASCII cells, and reuse run strings and `RenderNode`s evicted from the cache | UI thread drawing p50 of full-screen updates 26 → 21 ms |
-
-### Known constraints
-
-- The line drawing cache is used only with a hardware-accelerated `Canvas`. The `Canvas` of Robolectric's screenshot tests has none, so the provisional goldens compare drawing that does not go through the cache. Drawing through the cache was checked by replaying in the sample app on the emulator (`scripts/sample_replay.py`).
-- The cache takes the drawing colors from `TerminalStyle`. When values that affect drawing (the number of columns, reverse video) change, all lines are redrawn.
-- The render thread discards the display lists of `RenderNode`s not drawn in a frame. If a node taken from the cache has no display list (`hasDisplayList()`), it is recorded again (same as `View`). This was overlooked, so when the content of a line unused for one frame appeared on another line, it was drawn blank (found on a real device; `LineCacheTest`). Robolectric's rendering does not go through this path, so the cache's decisions are tested directly on `LineCache`.
+`scripts/benchmark.py` measures all of them and compares them with these targets; the targets are its constants. The targets were set from measurements on the development machine's JVM and on the emulator. They have not been checked on real devices (ART); checking the rendering on a real device is in section 5 of [device-checks.md](../device-checks.md). The optimizations made to reach the targets, and what each gained, are recorded in [research/performance-2026-10.md](../research/performance-2026-10.md).
 
 ## Alternatives considered
 
