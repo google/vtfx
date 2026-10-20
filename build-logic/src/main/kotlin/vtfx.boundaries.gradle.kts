@@ -20,6 +20,7 @@
 // only aggregates the API reference, and ships nothing.
 
 import com.android.build.api.artifact.ScopedArtifact
+import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.variant.AndroidComponentsExtension
 import com.android.build.api.variant.ScopedArtifacts
 import org.gradle.api.artifacts.ArtifactView
@@ -70,6 +71,25 @@ subprojects {
                 )
             }
         checkBoundaries.configure { dependsOn(checkClasses) }
+        val checkArtifact =
+            tasks.register<CheckLibraryArtifactTask>("checkLibraryArtifact") {
+                description = "Checks what the jar brings into apps besides classes."
+                artifact.set(tasks.named<Jar>("jar").flatMap { it.archiveFile })
+            }
+        checkBoundaries.configure { dependsOn(checkArtifact) }
+    }
+    pluginManager.withPlugin("com.android.library") {
+        // The AAR that is published; the debug one is built from the same sources.
+        val components =
+            extensions.getByName("androidComponents") as AndroidComponentsExtension<*, *, *>
+        components.onVariants(components.selector().withBuildType("release")) { variant ->
+            val checkArtifact =
+                tasks.register<CheckLibraryArtifactTask>("checkLibraryArtifact") {
+                    description = "Checks what the AAR brings into apps besides classes."
+                    artifact.set(variant.artifacts.get(SingleArtifact.AAR))
+                }
+            checkBoundaries.configure { dependsOn(checkArtifact) }
+        }
     }
     for (android in androidPlugins) {
         pluginManager.withPlugin(android) {

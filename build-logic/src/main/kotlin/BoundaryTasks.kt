@@ -158,6 +158,21 @@ abstract class CheckClassReferencesTask : DefaultTask() {
     }
 }
 
+/** Fails if a library's artifact brings into apps what [LibraryArtifacts] does not allow. */
+@DisableCachingByDefault(because = "A check with no outputs")
+abstract class CheckLibraryArtifactTask : DefaultTask() {
+    /** The jar of a JVM library, or the AAR of an Android library. */
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NAME_ONLY)
+    abstract val artifact: RegularFileProperty
+
+    @TaskAction
+    fun run() {
+        val file = artifact.get().asFile
+        failOn(LibraryArtifacts.violations(file.name, file.readBytes()))
+    }
+}
+
 /** The internal names of the classes in [file], a directory or a jar. */
 private fun classNames(file: File): List<String> =
     when {
@@ -183,7 +198,7 @@ private fun failOn(violations: List<String>) {
     val distinct = violations.distinct()
     if (distinct.isEmpty()) return
     throw GradleException(
-        (distinct + "${distinct.size} boundary violation(s). See config/boundaries.toml.")
+        (distinct + "${distinct.size} boundary violation(s). See docs/decisions/0044.")
             .joinToString("\n")
     )
 }
