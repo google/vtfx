@@ -25,6 +25,9 @@ cd "$(dirname "$0")/.."
 echo "== KDoc of the public API"
 python3 -I scripts/check_kdoc.py
 
+echo "== References to documents"
+python3 -I scripts/check_doc_links.py
+
 echo "== License headers"
 # Files that are not Google's own source code have no header (docs/decisions/0018). To add missing
 # headers, run the same command with `-c "Google LLC" -l apache` instead of `-check`.

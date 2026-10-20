@@ -111,12 +111,13 @@ In the middle of development, many spec tests do not pass yet. Agents cannot cha
 Runs the following in this order, and fails if any one fails.
 
 1. `scripts/check_kdoc.py` (public declarations of library modules have KDoc, requirement 6.5; `@InternalVtfxApi` declarations are excluded from the API reference with `@suppress`; KDoc that appears in the reference does not refer to repository documents or requirement sections. [decisions/0016](../decisions/0016-public-api.md), [decisions/0022](../decisions/0022-api-reference-content.md))
-2. License headers (`addlicense -check`, run with `go run github.com/google/addlicense@v1.2.0` on the files tracked by git; files that are not Google's own source code are excluded. [decisions/0018](../decisions/0018-distribution.md))
-3. Tests of the scripts themselves (`python3 -m unittest discover -s scripts/tests`)
-4. The generated sources are up to date: `scripts/generate_unicode_tables.py --check` regenerates the character width tables of `vtfx-core` and the default-ignorable code points of `vtfx-gate` from `third_party/unicode` and compares them with the committed files ([decisions/0029](../decisions/0029-import-without-gradle.md))
-5. `./gradlew build` (Kotlin formatting check, the module boundaries: the dependencies between modules and what the compiled main classes of each module refer to ([decisions/0044](../decisions/0044-boundaries-in-gradle-and-classes.md)), compilation, unit tests, spec tests, lint, and the public API compatibility check. Formatting is [decisions/0023](../decisions/0023-code-style.md))
+2. `scripts/check_doc_links.py` (the `docs/...` paths written anywhere in the repository and the relative links of the Markdown files point at files that exist, and a superseded decision links to its successor. References to sections are not checked, so the documents keep their section numbers ([AGENTS.md](../../AGENTS.md)))
+3. License headers (`addlicense -check`, run with `go run github.com/google/addlicense@v1.2.0` on the files tracked by git; files that are not Google's own source code are excluded. [decisions/0018](../decisions/0018-distribution.md))
+4. Tests of the scripts themselves (`python3 -m unittest discover -s scripts/tests`)
+5. The generated sources are up to date: `scripts/generate_unicode_tables.py --check` regenerates the character width tables of `vtfx-core` and the default-ignorable code points of `vtfx-gate` from `third_party/unicode` and compares them with the committed files ([decisions/0029](../decisions/0029-import-without-gradle.md))
+6. `./gradlew build` (Kotlin formatting check, the module boundaries: the dependencies between modules and what the compiled main classes of each module refer to ([decisions/0044](../decisions/0044-boundaries-in-gradle-and-classes.md)), compilation, unit tests, spec tests, lint, and the public API compatibility check. Formatting is [decisions/0023](../decisions/0023-code-style.md))
 
-Long fuzzing and the emulator e2e take time, so they are not included. They run with separate scripts (sections 7 and 8). Short fuzzing is included in the `check` of `./gradlew build` in step 5 (section 7, [decisions/0003](../decisions/0003-fuzzing-gate.md)).
+Long fuzzing and the emulator e2e take time, so they are not included. They run with separate scripts (sections 7 and 8). Short fuzzing is included in the `check` of `./gradlew build` in step 6 (section 7, [decisions/0003](../decisions/0003-fuzzing-gate.md)).
 
 ## 10. Recording and replaying the output of real apps
 
