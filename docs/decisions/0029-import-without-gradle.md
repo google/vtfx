@@ -19,13 +19,12 @@ The character width tables of `vtfx-core` (`UnicodeWidthTables.kt`) were generat
 - Each file that uses declarations marked `@InternalVtfxApi` opts in with `@file:OptIn(InternalVtfxApi::class)`, in the main sources and in the tests. The conventions in `build-logic` no longer pass `optIn`. A file-level opt-in, rather than one per declaration, keeps the change mechanical and close to the module-wide opt-in it replaces.
 - Apps still must not opt in. The sample app has no `@OptIn(InternalVtfxApi::class)`, so it still compiles with the public API alone.
 
-### Committed character width tables
+### Committed generated sources
 
-- `UnicodeWidthTables.kt` is committed in `vtfx-core/src/main/kotlin` like the other sources (the direction was chosen by a human). `scripts/generate_unicode_tables.py` regenerates it from the copies of the UCD files in `third_party/unicode`, and replaces the Gradle task, which is removed. It uses only the Python standard library, like the other scripts, and does not download anything.
-- The script keeps the rules and the output of the Gradle task: the tables are byte for byte the same; only the license header (below) and the comment that names the generator differ. Its tests (`scripts/tests/test_generate_unicode_tables.py`) check the rules on small UCD files.
-- `scripts/check.sh` runs `scripts/generate_unicode_tables.py --check`, which regenerates the file in memory and fails if the committed file differs, so the file cannot drift from the UCD files or be edited by hand.
-- The generated file begins with the same Apache License header as the other sources, so the license header check covers it as it does every other source. The UCD files it is generated from stay under the Unicode License v3 in `third_party/unicode`, as [0018](0018-distribution.md) arranges for the `vtfx-core` artifact that contains the tables. A human confirmed that this header is right for the generated file (2026-10-15).
-- ktfmt would break the tables of value pairs into one value per line, so `vtfx.ktfmt` excludes the file by path ([0023](0023-code-style.md)). The `--check` above keeps its format fixed instead.
+- The sources generated from the Unicode Character Database are committed like the other sources (the direction was chosen by a human): the character width tables (`UnicodeWidthTables.kt`) and the diacritics of the kitty graphics placeholders (`PlaceholderDiacritics.kt`) in `vtfx-core`, and the default-ignorable code points (`UnicodeDefaultIgnorables.kt`) in `vtfx-gate`. `scripts/generate_unicode_tables.py` generates them from the copies of the UCD files in `third_party/unicode`; there is no generation task in the Gradle build. It uses only the Python standard library, like the other scripts, and does not download anything. Its tests (`scripts/tests/test_generate_unicode_tables.py`) check the rules on small UCD files.
+- `scripts/check.sh` runs `scripts/generate_unicode_tables.py --check`, which regenerates the files in memory and fails if a committed file differs, so the files cannot drift from the UCD files or be edited by hand.
+- The generated files begin with the same Apache License header as the other sources, so the license header check covers them as it does every other source. The UCD files they are generated from stay under the Unicode License v3 in `third_party/unicode`, as [0018](0018-distribution.md) arranges for the artifacts that contain the tables. A human confirmed that this header is right for the generated files.
+- ktfmt would break the tables of value pairs into one value per line, so `vtfx.ktfmt` excludes `UnicodeWidthTables.kt` and `UnicodeDefaultIgnorables.kt` by path ([0023](0023-code-style.md)). The `--check` above keeps their format fixed instead.
 
 ### What the sources still expect from the build
 
@@ -53,6 +52,6 @@ No Kotlin language feature that needs a flag (context parameters, `-Xjvm-default
 
 ## Impact of reversing
 
-For the tables, delete the committed file and the `--check` step in `scripts/check.sh`, add a task that runs the script (or the former `GenerateUnicodeWidthTablesTask`) into `build/` and register its output as a source directory of `vtfx-core`, and drop the exclusion in `vtfx.ktfmt`.
+For the generated sources, delete the committed files and the `--check` step in `scripts/check.sh`, add a task that runs the script into `build/` and register its output as a source directory of `vtfx-core` and `vtfx-gate`, and drop the exclusions in `vtfx.ktfmt`.
 
 For the opt-in, add `optIn.add("com.google.vtfx.core.InternalVtfxApi")` back to `compilerOptions` in `vtfx.jvm-library` and `vtfx.compose`, and remove the `@file:OptIn(InternalVtfxApi::class)` lines and their imports.

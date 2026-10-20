@@ -6,16 +6,14 @@
 
 ## Background
 
-`./gradlew build` in `scripts/check.sh` runs the `fuzz` task of `vtfx-core`, `vtfx-gate`, and `vtfx-input` ([0003](0003-fuzzing-gate.md)). Each takes about 35 seconds: 30 seconds of fuzzing, and the start of the JVM and the replay of the regression inputs. A shared build service let only one of them run at a time, so that the fuzzers, each of which keeps a CPU busy, did not slow down the tests that ran beside them, including those with a time limit (`ResourceExhaustionTest`).
+`./gradlew build` in `scripts/check.sh` runs the `fuzz` task of each module with a fuzz test ([0003](0003-fuzzing-gate.md)), three when this was decided. Each takes about 35 seconds: 30 seconds of fuzzing, and the start of the JVM and the replay of the regression inputs. A shared build service let only one of them run at a time, so that the fuzzers, each of which keeps a CPU busy, did not slow down the tests that ran beside them, including those with a time limit (`ResourceExhaustionTest`).
 
-On a development machine with 128 CPUs, the build took about 110 seconds whatever had changed, with or without the build cache, even when every other task was up to date: the three fuzz tasks one after another took about 105 seconds, and all the other tasks ran in parallel beside them. The fuzz tasks are never up to date, so their time is the least that the check takes.
+The fuzz tasks are never up to date, so their time is the least that the check takes. Run one after another, they made the check take about 110 seconds on the development machine even when every other task was up to date, while all the other tasks ran in parallel beside them ([research/check-duration-2026-10.md](../research/check-duration-2026-10.md)).
 
 ## Decision
 
-- The fuzz tasks have no limit on how many run at once. They run in parallel with each other and with the other tasks, like any other task.
+- The fuzz tasks have no limit on how many run at once. They run in parallel with each other and with the other tasks, like any other task (`vtfx.fuzz` in `build-logic`).
 - The amount of fuzzing in the gate does not change: each target is still fuzzed for 30 seconds on every run.
-- On the same machine, `scripts/check.sh` now takes about 40 seconds when nothing changed, instead of about 110. Each fuzzing JVM, with its heap of at most 1 GiB, took up to about 1.2 GB of resident memory, and the three together up to about 3.4 GB at once.
-- 2026-10-20 (correction): since 2026-10-19, `vtfx-font` and `vtfx-font-gate` apply `vtfx.fuzz` too ([0040](0040-sanitized-user-fonts.md), [0041](0041-security-review-by-module.md)), so five fuzz tasks run in parallel. The times and the memory above were measured with the three of 2026-10-14.
 - The tests with a time limit do not need the fuzzers to wait. `ResourceExhaustionTest` limits the CPU time of its thread, which does not grow when other processes compete for the CPUs; its limit on the elapsed time (120 seconds) only catches hangs. The fuzzers themselves report an input as a hang only after 10 seconds.
 
 ## Alternatives considered
@@ -28,4 +26,4 @@ On a development machine with 128 CPUs, the build took about 110 seconds whateve
 
 Register a shared build service with `maxParallelUsages` of 1 in `vtfx.fuzz.gradle.kts` in `build-logic`, and declare that the fuzz task uses it (`usesService`).
 
-On a machine with fewer CPUs than the fuzzers and the other tasks need, such as a CI runner with a few CPUs, the fuzzers share the CPUs, and each one tries fewer inputs in its 30 seconds than it would alone. A machine with little memory has to hold the fuzzing JVMs, one per fuzzed module, beside the Gradle daemon and the other test JVMs. If either matters, a limit of the number of fuzz tasks at once by the number of CPUs or the memory can be added instead of reversing.
+On a machine with fewer CPUs than the fuzzers and the other tasks need, such as a CI runner with a few CPUs, the fuzzers share the CPUs, and each one tries fewer inputs in its 30 seconds than it would alone. A machine with little memory has to hold the fuzzing JVMs, one per fuzzed module with a heap of at most 1 GiB each, beside the Gradle daemon and the other test JVMs. If either matters, a limit of the number of fuzz tasks at once by the number of CPUs or the memory can be added instead of reversing.

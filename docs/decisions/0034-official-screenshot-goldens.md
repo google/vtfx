@@ -6,15 +6,16 @@
 
 ## Background
 
-Section 5 of testing.md keeps screenshot goldens in two stages: provisional goldens in `vtfx-compose/src/test/screenshots/`, which agents update, and official goldens in `spec/screenshots/`, which humans own and promote from the provisional goldens. On 2026-10-15 a human approved promoting the 17 provisional goldens, the first official goldens. Nothing checked `spec/screenshots/` yet: Roborazzi compares the rendering with one directory, the provisional goldens.
+Section 5 of testing.md keeps screenshot goldens in two stages: provisional goldens in `vtfx-compose/src/test/screenshots/`, which agents update, and official goldens in `spec/screenshots/`, which humans own and promote from the provisional goldens. When a human first promoted provisional goldens, nothing checked `spec/screenshots/`: Roborazzi compares the rendering with one directory, the provisional goldens.
 
 ## Decision
 
+The procedure is in sections 5 and 6 of [testing.md](../design/testing.md).
+
 - Promoting copies a provisional golden to `spec/screenshots/` with the same file name. The file names contain the test class and the test name, so goldens of other modules would not collide.
-- `OfficialGoldensTest`, a plain JVM test in `vtfx-compose`, checks that each official golden has a provisional golden with the same pixels (size and ARGB of every pixel, read with `ImageIO`). The screenshot tests compare the rendering with the provisional goldens in the same run, so together they check the rendering against the official goldens.
-- An official golden that the provisional golden no longer matches is listed in `spec-expected-failures.txt` of `vtfx-compose` as `screenshots/<file name>`, as section 6 of testing.md does for spec cases. A listed golden must differ, and every listed entry must be an official golden. The agent that changes the rendering adds the entry and an item in review-queue.md; the human who promotes the new provisional golden removes the entry.
+- `OfficialGoldensTest` in `vtfx-compose` checks that each official golden has a provisional golden with the same pixels. Since the screenshot tests compare the rendering with the provisional goldens in the same run, together they check the rendering against the official goldens.
+- An official golden that the provisional golden no longer matches is listed in `spec-expected-failures.txt` of `vtfx-compose`, as spec cases are. The agent that changes the rendering adds the entry and an item in review-queue.md; the human who promotes the new provisional golden removes the entry.
 - Provisional goldens without an official golden (new tests) are not checked by this test; they wait for promotion.
-- `vtfx.screenshot-test` passes the directories to the tests as system properties and declares `spec/screenshots/` as an input, as `vtfx-core` does for `spec/`.
 
 ## Alternatives considered
 
