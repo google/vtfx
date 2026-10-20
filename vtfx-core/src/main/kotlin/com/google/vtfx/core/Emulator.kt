@@ -1112,6 +1112,8 @@ internal class Emulator(
 
     fun scrollbackPushes(): Long = scrollback.pushes
 
+    fun scrollbackGeneration(): Long = scrollback.generation
+
     fun scrollbackLine(index: Int): Line = scrollback[index]
 
     fun estimatedScrollbackBytes(): Long = scrollback.estimatedBytes()

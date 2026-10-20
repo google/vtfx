@@ -52,6 +52,13 @@ internal class Scrollback(private val capacity: Int) {
         get() = pushes - lines.size
 
     /**
+     * Incremented each time the lines are replaced or removed other than by dropping the oldest, so
+     * that the serials of the lines no longer name the lines they named.
+     */
+    var generation: Long = 0L
+        private set
+
+    /**
      * Keeps a compact copy of [line], with its image placements. The caller may reuse [line], which
      * no longer has them.
      */
@@ -83,6 +90,7 @@ internal class Scrollback(private val capacity: Int) {
 
     /** Removes every line, deleting their image placements. */
     fun clear() {
+        generation++
         for (line in lines) line.anchors?.forEach { it.kill() }
         lines.clear()
         bytes = 0L
@@ -98,6 +106,7 @@ internal class Scrollback(private val capacity: Int) {
      * [newLines] (reflow takes them along).
      */
     fun replaceAll(newLines: List<Line>) {
+        generation++
         lines.clear()
         bytes = 0L
         val kept = newLines.takeLast(capacity)

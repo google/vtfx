@@ -339,13 +339,13 @@ public class LinkFinder(private val patterns: List<LinkPattern>) {
 
     /** Finds the links in [rows], with rows counted from the first. */
     private fun findInRows(rows: Rows): List<FoundLink> {
-        val text = LineText(rows.lines)
+        val text = LineText(rows.lines, trimEnd = false)
         val string = text.text
         return match(string)
             .filter {
                 !(rows.isCutAbove && it.start == 0) && !(rows.isCutBelow && it.end == string.length)
             }
-            .mapNotNull { toLink(text, it) }
+            .mapNotNull { toLink(rows.lines, text, it) }
     }
 
     /**
@@ -392,10 +392,10 @@ public class LinkFinder(private val patterns: List<LinkPattern>) {
      * Returns the link of [match], or null if it covers a hyperlink or a concealed cell (SGR 8),
      * whose text the display does not show: the URL would then differ from what the user sees.
      */
-    private fun toLink(text: LineText, match: TextMatch): FoundLink? {
+    private fun toLink(lines: List<LineSnapshot>, text: LineText, match: TextMatch): FoundLink? {
         val spans = text.spans(match.start, match.end)
         for (span in spans) {
-            val line = text.lines[span.row]
+            val line = lines[span.row]
             if (
                 (span.start until span.end).any {
                     line.hyperlinkAt(it) != null || line.styleAt(it).isInvisible

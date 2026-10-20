@@ -146,6 +146,43 @@ public class Terminal(
     }
 
     /**
+     * Returns copies of lines for a search, from line [from], numbered as [SearchLines] says: at
+     * least [minLines] lines of the scrollback, if there are as many, and more up to the end of a
+     * line that autowrap does not join to the next, or, once the lines reach the screen, through
+     * the screen's last row. [from] is clamped to the oldest line kept and the screen's first row.
+     * Lines of the scrollback are resized to [columns], as in [snapshot].
+     *
+     * @throws IllegalArgumentException unless [minLines] is positive.
+     */
+    public fun searchLines(from: Long, minLines: Int): SearchLines {
+        require(minLines > 0) { "minLines must be positive: $minLines" }
+        val alternate = emulator.isAlternateScreen
+        val screen = emulator.screen
+        val screenLine = emulator.scrollbackPushes()
+        val oldestLine = screenLine - if (alternate) 0 else emulator.scrollbackSize()
+        val firstLine = from.coerceIn(oldestLine, screenLine)
+        val lines = ArrayList<LineSnapshot>()
+        var line = firstLine
+        while (line < screenLine && (line - firstLine < minLines || lines.last().isWrapped)) {
+            val index = (line - oldestLine).toInt()
+            lines +=
+                lineSnapshot(emulator.scrollbackLine(index).resized(emulator.columns), copy = false)
+            line++
+        }
+        val isComplete = line == screenLine
+        if (isComplete) for (row in 0 until screen.rows) lines += lineSnapshot(screen[row])
+        return SearchLines(
+            // Switching the screen numbers the lines again too.
+            generation = emulator.scrollbackGeneration() * 2 + if (alternate) 1 else 0,
+            firstLine = firstLine,
+            lines = lines,
+            oldestLine = oldestLine,
+            screenLine = screenLine,
+            isComplete = isComplete,
+        )
+    }
+
+    /**
      * Returns a copy of the screen, scrolled back by [scrollOffset] lines into the scrollback. The
      * offset is clamped to the scrollback's size, and is 0 on the alternate screen, which has no
      * scrollback.
@@ -199,6 +236,7 @@ public class Terminal(
             modes = emulator.modes,
             isAlternateScreen = emulator.isAlternateScreen,
             scrollOffset = offset,
+            firstLine = emulator.scrollbackPushes() - offset,
             lines = lines,
             linesAbove = linesAbove.toList(),
             linesBelow = linesBelow,

@@ -154,6 +154,12 @@ internal constructor(
      * at row `cursor.row + scrollOffset` if that is within [rows][TerminalSnapshot.rows].
      */
     public val scrollOffset: Int,
+    /**
+     * The number of the line at row 0, as [SearchLines] numbers lines.
+     *
+     * @suppress
+     */
+    @InternalVtfxApi public val firstLine: Long,
     private val lines: List<LineSnapshot>,
     /**
      * The rows above the display that autowrap joins to its first line, at most [rows] of them,
