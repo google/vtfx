@@ -114,7 +114,8 @@ packages = [
 ]
 # Enum.valueOf takes the Class of the enum.
 types = ["java/lang/Class"]
-# The thread checks of docs/decisions/0021.
+# To detect reentrant calls: HostWriter refuses a write from inside HostConnection.write, and
+# TerminalSession refuses an input operation from inside another one on the same thread.
 members = ["java/lang/Thread.currentThread"]
 
 # Every project of the build must be listed here, with the modules it may depend on. The build logic
@@ -521,4 +522,12 @@ allowed_modules = []
 # and vtfx-font-gate-android has a subpackage of it.
 package = "com/google/vtfx/font/gate"
 modules = ["vtfx-font-gate", "vtfx-font-gate-android"]
+reason = "A class of the same name in another module could replace a reviewed one on the class path (docs/decisions/0041)."
+
+[[reserved_packages]]
+# Likewise for vtfx-gate, which keeps its classes in this package, and vtfx-gate-android, which has a
+# subpackage of it. Another module could otherwise declare, say, com.google.vtfx.gate.Replies and
+# replace the reviewed class that builds the replies.
+package = "com/google/vtfx/gate"
+modules = ["vtfx-gate", "vtfx-gate-android"]
 reason = "A class of the same name in another module could replace a reviewed one on the class path (docs/decisions/0041)."
