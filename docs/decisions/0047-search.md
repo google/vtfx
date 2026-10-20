@@ -1,6 +1,6 @@
 # Searching the display
 
-- Status: Provisional
+- Status: Approved (2026-10-20, approved by a human, with the required search colors of `TerminalColors` in item 8)
 - Date: 2026-10-20
 - Related: Requirements 4.1, 6.1, and 6.5, section 13 of [compose-input.md](../design/compose-input.md), [0012](0012-touch-and-selection.md), [0014](0014-performance.md), [0019](0019-extensibility.md), [0031](0031-desktop-pointer-and-terminal-state.md), [0036](0036-adding-parameters.md), [0037](0037-api-shape-before-1.0.md), `SearchIndex` in `vtfx-core`, `TerminalState`
 
