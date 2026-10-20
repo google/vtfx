@@ -165,7 +165,7 @@ Keys, IME ─▶ vtfx-compose (adapter) ─▶ vtfx-session ─▶ vtfx-input (e
 
 ## 5. Verifying the security boundary
 
-As in requirement 6.1, in the initial phase the verification is at the level of a guardrail, backed by being able to audit afterward.
+The checks of the module boundaries read Gradle's model of the build and the compiled classes and artifacts, so that they hold against changes written to get around them, not only against obvious mistakes. What they do not cover (the build itself, how allowed APIs are used, tests) is left to review, backed by being able to audit afterward (requirement 6.1, [decisions/0044](../decisions/0044-boundaries-in-gradle-and-classes.md)).
 
 | Verification | Method |
 |---|---|

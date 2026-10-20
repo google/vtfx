@@ -14,8 +14,8 @@
 
 1. `TerminalSession` takes `connection: HostConnection` as its first argument and creates the `HostWriter` right away during construction. The session does not keep the connection; it keeps only the `HostWriter`.
 2. `HostWriter` becomes `@InternalVtfxApi` and is removed from the public API. It is still only vtfx-gate that assembles and checks the bytes for the host.
-3. In `config/boundaries.toml`, add only `TerminalSession.kt` of `vtfx-session` to the paths allowed to refer to `HostConnection`. It is limited to one file, not the whole module, so that the check can confirm the connection is not passed on from there. vtfx-compose still cannot refer to it.
-4. `TerminalSession.kt` is not added to `security_review` in `config/protected-paths.toml`, even though the check would let it write to the connection directly, bypassing `HostWriter` (2026-10-15, decided by a human). It is a file that changes often, and it only hands the connection to `HostWriter`.
+3. In `config/boundaries.toml`, add only `TerminalSession.kt` of `vtfx-session` to the paths allowed to refer to `HostConnection`. It is limited to one file, not the whole module, so that the check can confirm the connection is not passed on from there. vtfx-compose still cannot refer to it. Replaced by [0044](0044-boundaries-in-gradle-and-classes.md) (2026-10-20): the check reads the compiled classes, and any module may name `HostConnection` as a type, but only vtfx-gate may use its members.
+4. `TerminalSession.kt` is not added to `security_review` in `config/protected-paths.toml`, even though the check would let it write to the connection directly, bypassing `HostWriter` (2026-10-15, decided by a human). It is a file that changes often, and it only hands the connection to `HostWriter`. Since [0044](0044-boundaries-in-gradle-and-classes.md), the check no longer lets it: a call of the connection in any class of vtfx-session fails the build.
 
 ## Alternatives considered
 
