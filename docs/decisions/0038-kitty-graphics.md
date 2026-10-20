@@ -29,7 +29,7 @@ What real programs send was recorded on the development machine (kitty 0.48.2, t
 | Image ids and numbers (`i`, `I`), placement ids (`p`), source rectangles (`x`, `y`, `w`, `h`), cell offsets (`X`, `Y`), sizes in cells (`c`, `r`), z-index (`z`), cursor policy (`C`), quiet (`q`) | Usage hints (`N`): ignored |
 | Every kind of deletion (`d=a` to `Z`), except of animation frames (`d=f`, `F`, which do nothing) | |
 | Unicode placeholders (`U=1` and U+10EEEE) | |
-| Pixel sizes: XTWINOPS 14 (the text area) and 16 (a cell), and the pixel size given to the app for the host's window size | XTWINOPS 14;2 and 15 report the same as 14, since vtfx has no window or screen of its own |
+| Pixel sizes: XTWINOPS 14 (the text area) and 16 (a cell), and the pixel size given to the app for the host's window size | XTWINOPS 14;2 reports the same as 14, since vtfx has no window of its own; XTWINOPS 15 (the screen) is not answered |
 
 ### Parsing
 
@@ -56,7 +56,7 @@ Added to [0002](0002-resource-limits.md):
 |---|---|---|
 | Pixels of all images, of both screens together | 32 MiB of decoded pixels by default (8 Mi pixels), at most 1 GiB; 0 turns the protocol off: APC strings are then ignored and queries are not answered | `TerminalLimits.maxImageBytes` |
 | Width and height of an image | 10000 pixels each, as kitty | Not configurable |
-| Data of a transmission in progress | The size of the decoded image, and at most `maxImageBytes`, of decoded base64 | Follows `maxImageBytes` |
+| Data of a transmission in progress | `maxImageBytes` of decoded base64 | Follows `maxImageBytes` |
 | Images | 1024 per screen | Not configurable |
 | Placements | 1024 per screen | Not configurable |
 | Columns and rows of a placement | `TerminalLimits.MAX_DIMENSION` | Not configurable |

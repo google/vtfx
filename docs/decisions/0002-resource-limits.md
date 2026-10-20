@@ -27,7 +27,7 @@ Host output is not trustworthy. It must not be able to make the terminal use mem
 | Length of OSC, DCS, and APC strings | 256 Ki UTF-16 units by default (at most 16 Mi). APC since 2026-10-16 ([0038](0038-kitty-graphics.md)) | `TerminalLimits.maxStringLength` | The whole string is dropped (not truncated and executed) |
 | Number of parameters | 32 | Not configurable | The 33rd and later are dropped |
 | Parameter values | 65535 | Not configurable | Set to 65535 |
-| Combining characters per cell | 32 UTF-16 units | Not configurable | Later combining characters are dropped |
+| Text of a cell (a character and its combining characters) | 32 UTF-16 units | Not configurable (`Line.MAX_CLUSTER_LENGTH`) | Later combining characters are dropped |
 | REP (`CSI Ps b`) count | The number of cells on the screen (columns × rows) | Not configurable | The count is truncated |
 | Length of OSC 8 URIs | 2083 characters (the recommendation of the OSC 8 specification) | Not configurable | Not made a link |
 | Length of OSC 8 ids | 250 UTF-16 units (as VTE limits it) | Not configurable (`Emulator.MAX_LINK_ID_LENGTH`) | Not made a link |

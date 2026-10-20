@@ -1,6 +1,6 @@
 # Unicode version, character width, grapheme clusters, fonts
 
-- Status: Approved (2026-10-13, approved by a human in the final review)
+- Status: Approved (2026-10-13, approved by a human in the final review); generating the width table in the build superseded by [0029](0029-import-without-gradle.md)
 - Date: 2026-10-12
 - Related: Requirement 5.2, section 8 (the policy on the Unicode version, Ambiguous width, and grapheme clusters), `CharWidth`, `scripts/generate_unicode_tables.py`, [third_party/unicode](../../third_party/unicode/README.md), `BoxDrawing`
 
@@ -12,8 +12,7 @@ If the terminal and the host disagree on character widths, cursor positions shif
 
 ### Unicode version and width rules
 
-- The character width table is generated from the Unicode Character Database by the build of `vtfx-core` (`GenerateUnicodeWidthTablesTask` in `build-logic`). The rules are the same as glibc's `utf8_gen.py`. The build reads the copies of the UCD files in `third_party/unicode` and does not download them, so as not to put load on unicode.org (2026-10-14, decided by a human; until then, `scripts/gen_char_width.py` downloaded the files and the generated table was committed).
-  - 2026-10-14: The generated table (`UnicodeWidthTables.kt` in `vtfx-core`) is committed again, so that the sources build without Gradle. `scripts/generate_unicode_tables.py` generates it from the same copies with the same rules and output, replacing the Gradle task, and `scripts/check.sh` fails if the committed file is not what the script generates ([0029](0029-import-without-gradle.md), the direction was chosen by a human).
+- The character width table is generated from the Unicode Character Database by `scripts/generate_unicode_tables.py` and committed as `UnicodeWidthTables.kt` in `vtfx-core` ([0029](0029-import-without-gradle.md)). The rules are the same as glibc's `utf8_gen.py`. The script reads the copies of the UCD files in `third_party/unicode` and does not download them, so as not to put load on unicode.org (decided by a human).
   - Width 0: general categories Mn, Me, Cf (except U+00AD), Hangul medial vowel and final consonant jamo (U+1160–U+11FF, U+D7B0–U+D7FF), U+200B.
   - Width 2: East_Asian_Width W or F. Includes unassigned code points in the CJK ranges (the `@missing` default).
   - Everything else has width 1.
