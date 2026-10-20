@@ -174,6 +174,25 @@ members = ["java/security/MessageDigest.digest", "java/security/MessageDigest.ge
 allowed_dependencies = ["vtfx-font-gate", "vtfx-core"]
 check_classes = true
 
+[modules.vtfx-font-gate-android.allowed_references]
+# What vtfx-font-gate-android may do is what this list allows: make typefaces from the bytes of
+# canonical fonts in buffers.
+classes = [
+    "android/graphics/Typeface",
+    "android/graphics/Typeface$CustomFallbackBuilder",
+    "android/graphics/fonts/Font",
+    "android/graphics/fonts/Font$Builder",
+    "android/graphics/fonts/FontFamily",
+    "android/graphics/fonts/FontFamily$Builder",
+    "android/graphics/fonts/FontStyle",
+    "java/io/IOException",
+    "java/lang/Throwable",
+    "java/nio/ByteBuffer",
+]
+packages = []
+types = []
+members = []
+
 [modules.vtfx-input]
 allowed_dependencies = ["vtfx-core"]
 check_classes = true
@@ -198,6 +217,25 @@ members = ["java/util/Locale.ROOT"]
 allowed_dependencies = ["vtfx-gate"]
 check_classes = true
 
+[modules.vtfx-gate-android.allowed_references]
+# What vtfx-gate-android may do is what this list allows: the clipboard and opening URLs.
+classes = [
+    "android/content/ActivityNotFoundException",
+    "android/content/ClipData",
+    "android/content/ClipData$Item",
+    "android/content/ClipboardManager",
+    "android/content/Intent",
+    "android/net/Uri",
+    "java/lang/SecurityException",
+]
+packages = []
+# Whether the context is an activity decides whether the intent needs a new task.
+types = ["android/app/Activity"]
+members = [
+    "android/content/Context.getSystemService(Ljava/lang/Class;)",
+    "android/content/Context.startActivity",
+]
+
 [modules.vtfx-session]
 allowed_dependencies = ["vtfx-core", "vtfx-input", "vtfx-gate"]
 check_classes = true
@@ -215,6 +253,134 @@ members = []
 [modules.vtfx-compose]
 allowed_dependencies = ["vtfx-core", "vtfx-input", "vtfx-gate", "vtfx-gate-android", "vtfx-session", "vtfx-font", "vtfx-font-gate", "vtfx-font-gate-android"]
 check_classes = true
+
+[modules.vtfx-compose.allowed_references]
+# Packages of Compose and classes of Android without capabilities (layout, drawing, input events,
+# state) are allowed whole. The classes that hold capabilities among others, such as Context, View,
+# and InputMethodManager, are allowed by member, and so are the composition locals of
+# androidx.compose.ui.platform, among which are the clipboard and the URL handler. Nothing of
+# vtfx-gate-android is used; the app hands its capabilities to the session.
+classes = [
+    "android/annotation/SuppressLint",
+    "android/graphics/Bitmap$Config",
+    "android/graphics/Canvas",
+    "android/graphics/Matrix",
+    "android/graphics/Paint",
+    "android/graphics/Paint$FontMetrics",
+    "android/graphics/RecordingCanvas",
+    "android/graphics/Rect",
+    "android/graphics/RectF",
+    "android/graphics/RenderNode",
+    "android/os/Build$VERSION",
+    "android/os/Handler",
+    "android/os/LocaleList",
+    "android/os/Looper",
+    "android/view/KeyEvent",
+    "android/view/inputmethod/BaseInputConnection",
+    "android/view/inputmethod/CompletionInfo",
+    "android/view/inputmethod/CorrectionInfo",
+    "android/view/inputmethod/CursorAnchorInfo",
+    "android/view/inputmethod/CursorAnchorInfo$Builder",
+    "android/view/inputmethod/EditorInfo",
+    "android/view/inputmethod/ExtractedText",
+    "android/view/inputmethod/ExtractedTextRequest",
+    "android/view/inputmethod/InputConnection",
+    "android/view/inputmethod/InputContentInfo",
+    "android/view/inputmethod/SurroundingText",
+    "android/view/inputmethod/TextAttribute",
+    "androidx/annotation/AnyThread",
+    "androidx/annotation/FontRes",
+    "androidx/annotation/MainThread",
+    "androidx/annotation/RequiresApi",
+    "androidx/compose/ui/platform/InspectorInfo",
+    "androidx/compose/ui/platform/TextToolbar",
+    "androidx/compose/ui/platform/ValueElementSequence",
+    "androidx/compose/ui/platform/ViewConfiguration",
+    "androidx/compose/ui/text/AnnotatedString",
+    "androidx/compose/ui/text/font/DeviceFontFamilyName",
+    "androidx/compose/ui/text/font/DeviceFontFamilyNameFontKt",
+    "androidx/compose/ui/text/font/Font",
+    "androidx/compose/ui/text/font/FontFamily",
+    "androidx/compose/ui/text/font/FontFamily$Companion",
+    "androidx/compose/ui/text/font/FontFamily$Resolver",
+    "androidx/compose/ui/text/font/FontFamilyKt",
+    "androidx/compose/ui/text/font/FontKt",
+    "androidx/compose/ui/text/font/FontStyle",
+    "androidx/compose/ui/text/font/FontStyle$Companion",
+    "androidx/compose/ui/text/font/FontVariation$Settings",
+    "androidx/compose/ui/text/font/FontWeight",
+    "androidx/compose/ui/text/font/FontWeight$Companion",
+    "androidx/compose/ui/text/font/GenericFontFamily",
+    "androidx/compose/ui/viewinterop/AndroidView_androidKt",
+    "java/lang/Runnable",
+    "java/util/concurrent/atomic/AtomicBoolean",
+    "java/util/function/Predicate",
+    "kotlinx/coroutines/CoroutineScope",
+    "kotlinx/coroutines/DelayKt",
+    "kotlinx/coroutines/flow/Flow",
+    "kotlinx/coroutines/flow/FlowKt",
+]
+packages = [
+    "androidx/compose/foundation",
+    "androidx/compose/foundation/gestures",
+    "androidx/compose/foundation/layout",
+    "androidx/compose/runtime",
+    "androidx/compose/runtime/internal",
+    "androidx/compose/ui",
+    "androidx/compose/ui/draw",
+    "androidx/compose/ui/geometry",
+    "androidx/compose/ui/graphics",
+    "androidx/compose/ui/graphics/drawscope",
+    "androidx/compose/ui/input/key",
+    "androidx/compose/ui/input/pointer",
+    "androidx/compose/ui/layout",
+    "androidx/compose/ui/node",
+    "androidx/compose/ui/semantics",
+    "androidx/compose/ui/text/intl",
+    "androidx/compose/ui/unit",
+    "kotlin/coroutines",
+    "kotlin/coroutines/intrinsics",
+    "kotlin/coroutines/jvm/internal",
+]
+# The pixels of images (docs/decisions/0038) are copied into bitmaps; a Bundle only passes through
+# the IME's private commands.
+types = ["android/graphics/Bitmap", "android/os/Bundle"]
+members = [
+    "android/content/Context.getSystemService(Ljava/lang/Class;)",
+    "android/graphics/Bitmap.createBitmap",
+    "android/graphics/Typeface.create",
+    # Typefaces are keys of a cache.
+    "android/graphics/Typeface.hashCode",
+    # Information leaks through the log; only warnings are written.
+    "android/util/Log.w",
+    "android/view/View.<init>",
+    "android/view/View.dispatchKeyEventPreIme",
+    "android/view/View.getContext",
+    "android/view/View.getHeight",
+    "android/view/View.getLocationOnScreen",
+    "android/view/View.getWidth",
+    "android/view/View.hasFocus",
+    "android/view/View.hasWindowFocus",
+    "android/view/View.isFocused",
+    "android/view/View.onAttachedToWindow",
+    "android/view/View.onDetachedFromWindow",
+    "android/view/View.onFocusChanged",
+    "android/view/View.onKeyDown",
+    "android/view/View.onKeyUp",
+    "android/view/View.onWindowFocusChanged",
+    "android/view/View.requestFocus",
+    "android/view/View.setFocusable",
+    "android/view/View.setFocusableInTouchMode",
+    "android/view/View.setImportantForAccessibility",
+    "android/view/inputmethod/InputMethodManager.restartInput",
+    "android/view/inputmethod/InputMethodManager.showSoftInput",
+    "android/view/inputmethod/InputMethodManager.updateCursorAnchorInfo",
+    "android/view/inputmethod/InputMethodManager.updateSelection",
+    "androidx/compose/ui/platform/CompositionLocalsKt.getLocalDensity",
+    "androidx/compose/ui/platform/CompositionLocalsKt.getLocalFontFamilyResolver",
+    "androidx/compose/ui/platform/CompositionLocalsKt.getLocalLayoutDirection",
+    "androidx/compose/ui/platform/CompositionLocalsKt.getLocalTextToolbar",
+]
 
 # The sample app uses only the public API, as a third-party app would. Its classes are not checked:
 # an app may use any capability (docs/decisions/0044).

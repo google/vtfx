@@ -41,19 +41,21 @@ class AllowlistViolationsTest {
             types = ["java/lang/Class"]
             members = ["android/content/Context.getSystemService(Ljava/lang/Class;)"]
 
-            [modules.vtfx-session]
+            [modules.vtfx-sample]
             allowed_dependencies = ["vtfx-core"]
-            check_classes = true
+            check_classes = false
             """
         )
 
     /**
-     * Context and a subclass of it, a view, and the project's own subclass of the view; any other
-     * class stands for one that extends Object.
+     * Object and Class, Context and a subclass of it, a view, and the project's own subclass of the
+     * view; any other class stands for one that extends Object.
      */
     private val classFiles =
         mapOf(
-            "java/lang/Object" to classFile("java/lang/Object", null),
+            "java/lang/Object" to classFile("java/lang/Object", null, "hashCode()I"),
+            "java/lang/Class" to
+                classFile("java/lang/Class", "java/lang/Object", "getName()Ljava/lang/String;"),
             "android/content/Context" to
                 classFile(
                     "android/content/Context",
@@ -155,6 +157,13 @@ class AllowlistViolationsTest {
     }
 
     @Test
+    fun allowlistViolations_memberOfListedClassThroughOtherClass_none() {
+        val references = using("android/content/Context", "hashCode", "()I")
+
+        assertEquals(emptyList(), violations("vtfx-core", references))
+    }
+
+    @Test
     fun allowlistViolations_memberInheritedByOwnClass_reportsDeclaringClass() {
         val references =
             ClassReferences(
@@ -192,8 +201,8 @@ class AllowlistViolationsTest {
     }
 
     @Test
-    fun allowlistViolations_moduleWithoutAllowlist_none() {
-        assertEquals(emptyList(), violations("vtfx-session", naming("java/lang/System")))
+    fun allowlistViolations_moduleWithoutClassCheck_none() {
+        assertEquals(emptyList(), violations("vtfx-sample", naming("java/lang/System")))
     }
 
     private fun violations(module: String, references: ClassReferences): List<String> =

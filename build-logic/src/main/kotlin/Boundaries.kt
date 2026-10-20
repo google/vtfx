@@ -31,15 +31,16 @@ private constructor(
     private val bootstrapMethods: List<MemberPattern>,
     private val baseline: Allowlist,
 ) {
-    /**
-     * A module. [allowlist] is null for a module whose classes may still refer to any class outside
-     * the project that the other rules allow.
-     */
-    private class Module(
-        val allowedDependencies: Set<String>,
-        val checkClasses: Boolean,
-        val allowlist: Allowlist?,
-    )
+    private class Module(val allowedDependencies: Set<String>, val classes: ClassCheck)
+
+    /** Whether the classes of a module are checked (`check_classes`). */
+    private sealed interface ClassCheck {
+        /** Against the rules, and the baseline with [allowlist] (`allowed_references`). */
+        class Checked(val allowlist: Allowlist) : ClassCheck
+
+        /** Not at all: an app, which may use any capability. */
+        data object Unchecked : ClassCheck
+    }
 
     /**
      * The classes outside the project that classes may refer to, with all their members: the
@@ -193,7 +194,10 @@ private constructor(
         classes: List<ClassReferences>,
         hierarchy: ClassHierarchy,
     ): List<String> {
-        if (!module(module).checkClasses) return emptyList()
+        when (module(module).classes) {
+            is ClassCheck.Checked -> Unit
+            ClassCheck.Unchecked -> return emptyList()
+        }
         val memberRules = restrictedMembers.filter { module !in it.allowedModules }
         val classRules = restrictedClasses.filter { module !in it.allowedModules }
         val packages = reservedPackages.filter { module !in it.modules }
@@ -243,9 +247,11 @@ private constructor(
         projectClasses: Set<String>,
         hierarchy: ClassHierarchy,
     ): List<String> {
-        val declared = module(module)
-        if (!declared.checkClasses) return emptyList()
-        val allowlist = baseline + (declared.allowlist ?: return emptyList())
+        val allowlist =
+            when (val classCheck = module(module).classes) {
+                is ClassCheck.Checked -> baseline + classCheck.allowlist
+                ClassCheck.Unchecked -> return emptyList()
+            }
         val internal = projectClasses + classes.map { it.name }
         return classes.flatMap { references ->
             val name = references.name
@@ -255,7 +261,7 @@ private constructor(
                 .map { "$name refers to $it, which the allowlist of $module does not allow" } +
                 references.members
                     .mapNotNull { externalMember(it, internal, hierarchy) }
-                    .filter { !allowlist.allowsMember(it, hierarchy) }
+                    .filter { !allowsMember(it, allowlist, hierarchy) }
                     .distinct()
                     .sortedBy { it.toString() }
                     .map { "$name uses $it, which the allowlist of $module does not allow" }
@@ -264,6 +270,21 @@ private constructor(
 
     private fun module(name: String): Module =
         requireNotNull(modules[name]) { "module '$name' is not declared in config/boundaries.toml" }
+
+    /**
+     * Whether [allowlist] allows [member], a member outside the project: by its owner, by a member
+     * entry, or by the class that declares it, so that the members a listed class declares, such as
+     * those of `Object`, may be used through any class.
+     */
+    private fun allowsMember(
+        member: MemberReference,
+        allowlist: Allowlist,
+        hierarchy: ClassHierarchy,
+    ): Boolean =
+        allowlist.allowsMember(member, hierarchy) ||
+            allowlist.allowsClass(
+                hierarchy.declaringClass(member.owner, member.name, member.descriptor)
+            )
 
     /**
      * The member outside the project that a use of [member] reaches, or null if it is a member of
@@ -297,12 +318,7 @@ private constructor(
                             module
                                 .requireField("allowed_dependencies", where)
                                 .strings("$where.allowed_dependencies"),
-                            module
-                                .requireField("check_classes", where)
-                                .boolean("$where.check_classes"),
-                            module.get("allowed_references")?.let {
-                                allowlist(it, "$where.allowed_references")
-                            },
+                            classCheck(module, where),
                         )
                 }
             for ((name, module) in modules) {
@@ -382,6 +398,25 @@ private constructor(
                 reservedPackages,
                 bootstrapMethods,
                 baseline,
+            )
+        }
+
+        /** A module whose classes are checked must have an allowlist, and only such a module. */
+        private fun classCheck(module: JsonNode, where: String): ClassCheck {
+            val checked =
+                module.requireField("check_classes", where).boolean("$where.check_classes")
+            val allowlist = module.get("allowed_references")
+            if (!checked) {
+                require(allowlist == null) {
+                    "$where has allowed_references, but its classes are not checked"
+                }
+                return ClassCheck.Unchecked
+            }
+            return ClassCheck.Checked(
+                allowlist(
+                    requireNotNull(allowlist) { "$where has no allowed_references" },
+                    "$where.allowed_references",
+                )
             )
         }
 

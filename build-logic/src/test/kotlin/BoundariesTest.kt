@@ -27,11 +27,11 @@ class BoundariesTest {
 
             [modules.vtfx-core]
             allowed_dependencies = []
-            check_classes = true
+            check_classes = false
 
             [modules.vtfx-gate]
             allowed_dependencies = ["vtfx-core"]
-            check_classes = true
+            check_classes = false
             """
         )
 
@@ -171,7 +171,7 @@ class BoundariesTest {
 
                 [modules.vtfx-gate]
                 allowed_dependencies = ["vtfx-core"]
-                check_classes = true
+                check_classes = false
                 """
             )
         }
@@ -187,7 +187,7 @@ class BoundariesTest {
 
                 [modules.vtfx-core]
                 allowed_dependencies = []
-                check_classes = true
+                check_classes = false
                 allowed_test_dependencies = []
                 """
             )
@@ -204,7 +204,7 @@ class BoundariesTest {
 
                 [modules.vtfx-core]
                 allowed_dependencies = []
-                check_classes = true
+                check_classes = false
 
                 [exceptions]
                 paths = []
@@ -217,7 +217,40 @@ class BoundariesTest {
     fun parse_moduleWithoutAllowedDependencies_throws() {
         assertFailsWith<IllegalArgumentException> {
             Boundaries.parse(
-                "bootstrap_methods = []\nbaseline_references = { classes = [], packages = [], types = [], members = [] }\n[modules.vtfx-core]\ncheck_classes = true\n"
+                "bootstrap_methods = []\nbaseline_references = { classes = [], packages = [], types = [], members = [] }\n[modules.vtfx-core]\ncheck_classes = false\n"
+            )
+        }
+    }
+
+    @Test
+    fun parse_checkedModuleWithoutAllowlist_throws() {
+        assertFailsWith<IllegalArgumentException> {
+            Boundaries.parse(
+                """
+                bootstrap_methods = []
+                baseline_references = { classes = [], packages = [], types = [], members = [] }
+
+                [modules.vtfx-core]
+                allowed_dependencies = []
+                check_classes = true
+                """
+            )
+        }
+    }
+
+    @Test
+    fun parse_uncheckedModuleWithAllowlist_throws() {
+        assertFailsWith<IllegalArgumentException> {
+            Boundaries.parse(
+                """
+                bootstrap_methods = []
+                baseline_references = { classes = [], packages = [], types = [], members = [] }
+
+                [modules.vtfx-core]
+                allowed_dependencies = []
+                check_classes = false
+                allowed_references = { classes = [], packages = [], types = [], members = [] }
+                """
             )
         }
     }

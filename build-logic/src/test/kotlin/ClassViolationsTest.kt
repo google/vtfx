@@ -29,10 +29,12 @@ class ClassViolationsTest {
             [modules.vtfx-gate]
             allowed_dependencies = []
             check_classes = true
+            allowed_references = { classes = [], packages = [], types = [], members = [] }
 
             [modules.vtfx-session]
             allowed_dependencies = ["vtfx-gate"]
             check_classes = true
+            allowed_references = { classes = [], packages = [], types = [], members = [] }
 
             [modules.vtfx-sample]
             allowed_dependencies = ["vtfx-session"]
