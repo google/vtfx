@@ -4,7 +4,7 @@ Status: Living document. It describes the current design and is kept in sync wit
 
 This document defines, for each `InputConnection` call from the IME, what vtfx sends to the host, what it displays, and what it returns (requirement 5.3). It is based on the structure in [architecture.md](architecture.md) and the measurements in [ime-gboard-emulator.md](../research/ime-gboard-emulator.md) and [ime-gboard-device.md](../research/ime-gboard-device.md).
 
-`ImeEditor` in `vtfx-input` implements the editing model of this document. Points not settled by the text of this document alone (the range of `setComposingRegion`, the handling of keys arriving during composition, and so on) are in [decisions/0004](../decisions/0004-ime-editor-details.md).
+`ImeEditor` in `vtfx-input` implements the editing model of this document. Points not settled by the tables of section 6 alone (the handling of keys arriving during composition, of committed newlines, and so on) are in section 11.
 
 ## 1. Terms
 
@@ -106,10 +106,10 @@ A reset that host output triggers applies to every edit made after the output wa
 | `setComposingText(text, pos)` | Replaces the composing text with `text`. If there is no composing text, creates it at the end. | Nothing | `true` |
 | `commitText(text, pos)` | Replaces the composing text with `text`, commits it, and adds it to the input history. If there is no composing text, adds it at the end. | The difference (4.1) | `true` |
 | `finishComposingText()` | Commits the composing text as is and adds it to the input history. | The difference | `true` |
-| `setComposingRegion(start, end)` | If the range is within the editing buffer, makes that range the composing text (reconversion). If it is outside, does nothing. | If the range includes input history, that part goes back to uncommitted, so DELs are sent | `true` if within the range, `false` if outside |
+| `setComposingRegion(start, end)` | If the range is within the editing buffer and ends at the cursor, makes that range the composing text (reconversion). An empty range is the same as `finishComposingText`. Any other range does nothing ([decisions/0004](../decisions/0004-ime-editor-details.md)). | If the range includes input history, that part goes back to uncommitted, so DELs are sent | `true` if accepted, `false` otherwise |
 | `deleteSurroundingText(before, after)` | Erases `before` characters before the cursor. The part reaching before the start of the input history is treated as BS. `after` is ignored (there is no text after the cursor). | The difference, and DELs for the part outside | `true` |
 | `deleteSurroundingTextInCodePoints(before, after)` | Same as above (in code points). | Same as above | `true` |
-| `replaceText(start, end, text, pos, attr)` | If the range is within the editing buffer, replaces it. If it is outside, does nothing. | The difference if within the range | `true` if within the range, `false` if outside |
+| `replaceText(start, end, text, pos, attr)` | If the range is within the editing buffer, commits the composing text, then replaces the range; the result is the input history. If it is outside, does nothing. | The difference if within the range | `true` if within the range, `false` if outside |
 | `setSelection(start, end)` | Accepts only selections that end at the end (the cursor). When there is composing text, accepts only collapsed selections. The next `commitText` or `setComposingText` replaces the selected text, and other edits clear the selection first ([decisions/0008](../decisions/0008-ime-view-and-selection.md)). | Nothing (the difference when replaced) | `true` if accepted, `false` otherwise |
 | `commitCompletion(info)` | Same as `commitText(info.text, 1)`. | The difference | `true` |
 | `commitCorrection(info)` | Does nothing. The content of the correction has arrived through the preceding `replaceText` or the like. | Nothing | `true` |
@@ -143,13 +143,13 @@ Keys arriving from the IME through `sendKeyEvent` and physical keys the IME did 
 
 | Key | Effect |
 |---|---|
-| Up without a corresponding down | Ignored (it always arrives through the physical key path). |
+| Any key up | Ignored: keys act on down ([decisions/0004](../decisions/0004-ime-editor-details.md)). |
 | `KEYCODE_DEL` | Sends DEL. If the input history is not empty, erases its last code point. |
 | `KEYCODE_ENTER`, `KEYCODE_NUMPAD_ENTER` | Sends CR and resets. |
-| Keys that produce a character (`getUnicodeChar` is not 0, and the only modifier is Shift) | Handles the character the same as `commitText`. |
+| Keys that produce a character (`getUnicodeChar` is not 0, and the only modifier is Shift) | Commits the composing text, if any, and adds the character after it, like `commitText` of the character. |
 | Anything else | Sends it with `vtfx-gate`'s key encoding and resets. |
 
-When a non-character key is sent through the app's API (an extra key bar and so on) while there is composing text, the composing text is committed and sent first, and then the key is sent.
+When `KEYCODE_DEL` or another non-character key arrives while there is composing text, from the IME, a physical keyboard, or the app's API (an extra key bar and so on), the composing text is committed and sent first, and then the key is sent ([decisions/0004](../decisions/0004-ime-editor-details.md)).
 
 When the app arms sticky modifiers (`TerminalSession.stickyModifiers`) while there is composing text, the composing text is committed and sent first, without the modifiers, and the input history is reset, so that the modifiers apply only to what is typed after them ([decisions/0033](../decisions/0033-sticky-modifiers-and-composing-text.md)).
 
@@ -190,7 +190,48 @@ IME calls arrive on the UI thread. `vtfx-compose` operates the editing model of 
 
 | Item | Contents |
 |---|---|
-| Limit of the input history | Provisionally decided as 1024 code points ([decisions/0004](../decisions/0004-ime-editor-details.md)). |
-| IMEs other than Gboard | The behavior of Samsung Keyboard, SwiftKey, and Simeji. Their place in the matrix of target IMEs is in [decisions/0017](../decisions/0017-ime-scope.md). IMEs that hold English words as composing text are handled by direct input (section 3). |
+| Limit of the input history | 1024 code points (`ImeEditor.DEFAULT_MAX_HISTORY_LENGTH`, an argument of `ImeEditor`; [decisions/0004](../decisions/0004-ime-editor-details.md)). |
+| IMEs other than Gboard | The behavior of Samsung Keyboard, SwiftKey, and Simeji. Their place in the matrix of target IMEs is in section 13. IMEs that hold English words as composing text are handled by direct input (section 3). |
 | Autocorrect of misspellings, and undoing it | Not observed even on a real device (`teh` is not corrected). |
-| Handwriting input, voice input | Unverified. Handwriting gestures are not accepted (6.4, [decisions/0017](../decisions/0017-ime-scope.md)). Handwriting input is also a factor in the minSdk decision. |
+| Handwriting input, voice input | Unverified. Handwriting gestures are not accepted (6.4, section 13). |
+
+## 11. Details of the editing model
+
+What `ImeEditor` does in the cases that the tables of section 6 leave open ([decisions/0004](../decisions/0004-ime-editor-details.md)).
+
+| Case | Behavior |
+|---|---|
+| `setComposingRegion` with a range that does not end at the cursor | Rejected (`false`). Making it composing text would leave committed text after the composing text, against invariant 1. An empty range finishes the composition, as in `BaseInputConnection`. |
+| `replaceText` while there is composing text | The composing text is committed first, then the range is replaced, and the whole result becomes the input history. |
+| A character key while there is composing text | The composing text is committed, and the character is added after it. The composing text is not replaced by the character. |
+| BS or a non-character key while there is composing text | The composing text is committed and sent, then the key is sent, so that the host receives them in the order typed. This applies to keys from the IME, from physical keyboards, and from the app's API alike. |
+| Key up | Ignored, whatever key it is. No state tracks which downs have had their ups. |
+| The part of `deleteSurroundingText` before the input history | One DEL per UTF-16 code unit, since the content of that text is unknown and cannot be counted in code points (`deleteSurroundingTextInCodePoints` counts code points). At most the limit of the input history in total (section 6.1). |
+| Control characters that are not sent (4.2) | Removed from committed, composing, replacement, and character key text before it enters the editing buffer. |
+| A committed newline | Not part of `HostInput.Text`: each `\n`, `\r`, or `\r\n` is sent as the Enter key (`HostInput.Key`), so that what Enter sends (CR, or CR LF with LNM) is decided by the key encoding alone. CR LF is one Enter. The editing buffer is then reset (5.1). |
+
+The limit of the input history is an argument of `ImeEditor` (`maxHistoryLength`, by default 1024 code points).
+
+## 12. The view the IME connects to
+
+The IME connects to `TerminalInputView` in `vtfx-compose`, a `View` that the `Terminal` composable lays out behind the grid with the same bounds ([decisions/0008](../decisions/0008-ime-view-and-selection.md)).
+
+- `onCreateInputConnection` fills `EditorInfo` (section 3) and returns `TerminalInputConnection` itself. No wrapper of Compose's text input sits between them, so every call of section 6, `replaceText` included, reaches the editing model as the IME made it.
+- The view draws nothing and is not exposed to accessibility services (the rows over it are). A tap on the grid moves the focus to the view and shows the software keyboard.
+- Its coordinates are the grid's, which is what `CursorAnchorInfo` (section 7) is computed in.
+- Physical keys reach it while it has the focus: first the app's handler before the IME (`dispatchKeyEventPreIme`), then the IME, then `onKeyDown` and `onKeyUp` for the keys the IME did not consume (6.3).
+
+## 13. Target IMEs and direct input
+
+The IMEs that vtfx is checked with ([decisions/0017](../decisions/0017-ime-scope.md)):
+
+| IME | Languages | Position | How it is checked |
+|---|---|---|---|
+| Gboard | Japanese (QWERTY), English | Required | Replay of the traces in `spec/ime` (gate), emulator e2e (report) |
+| Gboard | Korean (두벌식) | For reports | Replay of the Korean traces in `spec/ime` (gate), emulator e2e (report) |
+| Gboard | Voice input, handwriting input | Unverified. Handwriting gestures are not accepted (6.4) | Humans check on real devices |
+| Samsung Keyboard, SwiftKey, Simeji | Japanese, English | Unverified. Working is the goal but not guaranteed | Humans check on real devices ([device-checks.md](../device-checks.md)) |
+
+The IME sees only the input history and the composing text (invariant 4, at most the limit of the input history), and personalized learning is always off (section 3). Rewrites of committed text within the input history are accepted and sent as differences (4.1), and take effect as intended only while the host edits a line (4.3).
+
+**Direct input.** By default the IME gets `TYPE_CLASS_TEXT` (section 3). Gboard's English keyboard then commits each letter as it is typed, so each key reaches the host, and Japanese and Korean conversion work. Some IMEs keep a whole English word as composing text until a space, so an app that acts on each key (vim in normal mode, and so on) gets nothing until then. For these, the app can switch `TerminalSession.directInput` on, for example from a key on its extra key bar. The IME then gets `VISIBLE_PASSWORD` with `NO_SUGGESTIONS` and commits one character at a time without composition; most IMEs then offer no Japanese or Korean input, so the user switches between the two. Switching commits and sends the composing text, resets the input history, and restarts the input. Keys from a physical keyboard that the IME does not consume, and `sendKey` and `sendText` from the app, are sent at once in either mode (6.3).
