@@ -2,7 +2,7 @@
 
 - Status: Approved (2026-10-13, approved by a human in the final review)
 - Date: 2026-10-12
-- Related: Requirement 5.1, layer 1 of [conformance-references.md](../research/conformance-references.md), `vtfx-core/src/main/kotlin/com/google/vtfx/core/parser/Parser.kt`
+- Related: Requirement 5.1, sections 1 and 2 of [emulation.md](../design/emulation.md), [conformance-references.md](../research/conformance-references.md), `vtfx-core/src/main/kotlin/com/google/vtfx/core/parser/Parser.kt`
 
 ## Background
 
@@ -10,20 +10,15 @@ The rules for splitting host output into sequences needed to be decided. The res
 
 ## Decision
 
-Apply Williams's state machine to code points after UTF-8 decoding. It deviates in the following points.
+Apply Williams's state machine to code points after UTF-8 decoding, replace malformed UTF-8 with U+FFFD by maximal subparts, and ignore unrecognized control functions rather than treat them as errors. The deviations from the state machine are listed in section 2 of [emulation.md](../design/emulation.md). Their reasons:
 
-| Item | State machine | vtfx | Reason |
-|---|---|---|---|
-| C1 control characters (U+0080–U+009F) | Executed as control functions | Ignored (neither displayed nor executed) | In UTF-8 they arrive only as 2-byte sequences, and almost no legitimate software sends them as C1. On the other hand, executing C1 creates a path that slips past filters that only remove ESC. alacritty, kitty, and wezterm handle them the same way. |
-| `:` in parameters | Invalidates the sequence | Separates subparameters | SGR's `38:2::R:G:B` and `4:3` (ITU T.416, xterm). |
-| OSC terminator | ST only | ST or BEL | The convention of xterm and of many apps that follow it. |
-| Aborting strings with CAN or SUB | Dispatches OSC and DCS, then aborts | Discards the string | It is safer not to execute an aborted string. Same as xterm. |
-| Three or more intermediate characters | Not specified | The sequence is ignored | No supported sequence has three or more. |
-| A character beyond ASCII where an escape or control sequence expects its final byte | Not specified (the state machine reads bytes) | Ends the sequence without dispatching it | Final bytes are ASCII in ECMA-48. Dispatching such a character let a code point above U+FFFF act as the ASCII character with the same low 16 bits (U+1006D as `m`, U+10063 after ESC as RIS), which a filter that checks final bytes as ASCII would not recognize (added 2026-10-15 after a security review). |
-
-Malformed UTF-8 is replaced with U+FFFD following section 3.9 of the Unicode Standard (maximal subpart) and the WHATWG Encoding standard. A malformed byte does not drag the correct bytes after it along.
-
-Unrecognized control functions are ignored rather than treated as errors.
+- **C1 control characters are ignored.** In UTF-8 they arrive only as 2-byte sequences, and almost no legitimate software sends them as C1. On the other hand, executing C1 creates a path that slips past filters that only remove ESC. alacritty, kitty, and wezterm handle them the same way.
+- **`:` separates subparameters**, for SGR's `38:2::R:G:B` and `4:3` (ITU T.416, xterm).
+- **BEL also ends OSC**, the convention of xterm and of the many apps that follow it.
+- **A string aborted with CAN or SUB is discarded.** It is safer not to execute an aborted string. Same as xterm.
+- **Sequences with three or more intermediate characters are ignored.** No supported sequence has three or more.
+- **A character beyond ASCII where a final byte is expected ends the sequence without dispatching it.** Final bytes are ASCII in ECMA-48. Dispatching such a character would let a code point above U+FFFF act as the ASCII character with the same low 16 bits (U+1006D as `m`, U+10063 after ESC as RIS), which a filter that checks final bytes as ASCII would not recognize (found in a security review).
+- **A malformed UTF-8 byte does not take the correct bytes after it along** (section 3.9 of the Unicode Standard, the WHATWG Encoding standard).
 
 ## Alternatives considered
 
@@ -32,4 +27,4 @@ Unrecognized control functions are ignored rather than treated as errors.
 
 ## Impact of reversing
 
-To execute C1, stop ignoring C1 in `Parser.advance` and add Williams's "anywhere" transitions (0x90 DCS, 0x9B CSI, 0x9C ST, 0x9D OSC, and so on). There is no impact on the spec tests.
+To execute C1, stop ignoring C1 in `Parser.advance` and add Williams's "anywhere" transitions (0x90 DCS, 0x9B CSI, 0x9C ST, 0x9D OSC, and so on), and update section 2 of [emulation.md](../design/emulation.md). There is no impact on the spec tests.
