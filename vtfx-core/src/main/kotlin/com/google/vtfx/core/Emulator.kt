@@ -29,7 +29,7 @@ import java.util.Base64
  * Applies parsed control functions to the terminal state.
  *
  * Coordinates are 0-based. The semantics follow DEC STD 070 and xterm's ctlseqs
- * (docs/research/conformance-references.md).
+ * (docs/design/emulation.md section 1).
  */
 internal class Emulator(
     columns: Int,
