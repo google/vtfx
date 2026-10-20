@@ -20,6 +20,7 @@ package com.google.vtfx.gate
 
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.Terminal
+import com.google.vtfx.core.TerminalEvent
 import com.google.vtfx.core.TerminalLimits
 import java.util.Base64
 import kotlin.random.Random
@@ -28,6 +29,8 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 /**
  * Tests for the attack classes of requirement 6.1 that vtfx-gate is responsible for. Each nested
@@ -250,6 +253,44 @@ class AttackTest {
                 )
             host(gate, "\u001b]52;c;?\u0007\u001b]52;c;${base64("x")}\u0007")
             assertEquals(emptyList(), sent)
+        }
+
+        // The gate checks the selection itself rather than trust the model's check, so these
+        // events skip the model.
+        @ParameterizedTest
+        @ValueSource(
+            strings = ["", "c\u001b]2;x", ";", "c;", "C", "8", "c\u0000", "cpqs0123456701234"]
+        )
+        fun readWithAMalformedSelectionIsRefused(selection: String) {
+            val gate = gate(GatePolicy(allowClipboardRead = true))
+            gate.handle(TerminalEvent.ClipboardReadRequested(selection))
+            assertEquals(emptyList(), sent)
+            assertEquals(0, clipboard.reads)
+        }
+
+        @ParameterizedTest
+        @ValueSource(
+            strings = ["", "c\u001b]2;x", ";", "c;", "C", "8", "c\u0000", "cpqs0123456701234"]
+        )
+        fun writeWithAMalformedSelectionIsRefused(selection: String) {
+            val gate = gate(GatePolicy(allowClipboardWrite = true))
+            gate.handle(TerminalEvent.ClipboardWriteRequested(selection, "x"))
+            assertEquals(emptyList(), clipboard.writes)
+        }
+
+        @Test
+        fun readRepeatsEveryTargetOfTheSelection() {
+            clipboard.text = "x"
+            val gate = gate(GatePolicy(allowClipboardRead = true))
+            gate.handle(TerminalEvent.ClipboardReadRequested("cpqs01234567"))
+            gate.handle(TerminalEvent.ClipboardReadRequested("cccccccccccccccc"))
+            assertEquals(
+                listOf(
+                    "\u001b]52;cpqs01234567;${base64("x")}\u001b\\",
+                    "\u001b]52;cccccccccccccccc;${base64("x")}\u001b\\",
+                ),
+                sent,
+            )
         }
     }
 

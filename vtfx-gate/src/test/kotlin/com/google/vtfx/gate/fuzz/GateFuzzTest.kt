@@ -22,7 +22,6 @@ import com.code_intelligence.jazzer.junit.FuzzTest
 import com.google.vtfx.core.ColorTarget
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.Terminal
-import com.google.vtfx.core.TerminalEvent
 import com.google.vtfx.gate.ClipboardAccess
 import com.google.vtfx.gate.GatePolicy
 import com.google.vtfx.gate.HostWriter
@@ -132,8 +131,9 @@ class GateFuzzTest {
 
     private fun clipboardReply(): String {
         val data = Base64.getEncoder().encodeToString(CLIPBOARD_TEXT.toByteArray(Charsets.UTF_8))
-        val selection = Regex.escape(TerminalEvent.CLIPBOARD_SELECTION_CHARACTERS)
-        return """\u001b\]52;[$selection]{1,16};${Regex.escape(data)}\u001b\\"""
+        // xterm's selection targets, written out here rather than taken from vtfx-core or the
+        // gate, so that the oracle does not depend on the code it checks.
+        return """\u001b\]52;[cpqs0-7]{1,16};${Regex.escape(data)}\u001b\\"""
     }
 
     private fun ByteArray.uint16At(index: Int): Int =

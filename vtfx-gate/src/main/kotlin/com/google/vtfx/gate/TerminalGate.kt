@@ -18,7 +18,6 @@ package com.google.vtfx.gate
 
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.TerminalEvent
-import java.util.Base64
 
 /**
  * Decides on the requests with external effects that the host or the user makes, and performs the
@@ -53,20 +52,21 @@ public class TerminalGate(
         }
     }
 
+    // Both clipboard requests parse the selection with the gate's own list of targets, rather than
+    // trust the model's check, since vtfx-core is not under security review.
     private fun writeClipboard(selection: String, text: String) {
         val clipboard = clipboard ?: return
-        if (!policy.allowClipboardWrite || !isValidSelection(selection)) return
+        if (!policy.allowClipboardWrite || ClipboardSelection.parse(selection) == null) return
         if (text.length > policy.maxClipboardWriteLength) return
         clipboard.write(text)
     }
 
-    /** Replies with OSC 52. The clipboard text is base64-encoded, so it cannot form a sequence. */
+    /** Replies with OSC 52, built by [Replies]. */
     private fun readClipboard(selection: String) {
         val clipboard = clipboard ?: return
-        if (!policy.allowClipboardRead || !isValidSelection(selection)) return
-        val text = clipboard.read() ?: ""
-        val data = Base64.getEncoder().encodeToString(text.toByteArray(Charsets.UTF_8))
-        writer.write("\u001b]52;$selection;$data\u001b\\".toByteArray(Charsets.US_ASCII))
+        if (!policy.allowClipboardRead) return
+        val parsed = ClipboardSelection.parse(selection) ?: return
+        writer.write(Replies.clipboard(parsed, clipboard.read() ?: ""))
     }
 
     // The user's copy and paste go through the gate, like opening URLs, so that only vtfx-gate
@@ -178,18 +178,12 @@ public class TerminalGate(
         return false
     }
 
-    private fun isValidSelection(selection: String): Boolean =
-        selection.isNotEmpty() &&
-            selection.length <= MAX_SELECTION_LENGTH &&
-            selection.all { it in TerminalEvent.CLIPBOARD_SELECTION_CHARACTERS }
-
     private fun Char.isAsciiLetter() = this in 'a'..'z' || this in 'A'..'Z'
 
     private fun Char.isAsciiDigit() = this in '0'..'9'
 
     private companion object {
         const val MAX_URL_LENGTH = 8192
-        const val MAX_SELECTION_LENGTH = 16
 
         /**
          * The schemes in which [isAllowedUrl] refuses userinfo and characters that are not ASCII in

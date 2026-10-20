@@ -28,6 +28,7 @@ import com.google.vtfx.core.TerminalColor
 import com.google.vtfx.core.TerminalLimits
 import com.google.vtfx.core.TerminalQuery
 import com.google.vtfx.core.UnderlineStyle
+import java.util.Base64
 
 /**
  * The colors that the display uses, which replies to color queries report (OSC 10, 11, 12, 4).
@@ -42,10 +43,13 @@ public fun interface ReportedColors {
 }
 
 /**
- * Builds the replies to queries from the host (docs/decisions/0006 and 0009).
+ * Builds the replies to the host's queries and requests (docs/decisions/0006 and 0009).
  *
- * Every reply is built from constants and numbers from the terminal state. No text from the host is
- * ever part of a reply, which rules out command injection through replies (requirement 6.1).
+ * Every reply is built from constants and numbers from the terminal state, except that the reply to
+ * an OSC 52 read also carries the clipboard text, encoded in base64. No text from the host is ever
+ * part of a reply, which rules out command injection through replies (requirement 6.1): even the
+ * selection that an OSC 52 reply repeats is spelled from the gate's [ClipboardSelection.Target]
+ * constants.
  */
 internal object Replies {
     /** DA1: a VT220 with ANSI color. */
@@ -124,6 +128,15 @@ internal object Replies {
                 is TerminalQuery.GraphicsReply -> graphics(query)
             }
         return reply.toByteArray(Charsets.US_ASCII)
+    }
+
+    /**
+     * The reply to an OSC 52 read of [selection]: [text], the clipboard's, in base64, which cannot
+     * form a sequence.
+     */
+    fun clipboard(selection: ClipboardSelection, text: String): ByteArray {
+        val data = Base64.getEncoder().encodeToString(text.toByteArray(Charsets.UTF_8))
+        return "${OSC}52;${selection.spelled()};$data$ST".toByteArray(Charsets.US_ASCII)
     }
 
     /**

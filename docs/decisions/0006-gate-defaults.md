@@ -1,6 +1,6 @@
 # Defaults of the gate's replies and policies
 
-- Status: Approved (2026-10-13, approved by a human in the final review)
+- Status: Approved (2026-10-13, approved by a human in the final review; on 2026-10-20 a human approved the gate's own check of the selection)
 - Date: 2026-10-12
 - Related: Requirements 6.1 and 6.5 (safe defaults), 3.3 of [architecture.md](../design/architecture.md), `vtfx-gate`
 
@@ -32,7 +32,7 @@ Of the attack types in requirement 6.1, replies to the host, the clipboard, open
 | Write | Allowed, up to 64 Ki (UTF-16 units). If exceeded, the whole is dropped. | Used by remote copy in tmux and vim. The limit keeps the load from huge data in check. |
 | Read | Denied | The clipboard may contain passwords and the like copied in other apps. |
 
-Even when reading is allowed, the content is returned encoded in base64, so it is never interpreted as control sequences. The selection parameter is also checked in the gate.
+Even when reading is allowed, the content is returned encoded in base64, so it is never interpreted as control sequences. The gate parses the selection parameter with its own list of xterm's targets (`c`, `p`, `q`, `s`, `0` to `7`, at most 16 of them), not with the list in `vtfx-core`, which is not under security review, and refuses both reads and writes whose selection does not parse. The reply to a read spells the selection again from the gate's constants, in `Replies` with every other reply, so no text from the host is part of it. (2026-10-20, approved by a human)
 
 Written content is not marked sensitive (`ClipDescription.EXTRA_IS_SENSITIVE`) (2026-10-13, decided by a human). On Android 13 and later, the OS shows a preview of the clipboard on each copy. With the mark, the content is masked, so the user can tell that the host rewrote the clipboard with OSC 52 but cannot see what it was rewritten to. Showing the content lets the user notice the rewrite. When a secret is copied (OSC 52 from a password manager on the host and so on), it is shown in the preview for a few seconds, but OSC 52 has no means of telling whether the content is secret, and the terminal side cannot mask only part of it. Most copies are not secret, so the choice was to show everything. When the user selects and copies ([0012](0012-touch-and-selection.md)), it goes through the same `ClipboardAccess`, so it is likewise not marked. Originally the mark was set.
 

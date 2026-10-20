@@ -23,7 +23,8 @@ package com.google.vtfx.core
  * (docs/design/architecture.md section 1). Events never carry strings from the host where a reply
  * could echo them back, so that a reply cannot inject host-controlled input. The one exception is
  * the selection of OSC 52, which the reply to a read repeats: it is limited to the characters of
- * [CLIPBOARD_SELECTION_CHARACTERS], here and again in vtfx-gate.
+ * [CLIPBOARD_SELECTION_CHARACTERS] here, and vtfx-gate parses it again with its own list of targets
+ * and spells the reply from that list.
  *
  * @suppress
  */
