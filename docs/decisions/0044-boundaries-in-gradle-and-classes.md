@@ -18,7 +18,7 @@ Reading build files misses every dependency that the text does not spell out as 
    - For every configuration that can be resolved, every edge to a project in the resolved graph is checked: from the project itself, and from every component it reaches. An edge from another project of the build is checked against that project's entry; an edge from a module of a repository to a project, or to a project of another build, is a violation however it came about. This sees what the declarations do not: dependencies added on resolution, and substitutions. A dependency that does not resolve still counts as an edge to the project it requested.
    - An edge from a project to itself is allowed (the tests of `vtfx-core` depend on its own test fixtures).
    - The root project is not checked: it only aggregates the API reference of the library modules, and ships nothing. Its build file is under security review like every other.
-   - `scripts/check_boundaries.py` still reads the build files as well, until the Gradle check has replaced it.
+   - `scripts/check_boundaries.py` no longer reads the build files.
 2. **Tests have no list of their own.** The configurations of the tests and test fixtures are checked against the same `allowed_dependencies` as the main code. No module needs more for its tests today (the verifier's tests in `vtfx-font-gate` read canonical fonts from files instead of depending on `vtfx-font`, [0041](0041-security-review-by-module.md)), and a list for tests would add edges, which loosens the rules: it waits until a module needs one and a human agrees to it.
 3. **`config/boundaries.toml` stays the single place of the rules**, read by the build logic with Jackson's TOML module (`jackson-dataformat-toml`), at the version of Jackson that AGP already puts on the classpath of the build logic, so that only one artifact is added to the build. The reader fails on a key it does not know and on an allowed dependency that is not a declared module, instead of ignoring them.
 
@@ -32,5 +32,5 @@ Reading build files misses every dependency that the text does not spell out as 
 
 ## Impact of reversing
 
-- Remove `vtfx.boundaries`, `Boundaries.kt`, `BoundaryTasks.kt`, their tests, and the plugin from the root `build.gradle.kts`. `scripts/check_boundaries.py` still checks the build files.
+- Remove `vtfx.boundaries`, `Boundaries.kt`, `BoundaryTasks.kt`, their tests, and the plugin from the root `build.gradle.kts`, and bring back the parsing of `project(...)` and `include(...)` in `scripts/check_boundaries.py` with its tests.
 - Remove `jackson-dataformat-toml` from `gradle/libs.versions.toml`, `build-logic/build.gradle.kts`, and `gradle/verification-metadata.xml`.

@@ -27,12 +27,6 @@ import unittest
 SCRIPT = pathlib.Path(__file__).resolve().parents[1] / "check_boundaries.py"
 
 CONFIG = textwrap.dedent('''
-    [modules.core]
-    allowed_dependencies = []
-
-    [modules.gate]
-    allowed_dependencies = ["core"]
-
     [[restricted_apis]]
     pattern = '\\bClipboardManager\\b'
     reason = "Clipboard access must go through gate."
@@ -45,9 +39,6 @@ class CheckBoundariesTest(unittest.TestCase):
         self._tmp = tempfile.TemporaryDirectory()
         self.root = pathlib.Path(self._tmp.name)
         self.write("config/boundaries.toml", CONFIG)
-        self.write("settings.gradle.kts", 'include(":core")\ninclude(":gate")\n')
-        self.write("core/build.gradle.kts", "")
-        self.write("gate/build.gradle.kts", 'dependencies { implementation(project(":core")) }\n')
 
     def tearDown(self):
         self._tmp.cleanup()
@@ -65,24 +56,6 @@ class CheckBoundariesTest(unittest.TestCase):
         result = self.run_check()
         self.assertEqual(result.returncode, 0, result.stdout)
 
-    def test_rejects_disallowed_dependency(self):
-        self.write("core/build.gradle.kts", 'dependencies { implementation(project(":gate")) }\n')
-        result = self.run_check()
-        self.assertEqual(result.returncode, 1)
-        self.assertIn("core/build.gradle.kts:1: 'core' must not depend on 'gate'", result.stdout)
-
-    def test_rejects_type_safe_project_accessor(self):
-        self.write("core/build.gradle.kts", "dependencies { implementation(projects.gate) }\n")
-        result = self.run_check()
-        self.assertEqual(result.returncode, 1)
-        self.assertIn("type-safe project accessors", result.stdout)
-
-    def test_rejects_undeclared_module(self):
-        self.write("settings.gradle.kts", 'include(":core")\ninclude(":gate")\ninclude(":extra")\n')
-        result = self.run_check()
-        self.assertEqual(result.returncode, 1)
-        self.assertIn("module 'extra' is not declared", result.stdout)
-
     def test_rejects_restricted_api_outside_allowed_paths(self):
         self.write("core/src/main/kotlin/Leak.kt", "val x: ClipboardManager? = null\n")
         result = self.run_check()
@@ -93,63 +66,6 @@ class CheckBoundariesTest(unittest.TestCase):
         self.write("core/build/generated/Leak.kt", "val x: ClipboardManager? = null\n")
         result = self.run_check()
         self.assertEqual(result.returncode, 0, result.stdout)
-
-    def test_rejects_named_path_argument(self):
-        self.write("core/build.gradle.kts", 'dependencies { implementation(project(path = ":gate")) }\n')
-        result = self.run_check()
-        self.assertEqual(result.returncode, 1)
-        self.assertIn("core/build.gradle.kts:1: 'core' must not depend on 'gate'", result.stdout)
-
-    def test_rejects_other_named_arguments(self):
-        self.write(
-            "core/build.gradle.kts",
-            'dependencies { implementation(project(configuration = "default", path = ":gate")) }\n')
-        result = self.run_check()
-        self.assertEqual(result.returncode, 1)
-        self.assertIn("core/build.gradle.kts:1: 'core' must not depend on 'gate'", result.stdout)
-
-    def test_rejects_dependency_across_lines(self):
-        self.write("core/build.gradle.kts", 'dependencies {\n    implementation(project(\n        ":gate"\n    ))\n}\n')
-        result = self.run_check()
-        self.assertEqual(result.returncode, 1)
-        self.assertIn("core/build.gradle.kts:2: 'core' must not depend on 'gate'", result.stdout)
-
-    def test_rejects_find_project(self):
-        self.write("core/build.gradle.kts", 'dependencies { implementation(findProject(":gate")!!) }\n')
-        result = self.run_check()
-        self.assertEqual(result.returncode, 1)
-        self.assertIn("core/build.gradle.kts:1: 'core' must not depend on 'gate'", result.stdout)
-
-    def test_rejects_non_literal_project_path(self):
-        self.write("core/build.gradle.kts", 'val p = ":gate"\ndependencies { implementation(project(p)) }\n')
-        result = self.run_check()
-        self.assertEqual(result.returncode, 1)
-        self.assertIn("core/build.gradle.kts:2: write project(...) with a literal module path only", result.stdout)
-
-    def test_accepts_literal_path_with_configuration(self):
-        self.write(
-            "gate/build.gradle.kts",
-            'dependencies {\n    implementation(project(path = ":core", configuration = "default"))\n}\n')
-        result = self.run_check()
-        self.assertEqual(result.returncode, 0, result.stdout)
-
-    def test_rejects_type_safe_project_accessor_across_lines(self):
-        self.write("core/build.gradle.kts", "dependencies {\n    implementation(projects\n        .gate)\n}\n")
-        result = self.run_check()
-        self.assertEqual(result.returncode, 1)
-        self.assertIn("core/build.gradle.kts:2: use project", result.stdout)
-
-    def test_rejects_undeclared_module_in_multi_argument_include(self):
-        self.write("settings.gradle.kts", 'include(\n    ":core",\n    ":gate",\n    ":extra",\n)\n')
-        result = self.run_check()
-        self.assertEqual(result.returncode, 1)
-        self.assertIn("module 'extra' is not declared", result.stdout)
-
-    def test_rejects_non_literal_include(self):
-        self.write("settings.gradle.kts", 'include(":core")\ninclude(":gate")\nlistOf(":extra").forEach { include(it) }\n')
-        result = self.run_check()
-        self.assertEqual(result.returncode, 1)
-        self.assertIn("settings.gradle.kts:3: write include(...) with literal module paths only", result.stdout)
 
 
 REPO_CONFIG = SCRIPT.parents[1] / "config" / "boundaries.toml"
@@ -185,7 +101,6 @@ class RepositoryRestrictedApisTest(unittest.TestCase):
         self._tmp = tempfile.TemporaryDirectory()
         self.root = pathlib.Path(self._tmp.name)
         self.write("config/boundaries.toml", REPO_CONFIG.read_text(encoding="utf-8"))
-        self.write("settings.gradle.kts", 'include(":vtfx-core")\ninclude(":vtfx-gate-android")\n')
 
     def tearDown(self):
         self._tmp.cleanup()

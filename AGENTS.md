@@ -80,7 +80,7 @@ The paths listed under `security_review` in `config/protected-paths.toml` are su
 | `vtfx-font-gate` | JVM | Checks the canonical form of fonts before the platform's native code reads them (subject to security review) |
 | `vtfx-font-gate-android` | Android | Makes typefaces from checked fonts (subject to security review) |
 
-- The direction of dependencies follows `config/boundaries.toml`. `scripts/check_boundaries.py` checks it.
+- The direction of dependencies follows `config/boundaries.toml`. The `checkBoundaries` task of the root project, part of `./gradlew build`, checks it ([docs/decisions/0044](docs/decisions/0044-boundaries-in-gradle-and-classes.md)).
 - When adding a new module, add it to both `settings.gradle.kts` and `config/boundaries.toml`.
 - The shared settings of each module are in the convention plugins in `build-logic/`. Do not duplicate individual settings in module build files.
 
