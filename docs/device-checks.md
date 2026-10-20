@@ -80,7 +80,7 @@ If `0b` appears in 3.1.1 and no toast appears, the IME received the key before `
 
 ### 3.2 AltGr
 
-`KeyEventHandler` sends Alt as an ESC prefix. Characters typed with AltGr (right Alt) may be sent as ESC and a character instead of the character.
+`KeyEventHandler` sends Alt as an ESC prefix and does not distinguish right Alt. Characters typed with AltGr (right Alt) may be sent as ESC and a character instead of the character. If they are, the fix is to prefer the character when the layout produces one with right Alt.
 
 In Settings → System → Keyboard → Physical keyboard, set the layout to German.
 
@@ -169,3 +169,83 @@ Type `unicode` and check that the second line has Japanese glyphs (the bottom le
 | 7.14 | Type `mouse` again, Shift+turn the wheel up, then (without Shift) hover, drag, click, and turn the wheel down until the display is back at the bottom; then click | While scrolled back: the pointer is an I-beam, the drag selects, the wheel scrolls, and nothing appears in logcat. Back at the bottom: the wheel and the click appear in logcat again |
 
 What to tell us: the device, the Android version, the mouse or touchpad, and each row's result. If the right button acts as Back, or the pointer does not change, tell us too.
+
+## 8. Images
+
+[decisions/0038](decisions/0038-kitty-graphics.md). Images of the kitty graphics protocol were checked only on the JVM, with recordings of real programs and screenshot tests. The sample app has no SSH, so it can only replay recordings; checking real programs needs an app that embeds vtfx and connects over SSH to a host with `kitten icat`, timg, and yazi.
+
+| # | Action | Expected |
+|---|---|---|
+| 8.1 | In the sample app, `replay timg`, `replay icat`, `replay icat-placeholder`, and `replay fastfetch` | Each image appears where the recording put it, in proportion to the cells. The recordings chose sizes for cells of 10 × 20 pixels, so an image without a size in cells looks smaller in larger cells |
+| 8.2 | Over SSH, show an image with `kitten icat`, then with timg, then browse images with yazi | The images appear at the size and place the programs ask for |
+| 8.3 | Print lines until the image scrolls off, then scroll back through the scrollback | The image moves with the text and comes back with it |
+| 8.4 | Show an image the size of the screen, then make it scroll (print lines below it) | The frame time stays near that of text (section 5) |
+| 8.5 | Show a few large images, and read the memory with `adb -s SERIAL shell dumpsys meminfo PACKAGE` | Note the memory: the display keeps bitmaps besides the decoded pixels, which `TerminalLimits.maxImageBytes` bounds |
+
+What to tell us: the device, the Android version, the programs, and each row's result, with the meminfo output of 8.5.
+
+## 9. The input history on switching IMEs
+
+5.1 of [ime-contract.md](design/ime-contract.md). `TerminalInputConnection.closeConnection` does not reset the input history, so if the window keeps the focus while the IME changes, the new IME may get the text typed with the previous one through `EditorInfo.setInitialSurroundingText` (API 30 and later). Whether that happens depends on how the system restarts the input, which the emulator e2e does not cover. If it happens, the input history should also be reset on `closeConnection`.
+
+Install a second IME (such as SwiftKey) besides Gboard, start the sample app, and tap the terminal.
+
+| # | Action | Expected |
+|---|---|---|
+| 9.1 | Type `hello wor` with Gboard without pressing Enter, then switch to the second IME with Gboard's switch key | The second IME's suggestions do not continue `wor` (for example, it does not suggest `world`) |
+| 9.2 | Repeat 9.1, switching from the system picker (the keyboard icon in the navigation bar, or the notification) | Same as 9.1 |
+
+If the new IME suggests words that continue the text typed before switching, it got the input history. Tell us the IMEs, the device, and the Android version.
+
+## 10. Links taken by a protected activity
+
+[decisions/0043](decisions/0043-url-open-results.md). `AndroidUrlOpener.open` converts `SecurityException` from `startActivity` into `OpenUrlResult.Refused` and lets other exceptions propagate. The unit test only makes a context throw `SecurityException`; what is not known is whether the system throws that exception, or another one, when the activity that takes the link requires a permission. Robolectric does not model it.
+
+This needs a second app with an activity that takes the link's URL (an app that verified the link's domain, so that no chooser appears) and declares `android:permission`, which the sample app does not hold.
+
+| # | Action | Expected |
+|---|---|---|
+| 10.1 | In the sample app, type a URL of the second app's domain and press Enter (the fake host echoes it, and the URL becomes a link), tap it, and confirm | The sample app shows "The system did not let the app for this link open." and does not crash |
+
+If the sample app crashes, tell us the exception in logcat.
+
+## 11. Imported fonts
+
+[decisions/0040](decisions/0040-sanitized-user-fonts.md). Sanitized fonts have no hinting, and sanitizing a CJK font takes seconds. On the x86_64 emulator, face 0 of Noto Serif CJK (65535 glyphs, CFF) took about 10 s in a release build and about 60 s in a debuggable one, where Android's runtime optimizes much less, measured before later optimizations of the verifier and the conversion. `SystemFontsTest` (an instrumented test) logs the time of every font of the device.
+
+Use a low-end phone and a device with a low density, and copy the font files to the device (for example to Downloads).
+
+| # | Action | Expected |
+|---|---|---|
+| 11.1 | In the sample app, type `font import` and pick a Latin monospace font | The app reports the faces and `Imported face N in M ms`, and the terminal uses the font |
+| 11.2 | Type `font import` and pick Noto Sans Mono CJK JP (CFF outlines, which sanitizing converts) | Same as 11.1. Note `M`. While it runs, read the memory with `adb -s SERIAL shell dumpsys meminfo com.google.vtfx.sample` |
+| 11.3 | Type `unicode` and `colors`, and look at the text at small font sizes | Text without hinting looks acceptable |
+
+What to tell us: the device, the Android version, the density, whether the build was debug or release, the reported times, and the memory.
+
+## 12. Copying all the text
+
+[decisions/0031](decisions/0031-desktop-pointer-and-terminal-state.md). Copying all the text copies at most the newest 10,000 lines, cut to 256 Ki characters (`TerminalDisplay.selectedText`), so that the system clipboard can take it. Robolectric's clipboard has no Binder limit, so whether the copy reaches the system clipboard and its preview without `TransactionTooLargeException` was not checked.
+
+| # | Action | Expected |
+|---|---|---|
+| 12.1 | In the sample app, fill the scrollback with long lines (for example, paste a long text of tens of KB and press Enter, several times; the fake host echoes it) | The scrollback holds many long lines |
+| 12.2 | Long-press, choose Select all, then Copy | The system's clipboard preview shows the start of the text, and the app does not crash. Note how long the UI freezes |
+| 12.3 | Paste into another app | The text is the newest part of the terminal, at most 256 Ki characters |
+
+If the app crashes, tell us the exception in logcat.
+
+## 13. IMEs on API 29 to 33
+
+[decisions/0039](decisions/0039-minsdk-29.md), sections 3 and 6.1 of [ime-contract.md](design/ime-contract.md). IMEs on Android 10 to 13 do not call `replaceText`, and on API 29 get no initial surrounding text, so they correct text through the other paths of the contract, which only the unit tests check. No traces were recorded on those versions, and whether the current Gboard installs on API 29 is not known.
+
+Use Gboard on devices with Android 10, 11, 12, and 13, and start the sample app with logHostInput enabled (section 1).
+
+| # | Action | Expected |
+|---|---|---|
+| 13.1 | In English, misspell a word and fix it with a suggestion | `7f` for each character of the wrong word, then the corrected word |
+| 13.2 | In English, type `ok` and two spaces | `6f`, `6b`, `20`, then `7f` and `2e20` (`. `) |
+| 13.3 | In English, type part of a word and choose a suggestion | The rest of the word (or `7f`s and the whole word) |
+| 13.4 | In Japanese, type and commit `にほんご`, then reconvert it (select it and choose a candidate, if Gboard offers it) | `7f`s for the committed text, then the new text on commit |
+
+What to tell us: the Gboard version, the device and Android version, and each row's logcat output.
