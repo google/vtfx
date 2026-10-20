@@ -433,7 +433,6 @@ private constructor(
             )
         }
 
-        // restricted_apis is read by scripts/check_boundaries.py.
         private val TOP_LEVEL_KEYS =
             setOf(
                 "modules",
@@ -442,7 +441,6 @@ private constructor(
                 "reserved_packages",
                 "bootstrap_methods",
                 "baseline_references",
-                "restricted_apis",
             )
         private val ALLOWLIST_KEYS = setOf("classes", "packages", "types", "members")
         private val RESTRICTED_CLASSES_KEYS =

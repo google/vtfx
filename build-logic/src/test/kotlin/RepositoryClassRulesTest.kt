@@ -26,7 +26,7 @@ import org.objectweb.asm.Opcodes
 
 /**
  * Checks the class rules of the repository's config/boundaries.toml against references that they
- * must catch, including those that the rules of scripts/check_boundaries.py caught in source text.
+ * must catch, including those that regular expressions over the sources caught before.
  */
 class RepositoryClassRulesTest {
     private val boundaries = Boundaries.parse(File("../config/boundaries.toml").readText())

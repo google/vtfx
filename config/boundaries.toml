@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Module boundaries. The build logic checks the modules and their dependencies
-# (build-logic/src/main/kotlin/vtfx.boundaries.gradle.kts, docs/decisions/0044), and
-# scripts/check_boundaries.py checks restricted_apis.
+# Module boundaries, which the build logic checks: the modules and their dependencies, and what the
+# compiled classes of each module refer to (build-logic/src/main/kotlin/vtfx.boundaries.gradle.kts,
+# docs/decisions/0044).
 #
 # This is a guardrail against obvious mistakes, not an enforcement that cannot be bypassed (see
 # docs/REQUIREMENTS.md section 6.1). The rationale is in docs/design/architecture.md.
@@ -522,63 +522,3 @@ allowed_modules = []
 package = "com/google/vtfx/font/gate"
 modules = ["vtfx-font-gate", "vtfx-font-gate-android"]
 reason = "A class of the same name in another module could replace a reviewed one on the class path (docs/decisions/0041)."
-
-# APIs that may only appear in the listed paths. Patterns are Python regular expressions matched
-# against each line of Kotlin and Java sources. Paths are fnmatch patterns relative to the
-# repository root, where "*" also matches "/".
-[[restricted_apis]]
-# Includes Compose's clipboard (LocalClipboardManager, LocalClipboard, ClipEntry).
-pattern = '\b(ClipboardManager|ClipData|LocalClipboardManager|LocalClipboard|ClipEntry)\b'
-reason = "Clipboard access must go through vtfx-gate-android."
-allowed_paths = ["vtfx-gate-android/**"]
-
-[[restricted_apis]]
-# Includes Compose's URL opening (LocalUriHandler, UriHandler, LinkAnnotation.Url) and AndroidX's
-# sharing and Custom Tabs (ShareCompat, CustomTabsIntent), which open other apps without naming Intent.
-pattern = '\b(Intent|startActivity|PendingIntent|LocalUriHandler|UriHandler|ShareCompat|CustomTabsIntent)\b|\bLinkAnnotation\.Url\b'
-reason = "Opening other apps (e.g. URLs) must go through vtfx-gate-android."
-allowed_paths = ["vtfx-gate-android/**"]
-
-[[restricted_apis]]
-pattern = '\bHostConnection\b'
-reason = "Only vtfx-gate may hold the connection to the host. TerminalSession only hands it over (docs/decisions/0027)."
-allowed_paths = ["vtfx-gate/**", "vtfx-session/src/main/kotlin/com/google/vtfx/session/TerminalSession.kt"]
-
-[[restricted_apis]]
-# Tests may implement fakes of them; test code is not shipped (docs/decisions/0042).
-pattern = '\b(ClipboardAccess|UrlOpener)\b'
-reason = "Only vtfx-gate may call the clipboard and the URL opener, which vtfx-gate-android implements. TerminalSession only hands them over (docs/decisions/0042)."
-allowed_paths = ["vtfx-gate/**", "vtfx-gate-android/**", "vtfx-session/src/main/kotlin/com/google/vtfx/session/TerminalSession.kt", "*/src/test/**"]
-
-[[restricted_apis]]
-# vtfx-font-gate keeps all its classes in a package of its own, which it shares with no other module,
-# and vtfx-font-gate-android has a subpackage of it.
-pattern = '\bpackage\s+com\.google\.vtfx\.font\.gate\b'
-reason = "Only the font gate modules may declare classes in com.google.vtfx.font.gate and its subpackages: a class of the same name in another module could replace a reviewed one on the class path (docs/decisions/0041)."
-allowed_paths = ["vtfx-font-gate/**", "vtfx-font-gate-android/**"]
-
-[[restricted_apis]]
-pattern = '\bjava\.lang\.(reflect|invoke)\b|\bkotlin\.reflect\.(full|jvm)\b|\bClass\.forName\b|\.getDeclared(Field|Method|Constructor)s?\b'
-reason = "Reflection can bypass visibility, which the module boundaries rely on."
-allowed_paths = []
-
-[[restricted_apis]]
-pattern = '\bRuntime\.getRuntime\(\)|\bProcessBuilder\b'
-reason = "vtfx does not start processes (docs/REQUIREMENTS.md section 4.2)."
-allowed_paths = []
-
-[[restricted_apis]]
-pattern = '\bjava\.net\.|\bjavax\.net\b|\bandroid\.webkit\.|\bokhttp3\b|\bDownloadManager\b'
-reason = "vtfx does not access the network. The app owns the connection to the host."
-allowed_paths = []
-
-[[restricted_apis]]
-pattern = '\bTypeface\.(createFromFile|createFromAsset|Builder|CustomFallbackBuilder)\b|\bandroid\.graphics\.fonts\b|\b(AndroidFont|GoogleFont|LoadedFontFamily|ParcelFileDescriptor)\b|\bFont\(\s*(File\b|file\s*=|path\s*=|fileDescriptor)|\bFontFamily\(\s*[Tt]ypeface\b'
-reason = "vtfx draws only fonts of the system, of the app's package, or sanitized by vtfx-font (TerminalFont); font files from elsewhere may be malicious (docs/decisions/0020, 0040)."
-# vtfx-font-gate-android makes typefaces from SanitizedFont alone, whose bytes passed the verifier of
-# vtfx-font-gate (docs/decisions/0040, 0041); the module is under security review. The test stands
-# for a font loading asynchronously.
-allowed_paths = [
-    "vtfx-font-gate-android/**",
-    "vtfx-compose/src/test/kotlin/com/google/vtfx/compose/TerminalStyleTest.kt",
-]

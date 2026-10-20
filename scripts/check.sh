@@ -22,9 +22,6 @@ set -eu
 
 cd "$(dirname "$0")/.."
 
-echo "== Module boundaries"
-python3 -I scripts/check_boundaries.py
-
 echo "== KDoc of the public API"
 python3 -I scripts/check_kdoc.py
 
