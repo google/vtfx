@@ -207,6 +207,8 @@ The following inputs are not trusted.
 3. Release after human review.
    - The review centers on the code under review in 6.1 and the public API in 6.5.
 
+Current phase (annotation): the repository was published on 2026-10-15 at version 0.1.0 after a human review of the whole tree, which was phase 3 ([0018](decisions/0018-distribution.md)). Development continues autonomously as in phase 2, with the changes that need a human gathered in [review-queue.md](review-queue.md).
+
 ### 7.2 Testing
 
 - **Protecting oracles**: The tests that support the autonomous loop must be trustworthy.
@@ -223,19 +225,19 @@ The following inputs are not trusted.
 
 ## 8. Open questions to decide at design time
 
-- The references to conform to, and the range of supported sequences
-- Handling of TERM / terminfo
-- The policy on the Unicode version, Ambiguous width, and grapheme clusters
-- The matrix of target IMEs
-- The range of surrounding text disclosed to the IME
-- Handling of requests to rewrite committed text
-- A means to send Latin letters one at a time, and compatibility with Japanese input
-- The policy on whether to disable the IME's personalized learning (decided: always disabled. Section 3 of [design/ime-contract.md](design/ime-contract.md))
-- Whether to reflow on resize
-- The policy for resize notifications during the IME animation
-- The acceptable range and limits for resource exhaustion
-- Performance targets
-- minSdk (trade-offs per feature. The initial value was decided as 34: section 7 of [design/architecture.md](design/architecture.md))
-- The concrete scope of the code under security review, and how to verify the boundary
-- The compatibility policy of the public API, and when to start guaranteeing stability
-- Distribution and license
+- The references to conform to, and the range of supported sequences (Resolved: [0001](decisions/0001-parser.md), [0009](decisions/0009-emulation-scope.md))
+- Handling of TERM / terminfo (Resolved: [0010](decisions/0010-term-terminfo.md))
+- The policy on the Unicode version, Ambiguous width, and grapheme clusters (Resolved: [0011](decisions/0011-unicode.md))
+- The matrix of target IMEs (Resolved: [0017](decisions/0017-ime-scope.md))
+- The range of surrounding text disclosed to the IME (Resolved: [0017](decisions/0017-ime-scope.md))
+- Handling of requests to rewrite committed text (Resolved: [0017](decisions/0017-ime-scope.md))
+- A means to send Latin letters one at a time, and compatibility with Japanese input (Resolved: [0017](decisions/0017-ime-scope.md))
+- The policy on whether to disable the IME's personalized learning (decided: always disabled. Section 3 of [design/ime-contract.md](design/ime-contract.md)) (Resolved: [0017](decisions/0017-ime-scope.md))
+- Whether to reflow on resize (Resolved: [0013](decisions/0013-resize-and-lifecycle.md))
+- The policy for resize notifications during the IME animation (Resolved: [0013](decisions/0013-resize-and-lifecycle.md))
+- The acceptable range and limits for resource exhaustion (Resolved: [0002](decisions/0002-resource-limits.md))
+- Performance targets (Resolved: [0014](decisions/0014-performance.md))
+- minSdk (trade-offs per feature) (Resolved: minSdk is 29, [0039](decisions/0039-minsdk-29.md); the initial value was 34)
+- The concrete scope of the code under security review, and how to verify the boundary (Resolved: [0041](decisions/0041-security-review-by-module.md), [0044](decisions/0044-boundaries-in-gradle-and-classes.md))
+- The compatibility policy of the public API, and when to start guaranteeing stability (Resolved: [0016](decisions/0016-public-api.md))
+- Distribution and license (Resolved: [0018](decisions/0018-distribution.md))
