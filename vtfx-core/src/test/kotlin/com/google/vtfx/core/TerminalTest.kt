@@ -20,11 +20,11 @@ package com.google.vtfx.core
 
 import kotlin.random.Random
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
+import org.junit.Test
 
 class TerminalTest {
     private val events = mutableListOf<TerminalEvent>()
@@ -55,13 +55,13 @@ class TerminalTest {
         for (row in 0..1) {
             val line = t.snapshot().line(row)
             for (column in listOf(-1, 4)) {
-                assertThrows<IndexOutOfBoundsException> { line.textAt(column) }
-                assertThrows<IndexOutOfBoundsException> { line.widthAt(column) }
-                assertThrows<IndexOutOfBoundsException> { line.styleAt(column) }
-                assertThrows<IndexOutOfBoundsException> { line.hyperlinkAt(column) }
+                assertFailsWith<IndexOutOfBoundsException> { line.textAt(column) }
+                assertFailsWith<IndexOutOfBoundsException> { line.widthAt(column) }
+                assertFailsWith<IndexOutOfBoundsException> { line.styleAt(column) }
+                assertFailsWith<IndexOutOfBoundsException> { line.hyperlinkAt(column) }
             }
         }
-        assertThrows<IndexOutOfBoundsException> { t.snapshot().line(2) }
+        assertFailsWith<IndexOutOfBoundsException> { t.snapshot().line(2) }
     }
 
     @Test
@@ -244,7 +244,7 @@ class TerminalTest {
         assertEquals(listOf("1  ", "2  ", "3  ", "4  "), t.lines(maxLines = 99).map { it.text() })
         assertEquals(listOf("2  ", "3  ", "4  "), t.lines(maxLines = 3).map { it.text() })
         assertEquals(emptyList(), t.lines(maxLines = 0))
-        assertThrows<IllegalArgumentException> { t.lines(maxLines = -1) }
+        assertFailsWith<IllegalArgumentException> { t.lines(maxLines = -1) }
         // At the current width, as the snapshot shows them.
         t.resize(2, 2)
         assertEquals(listOf(2), t.lines(maxLines = 99).map { it.columns }.distinct())
@@ -386,7 +386,7 @@ class TerminalTest {
         assertEquals(TerminalColor.rgb(7, 8, 9), line.underlineColorAt(4))
         assertEquals(TerminalColor.Default, line.underlineColorAt(5))
         assertEquals(TerminalColor.Default, line.underlineColorAt(6))
-        assertThrows<IndexOutOfBoundsException> { line.underlineColorAt(10) }
+        assertFailsWith<IndexOutOfBoundsException> { line.underlineColorAt(10) }
     }
 
     @Test
@@ -897,13 +897,13 @@ class TerminalTest {
     fun listenerMustNotCallBack() {
         lateinit var t: Terminal
         t = Terminal(5, 1) { t.write(byteArrayOf()) }
-        assertThrows<IllegalStateException> { t.write(byteArrayOf(7)) }
+        assertFailsWith<IllegalStateException> { t.write(byteArrayOf(7)) }
     }
 
     @Test
     fun rejectsInvalidSizes() {
-        assertThrows<IllegalArgumentException> { Terminal(0, 1) }
-        assertThrows<IllegalArgumentException> { Terminal(1, TerminalLimits.MAX_DIMENSION + 1) }
+        assertFailsWith<IllegalArgumentException> { Terminal(0, 1) }
+        assertFailsWith<IllegalArgumentException> { Terminal(1, TerminalLimits.MAX_DIMENSION + 1) }
     }
 
     @Test

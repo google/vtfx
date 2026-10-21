@@ -23,7 +23,7 @@ import com.google.vtfx.core.parser.ParserHandler
 import java.util.Random
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 /**
  * Checks that [Emulator.printAscii], which writes plain text directly into the cells

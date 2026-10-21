@@ -18,7 +18,7 @@ package com.google.vtfx.core
 
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 /** Checks that the scrollback's [CompactLine] gives back the line it was made from. */
 class CompactLineTest {

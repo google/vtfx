@@ -18,29 +18,33 @@
 
 package com.google.vtfx.core
 
+import com.google.testing.junit.testparameterinjector.TestParameter
+import com.google.testing.junit.testparameterinjector.TestParameterInjector
+import com.google.testing.junit.testparameterinjector.TestParameterValuesProvider
 import java.io.File
-import org.junit.jupiter.api.DynamicTest
-import org.junit.jupiter.api.TestFactory
-import org.opentest4j.AssertionFailedError
+import org.junit.ComparisonFailure
+import org.junit.Test
+import org.junit.runner.RunWith
 
 /**
  * Replays the output of real apps recorded by tools/recordings/record.py and compares the screen
  * with the one the reference terminal (tmux) showed for the same output (docs/design/testing.md
  * section 10).
  */
+@RunWith(TestParameterInjector::class)
 class RecordingReplayTest {
-    private val directory =
-        File(System.getProperty("vtfx.recordingsDir") ?: error("vtfx.recordingsDir is not set"))
+    @Test
+    fun recording(@TestParameter(valuesProvider = Recordings::class) recording: File) {
+        replay(recording.name.removeSuffix(".out"), recording)
+    }
 
-    @TestFactory
-    fun recordings(): List<DynamicTest> {
-        val recordings =
-            directory.listFiles { file -> file.name.endsWith(".out") }?.sortedBy { it.name }
-                ?: error("No recordings in $directory")
-        check(recordings.isNotEmpty()) { "No recordings in $directory" }
-        return recordings.map { recording ->
-            val name = recording.name.removeSuffix(".out")
-            DynamicTest.dynamicTest(name) { replay(name, recording) }
+    private class Recordings : TestParameterValuesProvider() {
+        override fun provideValues(context: Context): List<*> {
+            val recordings =
+                directory.listFiles { file -> file.name.endsWith(".out") }?.sortedBy { it.name }
+                    ?: error("No recordings in $directory")
+            check(recordings.isNotEmpty()) { "No recordings in $directory" }
+            return recordings.map { value(it).withName(it.name.removeSuffix(".out")) }
         }
     }
 
@@ -59,7 +63,7 @@ class RecordingReplayTest {
             File("build/recordings").mkdirs()
             File("build/recordings/$name.actual.txt")
                 .writeText(actual.joinToString("\n", postfix = "\n"))
-            throw AssertionFailedError(
+            throw ComparisonFailure(
                 "$name: screen differs from the reference",
                 expected.joinToString("\n"),
                 actual.joinToString("\n"),
@@ -87,7 +91,7 @@ class RecordingReplayTest {
             }
         }
         if (differences.isNotEmpty()) {
-            throw AssertionFailedError(
+            throw AssertionError(
                 "$name: ${differences.size} cells differ in style:\n" +
                     differences.take(20).joinToString("\n")
             )
@@ -208,5 +212,10 @@ class RecordingReplayTest {
             }
             return style
         }
+    }
+
+    private companion object {
+        val directory =
+            File(System.getProperty("vtfx.recordingsDir") ?: error("vtfx.recordingsDir is not set"))
     }
 }

@@ -26,7 +26,7 @@ import javax.imageio.ImageWriteParam
 import kotlin.random.Random
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 /**
  * Checks [PngDecoder] against the JDK's PNG encoder and decoder, an implementation written

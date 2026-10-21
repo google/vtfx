@@ -16,6 +16,7 @@
 
 package com.google.vtfx.core.graphics
 
+import com.google.vtfx.core.assertCompletesWithin
 import com.google.vtfx.core.graphics.PngTestEncoder.deflate
 import java.io.ByteArrayOutputStream
 import java.time.Duration
@@ -23,8 +24,7 @@ import java.util.zip.Deflater
 import kotlin.random.Random
 import kotlin.test.assertContentEquals
 import kotlin.test.assertNull
-import org.junit.jupiter.api.Assertions.assertTimeoutPreemptively
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 class ZlibTest {
     private fun inflate(data: ByteArray, maxOutput: Int) =
@@ -72,7 +72,7 @@ class ZlibTest {
         while (!deflater.finished()) out.write(buffer, 0, deflater.deflate(buffer))
         deflater.end()
         val bomb = out.toByteArray()
-        assertTimeoutPreemptively(Duration.ofSeconds(5)) { assertNull(inflate(bomb, 1 shl 20)) }
+        assertCompletesWithin(Duration.ofSeconds(5)) { assertNull(inflate(bomb, 1 shl 20)) }
     }
 
     @Test

@@ -23,28 +23,14 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import org.junit.jupiter.api.Assertions.assertTimeoutPreemptively
-import org.junit.jupiter.api.Nested
-import org.junit.jupiter.api.Test
+import org.junit.Test
+import org.junit.experimental.runners.Enclosed
+import org.junit.runner.RunWith
 
 /** Tests for the features in the scope of docs/decisions/0009, grouped by feature. */
+@RunWith(Enclosed::class)
 class EmulationCoverageTest {
-    private val events = mutableListOf<TerminalEvent>()
-
-    private fun terminal(
-        columns: Int = 20,
-        rows: Int = 3,
-        limits: TerminalLimits = TerminalLimits(),
-    ) = Terminal(columns, rows, limits) { events += it }
-
-    private fun Terminal.write(text: String) = write(text.toByteArray(Charsets.UTF_8))
-
-    private fun Terminal.line(row: Int) = snapshot().line(row)
-
-    private fun replies() = events.filterIsInstance<TerminalEvent.ReplyRequested>().map { it.query }
-
-    @Nested
-    inner class CharacterSets {
+    class CharacterSets : EventRecorder by TerminalEvents() {
         @Test
         fun decSpecialGraphicsDrawsLines() {
             val t = terminal()
@@ -90,8 +76,7 @@ class EmulationCoverageTest {
         }
     }
 
-    @Nested
-    inner class CursorStyle {
+    class CursorStyle : EventRecorder by TerminalEvents() {
         @Test
         fun decscusrSetsShapeAndBlinking() {
             val t = terminal()
@@ -151,8 +136,7 @@ class EmulationCoverageTest {
         }
     }
 
-    @Nested
-    inner class Queries {
+    class Queries : EventRecorder by TerminalEvents() {
         @Test
         fun decrqmReportsKnownModes() {
             val t = terminal()
@@ -242,8 +226,7 @@ class EmulationCoverageTest {
         }
     }
 
-    @Nested
-    inner class Unicode {
+    class Unicode : EventRecorder by TerminalEvents() {
         @Test
         fun charactersBeyondTheBmpDoNotEndSequencesAsAscii() {
             val t = terminal()
@@ -338,8 +321,7 @@ class EmulationCoverageTest {
         }
     }
 
-    @Nested
-    inner class Hyperlinks {
+    class Hyperlinks : EventRecorder by TerminalEvents() {
         @Test
         fun cellsCarryTheLink() {
             val t = terminal()
@@ -401,14 +383,13 @@ class EmulationCoverageTest {
             // Each new link, used by no cell, must not make the terminal visit all the cells again:
             // that would be about 10^5 sequences times 8 * 10^5 cells.
             val flood = buildString { repeat(100_000) { append("\u001b]8;;https://b/$it\u0007") } }
-            assertTimeoutPreemptively(Duration.ofSeconds(20)) {
+            assertCompletesWithin(Duration.ofSeconds(20)) {
                 t.write(flood.toByteArray(Charsets.UTF_8))
             }
         }
     }
 
-    @Nested
-    inner class SavedTitles {
+    class SavedTitles : EventRecorder by TerminalEvents() {
         private fun titles() =
             events.filterIsInstance<TerminalEvent.TitleChanged>().map { it.title }
 
@@ -534,3 +515,23 @@ class EmulationCoverageTest {
         }
     }
 }
+
+/** The events of the terminals of a test of [EmulationCoverageTest]. */
+interface EventRecorder {
+    val events: MutableList<TerminalEvent>
+
+    /** A terminal whose events go to [events]. */
+    fun terminal(columns: Int = 20, rows: Int = 3, limits: TerminalLimits = TerminalLimits()) =
+        Terminal(columns, rows, limits) { events += it }
+
+    fun replies() = events.filterIsInstance<TerminalEvent.ReplyRequested>().map { it.query }
+}
+
+/** A fresh [EventRecorder] for each test. */
+private class TerminalEvents : EventRecorder {
+    override val events = mutableListOf<TerminalEvent>()
+}
+
+private fun Terminal.write(text: String) = write(text.toByteArray(Charsets.UTF_8))
+
+private fun Terminal.line(row: Int) = snapshot().line(row)

@@ -19,11 +19,11 @@
 package com.google.vtfx.core
 
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
+import org.junit.Test
 
 class LinksTest {
     private val crbug = LinkPattern(Regex("""\bcrbug/(\d+)"""), "https://crbug.com/{1}")
@@ -145,10 +145,10 @@ class LinksTest {
     @Test
     fun invalidTemplatesAreRejected() {
         val regex = Regex("""a(b)""")
-        assertThrows<IllegalArgumentException> { LinkPattern(regex, "https://x/{2}") }
-        assertThrows<IllegalArgumentException> { LinkPattern(regex, "https://x/{a}") }
-        assertThrows<IllegalArgumentException> { LinkPattern(regex, "https://x/{1") }
-        assertThrows<IllegalArgumentException> { LinkPattern(regex, "https://x/}") }
+        assertFailsWith<IllegalArgumentException> { LinkPattern(regex, "https://x/{2}") }
+        assertFailsWith<IllegalArgumentException> { LinkPattern(regex, "https://x/{a}") }
+        assertFailsWith<IllegalArgumentException> { LinkPattern(regex, "https://x/{1") }
+        assertFailsWith<IllegalArgumentException> { LinkPattern(regex, "https://x/}") }
         LinkPattern(regex, "https://x/{0}/{1}")
     }
 

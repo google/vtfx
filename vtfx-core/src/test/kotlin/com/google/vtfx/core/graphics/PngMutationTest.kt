@@ -32,7 +32,7 @@ import java.nio.ByteBuffer
 import kotlin.random.Random
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 /**
  * Feeds [PngDecoder] mutations of valid images, with fixed seeds, and checks that it neither throws

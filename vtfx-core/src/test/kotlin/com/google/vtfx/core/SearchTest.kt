@@ -21,12 +21,10 @@ package com.google.vtfx.core
 import java.lang.management.ManagementFactory
 import java.time.Duration
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import org.junit.jupiter.api.Assertions.assertTimeoutPreemptively
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
-import org.junit.jupiter.api.function.ThrowingSupplier
+import org.junit.Test
 
 class SearchTest {
     private fun terminal(
@@ -282,7 +280,7 @@ class SearchTest {
 
     @Test
     fun theTextToSearchForMustNotBeEmpty() {
-        assertThrows<IllegalArgumentException> { SearchQuery("", ignoreCase = false) }
+        assertFailsWith<IllegalArgumentException> { SearchQuery("", ignoreCase = false) }
     }
 
     @Test
@@ -302,15 +300,12 @@ class SearchTest {
         val query = "a".repeat(1000) + "b"
 
         val cpuNanos =
-            assertTimeoutPreemptively(
-                Duration.ofSeconds(60),
-                ThrowingSupplier {
-                    val threads = ManagementFactory.getThreadMXBean()
-                    val start = threads.currentThreadCpuTime
-                    search(terminal, query)
-                    threads.currentThreadCpuTime - start
-                },
-            )
+            assertCompletesWithin(Duration.ofSeconds(60)) {
+                val threads = ManagementFactory.getThreadMXBean()
+                val start = threads.currentThreadCpuTime
+                search(terminal, query)
+                threads.currentThreadCpuTime - start
+            }
 
         assertTrue(cpuNanos <= 10_000_000_000L, "${cpuNanos / 1_000_000} ms of CPU time")
     }

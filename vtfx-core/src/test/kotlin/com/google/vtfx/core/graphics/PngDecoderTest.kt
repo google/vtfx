@@ -16,6 +16,7 @@
 
 package com.google.vtfx.core.graphics
 
+import com.google.vtfx.core.assertCompletesWithin
 import com.google.vtfx.core.graphics.PngTestEncoder.GRAY
 import com.google.vtfx.core.graphics.PngTestEncoder.Image
 import com.google.vtfx.core.graphics.PngTestEncoder.PALETTE
@@ -37,8 +38,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertSame
-import org.junit.jupiter.api.Assertions.assertTimeoutPreemptively
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 class PngDecoderTest {
     private val maxPixels = 1L shl 20
@@ -377,7 +377,7 @@ class PngDecoderTest {
     @Test
     fun `reports huge images as too large without decoding them`() {
         val idat = chunk("IDAT", deflate(ByteArray(100)))
-        assertTimeoutPreemptively(Duration.ofSeconds(1)) {
+        assertCompletesWithin(Duration.ofSeconds(1)) {
             assertSame(
                 PngDecoder.Result.TooLarge,
                 decode(png(ihdr(65535, 65535, 8, RGBA), idat, chunk("IEND"))),
@@ -426,7 +426,7 @@ class PngDecoderTest {
         while (!deflater.finished()) out.write(buffer, 0, deflater.deflate(buffer))
         deflater.end()
         val png = png(ihdr(16, 16, 8, RGBA), chunk("IDAT", out.toByteArray()), chunk("IEND"))
-        assertTimeoutPreemptively(Duration.ofSeconds(2)) { assertMalformed(png) }
+        assertCompletesWithin(Duration.ofSeconds(2)) { assertMalformed(png) }
     }
 
     @Test

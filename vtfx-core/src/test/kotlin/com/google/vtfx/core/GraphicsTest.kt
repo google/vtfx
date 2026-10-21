@@ -24,73 +24,18 @@ import java.util.Base64
 import java.util.zip.Deflater
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import org.junit.jupiter.api.Nested
-import org.junit.jupiter.api.Test
+import org.junit.Test
+import org.junit.experimental.runners.Enclosed
+import org.junit.runner.RunWith
 
 /**
  * The kitty graphics protocol (docs/decisions/0038): transmissions and their replies, placements
  * and how they follow the text, deletions, and the limits. The expected cursor positions after
  * placements are those that kitty 0.48.2 reported under Xvfb (the decision's background).
  */
+@RunWith(Enclosed::class)
 class GraphicsTest {
-    private val events = mutableListOf<TerminalEvent>()
-
-    private fun terminal(
-        columns: Int = 80,
-        rows: Int = 24,
-        limits: TerminalLimits = TerminalLimits(),
-    ): Terminal = Terminal(columns, rows, limits) { events += it }.apply { setCellSize(10, 19) }
-
-    private fun Terminal.write(text: String) = write(text.toByteArray(Charsets.UTF_8))
-
-    private fun replies(): List<TerminalQuery.GraphicsReply> = events.mapNotNull {
-        (it as? TerminalEvent.ReplyRequested)?.query as? TerminalQuery.GraphicsReply
-    }
-
-    private fun reply(id: Long, status: GraphicsStatus, number: Long = 0, placement: Long = 0) =
-        TerminalQuery.GraphicsReply(id, number, placement, status)
-
-    /** A command with the base64 of [payload], if any. */
-    private fun apc(control: String, payload: ByteArray? = null): String =
-        "\u001b_G$control" +
-            (payload?.let { ";" + Base64.getEncoder().encodeToString(it) } ?: "") +
-            "\u001b\\"
-
-    /** RGBA pixels of [width] by [height], all [color] (0xAARRGGBB). */
-    private fun rgba(width: Int, height: Int, color: Int = 0xFFFF0000.toInt()): ByteArray {
-        val bytes = ByteArray(width * height * 4)
-        for (i in 0 until width * height) {
-            bytes[i * 4] = (color shr 16).toByte()
-            bytes[i * 4 + 1] = (color shr 8).toByte()
-            bytes[i * 4 + 2] = color.toByte()
-            bytes[i * 4 + 3] = (color ushr 24).toByte()
-        }
-        return bytes
-    }
-
-    /** Transmits and places an RGBA image of [width] by [height] with [keys]. */
-    private fun Terminal.place(keys: String, width: Int = 20, height: Int = 40) =
-        write(apc("a=T,f=32,s=$width,v=$height,q=2,$keys", rgba(width, height)))
-
-    private fun Terminal.cursorAt(): Pair<Int, Int> = Pair(cursor.column, cursor.row)
-
-    /**
-     * Checks that every live placement anchored to a line is found on the screen or in the
-     * scrollback: a placement whose line went away without it would be kept but never shown.
-     */
-    private fun Terminal.checkPlacements() {
-        var anchored = 0
-        graphicsLayer.forEachPlacement { if (!it.virtual) anchored++ }
-        var found = 0
-        graphicsLayer.forEachAnchored { placement, row ->
-            found++
-            assertTrue(row >= -scrollbackSize && row < rows, "row $row of $placement")
-        }
-        assertEquals(anchored, found, "placements not on any line")
-    }
-
-    @Nested
-    inner class Replies {
+    class Replies : GraphicsEvents by GraphicsRecorder() {
         @Test
         fun aQueryIsAnsweredWithItsId() {
             val terminal = terminal()
@@ -212,8 +157,7 @@ class GraphicsTest {
         }
     }
 
-    @Nested
-    inner class Transmission {
+    class Transmission : GraphicsEvents by GraphicsRecorder() {
         @Test
         fun chunksAreJoinedAndAnsweredOnceAtTheEnd() {
             val terminal = terminal()
@@ -309,8 +253,7 @@ class GraphicsTest {
         }
     }
 
-    @Nested
-    inner class Cursor {
+    class Cursor : GraphicsEvents by GraphicsRecorder() {
         @Test
         fun placementsMoveTheCursorToTheirLastRowAfterTheirLastColumn() {
             val terminal = terminal()
@@ -367,8 +310,7 @@ class GraphicsTest {
         }
     }
 
-    @Nested
-    inner class FollowingTheText {
+    class FollowingTheText : GraphicsEvents by GraphicsRecorder() {
         @Test
         fun placementsScrollIntoTheScrollbackAndShowThere() {
             val terminal = terminal(rows = 5)
@@ -528,8 +470,7 @@ class GraphicsTest {
         }
     }
 
-    @Nested
-    inner class Deletion {
+    class Deletion : GraphicsEvents by GraphicsRecorder() {
         private fun Terminal.placeAt(row: Int, column: Int, keys: String) {
             write("\u001b[${row};${column}H")
             place("$keys,C=1")
@@ -613,8 +554,7 @@ class GraphicsTest {
         }
     }
 
-    @Nested
-    inner class Limits {
+    class Limits : GraphicsEvents by GraphicsRecorder() {
         @Test
         fun theOldestImagesGoFirstThoseWithoutPlacementsBeforeTheOthers() {
             // Room for three images of 10 by 10.
@@ -674,8 +614,7 @@ class GraphicsTest {
         }
     }
 
-    @Nested
-    inner class UnicodePlaceholders {
+    class UnicodePlaceholders : GraphicsEvents by GraphicsRecorder() {
         /** A placeholder with the diacritics of [values]: row, column, and high byte. */
         private fun cell(vararg values: Int): String = buildString {
             appendCodePoint(0x10EEEE)
@@ -805,30 +744,100 @@ class GraphicsTest {
         }
     }
 
-    @Test
-    fun virtualPlacementsNeitherShowNorMoveTheCursor() {
-        val terminal = terminal()
-        terminal.write(apc("a=T,i=1,U=1,c=2,r=2,f=24,s=1,v=1,q=2", byteArrayOf(0, 0, 0)))
-        assertEquals(Pair(0, 0), terminal.cursorAt())
-        assertEquals(emptyList(), terminal.snapshot().imagePlacements)
-        assertEquals(1, terminal.graphicsLayer.placementCount)
-    }
+    /** Placements that the other groups do not cover. */
+    class Placement : GraphicsEvents by GraphicsRecorder() {
+        @Test
+        fun virtualPlacementsNeitherShowNorMoveTheCursor() {
+            val terminal = terminal()
+            terminal.write(apc("a=T,i=1,U=1,c=2,r=2,f=24,s=1,v=1,q=2", byteArrayOf(0, 0, 0)))
+            assertEquals(Pair(0, 0), terminal.cursorAt())
+            assertEquals(emptyList(), terminal.snapshot().imagePlacements)
+            assertEquals(1, terminal.graphicsLayer.placementCount)
+        }
 
-    @Test
-    fun sourceRectanglesAndOffsets() {
-        val terminal = terminal()
-        terminal.write(apc("a=T,i=1,f=32,s=20,v=40,x=5,y=10,w=100,h=20,X=4,Y=30,q=2", rgba(20, 40)))
-        val placement = terminal.snapshot().imagePlacements.single()
-        assertEquals(
-            listOf(5, 10, 15, 20),
-            with(placement) {
-                listOf(sourceX, sourceY, sourceWidth, sourceHeight)
-            },
-        )
-        // The offset in a cell is less than the cell: 4 of 10, and 18 of 19.
-        assertEquals(0.4f, placement.left)
-        assertEquals(18f / 19, placement.top)
-        // 4 + 15 pixels take 2 columns; 18 + 20 take 2 rows.
-        assertEquals(Pair(2, 1), terminal.cursorAt())
+        @Test
+        fun sourceRectanglesAndOffsets() {
+            val terminal = terminal()
+            terminal.write(
+                apc("a=T,i=1,f=32,s=20,v=40,x=5,y=10,w=100,h=20,X=4,Y=30,q=2", rgba(20, 40))
+            )
+            val placement = terminal.snapshot().imagePlacements.single()
+            assertEquals(
+                listOf(5, 10, 15, 20),
+                with(placement) {
+                    listOf(sourceX, sourceY, sourceWidth, sourceHeight)
+                },
+            )
+            // The offset in a cell is less than the cell: 4 of 10, and 18 of 19.
+            assertEquals(0.4f, placement.left)
+            assertEquals(18f / 19, placement.top)
+            // 4 + 15 pixels take 2 columns; 18 + 20 take 2 rows.
+            assertEquals(Pair(2, 1), terminal.cursorAt())
+        }
     }
+}
+
+/** The events of the terminals of a test of [GraphicsTest]. */
+interface GraphicsEvents {
+    val events: MutableList<TerminalEvent>
+
+    /** A terminal with cells of 10 by 19 pixels whose events go to [events]. */
+    fun terminal(
+        columns: Int = 80,
+        rows: Int = 24,
+        limits: TerminalLimits = TerminalLimits(),
+    ): Terminal = Terminal(columns, rows, limits) { events += it }.apply { setCellSize(10, 19) }
+
+    fun replies(): List<TerminalQuery.GraphicsReply> = events.mapNotNull {
+        (it as? TerminalEvent.ReplyRequested)?.query as? TerminalQuery.GraphicsReply
+    }
+}
+
+/** A fresh [GraphicsEvents] for each test. */
+private class GraphicsRecorder : GraphicsEvents {
+    override val events = mutableListOf<TerminalEvent>()
+}
+
+private fun Terminal.write(text: String) = write(text.toByteArray(Charsets.UTF_8))
+
+private fun reply(id: Long, status: GraphicsStatus, number: Long = 0, placement: Long = 0) =
+    TerminalQuery.GraphicsReply(id, number, placement, status)
+
+/** A command with the base64 of [payload], if any. */
+private fun apc(control: String, payload: ByteArray? = null): String =
+    "\u001b_G$control" +
+        (payload?.let { ";" + Base64.getEncoder().encodeToString(it) } ?: "") +
+        "\u001b\\"
+
+/** RGBA pixels of [width] by [height], all [color] (0xAARRGGBB). */
+private fun rgba(width: Int, height: Int, color: Int = 0xFFFF0000.toInt()): ByteArray {
+    val bytes = ByteArray(width * height * 4)
+    for (i in 0 until width * height) {
+        bytes[i * 4] = (color shr 16).toByte()
+        bytes[i * 4 + 1] = (color shr 8).toByte()
+        bytes[i * 4 + 2] = color.toByte()
+        bytes[i * 4 + 3] = (color ushr 24).toByte()
+    }
+    return bytes
+}
+
+/** Transmits and places an RGBA image of [width] by [height] with [keys]. */
+private fun Terminal.place(keys: String, width: Int = 20, height: Int = 40) =
+    write(apc("a=T,f=32,s=$width,v=$height,q=2,$keys", rgba(width, height)))
+
+private fun Terminal.cursorAt(): Pair<Int, Int> = Pair(cursor.column, cursor.row)
+
+/**
+ * Checks that every live placement anchored to a line is found on the screen or in the scrollback:
+ * a placement whose line went away without it would be kept but never shown.
+ */
+private fun Terminal.checkPlacements() {
+    var anchored = 0
+    graphicsLayer.forEachPlacement { if (!it.virtual) anchored++ }
+    var found = 0
+    graphicsLayer.forEachAnchored { placement, row ->
+        found++
+        assertTrue(row >= -scrollbackSize && row < rows, "row $row of $placement")
+    }
+    assertEquals(anchored, found, "placements not on any line")
 }

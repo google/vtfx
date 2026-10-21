@@ -17,7 +17,7 @@
 package com.google.vtfx.core.parser
 
 import kotlin.test.assertEquals
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 class Utf8DecoderTest {
     private fun decode(vararg chunks: ByteArray): List<Int> {

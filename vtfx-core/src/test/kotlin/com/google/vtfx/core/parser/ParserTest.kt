@@ -17,7 +17,7 @@
 package com.google.vtfx.core.parser
 
 import kotlin.test.assertEquals
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 class ParserTest {
     /** Records the actions as strings, merging consecutive printed characters. */

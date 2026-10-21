@@ -20,7 +20,7 @@ package com.google.vtfx.core
 
 import java.io.File
 import kotlin.test.assertEquals
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 /**
  * Replays the output of real programs that show images (recordings/graphics, made by

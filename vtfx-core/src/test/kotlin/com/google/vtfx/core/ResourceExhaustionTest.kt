@@ -18,13 +18,14 @@
 
 package com.google.vtfx.core
 
+import com.google.testing.junit.testparameterinjector.TestParameter
+import com.google.testing.junit.testparameterinjector.TestParameterInjector
+import com.google.testing.junit.testparameterinjector.TestParameterValuesProvider
 import java.lang.management.ManagementFactory
 import java.time.Duration
 import kotlin.test.assertTrue
-import org.junit.jupiter.api.Assertions.assertTimeoutPreemptively
-import org.junit.jupiter.api.function.ThrowingSupplier
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.MethodSource
+import org.junit.Test
+import org.junit.runner.RunWith
 
 /**
  * Resource exhaustion by host output, an attack class of requirement 6.1, with the limits of
@@ -36,14 +37,14 @@ import org.junit.jupiter.params.provider.MethodSource
  * work that grows faster than the input, such as a scan of the scrollback per sequence. CPU time,
  * unlike elapsed time, does not grow when other processes compete for the CPUs, as fuzzers do.
  */
+@RunWith(TestParameterInjector::class)
 class ResourceExhaustionTest {
     class Case(val name: String, val unit: (Int) -> String) {
         override fun toString(): String = name
     }
 
-    @ParameterizedTest
-    @MethodSource("cases")
-    fun hostileOutputIsBounded(case: Case) {
+    @Test
+    fun hostileOutputIsBounded(@TestParameter(valuesProvider = Cases::class) case: Case) {
         val terminal = Terminal(COLUMNS, ROWS, TerminalLimits(scrollbackLines = SCROLLBACK_LINES))
         val input = buildString {
             var i = 0
@@ -51,18 +52,15 @@ class ResourceExhaustionTest {
         }
             .toByteArray(Charsets.UTF_8)
         val cpuNanos =
-            assertTimeoutPreemptively(
-                Duration.ofSeconds(HANG_LIMIT_SECONDS),
-                ThrowingSupplier {
-                    val threads = ManagementFactory.getThreadMXBean()
-                    val start = threads.currentThreadCpuTime
-                    // In chunks, as a connection delivers it, so that state carries across writes.
-                    for (offset in input.indices step CHUNK) {
-                        terminal.write(input, offset, minOf(CHUNK, input.size - offset))
-                    }
-                    threads.currentThreadCpuTime - start
-                },
-            )
+            assertCompletesWithin(Duration.ofSeconds(HANG_LIMIT_SECONDS)) {
+                val threads = ManagementFactory.getThreadMXBean()
+                val start = threads.currentThreadCpuTime
+                // In chunks, as a connection delivers it, so that state carries across writes.
+                for (offset in input.indices step CHUNK) {
+                    terminal.write(input, offset, minOf(CHUNK, input.size - offset))
+                }
+                threads.currentThreadCpuTime - start
+            }
         assertTrue(
             cpuNanos <= CPU_TIME_LIMIT_SECONDS * 1_000_000_000L,
             "${cpuNanos / 1_000_000} ms of CPU time",
@@ -91,7 +89,7 @@ class ResourceExhaustionTest {
         }
     }
 
-    companion object {
+    private companion object {
         private const val COLUMNS = 80
         private const val ROWS = 24
         private const val SCROLLBACK_LINES = 1000
@@ -119,7 +117,6 @@ class ResourceExhaustionTest {
             java.util.Base64.getEncoder().encodeToString(out.toByteArray())
         }
 
-        @JvmStatic
         fun cases(): List<Case> =
             listOf(
                 Case("repeat") { "x\u001b[65535b" },
@@ -171,5 +168,10 @@ class ResourceExhaustionTest {
                     else if (it <= 1100) "\u001b_Ga=p,i=1,r=1,c=1,q=2\u001b\\" else "\n"
                 },
             )
+    }
+
+    private class Cases : TestParameterValuesProvider() {
+        override fun provideValues(context: Context): List<*> =
+            cases().map { value(it).withName(it.name) }
     }
 }
