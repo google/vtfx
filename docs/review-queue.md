@@ -11,7 +11,6 @@ Until decided, the provisional decision is implemented. The impact of reversing 
 | Item | What to decide | Related |
 |---|---|---|
 | Robolectric's Android jars | Whether and how to verify the `android-all` jars that Robolectric downloads into `~/.m2` with its own downloader, outside Gradle, so that `gradle/verification-metadata.xml` does not cover them. Candidates: declare them as Gradle dependencies and run Robolectric offline from them, or keep relying on the repository | [0035](decisions/0035-dependency-verification.md), `build-logic` |
-| Header of `config/boundaries.toml` | Approve rewording the header comment of `config/boundaries.toml`: it calls the check "a guardrail against obvious mistakes, not an enforcement that cannot be bypassed" and says the rationale is in architecture.md, but item 6 of 0044 decided that the checks hold against changes written to get around them, and the rationale is now in [boundaries.md](design/boundaries.md) and 0044. The file is under security review, so agents do not change it on their own | [0044](decisions/0044-boundaries-in-gradle-and-classes.md), section 7 of [boundaries.md](design/boundaries.md), `config/boundaries.toml` |
 
 ## 2. Work only humans can do
 

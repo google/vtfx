@@ -16,8 +16,9 @@
 # compiled classes of each module refer to (build-logic/src/main/kotlin/vtfx.boundaries.gradle.kts,
 # docs/decisions/0044).
 #
-# This is a guardrail against obvious mistakes, not an enforcement that cannot be bypassed (see
-# docs/REQUIREMENTS.md section 6.1). The rationale is in docs/design/architecture.md.
+# The checks are meant to hold against changes written to get around them, within the limits that
+# review covers (docs/REQUIREMENTS.md section 6.1, item 6 of docs/decisions/0044). How they work
+# and what they do not cover are in docs/design/boundaries.md.
 #
 # Changes to this file require security review (config/protected-paths.toml).
 
