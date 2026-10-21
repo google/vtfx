@@ -46,6 +46,8 @@ dependencies {
     "testImplementation"(libs.findLibrary("roborazzi").get())
     "testImplementation"(libs.findLibrary("roborazzi-compose").get())
     "testImplementation"(libs.findLibrary("roborazzi-junit-rule").get())
+    // OfficialGoldensTest takes each official golden as a parameter.
+    "testImplementation"(libs.findLibrary("testparameterinjector").get())
     "testImplementation"(platform(libs.findLibrary("compose-bom").get()))
     "testImplementation"(libs.findLibrary("compose-ui-test-junit4").get())
     "debugImplementation"(libs.findLibrary("compose-ui-test-manifest").get())

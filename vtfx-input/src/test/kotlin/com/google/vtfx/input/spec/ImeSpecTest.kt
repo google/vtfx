@@ -18,6 +18,9 @@
 
 package com.google.vtfx.input.spec
 
+import com.google.testing.junit.testparameterinjector.TestParameter
+import com.google.testing.junit.testparameterinjector.TestParameterInjector
+import com.google.testing.junit.testparameterinjector.TestParameterValuesProvider
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.KeyModifiers
 import com.google.vtfx.core.KeyStroke
@@ -27,9 +30,9 @@ import com.google.vtfx.input.ImeEditor
 import com.google.vtfx.testing.ExpectedFailures
 import java.io.ByteArrayOutputStream
 import java.io.File
-import org.junit.jupiter.api.DynamicTest
-import org.junit.jupiter.api.TestFactory
-import org.opentest4j.AssertionFailedError
+import org.junit.ComparisonFailure
+import org.junit.Test
+import org.junit.runner.RunWith
 
 /**
  * Replays the IME traces listed in spec/ime into [ImeEditor] and compares the bytes for the host
@@ -38,34 +41,26 @@ import org.opentest4j.AssertionFailedError
  * Only the top-level `InputConnection` calls of a trace are replayed. Nested calls are made by
  * `BaseInputConnection` itself, and the other events are the recorder's own actions.
  */
+@RunWith(TestParameterInjector::class)
 class ImeSpecTest {
-    private val repoRoot =
-        File(System.getProperty("vtfx.repoRoot") ?: error("vtfx.repoRoot is not set"))
+    private val expectedFailures = ExpectedFailures.load(ImeSpecTest::class.java)
 
-    @TestFactory
-    fun spec(): List<DynamicTest> {
-        val directory = File(repoRoot, "spec/ime")
-        val files =
-            directory.listFiles { file -> file.name.endsWith(".toml") }?.sortedBy { it.name }
-                ?: error("No spec directory: $directory")
-        val expectedFailures = ExpectedFailures.load(ImeSpecTest::class.java)
-        val ids = mutableListOf<String>()
-        val tests = files.flatMap { file ->
-            MiniToml.parseArrayOfTables(file.readText(), "case").map { case ->
-                val id = "${file.name}:${case["name"] ?: error("${file.name}: a case has no name")}"
-                ids += id
-                expectedFailures.test(id) { run(id, case) }
-            }
-        }
-        return tests + expectedFailures.staleEntriesTest(ids)
+    @Test
+    fun spec(@TestParameter(valuesProvider = Cases::class) case: ImeSpecCase) {
+        expectedFailures.verify(case.id) { run(case.id, case.fields) }
+    }
+
+    @Test
+    fun expectedFailuresListOnlyExistingCases() {
+        expectedFailures.verifyListsOnly(cases().map { it.id })
     }
 
     private fun run(id: String, case: Map<String, String>) {
-        val trace = File(repoRoot, case["trace"] ?: throw AssertionFailedError("$id: no trace"))
-        val expected = case["expected"] ?: throw AssertionFailedError("$id: no expected")
+        val trace = File(repoRoot, case["trace"] ?: throw AssertionError("$id: no trace"))
+        val expected = case["expected"] ?: throw AssertionError("$id: no expected")
         val actual = replay(trace)
         if (!actual.contentEquals(expected.toByteArray(Charsets.UTF_8))) {
-            throw AssertionFailedError(
+            throw ComparisonFailure(
                 "$id: bytes differ",
                 escape(expected.toByteArray()),
                 escape(actual),
@@ -125,7 +120,7 @@ class ImeSpecTest {
                 "requestCursorUpdates+filter",
                 "commitCorrection",
                 "clearMetaKeyStates" -> {}
-                else -> throw AssertionFailedError("${trace.name}: unsupported call $call")
+                else -> throw AssertionError("${trace.name}: unsupported call $call")
             }
         }
         return out.toByteArray()
@@ -146,7 +141,7 @@ class ImeSpecTest {
      * the encoder has its own tests there.
      */
     private fun encode(stroke: KeyStroke): ByteArray {
-        if (!stroke.modifiers.isEmpty) throw AssertionFailedError("unsupported key $stroke")
+        if (!stroke.modifiers.isEmpty) throw AssertionError("unsupported key $stroke")
         val text =
             when (stroke) {
                 is KeyStroke.Character -> String(Character.toChars(stroke.codePoint))
@@ -161,7 +156,7 @@ class ImeSpecTest {
                         TerminalKey.Right -> "\u001b[C"
                         TerminalKey.Left -> "\u001b[D"
                         TerminalKey.Delete -> "\u001b[3~"
-                        else -> throw AssertionFailedError("unsupported key $stroke")
+                        else -> throw AssertionError("unsupported key $stroke")
                     }
             }
         return text.toByteArray(Charsets.UTF_8)
@@ -201,7 +196,7 @@ class ImeSpecTest {
                 "MINUS" -> '-'
                 "APOSTROPHE" -> '\''
                 "SLASH" -> if (shift) '?' else '/'
-                else -> throw AssertionFailedError("unsupported key code $keyCode")
+                else -> throw AssertionError("unsupported key code $keyCode")
             }
         return KeyStroke.Character(character.code)
     }
@@ -213,8 +208,32 @@ class ImeSpecTest {
             .replace("\n", "\\n")
             .replace("\u007f", "\\x7f")
 
+    /** A case of spec/ime: its id, `<file>:<case name>`, and its keys. */
+    class ImeSpecCase(val id: String, val fields: Map<String, String>)
+
+    private class Cases : TestParameterValuesProvider() {
+        override fun provideValues(context: Context): List<*> =
+            cases().map { value(it).withName(it.id) }
+    }
+
     private companion object {
         const val ACTION_DOWN = 0
         const val META_SHIFT_ON = 1
+
+        val repoRoot =
+            File(System.getProperty("vtfx.repoRoot") ?: error("vtfx.repoRoot is not set"))
+
+        fun cases(): List<ImeSpecCase> {
+            val directory = File(repoRoot, "spec/ime")
+            val files =
+                directory.listFiles { file -> file.name.endsWith(".toml") }?.sortedBy { it.name }
+                    ?: error("No spec directory: $directory")
+            return files.flatMap { file ->
+                MiniToml.parseArrayOfTables(file.readText(), "case").map { case ->
+                    val name = case["name"] ?: error("${file.name}: a case has no name")
+                    ImeSpecCase("${file.name}:$name", case)
+                }
+            }
+        }
     }
 }

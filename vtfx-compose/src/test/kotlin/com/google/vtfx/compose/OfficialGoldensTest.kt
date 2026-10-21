@@ -16,10 +16,14 @@
 
 package com.google.vtfx.compose
 
+import com.google.testing.junit.testparameterinjector.TestParameter
+import com.google.testing.junit.testparameterinjector.TestParameterInjector
+import com.google.testing.junit.testparameterinjector.TestParameterValuesProvider
+import com.google.vtfx.testing.ExpectedFailures
 import java.io.File
 import javax.imageio.ImageIO
-import org.junit.Assert.fail
 import org.junit.Test
+import org.junit.runner.RunWith
 
 /**
  * Checks the provisional goldens in src/test/screenshots against the official goldens that humans
@@ -30,33 +34,25 @@ import org.junit.Test
  * that no longer matches is listed in `spec-expected-failures.txt` as `screenshots/<file name>`
  * until a human promotes the new provisional golden (section 6).
  */
+@RunWith(TestParameterInjector::class)
 class OfficialGoldensTest {
-    private val official = directory("vtfx.officialGoldensDir")
-    private val provisional = directory("vtfx.provisionalGoldensDir")
+    private val expectedFailures = ExpectedFailures.load(OfficialGoldensTest::class.java)
 
     @Test
-    fun provisionalGoldensMatchTheOfficialGoldens() {
-        val goldens =
-            official.listFiles { file -> file.name.endsWith(".png") }?.sortedBy { it.name }
-                ?: error("No official goldens: $official")
-        check(goldens.isNotEmpty()) { "No official goldens: $official" }
-        val expectedFailures = loadExpectedFailures()
-
-        val problems = mutableListOf<String>()
-        for (golden in goldens) {
-            val id = "$PREFIX${golden.name}"
-            val difference = difference(golden, File(provisional, golden.name))
-            if (id !in expectedFailures && difference != null) {
-                problems += "$id: $difference"
-            } else if (id in expectedFailures && difference == null) {
-                problems += "$id matches; remove it from spec-expected-failures.txt"
+    fun provisionalGoldenMatchesTheOfficialGolden(
+        @TestParameter(valuesProvider = Goldens::class) golden: File
+    ) {
+        val id = id(golden)
+        expectedFailures.verify(id) {
+            difference(golden, File(provisional, golden.name))?.let {
+                throw AssertionError("$id: $it")
             }
         }
-        val stale = expectedFailures - goldens.map { "$PREFIX${it.name}" }.toSet()
-        for (id in stale.sorted()) {
-            problems += "$id in spec-expected-failures.txt is not an official golden"
-        }
-        if (problems.isNotEmpty()) fail(problems.joinToString("\n"))
+    }
+
+    @Test
+    fun expectedFailuresListOnlyOfficialGoldens() {
+        expectedFailures.verifyListsOnly(goldens().map { id(it) })
     }
 
     /** Returns how [actual] differs from [expected], or null if their pixels are the same. */
@@ -79,21 +75,27 @@ class OfficialGoldensTest {
         return if (differing == 0) null else "$differing pixels differ"
     }
 
-    private fun loadExpectedFailures(): Set<String> =
-        OfficialGoldensTest::class
-            .java
-            .getResource("/spec-expected-failures.txt")
-            ?.readText()
-            .orEmpty()
-            .lines()
-            .map { it.substringBefore('#').trim() }
-            .filter { it.isNotEmpty() }
-            .toSet()
+    private class Goldens : TestParameterValuesProvider() {
+        override fun provideValues(context: Context): List<*> =
+            goldens().map { value(it).withName(it.name) }
+    }
 
     private companion object {
-        const val PREFIX = "screenshots/"
+        val official = directory("vtfx.officialGoldensDir")
+        val provisional = directory("vtfx.provisionalGoldensDir")
 
         fun directory(property: String): File =
             File(System.getProperty(property) ?: error("$property is not set"))
+
+        fun goldens(): List<File> {
+            val goldens =
+                official.listFiles { file -> file.name.endsWith(".png") }?.sortedBy { it.name }
+                    ?: error("No official goldens: $official")
+            check(goldens.isNotEmpty()) { "No official goldens: $official" }
+            return goldens
+        }
+
+        /** The id of [golden] in spec-expected-failures.txt. */
+        fun id(golden: File): String = "screenshots/${golden.name}"
     }
 }
