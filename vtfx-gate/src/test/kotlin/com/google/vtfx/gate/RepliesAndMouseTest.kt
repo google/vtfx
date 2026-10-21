@@ -30,15 +30,13 @@ import com.google.vtfx.core.Terminal
 import com.google.vtfx.core.TerminalEvent
 import com.google.vtfx.core.TerminalQuery
 import kotlin.test.assertEquals
-import org.junit.jupiter.api.Nested
-import org.junit.jupiter.api.Test
+import org.junit.Test
+import org.junit.experimental.runners.Enclosed
+import org.junit.runner.RunWith
 
+@RunWith(Enclosed::class)
 class RepliesAndMouseTest {
-    private val sent = mutableListOf<String>()
-    private val writer = HostWriter { sent += String(it, Charsets.UTF_8).replace("\u001b", "\\e") }
-
-    @Nested
-    inner class Replies {
+    class Replies : RecordingHost by HostRecorder() {
         private val colors = ReportedColors { target ->
             when (target) {
                 ColorTarget.Foreground -> 0xE5E5E5
@@ -158,8 +156,7 @@ class RepliesAndMouseTest {
         }
     }
 
-    @Nested
-    inner class Mouse {
+    class Mouse : RecordingHost by HostRecorder() {
         private fun send(
             report: MouseReport,
             tracking: MouseTracking = MouseTracking.AnyEvent,
@@ -239,4 +236,17 @@ class RepliesAndMouseTest {
             assertEquals(4, sent.size)
         }
     }
+}
+
+/** A host for the tests of [RepliesAndMouseTest] that records what it is sent. */
+interface RecordingHost {
+    /** What [writer] was given, one string per write, with ESC as `\e`. */
+    val sent: MutableList<String>
+    val writer: HostWriter
+}
+
+/** A fresh [RecordingHost] for each test. */
+private class HostRecorder : RecordingHost {
+    override val sent = mutableListOf<String>()
+    override val writer = HostWriter { sent += String(it, Charsets.UTF_8).replace("\u001b", "\\e") }
 }

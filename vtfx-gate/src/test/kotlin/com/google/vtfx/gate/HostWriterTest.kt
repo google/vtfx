@@ -25,8 +25,8 @@ import com.google.vtfx.core.TerminalKey
 import com.google.vtfx.core.TerminalQuery
 import com.google.vtfx.testing.terminalModes
 import kotlin.test.assertEquals
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
+import kotlin.test.assertFailsWith
+import org.junit.Test
 
 class HostWriterTest {
     private val sent = mutableListOf<String>()
@@ -60,7 +60,7 @@ class HostWriterTest {
     fun deletesSendDel() {
         writer.sendDeletes(3)
         assertEquals(listOf("\u007f\u007f\u007f"), sent)
-        assertThrows<IllegalArgumentException> { writer.sendDeletes(0) }
+        assertFailsWith<IllegalArgumentException> { writer.sendDeletes(0) }
     }
 
     @Test
@@ -96,7 +96,7 @@ class HostWriterTest {
 
     @Test
     fun cursorPositionOutOfRangeIsAProgrammingError() {
-        assertThrows<IllegalArgumentException> {
+        assertFailsWith<IllegalArgumentException> {
             writer.sendReply(TerminalQuery.CursorPosition(0, 1, false))
         }
     }
@@ -133,7 +133,7 @@ class HostWriterTest {
         lateinit var nested: HostWriter
         var calls = 0
         nested = HostWriter { if (calls++ == 0) nested.sendText("b") }
-        assertThrows<IllegalStateException> { nested.sendText("a") }
+        assertFailsWith<IllegalStateException> { nested.sendText("a") }
         // The writer is usable again afterwards.
         val writer = HostWriter { sent += String(it, Charsets.UTF_8) }
         writer.sendText("c")

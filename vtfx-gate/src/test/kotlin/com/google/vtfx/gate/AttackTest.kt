@@ -18,6 +18,8 @@
 
 package com.google.vtfx.gate
 
+import com.google.testing.junit.testparameterinjector.TestParameter
+import com.google.testing.junit.testparameterinjector.TestParameterInjector
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.Terminal
 import com.google.vtfx.core.TerminalEvent
@@ -27,61 +29,18 @@ import kotlin.random.Random
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import org.junit.jupiter.api.Nested
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.ValueSource
+import org.junit.Test
+import org.junit.experimental.runners.Enclosed
+import org.junit.runner.RunWith
 
 /**
  * Tests for the attack classes of requirement 6.1 that vtfx-gate is responsible for. Each nested
  * class is one attack class. Host output goes through a real [Terminal], as it would in the app.
  */
+@RunWith(Enclosed::class)
 class AttackTest {
-    private class FakeClipboard(var text: String? = null) : ClipboardAccess {
-        val writes = mutableListOf<String>()
-        var reads = 0
-
-        override fun write(text: String) {
-            writes += text
-            this.text = text
-        }
-
-        override fun read(): String? {
-            reads++
-            return text
-        }
-    }
-
-    private val sent = mutableListOf<String>()
-    private val opened = mutableListOf<String>()
-    private val clipboard = FakeClipboard("secret from another app")
-
-    private fun gate(policy: GatePolicy = GatePolicy()) =
-        TerminalGate(
-            HostWriter { sent += String(it, Charsets.UTF_8) },
-            policy,
-            clipboard,
-            urlOpener = {
-                opened += it
-                OpenUrlResult.Opened
-            },
-        )
-
-    private fun host(
-        gate: TerminalGate,
-        output: String,
-        limits: TerminalLimits = TerminalLimits(),
-    ) {
-        val terminal = Terminal(80, 24, limits) { gate.handle(it) }
-        terminal.write(output.toByteArray(Charsets.UTF_8))
-    }
-
-    private fun base64(text: String) =
-        Base64.getEncoder().encodeToString(text.toByteArray(Charsets.UTF_8))
-
     /** Command injection to the host through terminal replies. */
-    @Nested
-    inner class ReplyInjection {
+    class ReplyInjection : AttackFixture by GateUnderAttack() {
         // ESC would end the string it is in, so a payload inside a string has none.
         private val payload = "[c;rm -rf ~\u009b6n"
 
@@ -208,8 +167,8 @@ class AttackTest {
     }
 
     /** Unauthorized clipboard reads and writes through OSC 52. */
-    @Nested
-    inner class Clipboard {
+    @RunWith(TestParameterInjector::class)
+    class Clipboard : AttackFixture by GateUnderAttack() {
         @Test
         fun readIsDeniedByDefault() {
             host(gate(), "\u001b]52;c;?\u0007")
@@ -263,22 +222,22 @@ class AttackTest {
 
         // The gate checks the selection itself rather than trust the model's check, so these
         // events skip the model.
-        @ParameterizedTest
-        @ValueSource(
-            strings = ["", "c\u001b]2;x", ";", "c;", "C", "8", "c\u0000", "cpqs0123456701234"]
-        )
-        fun readWithAMalformedSelectionIsRefused(selection: String) {
+        @Test
+        fun readWithAMalformedSelectionIsRefused(
+            @TestParameter("", "c\u001b]2;x", ";", "c;", "C", "8", "c\u0000", "cpqs0123456701234")
+            selection: String
+        ) {
             val gate = gate(GatePolicy(allowClipboardRead = true))
             gate.handle(TerminalEvent.ClipboardReadRequested(selection))
             assertEquals(emptyList(), sent)
             assertEquals(0, clipboard.reads)
         }
 
-        @ParameterizedTest
-        @ValueSource(
-            strings = ["", "c\u001b]2;x", ";", "c;", "C", "8", "c\u0000", "cpqs0123456701234"]
-        )
-        fun writeWithAMalformedSelectionIsRefused(selection: String) {
+        @Test
+        fun writeWithAMalformedSelectionIsRefused(
+            @TestParameter("", "c\u001b]2;x", ";", "c;", "C", "8", "c\u0000", "cpqs0123456701234")
+            selection: String
+        ) {
             val gate = gate(GatePolicy(allowClipboardWrite = true))
             gate.handle(TerminalEvent.ClipboardWriteRequested(selection, "x"))
             assertEquals(emptyList(), clipboard.writes)
@@ -301,8 +260,7 @@ class AttackTest {
     }
 
     /** Spoofed hyperlinks and unintended opening of URLs. */
-    @Nested
-    inner class Hyperlinks {
+    class Hyperlinks : AttackFixture by GateUnderAttack() {
         @Test
         fun hostOutputNeverOpensUrls() {
             host(
@@ -580,8 +538,7 @@ class AttackTest {
     }
 
     /** Escaping bracketed paste with the pasted content. */
-    @Nested
-    inner class PasteEscape {
+    class PasteEscape : AttackFixture by GateUnderAttack() {
         @Test
         fun pasteCannotEndTheBracketEarly() {
             val writer = HostWriter { sent += String(it, Charsets.UTF_8) }
@@ -606,8 +563,7 @@ class AttackTest {
     }
 
     /** Unintended leakage of the terminal content. */
-    @Nested
-    inner class ContentLeakage {
+    class ContentLeakage : AttackFixture by GateUnderAttack() {
         @Test
         fun screenContentIsNeverReported() {
             val gate = gate()
@@ -618,8 +574,7 @@ class AttackTest {
     }
 
     /** Resource exhaustion through the gate. */
-    @Nested
-    inner class ResourceExhaustion {
+    class ResourceExhaustion : AttackFixture by GateUnderAttack() {
         @Test
         fun repliesGrowLinearlyWithTheQueries() {
             val gate = gate()
@@ -630,4 +585,67 @@ class AttackTest {
             assertTrue(total <= queries.length * 2, "replies: $total bytes")
         }
     }
+}
+
+/** What the attack classes of [AttackTest] run against. */
+interface AttackFixture {
+    /** The bytes sent to the host, one string per write. */
+    val sent: MutableList<String>
+
+    /** The URLs opened. */
+    val opened: MutableList<String>
+
+    val clipboard: AttackClipboard
+
+    /**
+     * A gate with [policy] that writes to [sent], uses [clipboard], and opens URLs into [opened].
+     */
+    fun gate(policy: GatePolicy = GatePolicy()): TerminalGate
+
+    /** Writes [output] as the host into a real [Terminal] whose events go to [gate]. */
+    fun host(gate: TerminalGate, output: String, limits: TerminalLimits = TerminalLimits())
+
+    fun base64(text: String): String
+}
+
+/** A clipboard that holds text from another app and counts the reads. */
+class AttackClipboard(var text: String?) : ClipboardAccess {
+    val writes = mutableListOf<String>()
+    var reads = 0
+
+    override fun write(text: String) {
+        writes += text
+        this.text = text
+    }
+
+    override fun read(): String? {
+        reads++
+        return text
+    }
+}
+
+/** A fresh [AttackFixture] for each test. */
+private class GateUnderAttack : AttackFixture {
+    override val sent = mutableListOf<String>()
+    override val opened = mutableListOf<String>()
+    override val clipboard = AttackClipboard("secret from another app")
+
+    override fun gate(policy: GatePolicy) =
+        TerminalGate(
+            HostWriter { sent += String(it, Charsets.UTF_8) },
+            policy,
+            clipboard,
+            urlOpener = {
+                opened += it
+                OpenUrlResult.Opened
+            },
+        )
+
+    override fun host(gate: TerminalGate, output: String, limits: TerminalLimits) {
+        val terminal = Terminal(80, 24, limits) { gate.handle(it) }
+        terminal.write(output.toByteArray(Charsets.UTF_8))
+    }
+
+    override fun base64(text: String): String =
+        Base64.getEncoder().encodeToString(text.toByteArray(Charsets.UTF_8))
 }

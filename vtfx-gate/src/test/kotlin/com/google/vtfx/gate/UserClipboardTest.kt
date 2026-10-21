@@ -23,7 +23,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 /**
  * Tests for the user's copy and paste through [TerminalGate], to which the OSC 52 policy does not

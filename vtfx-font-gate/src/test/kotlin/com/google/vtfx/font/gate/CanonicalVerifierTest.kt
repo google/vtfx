@@ -16,13 +16,14 @@
 
 package com.google.vtfx.font.gate
 
+import com.google.testing.junit.testparameterinjector.TestParameter
+import com.google.testing.junit.testparameterinjector.TestParameterInjector
 import com.google.vtfx.font.gate.InvalidFontException.Kind
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.ValueSource
+import org.junit.Test
+import org.junit.runner.RunWith
 
 /**
  * [CanonicalVerifier], through [SanitizedFont.fromCanonical], which runs only it, with the
@@ -30,6 +31,7 @@ import org.junit.jupiter.params.provider.ValueSource
  * checks, besides, that the fonts that the verifier accepts are those that sanitizing leaves as
  * they are.
  */
+@RunWith(TestParameterInjector::class)
 class CanonicalVerifierTest {
     private val limits = FontLimits()
 
@@ -41,9 +43,11 @@ class CanonicalVerifierTest {
     private fun verifyFailure(font: ByteArray, limits: FontLimits = this.limits): Kind =
         assertFailsWith<InvalidFontException> { SanitizedFont.fromCanonical(font, limits) }.kind
 
-    @ParameterizedTest
-    @ValueSource(strings = ["variations.ttf", "dual-width.ttf", "cff.ttf", "fewer-points.ttf"])
-    fun canonicalFontLoadsWithItsBytes(name: String) {
+    @Test
+    fun canonicalFontLoadsWithItsBytes(
+        @TestParameter("variations.ttf", "dual-width.ttf", "cff.ttf", "fewer-points.ttf")
+        name: String
+    ) {
         val font = CanonicalFonts.read(name)
 
         val loaded = SanitizedFont.fromCanonical(font, limits)
@@ -195,9 +199,11 @@ class CanonicalVerifierTest {
      * with the checksums made right again, is rejected. Bytes elsewhere can be numbers within a
      * range, such as the weight class or the coordinates of a point inside the bounding box.
      */
-    @ParameterizedTest
-    @ValueSource(strings = ["variations.ttf", "dual-width.ttf", "cff.ttf", "fewer-points.ttf"])
-    fun everyChangeOfOneFixedByteIsMalformed(name: String) {
+    @Test
+    fun everyChangeOfOneFixedByteIsMalformed(
+        @TestParameter("variations.ttf", "dual-width.ttf", "cff.ttf", "fewer-points.ttf")
+        name: String
+    ) {
         val font = CanonicalFonts.read(name)
         val fixed =
             listOf(0 until DIRECTORY_END) +

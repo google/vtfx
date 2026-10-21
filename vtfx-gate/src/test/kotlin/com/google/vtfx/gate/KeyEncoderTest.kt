@@ -18,6 +18,9 @@
 
 package com.google.vtfx.gate
 
+import com.google.testing.junit.testparameterinjector.TestParameter
+import com.google.testing.junit.testparameterinjector.TestParameterInjector
+import com.google.testing.junit.testparameterinjector.TestParameterValuesProvider
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.KeyModifiers
 import com.google.vtfx.core.KeyStroke
@@ -27,22 +30,15 @@ import com.google.vtfx.testing.terminalModes
 import java.nio.ByteBuffer
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.Arguments
-import org.junit.jupiter.params.provider.MethodSource
+import org.junit.Test
+import org.junit.runner.RunWith
 
+@RunWith(TestParameterInjector::class)
 class KeyEncoderTest {
-    @ParameterizedTest(name = "{0} {1} -> {3}")
-    @MethodSource("cases")
-    fun encodes(
-        stroke: KeyStroke,
-        modes: TerminalModes,
-        @Suppress("unused") modeName: String,
-        expected: String,
-    ) {
-        val actual = String(KeyEncoder.encode(stroke, modes), Charsets.UTF_8)
-        assertEquals(expected, actual.replace("\u001b", "\\e"))
+    @Test
+    fun encodes(@TestParameter(valuesProvider = Cases::class) case: Case) {
+        val actual = String(KeyEncoder.encode(case.stroke, case.modes), Charsets.UTF_8)
+        assertEquals(case.expected, actual.replace("\u001b", "\\e"))
     }
 
     /**
@@ -88,7 +84,7 @@ class KeyEncoderTest {
         }
     }
 
-    companion object {
+    private companion object {
         /** A bound on the length of a key. The longest, such as ESC [ 2 4 ; 1 6 ~, are 8 bytes. */
         private const val MAX_KEY_LENGTH = 16
         private val KEY_SHAPE =
@@ -114,10 +110,9 @@ class KeyEncoderTest {
             expected: String,
             modes: TerminalModes = normal,
             modeName: String = "",
-        ) = Arguments.of(stroke, modes, modeName, expected)
+        ) = Case(stroke, modes, modeName, expected)
 
-        @JvmStatic
-        fun cases(): List<Arguments> =
+        fun cases(): List<Case> =
             listOf(
                 case(special(TerminalKey.Up), "\\e[A"),
                 case(special(TerminalKey.Left), "\\e[D"),
@@ -168,5 +163,18 @@ class KeyEncoderTest {
                 case(special(TerminalKey.KeypadEnter), "\\eOM", keypad, "DECKPAM"),
                 case(special(TerminalKey.KeypadMultiply, shift), "\\e[1;2j", keypad, "DECKPAM"),
             )
+    }
+
+    /** A key under [modes], named [modeName], and what it encodes to, with ESC as `\e`. */
+    class Case(
+        val stroke: KeyStroke,
+        val modes: TerminalModes,
+        val modeName: String,
+        val expected: String,
+    )
+
+    private class Cases : TestParameterValuesProvider() {
+        override fun provideValues(context: Context): List<*> =
+            cases().map { value(it).withName("${it.stroke} ${it.modeName} -> ${it.expected}") }
     }
 }

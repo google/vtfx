@@ -20,7 +20,7 @@ package com.google.vtfx.gate
 
 import com.google.vtfx.core.InternalVtfxApi
 import kotlin.test.assertEquals
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 /**
  * Tests for what [TerminalGate.openUrl] returns. Which URLs it allows is in
