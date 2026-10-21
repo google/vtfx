@@ -56,6 +56,11 @@ dependencies {
     "testImplementation"(libs.findLibrary("junit-jupiter").get())
     "testImplementation"(kotlin("test"))
     "testRuntimeOnly"(libs.findLibrary("junit-platform-launcher").get())
+    // The tests are moving to JUnit 4 (docs/decisions/0048). Until all of them have moved, the
+    // vintage engine runs the JUnit 4 tests on the JUnit Platform beside the Jupiter tests.
+    "testImplementation"(libs.findLibrary("junit4").get())
+    "testImplementation"(libs.findLibrary("testparameterinjector").get())
+    "testRuntimeOnly"(libs.findLibrary("junit-vintage-engine").get())
 }
 
 tasks.withType<Test>().configureEach {
