@@ -20,7 +20,7 @@ import com.google.vtfx.font.gate.FontLimits
 import com.google.vtfx.font.gate.SanitizedFont
 import java.io.File
 import kotlin.test.assertContentEquals
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 /**
  * [FontFile.sanitize] writes the canonical fonts that vtfx-font-gate's tests check its verifier

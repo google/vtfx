@@ -21,7 +21,7 @@ import com.google.vtfx.font.gate.InvalidFontException
 import com.google.vtfx.font.gate.SanitizedFont
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 /**
  * Cross-checks of the verifier of vtfx-font-gate, which [SanitizedFont.fromCanonical] runs, with

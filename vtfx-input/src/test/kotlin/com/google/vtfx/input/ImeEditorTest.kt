@@ -25,7 +25,7 @@ import com.google.vtfx.core.TerminalKey
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 class ImeEditorTest {
     private val sent = mutableListOf<HostInput>()

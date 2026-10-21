@@ -24,7 +24,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 class FontFileTest {
     private val limits = FontLimits()

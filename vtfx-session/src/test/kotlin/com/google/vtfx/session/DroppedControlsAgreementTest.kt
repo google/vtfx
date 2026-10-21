@@ -21,7 +21,7 @@ package com.google.vtfx.session
 import com.google.vtfx.core.InternalVtfxApi
 import java.io.ByteArrayOutputStream
 import kotlin.test.assertEquals
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 /**
  * Pins that the two copies of the rule for dropping control characters (ime-contract.md section

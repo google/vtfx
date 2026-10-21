@@ -35,8 +35,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
+import org.junit.Test
 
 class TerminalSessionTest {
     private val sent = StringBuilder()
@@ -167,7 +166,7 @@ class TerminalSessionTest {
 
     @Test
     fun aFirstResizeThatFailsIsNotTheFirst() {
-        assertThrows<IllegalArgumentException> { session.resize(0, 5) }
+        assertFailsWith<IllegalArgumentException> { session.resize(0, 5) }
         session.resize(20, 5)
         assertEquals(listOf(Pair(20, 5)), resizes)
     }
@@ -215,9 +214,9 @@ class TerminalSessionTest {
 
     @Test
     fun theSizeOfACellIsChecked() {
-        assertThrows<IllegalArgumentException> { session.resize(20, 5, 10, 0) }
-        assertThrows<IllegalArgumentException> { session.resize(20, 5, 1001, 20) }
-        assertThrows<IllegalArgumentException> { session.resize(20, 5, -1, -1) }
+        assertFailsWith<IllegalArgumentException> { session.resize(20, 5, 10, 0) }
+        assertFailsWith<IllegalArgumentException> { session.resize(20, 5, 1001, 20) }
+        assertFailsWith<IllegalArgumentException> { session.resize(20, 5, -1, -1) }
         assertEquals(emptyList(), resizes)
     }
 
@@ -901,7 +900,7 @@ class TerminalSessionTest {
         // that the mistake does not depend on what the host sends (docs/decisions/0024).
         lateinit var session: TerminalSession
         session = TerminalSession({ session.feed("x".toByteArray()) })
-        assertThrows<IllegalStateException> { session.sendText("a") }
+        assertFailsWith<IllegalStateException> { session.sendText("a") }
         val failure = runOnAnotherThread { session.feed("\u001b[c".toByteArray()) }
         assertTrue(failure is IllegalStateException, "$failure")
         assertEquals("", session.snapshot().line(0).text().trimEnd())

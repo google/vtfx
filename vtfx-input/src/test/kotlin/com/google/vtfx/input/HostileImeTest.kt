@@ -22,7 +22,7 @@ import com.google.vtfx.core.InternalVtfxApi
 import kotlin.random.Random
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 /**
  * The IME is not trusted (requirement 6.1): any sequence of calls, with any arguments, must keep
