@@ -52,17 +52,13 @@ kotlin {
 registerKotlinSignatures("compileKotlin")
 
 dependencies {
-    "testImplementation"(platform(libs.findLibrary("junit-bom").get()))
-    "testImplementation"(libs.findLibrary("junit-jupiter").get())
-    "testImplementation"(kotlin("test"))
-    "testRuntimeOnly"(libs.findLibrary("junit-platform-launcher").get())
-    // The tests are moving to JUnit 4 (docs/decisions/0048). Until all of them have moved, the
-    // vintage engine runs the JUnit 4 tests on the JUnit Platform beside the Jupiter tests.
+    // The tests run on JUnit 4, which builds of the sources with other build systems run too
+    // (docs/decisions/0048).
     "testImplementation"(libs.findLibrary("junit4").get())
     "testImplementation"(libs.findLibrary("testparameterinjector").get())
-    "testRuntimeOnly"(libs.findLibrary("junit-vintage-engine").get())
+    "testImplementation"(kotlin("test"))
 }
 
 tasks.withType<Test>().configureEach {
-    useJUnitPlatform()
+    useJUnit()
 }

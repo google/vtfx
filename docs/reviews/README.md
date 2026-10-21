@@ -32,7 +32,7 @@ Prioritize in the following order. Do not report matters of taste in appearance 
 
 - Back every finding with a reproduction test that fails at the target commit. Do not report suspicions that could not be reproduced as bugs. Write what was checked and why it could not be reproduced in the "Unverified concerns" section of the report.
 - Where possible, reproduction tests verify behavior observable through the public API (what is sent to the host, what is displayed). Tests that look only at internal state lose their meaning when the implementation changes after the fix.
-- Put reproduction tests in `docs/reviews/repro-<date>/`, and do not include them in the normal `build` or `scripts/check.sh`. Putting tests that fail at the time of the report into the gate would make the gate fail. Run them with a Gradle init script, using the one below as a template. It is for the JVM module `vtfx-session`; change the module, the directory name, and the test file. For an Android module (e.g. `vtfx-compose`), use the tasks `testDebugUnitTest` and `compileDebugUnitTestKotlin` instead of `test` and `compileTestKotlin`, and remove `useJUnitPlatform()`. The module boundaries of `config/boundaries.toml` apply to the main classes of the modules only, so reproduction tests may use any API.
+- Put reproduction tests in `docs/reviews/repro-<date>/`, and do not include them in the normal `build` or `scripts/check.sh`. Putting tests that fail at the time of the report into the gate would make the gate fail. Run them with a Gradle init script, using the one below as a template. It is for the JVM module `vtfx-session`; change the module, the directory name, and the test file. For an Android module (e.g. `vtfx-compose`), use the tasks `testDebugUnitTest` and `compileDebugUnitTestKotlin` instead of `test` and `compileTestKotlin`. The module boundaries of `config/boundaries.toml` apply to the main classes of the modules only, so reproduction tests may use any API.
 
   ```groovy
   // Runs the review reproductions without adding them to the regular test suite.
@@ -63,7 +63,7 @@ Prioritize in the following order. Do not report matters of taste in appearance 
       }
       p.tasks.register('reviewRepro', Test) {
           dependsOn compile
-          useJUnitPlatform()
+          useJUnit()
           testClassesDirs = p.files(new File(output, 'classes'))
           classpath = p.files(new File(output, 'classes')) + original.classpath
           systemProperties original.systemProperties

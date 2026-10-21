@@ -151,3 +151,11 @@ The correspondence between the "attack types to prevent" in requirement 6.1 and 
 The IME is not trusted, so `HostileImeTest` (random) and `ImeFuzzer` (fuzzing) in `vtfx-input` check the invariants of the editing model and what the host receives against sequences of calls with arbitrary arguments. The limit on DELs for deletions outside the range and splitting many DELs (`TerminalSessionTest.manyDeletesFromTheImeAreSentInParts`) are also checked here. `DroppedControlsAgreementTest` in `vtfx-session` checks, for every UTF-16 code unit, that the input history keeps what the host receives of committed text, and what the host receives of the same text pasted, which the gate's rule alone handles, since `ImeEditor` and the gate each have a copy of the rule for dropping control characters (ime-contract.md section 4.2).
 
 The limits are in section 10 of [emulation.md](emulation.md), and the default policies of the gate are in [gate-policy.md](gate-policy.md).
+
+## 13. Test framework
+
+- The tests of the library modules and the sample app run on JUnit 4, so that a build of the sources with another build system can run them too ([decisions/0048](../decisions/0048-junit4.md)). The tests of `build-logic`, which test the Gradle build itself, run on JUnit Jupiter.
+- Parameterized tests use TestParameterInjector: `@TestParameter` values, or a values provider for data listed at run time, such as the spec cases, the recordings, and the fuzzing corpus.
+- Assertions use `kotlin.test`. Failures that carry an expected and an actual value, such as those of the spec runners, are `ComparisonFailure`, which IDEs show as a diff.
+- Groups of tests are nested classes run by `Enclosed`. JUnit 4 constructs each nested class on its own, so what the tests of a group share is an interface that each nested class implements by delegation to a fresh instance (such as `AttackTest` in `vtfx-gate`, and `EmulationCoverageTest` and `GraphicsTest` in `vtfx-core`).
+- A time limit on a part of a test is `assertCompletesWithin` in the tests of `vtfx-core`, which runs that part on a thread of its own; a limit on a whole test is `@Test(timeout = ...)`.

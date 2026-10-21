@@ -49,10 +49,10 @@ compose-ui = { module = "androidx.compose.ui:ui" }
 compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
 compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
 
+# The tests of build-logic (docs/decisions/0048).
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
-junit-vintage-engine = { module = "org.junit.vintage:junit-vintage-engine" }
 
 jazzer = { module = "com.code-intelligence:jazzer", version.ref = "jazzer" }
 junit4 = { module = "junit:junit", version.ref = "junit4" }
