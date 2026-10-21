@@ -1,6 +1,6 @@
 # Fuzzing in the gate
 
-- Status: Approved (2026-10-13, approved by a human in the final review)
+- Status: Approved (2026-10-13, approved by a human in the final review); running the fuzz tests through Jazzer's JUnit integration, and their corpus directories in the test resources, superseded by [0048](0048-junit4.md)
 - Date: 2026-10-12
 - Related: Sections 1, 7, and 9 of [testing.md](../design/testing.md), requirement 7.2, [0028](0028-parallel-fuzzing.md), `vtfx.fuzz` in `build-logic`, `scripts/fuzz.sh`
 

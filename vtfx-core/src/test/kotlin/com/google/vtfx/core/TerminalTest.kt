@@ -536,7 +536,7 @@ class TerminalTest {
     @Test
     fun restoredCursorStaysInsideTheMarginsInOriginMode() {
         // A cursor saved inside the old margins is moved inside the new ones, as xterm does, so
-        // that its position relative to the top margin is never negative (GateFuzzTest found a
+        // that its position relative to the top margin is never negative (GateFuzzer found a
         // report of row -1, which the gate rejects).
         val t = terminal(10, 10)
         t.write("\u001b[3;8r\u001b[?6h\u001b[2;5H\u001b7\u001b[6;8r\u001b8\u001b[6n")

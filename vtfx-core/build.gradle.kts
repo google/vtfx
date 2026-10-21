@@ -22,6 +22,8 @@ plugins {
     `java-test-fixtures`
 }
 
+fuzzTarget { className.set("com.google.vtfx.core.fuzz.TerminalFuzzer") }
+
 tasks.test {
     // The spec runner reads the human-owned oracles in spec/ (docs/design/testing.md). They are
     // declared as inputs so that the tests rerun when they change. The path is relative to the

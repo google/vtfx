@@ -20,6 +20,8 @@ plugins {
     id("vtfx.fuzz")
 }
 
+fuzzTarget { className.set("com.google.vtfx.gate.fuzz.GateFuzzer") }
+
 dependencies {
     implementation(project(":vtfx-core"))
     // Makes TerminalModes, which only vtfx-core can construct, for the tests.

@@ -19,6 +19,8 @@ plugins {
     id("vtfx.fuzz")
 }
 
+fuzzTarget { className.set("com.google.vtfx.input.fuzz.ImeFuzzer") }
+
 dependencies {
     implementation(project(":vtfx-core"))
 }

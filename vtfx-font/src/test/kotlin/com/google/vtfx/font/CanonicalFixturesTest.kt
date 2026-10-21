@@ -35,7 +35,7 @@ import org.junit.jupiter.api.Test
  * To change the canonical form on purpose, or to add a fixture: run this test (`./gradlew
  * :vtfx-font:test --tests com.google.vtfx.font.CanonicalFixturesTest`). On a mismatch it writes
  * what sanitizing gave to `vtfx-font/build/canonical-fixtures/`. Review those files, and copy them
- * to `vtfx-font-gate/src/test/resources/com/google/vtfx/font/gate/canonical/`, which is under
+ * to `vtfx-font-gate/src/fuzz/resources/com/google/vtfx/font/gate/canonical/`, which is under
  * security review.
  */
 class CanonicalFixturesTest {

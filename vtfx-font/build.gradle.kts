@@ -22,6 +22,8 @@ plugins {
     id("vtfx.fuzz")
 }
 
+fuzzTarget { className.set("com.google.vtfx.font.FontFuzzer") }
+
 dependencies {
     // The public API returns SanitizedFont and takes FontLimits.
     api(project(":vtfx-font-gate"))
@@ -33,7 +35,7 @@ dependencies {
 tasks.named<Test>("test") {
     val fixtures =
         layout.settingsDirectory.dir(
-            "vtfx-font-gate/src/test/resources/com/google/vtfx/font/gate/canonical"
+            "vtfx-font-gate/src/fuzz/resources/com/google/vtfx/font/gate/canonical"
         )
     inputs
         .dir(fixtures)

@@ -13,16 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Fuzzes the fuzz tests for longer than scripts/check.sh does (docs/design/testing.md section 7),
+# Fuzzes the fuzz targets for longer than scripts/check.sh does (docs/design/testing.md section 7),
 # and appends the results to build/reports/fuzzing-log.tsv.
 #
 # Usage: scripts/fuzz.sh [DURATION [MODULE...]]
-#   DURATION is per fuzz test, in Jazzer's format (e.g. 30m, 2h). The default is 10m.
+#   DURATION is per fuzz target, a number of seconds, minutes, or hours (e.g. 30s, 30m, 2h). The
+#   default is 10m.
 #   MODULEs are the modules to fuzz, one after another. The default is all modules with a fuzz
-#   test.
+#   target.
 #
-# A crashing input is written to the resources directory of the fuzz test, where the regular test
-# run replays it. Fix the bug, keep the input, and add a unit test for it.
+# A crashing input is written to the corpus directory of the fuzz target,
+# src/fuzz/corpus/<target>/, where the regular test run replays it. Fix the bug, keep the input,
+# and add a unit test for it.
 
 set -eu
 
@@ -35,15 +37,15 @@ log="build/reports/fuzzing-log.tsv"
 output="$(mktemp)"
 trap 'rm -f "$output"' EXIT
 
-# The fuzz test of each module, as named in the log.
+# The fuzz target of each module, as named in the log.
 target_of() {
   case "$1" in
-    vtfx-core) echo "vtfx-core:TerminalFuzzTest.write" ;;
-    vtfx-gate) echo "vtfx-gate:GateFuzzTest.hostOutput" ;;
-    vtfx-input) echo "vtfx-input:ImeFuzzTest.calls" ;;
-    vtfx-font) echo "vtfx-font:FontFuzzTest.fontFile" ;;
-    vtfx-font-gate) echo "vtfx-font-gate:VerifierFuzzTest.mutations" ;;
-    *) echo "No fuzz test in module $1." >&2; exit 2 ;;
+    vtfx-core) echo "vtfx-core:TerminalFuzzer" ;;
+    vtfx-gate) echo "vtfx-gate:GateFuzzer" ;;
+    vtfx-input) echo "vtfx-input:ImeFuzzer" ;;
+    vtfx-font) echo "vtfx-font:FontFuzzer" ;;
+    vtfx-font-gate) echo "vtfx-font-gate:VerifierFuzzer" ;;
+    *) echo "No fuzz target in module $1." >&2; exit 2 ;;
   esac
 }
 

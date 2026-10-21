@@ -184,7 +184,7 @@ IME calls arrive on the UI thread. `vtfx-compose` operates the editing model of 
 - Replay the `ic` events of traces recorded with `tools/ime-probe` into the editing model of `vtfx-input` in order.
 - The expected sent content is kept, separately from the traces, as a table owned by humans. The policy of the recording tool differs in part from this document (it resets on BS and so on), so the `send` events recorded in traces are not used as expected values.
 - The replay tests are gates. The emulator e2e with a real IME is for reports (requirement 7.2).
-- The IME is not trusted, so the invariants and what the host receives are checked against sequences of calls with arbitrary arguments (`HostileImeTest` and the fuzzing `ImeFuzzTest`; section 12 of [testing.md](testing.md)).
+- The IME is not trusted, so the invariants and what the host receives are checked against sequences of calls with arbitrary arguments (`HostileImeTest` and the fuzzing `ImeFuzzer`; section 12 of [testing.md](testing.md)).
 
 ## 10. Open questions and unverified items
 
