@@ -514,6 +514,17 @@ class SanitizedCffFontTest {
     }
 
     @Test
+    fun subroutinesThatAllGlyphsCallAreLimitedForTheWholeFace() {
+        // Each of seven levels calls the next four times: each glyph runs 65536 operators and
+        // operands, of which 43691 operators, within the limit of one glyph; 2048 glyphs run 2^27.
+        val glyphs = List(2100) { if (it == 0) "endchar" else "-107 callgsubr endchar" }
+        val font = TestCffFont(glyphs = glyphs)
+        font.globalSubrs = List(7) { "${"${it + 1 - 107} callgsubr ".repeat(4)} return" } + "return"
+
+        assertEquals(Kind.TooComplex, failure(font))
+    }
+
+    @Test
     fun pathBeforeMovetoIsMalformed() {
         assertEquals(Kind.Malformed, failure(glyph("300 0 rlineto endchar")))
     }

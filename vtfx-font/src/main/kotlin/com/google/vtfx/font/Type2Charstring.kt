@@ -41,11 +41,14 @@ internal interface CubicPen {
  *
  * The work is bounded: at most [MAX_OPERATORS] operators run, which bounds the time that
  * subroutines calling each other can take, and subroutines nest at most [MAX_SUBR_DEPTH] deep.
+ * Every operator and operand also takes a step of [tokens], which the glyphs of a face share, so
+ * that the time of a face is bounded too: the glyphs can all call the same subroutines.
  */
 internal class Type2Charstring(
     private val globalSubrs: CffIndex,
     private val localSubrs: CffIndex?,
     private val pen: CubicPen,
+    private val tokens: WorkBudget,
 ) {
     private val stack = DoubleArray(MAX_STACK)
     private var sp = 0
@@ -69,6 +72,7 @@ internal class Type2Charstring(
         var at = 0
         while (at < code.length) {
             val b0 = code.u8(at++)
+            tokens.spend()
             if (b0 >= 32 || b0 == SHORT_INT) {
                 if (sp == MAX_STACK) malformed("more than $MAX_STACK charstring arguments")
                 stack[sp++] =
@@ -371,6 +375,13 @@ internal class Type2Charstring(
     companion object {
         /** The most operators that one glyph runs, counting those of its subroutines. */
         const val MAX_OPERATORS = 65536
+
+        /**
+         * The most operators and operands that all the glyphs of a face run together, counting
+         * those of subroutines: about 2000 for each of 65535 glyphs. Noto Serif CJK, among the most
+         * complex of real fonts, runs about 30 million (2^25) in its 65535 glyphs.
+         */
+        const val MAX_FACE_TOKENS = 1L shl 27
 
         /** The deepest nesting of subroutines, as the specification limits it (appendix B). */
         const val MAX_SUBR_DEPTH = 10

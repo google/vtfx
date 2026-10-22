@@ -36,6 +36,7 @@ internal class GlyfOutlines(
     private val limits: FontLimits,
 ) : OutlineSource {
     private val offsets = IntArray(numGlyphs + 1)
+    private val components = WorkBudget(MAX_FACE_COMPONENTS, "components")
 
     init {
         for (i in 0..numGlyphs) {
@@ -87,6 +88,7 @@ internal class GlyfOutlines(
         var at = 10
         do {
             if (--budget[0] < 0) tooComplex("glyph of more than $MAX_COMPONENTS components")
+            components.spend()
             val flags = data.u16(at)
             val component = data.u16(at + 2)
             if (component >= numGlyphs) malformed("component $component of $numGlyphs glyphs")
@@ -239,6 +241,13 @@ internal class GlyfOutlines(
 
         /** The most components that flattening one glyph visits, at any depth. */
         const val MAX_COMPONENTS = 4096
+
+        /**
+         * The most components that flattening all the glyphs of a face visits together, since
+         * glyphs can all use the same composite glyphs. Real fonts visit about one for each glyph:
+         * Droid Sans Fallback, of 49382 glyphs, visits about 55000.
+         */
+        const val MAX_FACE_COMPONENTS = 1L shl 22
 
         const val ON_CURVE = 0x01
         const val X_SHORT = 0x02

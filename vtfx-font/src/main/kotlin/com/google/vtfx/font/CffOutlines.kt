@@ -39,9 +39,10 @@ internal class CffOutlines(
     limits: FontLimits,
 ) : OutlineSource {
     private val pen = QuadraticPen(limits.maxGlyphPoints, unitsPerEm / 1000.0)
+    private val tokens = WorkBudget(Type2Charstring.MAX_FACE_TOKENS, "charstring tokens")
 
     override fun outline(glyphId: Int): Outline {
-        Type2Charstring(font.globalSubrs, font.localSubrs(glyphId), pen)
+        Type2Charstring(font.globalSubrs, font.localSubrs(glyphId), pen, tokens)
             .run(font.charStrings.item(glyphId))
         return pen.build()
     }

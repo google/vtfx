@@ -139,16 +139,18 @@ It runs for each of the millions of points of a CJK font, every time an app load
 | Faces of a collection | 256 | `Unsupported` |
 | Depth of composite glyphs | 8 | `TooComplex` |
 | Components that flattening one glyph visits | 4096 | `TooComplex` |
+| Components that flattening all the glyphs of a face visits together | 2^22 | `TooComplex` |
 | Code points that `cmap` maps, counting overlaps | 0x110000 | `TooComplex` |
 | Variation sequences, all selectors together | 2^20 | `TooComplex` |
 | Operators that one charstring executes, counting those of subroutines | 65536 | `TooComplex` |
+| Operators and operands that all the charstrings of a face execute together, counting those of subroutines | 2^27 | `TooComplex` |
 | Argument stack of a charstring | 48 (the CFF specification) | `Malformed` |
 | Depth of subroutine calls | 10 (the CFF specification) | `TooComplex` |
 | Quadratic curves that approximate one cubic curve | 32 | `TooComplex` |
 | Font DICTs of a CID-keyed font | 256 (FDSelect cannot choose more) | `Unsupported` |
 | Size of a Private DICT | 64 KiB | `Unsupported` |
 
-The fixed limits are far beyond real fonts; they bound the time and memory that a crafted font can take. Bounding the Font DICTs and the Private DICTs keeps the time of reading the DICTs bounded however they overlap. The limits of `FontLimits` follow the pattern of `TerminalLimits` ([decisions/0002](../decisions/0002-resource-limits.md)).
+The fixed limits are far beyond real fonts; they bound the time and memory that a crafted font can take. The limits of one glyph alone do not bound the time of a face, since every glyph can reach them through subroutines or composite glyphs that all the glyphs share, in a few bytes each; so the work of the whole face is bounded too, independently of the number of glyphs. The face limits leave room over the most complex real fonts: Noto Serif CJK executes about 30 million operators and operands (about 2^25), and Droid Sans Fallback visits about 55,000 components. Bounding the Font DICTs and the Private DICTs keeps the time of reading the DICTs bounded however they overlap. The limits of `FontLimits` follow the pattern of `TerminalLimits` ([decisions/0002](../decisions/0002-resource-limits.md)).
 
 ## 10. Tests
 

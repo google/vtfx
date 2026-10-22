@@ -189,6 +189,25 @@ class SanitizedFontTest {
     }
 
     @Test
+    fun componentsThatAllGlyphsVisitAreLimitedForTheWholeFace() {
+        // Glyph 4 visits 63 + 63 * 64 components and each glyph after it one more: 4096, the
+        // most for one glyph, so the glyphs from 4 on visit 2^22 together after 1024 of them.
+        val glyphs =
+            List(1100) {
+                when (it) {
+                    0 -> TestGlyph.Empty()
+                    1 -> TestGlyph.Simple(listOf(square(50, 0, 400)))
+                    2 -> TestGlyph.Empty()
+                    3 -> TestGlyph.Composite(List(64) { TestComponent(2, 0, 0) })
+                    4 -> TestGlyph.Composite(List(63) { TestComponent(3, 0, 0) })
+                    else -> TestGlyph.Composite(listOf(TestComponent(4, 0, 0)))
+                }
+            }
+
+        assertEquals(Kind.TooComplex, failure(TestTrueTypeFont(glyphs = glyphs)))
+    }
+
+    @Test
     fun componentPlacedByPointsIsUnsupported() {
         val font =
             TestTrueTypeFont(
