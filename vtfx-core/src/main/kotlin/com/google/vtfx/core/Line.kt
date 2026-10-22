@@ -329,7 +329,8 @@ internal class Line(columns: Int, style: CellStyle = CellStyle.Default) {
         breakWide(column)
         breakWide(column + n - 1)
         shift(column + n, column, codes.size - column - n)
-        erase(codes.size - n, codes.size, style)
+        // As in insertBlanks: the cells to fill still hold their values from before the shift.
+        fillBlank(codes.size - n, codes.size, style)
     }
 
     /**

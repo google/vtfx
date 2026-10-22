@@ -122,6 +122,21 @@ class TerminalTest {
     }
 
     @Test
+    fun deleteCharactersKeepsAWideCharacterAtTheRightEdge() {
+        val t = terminal(5, 1)
+        t.write("aあい\r\u001b[P")
+        assertEquals(listOf("あ", null, "い", null, null), t.cellTexts(0))
+        assertEquals(listOf(2, 0, 2, 0, 1), t.widths(0))
+    }
+
+    @Test
+    fun deleteCharactersKeepsTheShiftedText() {
+        val t = terminal(5, 1)
+        t.write("xyあb\r\u001b[2P")
+        assertEquals(listOf("あ", null, "b", null, null), t.cellTexts(0))
+    }
+
+    @Test
     fun insertBlanksPushingAWideCharacterOffTheEdgeDropsIt() {
         val t = terminal(4, 1)
         t.write("abあ\u001b[1G\u001b[@")
