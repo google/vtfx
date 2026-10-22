@@ -18,6 +18,7 @@
 
 package com.google.vtfx.core.fuzz
 
+import com.google.vtfx.core.CharWidth
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.LinkFinder
 import com.google.vtfx.core.LinkPattern
@@ -74,6 +75,9 @@ object TerminalFuzzer {
                     check(text.length <= MAX_CELL_TEXT_LENGTH) {
                         "cell text too long at $row,$column"
                     }
+                    check(line.widthAt(column) == widthOf(text)) {
+                        "cell at $row,$column is ${line.widthAt(column)} wide for its text"
+                    }
                 }
             }
         }
@@ -128,6 +132,20 @@ object TerminalFuzzer {
         }
     }
 
+    /**
+     * The width that a cell with [text] must have: that of its first code point, at the default
+     * ambiguous width, or 2 for a flag, a pair of regional indicators (docs/design/emulation.md
+     * section 7.2). This catches a wide character that an edit left in one cell.
+     */
+    private fun widthOf(text: String): Int {
+        val first = text.codePointAt(0)
+        val second =
+            Character.charCount(first).let { if (it < text.length) text.codePointAt(it) else -1 }
+        if (first in REGIONAL_INDICATORS && second in REGIONAL_INDICATORS) return 2
+        return CharWidth.of(first)
+    }
+
+    private val REGIONAL_INDICATORS = 0x1F1E6..0x1F1FF
     private const val MAX_CELL_TEXT_LENGTH = 32
     private const val SCROLLBACK_LINES = 4
 
