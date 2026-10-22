@@ -594,6 +594,17 @@ class AttackTest {
             }
         }
 
+        // Such a scheme would match no URL, so every link would silently be NotAllowed.
+        @Test
+        fun schemesThatCannotMatchAreRefused() {
+            for (scheme in
+                listOf("", "https:", " https", "https://", "1http", "ht tp", "h\u00e9")) {
+                assertFailsWith<IllegalArgumentException>(scheme) {
+                    GatePolicy(urlSchemes = setOf(scheme))
+                }
+            }
+        }
+
         // Java code can call add on any Set, as the cast does here.
         @Test
         fun schemesOfAPolicyCannotBeChangedAfterItIsBuilt() {

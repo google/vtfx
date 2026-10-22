@@ -1,4 +1,4 @@
-# URL schemes that GatePolicy refuses
+# The URL schemes of GatePolicy
 
 - Status: Provisional
 - Date: 2026-10-22
@@ -14,6 +14,7 @@
 2. `AndroidUrlOpener` is unchanged: the gate decides which URLs are opened, and vtfx-gate-android only performs what the gate allowed.
 3. `content` stays allowed if an app adds it: starting an activity for a `content:` URL does not throw by default, and the app that takes it decides whether it can read it.
 4. `GatePolicy` is immutable, as its documentation says, also to Java: `urlSchemes` and `GatePolicy.DEFAULT_URL_SCHEMES` are unmodifiable sets (`Collections.unmodifiableSet`). Before, both returned a `LinkedHashSet` that Java code could add to (and Kotlin code by a cast), which changed a policy after it was built, or the default of every later policy in the process (found in the same review).
+5. `GatePolicy` refuses a scheme outside the grammar that `isAllowedUrl` accepts (an ASCII letter followed by ASCII letters, digits, `+`, `-`, or `.`), with `IllegalArgumentException`. Such a scheme, like `https:` or ` https`, matched no URL, so a mistake in the configuration made every link silently `NotAllowed`; only the empty scheme was refused before.
 
 ## Alternatives considered
 
@@ -27,3 +28,4 @@
 - Remove the check from `GatePolicy`, its test in `AttackTest.Hyperlinks`, and the sentence in section 5.2 of gate-policy.md.
 - Decide again what `AndroidUrlOpener` does with `FileUriExposedException`; catching nothing brings back the crash.
 - Item 4: store the sets without the unmodifiable wrapper; nothing else depends on it.
+- Item 5: refuse only the empty scheme again.

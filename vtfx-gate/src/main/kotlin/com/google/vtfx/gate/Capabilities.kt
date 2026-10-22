@@ -116,9 +116,10 @@ public class GatePolicy(
      * URLs found in the text, and URLs that the app's link patterns build. Which text becomes a
      * link is decided by the link patterns, not by this set.
      *
-     * `file` may not be given: Android throws `FileUriExposedException` when an app that targets
-     * API 24 or later starts an activity for a `file:` URL, so a link from the host would crash the
-     * app.
+     * Each must be a scheme as URLs spell it, without `:`: an ASCII letter followed by ASCII
+     * letters, digits, `+`, `-`, or `.`. `file` may not be given: Android throws
+     * `FileUriExposedException` when an app that targets API 24 or later starts an activity for a
+     * `file:` URL, so a link from the host would crash the app.
      *
      * Unmodifiable, also from Java, so that the policy cannot change after it is built.
      */
@@ -128,10 +129,17 @@ public class GatePolicy(
     init {
         require(maxClipboardWriteLength >= 0) { "maxClipboardWriteLength must not be negative" }
         require(maxClipboardReadLength >= 0) { "maxClipboardReadLength must not be negative" }
-        require(this.urlSchemes.none { it.isEmpty() }) { "schemes must not be empty" }
+        // A scheme outside the grammar of URLs would match no URL, so every link would be refused.
+        for (scheme in this.urlSchemes) require(isScheme(scheme)) { "not a URL scheme: $scheme" }
         // docs/decisions/0058.
         require("file" !in this.urlSchemes) { "file URLs cannot be opened in another app" }
     }
+
+    /** An ASCII letter followed by ASCII letters, digits, `+`, `-`, or `.` (RFC 3986). */
+    private fun isScheme(s: String): Boolean =
+        s.isNotEmpty() &&
+            s[0] in 'a'..'z' &&
+            s.all { it in 'a'..'z' || it in '0'..'9' || it in "+-." }
 
     public companion object {
         // Plain vals rather than consts, so that apps read the values of the vtfx they run with,
