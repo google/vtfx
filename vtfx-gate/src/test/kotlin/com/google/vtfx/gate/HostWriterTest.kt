@@ -57,6 +57,12 @@ class HostWriterTest {
     }
 
     @Test
+    fun characterKeyOfAControlSendsNothing() {
+        writer.sendKey(KeyStroke.Character(0x1B, KeyModifiers.of(alt = true)), terminalModes())
+        assertEquals(emptyList(), sent)
+    }
+
+    @Test
     fun deletesSendDel() {
         writer.sendDeletes(3)
         assertEquals(listOf("\u007f\u007f\u007f"), sent)

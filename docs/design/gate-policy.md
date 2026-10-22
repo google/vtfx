@@ -17,7 +17,7 @@ The defaults and the reasons for them are in [decisions/0006](../decisions/0006-
 
 | Method | What it sends |
 |---|---|
-| `sendKey(stroke, modes)` | The bytes xterm sends for the key and modifiers under the terminal modes (application cursor keys and so on), encoded by `KeyEncoder` inside the gate. Its inputs are only the key, the modifiers, and the modes, which are enums and booleans, so no text from the host can reach the output ([decisions/0005](../decisions/0005-key-bytes-through-gate.md)). |
+| `sendKey(stroke, modes)` | The bytes xterm sends for the key and modifiers under the terminal modes (application cursor keys and so on), encoded by `KeyEncoder` inside the gate. Its inputs are only the key, the modifiers, and the modes, which are enums, booleans, and the code point of a character key, so no text from the host can reach the output ([decisions/0005](../decisions/0005-key-bytes-through-gate.md)). Only Ctrl makes a control from a character: a character key whose code point is itself a control (C0, DEL, or C1) sends nothing, and an unpaired surrogate is sent as U+FFFD, as in text (section 2.1). |
 | `sendText(text)` | Text that the user typed or the IME committed, converted as in section 2.1. |
 | `sendDeletes(count)` | `count` DELs, which erase text already sent in IME editing. A count outside 1 to 65536 is a programming error. |
 | `sendPaste(text, bracketed)` | Pasted text, converted as in section 2.1, and wrapped in `ESC [ 200 ~` and `ESC [ 201 ~` when `bracketed`. |

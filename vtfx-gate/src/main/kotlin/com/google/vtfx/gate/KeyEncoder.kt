@@ -28,6 +28,7 @@ import com.google.vtfx.core.TerminalModes
  */
 internal object KeyEncoder {
     private const val ESC = 0x1B
+    private const val REPLACEMENT_CHARACTER = 0xFFFD
 
     /** Returns the bytes for [stroke] under [modes]. */
     fun encode(stroke: KeyStroke, modes: TerminalModes): ByteArray =
@@ -123,11 +124,19 @@ internal object KeyEncoder {
     private fun tilde(code: Int, m: KeyModifiers): ByteArray =
         if (m.isEmpty) csi("$code~") else csi("$code;${m.xtermParameter}~")
 
+    /**
+     * Encodes a character key. Only Ctrl makes a control: a key whose character is itself a control
+     * (C0, DEL, or C1) encodes to nothing, as sendText drops it, since the code point comes from
+     * the app or the IME, not from an enum. An unpaired surrogate becomes U+FFFD, as in text.
+     */
     private fun encodeCharacter(codePoint: Int, m: KeyModifiers): ByteArray {
         val base = if (m.ctrl) controlCharacter(codePoint) else null
+        if (base == null && isControl(codePoint)) return ByteArray(0)
         val bytes = if (base != null) byteArrayOf(base.toByte()) else utf8(codePoint)
         return withAlt(bytes, m)
     }
+
+    private fun isControl(codePoint: Int): Boolean = codePoint < 0x20 || codePoint in 0x7F..0x9F
 
     /** Returns the C0 control that Ctrl with [codePoint] produces, as in xterm, or null. */
     private fun controlCharacter(codePoint: Int): Int? =
@@ -157,8 +166,10 @@ internal object KeyEncoder {
     private fun ss3(final: Char): ByteArray =
         byteArrayOf(ESC.toByte(), 'O'.code.toByte(), final.code.toByte())
 
-    private fun utf8(codePoint: Int): ByteArray =
-        String(Character.toChars(codePoint)).toByteArray(Charsets.UTF_8)
+    private fun utf8(codePoint: Int): ByteArray {
+        val character = if (codePoint in 0xD800..0xDFFF) REPLACEMENT_CHARACTER else codePoint
+        return String(Character.toChars(character)).toByteArray(Charsets.UTF_8)
+    }
 
     /** The modifier parameter of xterm's sequences: 1 + the sum of the held modifiers. */
     private val KeyModifiers.xtermParameter: Int

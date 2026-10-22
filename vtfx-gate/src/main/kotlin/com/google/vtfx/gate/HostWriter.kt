@@ -67,13 +67,15 @@ public class HostWriter(private val connection: HostConnection) {
 
     /**
      * Sends [stroke] as xterm encodes it under [modes], for example with SS3 for the cursor keys in
-     * application cursor mode (docs/decisions/0005).
+     * application cursor mode (docs/decisions/0005). A character key of a control character sends
+     * nothing.
      *
      * @suppress
      */
     @InternalVtfxApi
     public fun sendKey(stroke: KeyStroke, modes: TerminalModes) {
-        write(KeyEncoder.encode(stroke, modes))
+        val bytes = KeyEncoder.encode(stroke, modes)
+        if (bytes.isNotEmpty()) write(bytes)
     }
 
     /**

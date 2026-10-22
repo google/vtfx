@@ -43,9 +43,9 @@ class KeyEncoderTest {
 
     /**
      * Every key, with any modifiers, under any modes, encodes to the shape of a key: a CSI or SS3
-     * sequence, CR LF, or one character, optionally after ESC for Alt. So no key can send a string
-     * (OSC, DCS) or several characters, which the gate checked of the bytes it was given before it
-     * encoded keys itself (docs/decisions/0005).
+     * sequence, CR LF, or one character, optionally after ESC for Alt, or nothing. So no key can
+     * send a string (OSC, DCS) or several characters, which the gate checked of the bytes it was
+     * given before it encoded keys itself (docs/decisions/0005).
      */
     @Test
     fun everyKeyHasTheShapeOfAKey() {
@@ -88,7 +88,7 @@ class KeyEncoderTest {
         /** A bound on the length of a key. The longest, such as ESC [ 2 4 ; 1 6 ~, are 8 bytes. */
         private const val MAX_KEY_LENGTH = 16
         private val KEY_SHAPE =
-            Regex("\u001b?(?:\u001b\\[[0-9;]*[A-Za-z~]|\u001bO[A-Za-z]|\r\n|(?s:.))")
+            Regex("(?:\u001b?(?:\u001b\\[[0-9;]*[A-Za-z~]|\u001bO[A-Za-z]|\r\n|(?s:.)))?")
 
         private val normal = terminalModes()
         private val application = terminalModes(applicationCursorKeys = true)
@@ -155,6 +155,17 @@ class KeyEncoderTest {
                 case(char('x', alt), "\\ex"),
                 case(char('c', KeyModifiers.of(ctrl = true, alt = true)), "\\e\u0003"),
                 case(char('é', ctrl), "é"),
+                // Controls are dropped, as from text, so that a character key cannot carry ESC or
+                // C1 CSI; only Ctrl makes a control from a character.
+                case(char('\u001b'), ""),
+                case(char('\u001b', alt), ""),
+                case(char('\u0000'), ""),
+                case(char('\r', ctrl), ""),
+                case(char('\u007f'), ""),
+                case(char('\u009b'), ""),
+                // Unpaired surrogates become U+FFFD, as in text.
+                case(char('\ud800'), "\ufffd"),
+                case(char('\udc00', alt), "\\e\ufffd"),
                 case(special(TerminalKey.Keypad5), "5"),
                 case(special(TerminalKey.KeypadPlus), "+"),
                 case(special(TerminalKey.KeypadEnter), "\r"),
