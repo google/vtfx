@@ -32,6 +32,8 @@ android {
     sourceSets {
         // The recordings of real apps (tools/recordings), for the "replay" command.
         getByName("main").assets.directories.add("../recordings")
+        // Canonical fonts, valid font files for the tests of FontStore.
+        getByName("test").resources.directories.add("../vtfx-font-gate/src/fuzz/resources")
     }
 }
 

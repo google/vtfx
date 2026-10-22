@@ -27,9 +27,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import com.google.vtfx.core.KeyModifiers
-import com.google.vtfx.font.FontFile
 import com.google.vtfx.font.gate.FontLimits
-import com.google.vtfx.font.gate.InvalidFontException
 import com.google.vtfx.font.gate.SanitizedFont
 import com.google.vtfx.gate.android.AndroidClipboard
 import com.google.vtfx.gate.android.AndroidUrlOpener
@@ -82,10 +80,8 @@ class SampleViewModel(application: Application) : AndroidViewModel(application) 
     /** Reads and sanitizes fonts, which takes seconds for a CJK font, off the main thread. */
     private val fontExecutor = Executors.newSingleThreadExecutor()
 
-    private val fontDirectory = File(application.filesDir, "fonts")
-
     /** The saved fonts, touched only on the font thread; [fonts] is a copy for the main thread. */
-    private var savedFonts: List<SanitizedFont> = emptyList()
+    private val fontStore = FontStore(File(application.filesDir, "fonts"), LIMITS)
 
     private var columns = 0
     private var rows = 0
@@ -125,7 +121,10 @@ class SampleViewModel(application: Application) : AndroidViewModel(application) 
 
     init {
         host.start()
-        fontExecutor.execute(::loadSavedFonts)
+        fontExecutor.execute {
+            val loaded = fontStore.load()
+            mainHandler.post { fonts = loaded }
+        }
     }
 
     override fun onCleared() {
@@ -144,7 +143,14 @@ class SampleViewModel(application: Application) : AndroidViewModel(application) 
                     fontRequest = FontRequest(face)
                 }
             }
-            "reset" -> fontExecutor.execute { saveFonts(emptyList(), report = "") }
+            "reset" ->
+                fontExecutor.execute {
+                    fontStore.save(emptyList())
+                    mainHandler.post {
+                        fonts = emptyList()
+                        host.report(describeFonts(emptyList()))
+                    }
+                }
             else -> host.report("Usage: font, font import [FACE], or font reset")
         }
     }
@@ -156,62 +162,14 @@ class SampleViewModel(application: Application) : AndroidViewModel(application) 
     fun importFont(request: FontRequest, uri: Uri) {
         val resolver = getApplication<Application>().contentResolver
         fontExecutor.execute {
-            val failure =
-                try {
-                    val bytes =
-                        checkNotNull(resolver.openInputStream(uri)) { "cannot open $uri" }
-                            .use { it.readBytes() }
-                    val faces = FontFile.inspect(bytes, LIMITS)
-                    val face =
-                        request.face
-                            ?: faces.firstOrNull { it.isSupported }?.index
-                            ?: throw IllegalArgumentException("no face that vtfx reads")
-                    val started = System.nanoTime()
-                    val font = FontFile.sanitize(bytes, face, LIMITS)
-                    val millis = (System.nanoTime() - started) / 1_000_000
-                    val report =
-                        faces.joinToString("\n", postfix = "\n") { info ->
-                            val mark = if (info.index == face) "*" else " "
-                            "$mark ${info.index}: ${info.familyName} ${info.styleName} " +
-                                "(${info.outlineFormat})"
-                        } +
-                            "Imported face $face in $millis ms: ${bytes.size} bytes to " +
-                            "${font.size}.\n"
-                    saveFonts(savedFonts + font, report)
-                    null
-                } catch (e: InvalidFontException) {
-                    "Not imported: ${e.kind}: ${e.message}"
-                } catch (e: IllegalArgumentException) {
-                    "Not imported: ${e.message}"
-                } catch (e: java.io.IOException) {
-                    "Not imported: $e"
-                }
-            if (failure != null) mainHandler.post { host.report(failure) }
-        }
-    }
-
-    /** Loads the fonts saved before, checking them again, on the font thread. */
-    private fun loadSavedFonts() {
-        val files = fontDirectory.listFiles().orEmpty().sortedBy { it.name }
-        savedFonts = files.map { SanitizedFont.fromCanonical(it.readBytes(), LIMITS) }
-        val loaded = savedFonts
-        mainHandler.post { fonts = loaded }
-    }
-
-    /**
-     * Saves [newFonts] in place of the saved fonts and uses them, on the font thread, then shows
-     * [report] and the fonts.
-     */
-    private fun saveFonts(newFonts: List<SanitizedFont>, report: String) {
-        fontDirectory.deleteRecursively()
-        fontDirectory.mkdirs()
-        for ((i, font) in newFonts.withIndex()) {
-            File(fontDirectory, "%03d.ttf".format(i)).writeBytes(font.toByteArray())
-        }
-        savedFonts = newFonts
-        mainHandler.post {
-            fonts = newFonts
-            host.report(report + describeFonts(newFonts))
+            when (val result = fontStore.import({ resolver.openInputStream(uri) }, request.face)) {
+                is FontStore.ImportResult.Imported ->
+                    mainHandler.post {
+                        fonts = result.fonts
+                        host.report(result.report + describeFonts(result.fonts))
+                    }
+                is FontStore.ImportResult.Failed -> mainHandler.post { host.report(result.message) }
+            }
         }
     }
 

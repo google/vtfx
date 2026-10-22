@@ -1,0 +1,62 @@
+/*
+ * Copyright 2026 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.google.vtfx.sample
+
+import com.google.vtfx.font.gate.FontLimits
+import com.google.vtfx.font.gate.SanitizedFont
+import java.io.ByteArrayInputStream
+import java.io.File
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
+
+class FontStoreTest {
+    @get:Rule val folder = TemporaryFolder()
+
+    private val limits = FontLimits()
+
+    private val directory: File by lazy { File(folder.root, "fonts") }
+
+    /** A valid font file: a canonical font, which sanitizes to itself. */
+    private val font: ByteArray =
+        checkNotNull(javaClass.getResourceAsStream(FONT)) { "missing $FONT" }.use { it.readBytes() }
+
+    private fun store() = FontStore(directory, limits)
+
+    @Test
+    fun importedFontIsSavedAndLoadedAgain() {
+        val result = store().import({ ByteArrayInputStream(font) }, null)
+
+        val imported = (result as FontStore.ImportResult.Imported).fonts
+        assertEquals(listOf(SanitizedFont.fromCanonical(font, limits)), imported)
+        assertEquals(imported, store().load())
+    }
+
+    @Test
+    fun fileThatIsNotAFontIsNotImported() {
+        val result = store().import({ ByteArrayInputStream(ByteArray(100)) }, null)
+
+        assertTrue((result as FontStore.ImportResult.Failed).message.startsWith("Not imported"))
+        assertEquals(emptyList<SanitizedFont>(), store().load())
+    }
+
+    private companion object {
+        const val FONT = "/com/google/vtfx/font/gate/canonical/variations.ttf"
+    }
+}
