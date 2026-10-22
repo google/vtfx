@@ -225,7 +225,7 @@ What to tell us: the device, the Android version, the density, whether the build
 
 ## 12. Copying all the text
 
-Section 4 of [compose-input.md](design/compose-input.md). Copying all the text copies at most the newest 10,000 lines, cut to 256 Ki characters (`TerminalDisplay.selectedText`), so that the system clipboard can take it. Robolectric's clipboard has no Binder limit, so whether the copy reaches the system clipboard and its preview without `TransactionTooLargeException` was not checked.
+Section 4 of [compose-input.md](design/compose-input.md). Copying all the text copies at most the newest 10,000 lines, cut to 256 Ki characters (`TerminalDisplay.selectedText`), so that the system clipboard can take it. Robolectric's clipboard has no Binder limit; on the emulator, `DeviceLimitsTest` in `vtfx-compose` checks that the copy reaches the system clipboard without `TransactionTooLargeException`. What the emulator cannot tell is how long the UI freezes on a real device.
 
 | # | Action | Expected |
 |---|---|---|
