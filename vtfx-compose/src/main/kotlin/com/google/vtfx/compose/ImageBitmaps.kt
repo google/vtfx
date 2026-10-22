@@ -25,18 +25,21 @@ import com.google.vtfx.core.TerminalImage
 /**
  * The bitmaps of the images that frames draw (docs/decisions/0038), made once per image. A bitmap
  * that no frame drew for [KEEP_FRAMES] frames goes, so that the bitmaps of deleted images do not
- * stay; images that come back, scrolled into view again for example, are made again.
+ * stay; images that come back, scrolled into view again for example, are made again. The bitmaps of
+ * images that the last frame did not draw are kept up to [MAX_UNDRAWN_BYTES], so that their memory
+ * stays bounded when the host replaces an image on every frame (docs/decisions/0052).
  *
  * One per display: the keys of images are unique only within a session.
  */
 internal class ImageBitmaps {
-    private class Entry(val bitmap: Bitmap, var frame: Int)
+    private class Entry(val bitmap: Bitmap, val bytes: Long, var frame: Int)
 
     private val entries = HashMap<Long, Entry>()
     private var frame = 0
 
-    val size: Int
-        get() = entries.size
+    /** The bytes of the pixels of the bitmaps kept. */
+    var bytes = 0L
+        private set
 
     fun startFrame() {
         frame++
@@ -47,25 +50,45 @@ internal class ImageBitmaps {
         val entry =
             entries.getOrPut(image.key) {
                 Entry(
-                    Bitmap.createBitmap(
-                        image.pixels,
-                        image.width,
-                        image.height,
-                        Bitmap.Config.ARGB_8888,
-                    ),
-                    frame,
-                )
+                        Bitmap.createBitmap(
+                            image.pixels,
+                            image.width,
+                            image.height,
+                            Bitmap.Config.ARGB_8888,
+                        ),
+                        image.width.toLong() * image.height * BYTES_PER_PIXEL,
+                        frame,
+                    )
+                    .also { bytes += it.bytes }
             }
         entry.frame = frame
         return entry.bitmap
     }
 
     fun endFrame() {
-        entries.values.removeIf { frame - it.frame > KEEP_FRAMES }
+        entries.values.removeIf { entry ->
+            (frame - entry.frame > KEEP_FRAMES).also { if (it) bytes -= entry.bytes }
+        }
+        // The bitmaps of images that this frame did not draw, the least recently drawn first, go
+        // beyond MAX_UNDRAWN_BYTES: the host can replace an image on every frame.
+        val undrawn = entries.entries.filter { it.value.frame != frame }
+        var undrawnBytes = undrawn.sumOf { it.value.bytes }
+        if (undrawnBytes <= MAX_UNDRAWN_BYTES) return
+        for ((key, entry) in undrawn.sortedBy { it.value.frame }) {
+            entries.remove(key)
+            bytes -= entry.bytes
+            undrawnBytes -= entry.bytes
+            if (undrawnBytes <= MAX_UNDRAWN_BYTES) return
+        }
     }
 
-    private companion object {
+    companion object {
+        /** The most bytes of bitmaps kept for images that the last frame did not draw. */
+        const val MAX_UNDRAWN_BYTES = 32L * 1024 * 1024
+
+        private const val BYTES_PER_PIXEL = 4
+
         /** About a second of frames at 60 frames per second. */
-        const val KEEP_FRAMES = 60
+        private const val KEEP_FRAMES = 60
     }
 }

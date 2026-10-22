@@ -201,7 +201,7 @@ vtfx implements the kitty graphics protocol (kitty 0.48) with direct transmissio
 
 - PNG is decoded by `PngDecoder` in `vtfx-core`, in Kotlin. It decodes every color type, bit depth, and interlacing, and checks the size in the header against the limits before it allocates anything. Colors are taken as sRGB, ignoring color profiles and gamma.
 - zlib data (`o=z`, and the image data of PNG) is inflated with `java.util.zip.Inflater`, up to the size the image needs.
-- Pixels are kept decoded, 4 bytes each. The display makes a bitmap of each image once and keeps it until the image is gone.
+- Pixels are kept decoded, 4 bytes each. The display makes a bitmap of an image when it first draws it, and keeps it for a while after the image is no longer drawn (section 9.6).
 
 ### 9.4 Storage and eviction
 
@@ -223,6 +223,7 @@ vtfx implements the kitty graphics protocol (kitty 0.48) with direct transmissio
 - Images with a negative z-index are drawn under the text and under the backgrounds of cells, the others over the text, before the selection and the cursor.
 - An image is drawn from its anchor, scaled to its size in cells, and cut at the edges of the grid.
 - Each display (a session shown by a `Terminal`) keeps its own bitmaps, since each session numbers its images from 1.
+- A display keeps the bitmap of an image that it no longer draws, scrolled out of view or deleted, for 60 frames, so that an image scrolled back into view is not made again; of these, it keeps at most 32 MiB, dropping the least recently drawn first (`ImageBitmaps.MAX_UNDRAWN_BYTES`), so that a host that replaces an image on every frame does not build up bitmaps beyond the limit of the core ([decisions/0052](../decisions/0052-display-bitmap-budget.md)). The bitmaps of the images drawn in a frame are bounded by `maxImageBytes`.
 
 ### 9.7 Unicode placeholders
 
@@ -270,6 +271,7 @@ Host output is untrusted (requirement 6.1). The policy and the reasons for each 
 | Pixels of one image | 64 MiB of decoded pixels (16,777,216 pixels), or `maxImageBytes` if smaller, below the size of a bitmap that Android refuses to draw ([decisions/0051](../decisions/0051-largest-image.md)) | Not configurable (`Graphics.MAX_BYTES_PER_IMAGE`) | Refused with `EFBIG` before the pixels are allocated |
 | Images, placements | 1024 of each per screen | Not configurable (`Graphics.MAX_IMAGES`, `MAX_PLACEMENTS`) | The oldest are dropped |
 | Columns and rows of a placement, and the width and height of the area it is drawn in | `TerminalLimits.MAX_DIMENSION` cells | Not configurable | Clamped, also a side computed from the image's aspect ratio when only `c` or `r` is given |
+| Bitmaps of images that a display no longer draws | 32 MiB per display, each for 60 frames | Not configurable (`ImageBitmaps.MAX_UNDRAWN_BYTES`, `KEEP_FRAMES` in `vtfx-compose`) | The least recently drawn are dropped (section 9.6) |
 
 - String lengths are counted in UTF-16 units, which bound the memory of the held strings directly.
 - Commands of the graphics protocol that look at every placement (deletions by position, clearing the screen) do work up to 1024 placements for a few bytes of output.
