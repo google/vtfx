@@ -21,6 +21,7 @@ package com.google.vtfx.gate.fuzz
 import com.google.vtfx.core.ColorTarget
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.Terminal
+import com.google.vtfx.core.TerminalEvent
 import com.google.vtfx.gate.ClipboardAccess
 import com.google.vtfx.gate.GatePolicy
 import com.google.vtfx.gate.HostWriter
@@ -87,9 +88,15 @@ object GateFuzzer {
                         ReportedColors { if (it == ColorTarget.Palette(255)) null else 0x12AB34 }
                     else null,
             )
-        val terminal = Terminal(columns, rows) { gate.handle(it) }
+        // Like TerminalSession, hands the gate the events of each write together.
+        val events = mutableListOf<TerminalEvent>()
+        val terminal = Terminal(columns, rows) { events += it }
         if (cellWidth != 0 && cellHeight != 0) terminal.setCellSize(cellWidth, cellHeight)
-        for (write in output.split(SPLIT)) terminal.write(write)
+        for (write in output.split(SPLIT)) {
+            terminal.write(write)
+            gate.handle(events.toList())
+            events.clear()
+        }
 
         val allowed = buildList {
             add(KnownReplies.pattern.pattern)
@@ -136,7 +143,8 @@ object GateFuzzer {
         val data = Base64.getEncoder().encodeToString(CLIPBOARD_TEXT.toByteArray(Charsets.UTF_8))
         // xterm's selection targets, written out here rather than taken from vtfx-core or the
         // gate, so that the oracle does not depend on the code it checks.
-        return """\u001b\]52;[cpqs0-7]{1,16};${Regex.escape(data)}\u001b\\"""
+        // Reads after the first of a write are replied to as empty.
+        return """\u001b\]52;[cpqs0-7]{1,16};(?:${Regex.escape(data)})?\u001b\\"""
     }
 
     private fun ByteArray.uint16At(index: Int): Int =

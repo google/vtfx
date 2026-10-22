@@ -39,16 +39,24 @@ public class TerminalGate(
     private val colors: ReportedColors? = null,
 ) {
     /**
-     * Handles an event from the terminal model: replies to queries and decides on clipboard
-     * requests. Events without external effects (title, bell) are ignored.
+     * Handles the [events] that the terminal model emitted for one write of host output, in order:
+     * replies to queries and decides on clipboard requests. Events without external effects (title,
+     * bell) are ignored.
      */
-    public fun handle(event: TerminalEvent) {
-        when (event) {
-            is TerminalEvent.ReplyRequested -> writer.sendReply(event.query, colors)
-            is TerminalEvent.ClipboardWriteRequested -> writeClipboard(event.selection, event.text)
-            is TerminalEvent.ClipboardReadRequested -> readClipboard(event.selection)
-            is TerminalEvent.TitleChanged,
-            TerminalEvent.Bell -> {}
+    public fun handle(events: List<TerminalEvent>) {
+        var clipboardRead = false
+        for (event in events) {
+            when (event) {
+                is TerminalEvent.ReplyRequested -> writer.sendReply(event.query, colors)
+                is TerminalEvent.ClipboardWriteRequested ->
+                    writeClipboard(event.selection, event.text)
+                is TerminalEvent.ClipboardReadRequested ->
+                    if (readClipboard(event.selection, fromClipboard = !clipboardRead)) {
+                        clipboardRead = true
+                    }
+                is TerminalEvent.TitleChanged,
+                TerminalEvent.Bell -> {}
+            }
         }
     }
 
@@ -61,12 +69,24 @@ public class TerminalGate(
         clipboard.write(text)
     }
 
-    /** Replies with OSC 52, built by [Replies]. */
-    private fun readClipboard(selection: String) {
-        val clipboard = clipboard ?: return
-        if (!policy.allowClipboardRead) return
-        val parsed = ClipboardSelection.parse(selection) ?: return
-        writer.write(Replies.clipboard(parsed, clipboard.read() ?: ""))
+    /**
+     * Replies with OSC 52, built by [Replies], and returns whether it replied. The reply carries
+     * the clipboard only if [fromClipboard], the first read of a write of host output, and the text
+     * is no longer than [GatePolicy.maxClipboardReadLength]; otherwise it is empty, so that what
+     * the gate sends stays proportional to the host's output (docs/decisions/0059).
+     */
+    private fun readClipboard(selection: String, fromClipboard: Boolean): Boolean {
+        val clipboard = clipboard ?: return false
+        if (!policy.allowClipboardRead) return false
+        val parsed = ClipboardSelection.parse(selection) ?: return false
+        val text =
+            if (fromClipboard) {
+                clipboard.read()?.takeIf { it.length <= policy.maxClipboardReadLength }
+            } else {
+                null
+            }
+        writer.write(Replies.clipboard(parsed, text ?: ""))
+        return true
     }
 
     // The user's copy and paste go through the gate, like opening URLs, so that only vtfx-gate

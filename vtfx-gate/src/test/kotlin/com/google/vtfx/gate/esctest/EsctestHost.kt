@@ -60,7 +60,8 @@ object EsctestHost {
         val terminal =
             Terminal(80, 25) { event ->
                 if (event is TerminalEvent.TitleChanged) title = event.title
-                gate.handle(event)
+                // No clipboard, so handing the events one at a time changes nothing.
+                gate.handle(listOf(event))
             }
         val scanner = Scanner(terminal, out) { title }
         val buffer = ByteArray(65536)

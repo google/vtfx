@@ -510,7 +510,7 @@ public class TerminalSession(
         if (rang) listener.onBell()
         titleNotifier.tell()
         // Last, so that an exception from the app's code leaves the session up to date.
-        for (request in requests) gate.handle(request)
+        gate.handle(requests)
     }
 
     /**

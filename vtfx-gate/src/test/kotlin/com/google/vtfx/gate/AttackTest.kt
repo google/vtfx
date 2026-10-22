@@ -228,7 +228,7 @@ class AttackTest {
             selection: String
         ) {
             val gate = gate(GatePolicy(allowClipboardRead = true))
-            gate.handle(TerminalEvent.ClipboardReadRequested(selection))
+            gate.handle(listOf(TerminalEvent.ClipboardReadRequested(selection)))
             assertEquals(emptyList(), sent)
             assertEquals(0, clipboard.reads)
         }
@@ -239,16 +239,40 @@ class AttackTest {
             selection: String
         ) {
             val gate = gate(GatePolicy(allowClipboardWrite = true))
-            gate.handle(TerminalEvent.ClipboardWriteRequested(selection, "x"))
+            gate.handle(listOf(TerminalEvent.ClipboardWriteRequested(selection, "x")))
             assertEquals(emptyList(), clipboard.writes)
+        }
+
+        @Test
+        fun readsAreAnsweredFromTheClipboardOncePerWrite() {
+            clipboard.text = "x"
+            val gate = gate(GatePolicy(allowClipboardRead = true))
+
+            host(gate, "\u001b]52;c;?\u0007".repeat(3))
+            host(gate, "\u001b]52;c;?\u0007")
+
+            val answered = "\u001b]52;c;${base64("x")}\u001b\\"
+            val empty = "\u001b]52;c;\u001b\\"
+            assertEquals(listOf(answered, empty, empty, answered), sent)
+            assertEquals(2, clipboard.reads)
+        }
+
+        @Test
+        fun clipboardLongerThanTheReadLimitIsRepliedAsEmpty() {
+            clipboard.text = "123456"
+            val gate = gate(GatePolicy(allowClipboardRead = true, maxClipboardReadLength = 5))
+
+            host(gate, "\u001b]52;c;?\u0007")
+
+            assertEquals(listOf("\u001b]52;c;\u001b\\"), sent)
         }
 
         @Test
         fun readRepeatsEveryTargetOfTheSelection() {
             clipboard.text = "x"
             val gate = gate(GatePolicy(allowClipboardRead = true))
-            gate.handle(TerminalEvent.ClipboardReadRequested("cpqs01234567"))
-            gate.handle(TerminalEvent.ClipboardReadRequested("cccccccccccccccc"))
+            gate.handle(listOf(TerminalEvent.ClipboardReadRequested("cpqs01234567")))
+            gate.handle(listOf(TerminalEvent.ClipboardReadRequested("cccccccccccccccc")))
             assertEquals(
                 listOf(
                     "\u001b]52;cpqs01234567;${base64("x")}\u001b\\",
@@ -614,6 +638,19 @@ class AttackTest {
             assertEquals(10_000, sent.size)
             assertTrue(total <= queries.length * 2, "replies: $total bytes")
         }
+
+        @Test
+        fun clipboardRepliesStayProportionalToTheReads() {
+            clipboard.text = "x".repeat(60_000)
+            val gate = gate(GatePolicy(allowClipboardRead = true))
+            val reads = "\u001b]52;c;?\u0007".repeat(100)
+
+            host(gate, reads)
+
+            val total = sent.sumOf { it.length }
+            val oneClipboard = base64(clipboard.text!!).length
+            assertTrue(total <= oneClipboard + reads.length * 2, "replies: $total bytes")
+        }
     }
 }
 
@@ -672,8 +709,11 @@ private class GateUnderAttack : AttackFixture {
         )
 
     override fun host(gate: TerminalGate, output: String, limits: TerminalLimits) {
-        val terminal = Terminal(80, 24, limits) { gate.handle(it) }
+        // Like TerminalSession, hands the gate the events of the write together.
+        val events = mutableListOf<TerminalEvent>()
+        val terminal = Terminal(80, 24, limits) { events += it }
         terminal.write(output.toByteArray(Charsets.UTF_8))
+        gate.handle(events)
     }
 
     override fun base64(text: String): String =

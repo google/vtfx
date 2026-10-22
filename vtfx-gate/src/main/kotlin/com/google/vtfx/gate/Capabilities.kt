@@ -101,6 +101,11 @@ public class GatePolicy(
      * secrets copied from other apps.
      */
     public val allowClipboardRead: Boolean = false,
+    /**
+     * The longest clipboard text, in UTF-16 code units, that an OSC 52 read replies with. A longer
+     * text is replied to as empty.
+     */
+    public val maxClipboardReadLength: Int = DEFAULT_MAX_CLIPBOARD_READ_LENGTH,
     urlSchemes: Set<String> = DEFAULT_URL_SCHEMES,
 ) {
     /**
@@ -113,6 +118,7 @@ public class GatePolicy(
 
     init {
         require(maxClipboardWriteLength >= 0) { "maxClipboardWriteLength must not be negative" }
+        require(maxClipboardReadLength >= 0) { "maxClipboardReadLength must not be negative" }
         require(this.urlSchemes.none { it.isEmpty() }) { "schemes must not be empty" }
     }
 
@@ -125,6 +131,12 @@ public class GatePolicy(
          * UTF-16 code units.
          */
         public val DEFAULT_MAX_CLIPBOARD_WRITE_LENGTH: Int = 64 * 1024
+
+        /**
+         * The default of [maxClipboardReadLength][GatePolicy.maxClipboardReadLength]: 64 Ki UTF-16
+         * code units.
+         */
+        public val DEFAULT_MAX_CLIPBOARD_READ_LENGTH: Int = 64 * 1024
 
         /** The default of [urlSchemes][GatePolicy.urlSchemes]: http and https. */
         public val DEFAULT_URL_SCHEMES: Set<String> = setOf("http", "https")

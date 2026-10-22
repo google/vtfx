@@ -4,14 +4,16 @@ public interface com.google.vtfx.gate.ClipboardAccess {
 }
 
 public final class com.google.vtfx.gate.GatePolicy {
-    public constructor(allowClipboardWrite: kotlin.Boolean = ..., maxClipboardWriteLength: kotlin.Int = ..., allowClipboardRead: kotlin.Boolean = ..., urlSchemes: kotlin.collections.Set<kotlin.String> = ...)
+    public constructor(allowClipboardWrite: kotlin.Boolean = ..., maxClipboardWriteLength: kotlin.Int = ..., allowClipboardRead: kotlin.Boolean = ..., maxClipboardReadLength: kotlin.Int = ..., urlSchemes: kotlin.collections.Set<kotlin.String> = ...)
     public final val allowClipboardRead: kotlin.Boolean
     public final val allowClipboardWrite: kotlin.Boolean
+    public final val maxClipboardReadLength: kotlin.Int
     public final val maxClipboardWriteLength: kotlin.Int
     public final val urlSchemes: kotlin.collections.Set<kotlin.String>
 }
 
 public companion object com.google.vtfx.gate.GatePolicy.Companion {
+    public final val DEFAULT_MAX_CLIPBOARD_READ_LENGTH: kotlin.Int
     public final val DEFAULT_MAX_CLIPBOARD_WRITE_LENGTH: kotlin.Int
     public final val DEFAULT_URL_SCHEMES: kotlin.collections.Set<kotlin.String>
 }
