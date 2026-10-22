@@ -273,6 +273,7 @@ Host output is untrusted (requirement 6.1). The policy and the reasons for each 
 
 - String lengths are counted in UTF-16 units, which bound the memory of the held strings directly.
 - Commands of the graphics protocol that look at every placement (deletions by position, clearing the screen) do work up to 1024 placements for a few bytes of output.
+- Decoding an image takes memory beyond its pixels until the command ends: the data of the transmission (up to `maxImageBytes`), the data inflated from `o=z` (up to the same), and for PNG the inflated image data, up to 8 bytes per pixel (16-bit RGBA) and a byte per row, about twice the pixels of the image and so at most about 128 MiB (`Graphics.MAX_BYTES_PER_IMAGE`). The images already kept stay meanwhile.
 - Resolving the Unicode placeholders of a snapshot looks up the virtual placement of each cell in a table made once per image, so the work is linear in the cells and the placements, not their product.
 - The tests of the limits are listed in section 12 of [testing.md](testing.md).
 
