@@ -572,6 +572,15 @@ class TerminalSessionTest {
     }
 
     @Test
+    fun outputWithoutTypingDoesNotRestartTheIme() {
+        repeat(100) { feed("line $it\r\n") }
+        assertEquals(0, restarts)
+        session.edit { it.commitText("ls") }
+        repeat(100) { feed("line $it\r\n") }
+        assertEquals(1, restarts)
+    }
+
+    @Test
     fun losingFocusResetsTheIme() {
         session.edit { it.commitText("abc") }
         session.onFocusChanged(false)

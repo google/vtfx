@@ -84,6 +84,17 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
 
     private val invalidationPending = AtomicBoolean(false)
 
+    /**
+     * The lines that entered the scrollback since the task to follow it was posted, or -1 if no
+     * task is posted, so that output from another thread posts one task, not one per receive
+     * (docs/design/emulation.md section 10.1). Guarded by [followLock].
+     */
+    private var linesToFollow = -1L
+    private val followLock = Any()
+
+    /** Whether a restart of the IME's input is posted, for the same reason. */
+    private val restartPending = AtomicBoolean(false)
+
     /** Starts receiving the session's notifications. */
     fun attach() {
         session.addObserver(this)
@@ -93,6 +104,8 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
     fun detach() {
         session.removeObserver(this)
         mainHandler.removeCallbacksAndMessages(null)
+        synchronized(followLock) { linesToFollow = -1L }
+        restartPending.set(false)
     }
 
     /** Returns what the display shows: the screen, scrolled back by [scrollOffset]. */
@@ -338,7 +351,24 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
 
     @AnyThread
     override fun onOutput(scrolledLines: Long, scrollbackShrank: Boolean, synchronizing: Boolean) {
-        if (scrolledLines > 0 || scrollbackShrank) runOnMain { followScrollback(scrolledLines) }
+        if (scrolledLines > 0 || scrollbackShrank) {
+            val post =
+                synchronized(followLock) {
+                    val pending = linesToFollow
+                    linesToFollow =
+                        if (pending < 0) scrolledLines
+                        else if (pending > Long.MAX_VALUE - scrolledLines) Long.MAX_VALUE
+                        else pending + scrolledLines
+                    pending < 0
+                }
+            if (post) {
+                runOnMain {
+                    val lines =
+                        synchronized(followLock) { linesToFollow.also { linesToFollow = -1L } }
+                    if (lines >= 0) followScrollback(lines)
+                }
+            }
+        }
         if (synchronizing) {
             // Mode 2026: the host is in the middle of an update. Draw when it ends, or after a
             // timeout from the first output not drawn, in case it never ends.
@@ -356,7 +386,15 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
 
     @AnyThread override fun onUserInput() = runOnMain { notifyEditorChanged() }
 
-    @AnyThread override fun onRestartInput() = runOnMain { inputHost?.restartInput() }
+    @AnyThread
+    override fun onRestartInput() {
+        if (restartPending.compareAndSet(false, true)) {
+            runOnMain {
+                restartPending.set(false)
+                inputHost?.restartInput()
+            }
+        }
+    }
 
     /** Whether [synchronizationTimeout] is posted, so that more output does not postpone it. */
     private val synchronizationTimeoutPending = AtomicBoolean(false)

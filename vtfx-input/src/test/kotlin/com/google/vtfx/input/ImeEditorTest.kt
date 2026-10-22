@@ -250,6 +250,26 @@ class ImeEditorTest {
     }
 
     @Test
+    fun aResetDoesNotRestartTheImeIfNothingChangedSinceTheLastRestart() {
+        editor.requestReset()
+        assertEquals(0, restarts)
+        editor.commitText("a")
+        editor.requestReset()
+        assertEquals(1, restarts)
+        editor.requestReset()
+        editor.requestReset()
+        assertEquals(1, restarts)
+    }
+
+    @Test
+    fun aResetRestartsTheImeAfterAnEditThatLeftNothing() {
+        editor.setComposingText("か")
+        editor.setComposingText("")
+        editor.requestReset()
+        assertEquals(1, restarts)
+    }
+
+    @Test
     fun committedTextOfSeveralLinesIsAPaste() {
         editor.commitText("ab")
         editor.setComposingText("か")

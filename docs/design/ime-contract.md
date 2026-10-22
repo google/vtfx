@@ -97,7 +97,7 @@ A reset that host output triggers applies to every edit made after the output wa
 
 1. When there is composing text, delay the reset until it is gone, because `restartInput` forcibly commits the composition. The exception is the limit of the input history (invariant 5): the composing text is then committed and sent first, as `restartInput` would commit it.
 2. Empty the input history.
-3. Call `InputMethodManager.restartInput`.
+3. Call `InputMethodManager.restartInput`, unless the editing buffer has not changed since the last restart (or since the connection, if there was no restart), so that the IME already has it empty. Host output that moves the cursor to another line then does not restart the IME on every receive while the user types nothing. A display posts at most one restart to the main thread at a time.
 
 ## 6. Contract for each call
 

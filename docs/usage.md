@@ -229,7 +229,7 @@ Host output can contain secrets (displayed API keys, keys, and so on). vtfx hand
 ## 7. Others
 
 - `session.title`: the window title set by the host. It may also go back to a title the host had saved (XTWINOPS 22, 23), such as when vim exits. It is an untrusted string, though at most 1024 UTF-16 units long and without control, line separator, and bidirectional formatting characters ([decisions/0063](decisions/0063-window-title-limits.md)). Changes are notified with `TerminalSessionListener.onTitleChanged`, on the thread that called `feed`. Of the titles set in one `feed`, only the last one is notified.
-- `TerminalSessionListener.onBell`: the bell. Many BELs contained in one `feed` are batched into one notification on the thread that called `feed`.
+- `TerminalSessionListener.onBell`: the bell. Many BELs contained in one `feed` are batched into one notification on the thread that called `feed`. An app that passes bells or titles to the main thread should keep at most one of each waiting there, so that its queue does not grow with the host's output.
 - `session.snapshot()`: a copy of the screen. Can be read on any thread.
 
 ## 8. Using without a UI

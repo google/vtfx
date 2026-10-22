@@ -76,6 +76,14 @@ public class ImeEditor(
     private var resetPending = false
 
     /**
+     * Whether the IME may have seen an edit since the last restart of its input, or since the
+     * editor was made. Until then its edit buffer is empty, and a reset does not restart it again,
+     * so that host output that moves the cursor to another line does not restart the IME on every
+     * receive while the user types nothing (section 5.2).
+     */
+    private var changedSinceRestart = false
+
+    /**
      * The start of a selection that ends at the cursor, or -1 if the selection is collapsed. Only
      * set while there is no composing text (docs/decisions/0008).
      */
@@ -321,6 +329,7 @@ public class ImeEditor(
      */
     public fun onKeyDown(stroke: KeyStroke) {
         selectionFrom = -1
+        changedSinceRestart = true
         if (
             stroke is KeyStroke.Character &&
                 !stroke.modifiers.ctrl &&
@@ -365,6 +374,7 @@ public class ImeEditor(
      * resets (section 6.4).
      */
     private fun sendPaste(text: String) {
+        changedSinceRestart = true
         flush()
         listener.send(HostInput.Paste(text))
         requestReset()
@@ -403,6 +413,7 @@ public class ImeEditor(
     }
 
     private fun endOperation() {
+        changedSinceRestart = true
         if (isHistoryOverLimit()) {
             // Past the limit, the history is sent and reset at once, even during a batch edit and
             // with composing text, which is committed as restarting the input would commit it.
@@ -438,7 +449,10 @@ public class ImeEditor(
             selectionFrom = -1
             history = ""
             sentHistory = ""
-            listener.restartInput()
+            if (changedSinceRestart) {
+                changedSinceRestart = false
+                listener.restartInput()
+            }
         }
     }
 

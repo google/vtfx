@@ -249,7 +249,7 @@ Host output is untrusted (requirement 6.1). The policy and the reasons for each 
 
 - Memory used because of host output is bounded by the configured limits. Input beyond a limit is silently truncated or dropped, never an exception or a crash.
 - Processing time is linear, with a small constant factor, in the number of input bytes. A few bytes of input do no work beyond the size of the screen.
-- For notifications to the main thread and the app caused by host output (redraws, bells, titles), at most one of each kind waits for the main thread.
+- For notifications to the main thread caused by host output (redraws, following the scrollback, restarts of the IME's input), at most one of each kind waits for the main thread. The session reports bells and titles to the app at most once per `feed`, on the thread that called it; an app that passes them to the main thread coalesces them itself ([usage.md](../usage.md)).
 - Values given by the app (the screen size, `TerminalLimits`) out of range are programming errors, and `IllegalArgumentException` is thrown.
 
 ### 10.2 Limits

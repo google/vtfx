@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
+@file:OptIn(InternalVtfxApi::class)
+
 package com.google.vtfx.compose
 
 import android.os.Looper
+import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.TerminalLimits
 import com.google.vtfx.gate.ClipboardAccess
 import com.google.vtfx.session.TerminalSession
@@ -119,6 +122,45 @@ class TerminalDisplayTest {
         feed("abc")
         shadowOf(Looper.getMainLooper()).idle()
         assertEquals(start, display.observeVersion())
+    }
+
+    @Test
+    fun outputFromAnotherThreadWaitsForTheMainThreadOnceForEachKind() {
+        // Emulation.md section 10.1: the main thread's queue does not grow with host output.
+        val reader = Thread { repeat(10_000) { feed("x\n") } }
+        reader.start()
+        reader.join()
+        val looper = shadowOf(Looper.getMainLooper())
+        var tasks = 0
+        while (!looper.isIdle) {
+            looper.runOneTask()
+            tasks++
+        }
+        // One redraw and one to follow the scrollback.
+        assertEquals(2, tasks)
+    }
+
+    @Test
+    fun restartsOfTheImeFromAnotherThreadWaitForTheMainThreadOnce() {
+        var restarts = 0
+        display.inputHost =
+            object : InputHost {
+                override fun restartInput() {
+                    restarts++
+                }
+
+                override fun onScreenChanged() {}
+            }
+        val other = Thread {
+            repeat(100) {
+                session.edit { it.commitText("a") }
+                feed("\r\n")
+            }
+        }
+        other.start()
+        other.join()
+        shadowOf(Looper.getMainLooper()).idle()
+        assertEquals(1, restarts)
     }
 
     @Test

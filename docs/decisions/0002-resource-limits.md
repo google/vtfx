@@ -12,7 +12,7 @@ Host output is not trustworthy. It must not be able to make the terminal use mem
 
 - Memory used because of host output is bounded by the configured limits, and input beyond a limit is **silently truncated** (or dropped), neither an exception nor a crash.
 - Processing time is kept linear, with a small constant factor, in the number of input bytes.
-- At most one notification of each kind caused by host output (redraws, bells, titles) waits for the main thread, so that notifications do not pile up in proportion to host output while the main thread is behind.
+- At most one notification of each kind caused by host output (redraws and the other notifications that a display passes to the main thread; bells and titles reach the app once per `feed`, on its thread) waits for the main thread, so that notifications do not pile up in proportion to host output while the main thread is behind.
 - Values given by the app (the screen size, `TerminalLimits`) out of range are programming errors, and throw `IllegalArgumentException`.
 - The scrollback has a memory budget besides its number of lines, which scales with the number of lines and the width.
 
