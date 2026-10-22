@@ -20,7 +20,12 @@ import com.google.vtfx.font.gate.FontLimits
 import com.google.vtfx.font.gate.InvalidFontException
 import com.google.vtfx.font.gate.SanitizedFont
 
-/** Reads what a font file holds, for an app to show before it sanitizes a face. */
+/**
+ * Reads what a font file holds, for an app to show before it sanitizes a face.
+ *
+ * vtfx takes the bytes of a file, never the file: the app reads it, and should stop once it holds
+ * more than [FontLimits.maxInputBytes] rather than read a huge file whole before this rejects it.
+ */
 public object FontFile {
     /**
      * Lists the faces of a font file: one for a single font, and one for each font of a collection

@@ -20,6 +20,7 @@ import com.google.vtfx.font.FontFile
 import com.google.vtfx.font.gate.FontLimits
 import com.google.vtfx.font.gate.InvalidFontException
 import com.google.vtfx.font.gate.SanitizedFont
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -65,7 +66,8 @@ class FontStore(private val directory: File, private val limits: FontLimits) {
         val problems = mutableListOf<String>()
         for (file in files) {
             try {
-                fonts += SanitizedFont.fromCanonical(file.readBytes(), limits)
+                val bytes = file.inputStream().use { readAtMost(it, limits.maxOutputBytes) }
+                fonts += SanitizedFont.fromCanonical(bytes, limits)
             } catch (e: InvalidFontException) {
                 problems += "Saved font ${file.name} not loaded: ${e.kind}: ${e.message}"
             } catch (e: IOException) {
@@ -84,7 +86,7 @@ class FontStore(private val directory: File, private val limits: FontLimits) {
     fun import(open: () -> InputStream?, face: Int?): ImportResult =
         try {
             val input = open() ?: throw FileNotFoundException("cannot open the file")
-            val bytes = input.use { it.readBytes() }
+            val bytes = input.use { readAtMost(it, limits.maxInputBytes) }
             val faces = FontFile.inspect(bytes, limits)
             val chosen =
                 face
@@ -116,6 +118,28 @@ class FontStore(private val directory: File, private val limits: FontLimits) {
             ImportResult.Cancelled
         }
 
+    /**
+     * Reads [input] to its end, failing as too large once it holds more than [limit] bytes, so that
+     * a huge or endless file takes no more memory than vtfx would accept.
+     */
+    private fun readAtMost(input: InputStream, limit: Int): ByteArray {
+        val out = ByteArrayOutputStream()
+        val buffer = ByteArray(BUFFER_SIZE)
+        while (true) {
+            // One byte more than the limit tells a file over it from one that just fits.
+            val wanted = minOf(buffer.size.toLong(), limit + 1L - out.size()).toInt()
+            val count = input.read(buffer, 0, wanted)
+            if (count < 0) return out.toByteArray()
+            out.write(buffer, 0, count)
+            if (out.size() > limit) {
+                throw InvalidFontException(
+                    InvalidFontException.Kind.TooLarge,
+                    "file of more than $limit bytes",
+                )
+            }
+        }
+    }
+
     /** Saves [fonts] in place of the saved fonts. */
     fun save(fonts: List<SanitizedFont>) {
         directory.deleteRecursively()
@@ -124,5 +148,9 @@ class FontStore(private val directory: File, private val limits: FontLimits) {
             File(directory, "%03d.ttf".format(i)).writeBytes(font.toByteArray())
         }
         saved = fonts
+    }
+
+    private companion object {
+        const val BUFFER_SIZE = 64 * 1024
     }
 }

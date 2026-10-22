@@ -20,6 +20,7 @@ import com.google.vtfx.font.gate.FontLimits
 import com.google.vtfx.font.gate.SanitizedFont
 import java.io.ByteArrayInputStream
 import java.io.File
+import java.io.InputStream
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -54,6 +55,23 @@ class FontStoreTest {
 
         assertTrue((result as FontStore.ImportResult.Failed).message.startsWith("Not imported"))
         assertEquals(emptyList<SanitizedFont>(), store().load().fonts)
+    }
+
+    @Test
+    fun fileLargerThanTheInputLimitIsNotReadBeyondIt() {
+        var read = 0L
+        val endless =
+            object : InputStream() {
+                override fun read(): Int = 0.also { read++ }
+
+                override fun read(b: ByteArray, off: Int, len: Int): Int = len.also { read += it }
+            }
+        val store = FontStore(directory, FontLimits(maxInputBytes = 1000))
+
+        val result = store.import({ endless }, null)
+
+        assertTrue((result as FontStore.ImportResult.Failed).message.contains("TooLarge"))
+        assertTrue("read $read bytes", read <= 1001)
     }
 
     @Test
