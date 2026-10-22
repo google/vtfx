@@ -212,7 +212,7 @@ A bar for keys not on the software keyboard (Esc, Tab, arrows, Ctrl, and so on) 
 
 - `session.sendKey(KeyStroke.Special(TerminalKey.Escape))`: sends a key.
 - `session.stickyModifiers = KeyModifiers.of(ctrl = true)`: applies modifiers to the next typed key or character. They are cleared after one use. Arming them sends the composing text first, without them. Changes, including clearing, are notified with `TerminalSessionListener.onStickyModifiersChanged`, so follow the key bar's display with it (e.g. `SampleViewModel` in `vtfx-sample`).
-- `session.sendText(text)`, `session.paste(text)`: input of text and pastes. A paste is bracketed if the host has enabled bracketed paste, and control characters are removed.
+- `session.sendText(text)`, `session.paste(text)`: input of text and pastes. `sendText` types the text, with each line break as Enter. A paste is bracketed if the host has enabled bracketed paste, and control characters are removed from both. Send text from elsewhere, such as the clipboard, with `paste`; text of several lines that the IME commits, such as Gboard's clipboard suggestion, is pasted too.
 
 ### Direct input
 

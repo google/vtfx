@@ -131,13 +131,29 @@ public class ImeEditor(
 
     /**
      * Replaces the composing text, or the selection if there is one, with [text] and commits it.
+     * Text with a line break, other than a line feed alone, is pasted (section 4.2).
      */
     public fun commitText(text: CharSequence): Boolean {
         removeSelectedText()
         composing = ""
+        val committed = withoutDroppedControls(text)
+        if (isPaste(committed)) {
+            sendPaste(committed)
+        } else {
+            history += committed
+            endOperation()
+        }
+        return true
+    }
+
+    /**
+     * Commits the composing text and adds [text] after it, as typed: each line break is sent as
+     * Enter. For text from the app, which is not a paste.
+     */
+    public fun typeText(text: String) {
+        finishComposingText()
         history += withoutDroppedControls(text)
         endOperation()
-        return true
     }
 
     /** Commits the composing text, which is sent to the host. */
@@ -209,7 +225,8 @@ public class ImeEditor(
 
     /**
      * Replaces [start, end) with [text]. A range outside the edit buffer is rejected, since its
-     * content is unknown. The composing text is finished first.
+     * content is unknown. The composing text is finished first. Text with a line break, other than
+     * a line feed alone, is pasted with the rest of the edit buffer after it (section 4.2).
      */
     public fun replaceText(start: Int, end: Int, text: CharSequence): Boolean {
         val buffer = this.text
@@ -218,9 +235,15 @@ public class ImeEditor(
         if (from < 0 || to > buffer.length) return false
         if (splitsSurrogatePair(buffer, from) || splitsSurrogatePair(buffer, to)) return false
         selectionFrom = -1
-        history = buffer.substring(0, from) + withoutDroppedControls(text) + buffer.substring(to)
+        val replacement = withoutDroppedControls(text)
         composing = ""
-        endOperation()
+        if (isPaste(replacement)) {
+            history = buffer.substring(0, from)
+            sendPaste(replacement + buffer.substring(to))
+        } else {
+            history = buffer.substring(0, from) + replacement + buffer.substring(to)
+            endOperation()
+        }
         return true
     }
 
@@ -334,6 +357,14 @@ public class ImeEditor(
         selectionFrom = -1
         history += composing
         composing = ""
+        sendPaste(text)
+    }
+
+    /**
+     * Sends the edits not sent yet, even during a batch edit, and then [text] as a paste, and
+     * resets (section 6.4).
+     */
+    private fun sendPaste(text: String) {
         flush()
         listener.send(HostInput.Paste(text))
         requestReset()
@@ -456,6 +487,14 @@ public class ImeEditor(
                     (it < ' ' && it != '\t' && it != '\n' && it != '\r') || it in '\u007f'..'\u009f'
                 }
                 .toString()
+
+        /**
+         * Whether committed [text] is a paste rather than typing: it has a line break, and is not a
+         * line feed alone, which is how an IME commits Enter. An IME commits a clipboard suggestion
+         * as text, and its lines must not run one by one (docs/decisions/0050).
+         */
+        private fun isPaste(text: String): Boolean =
+            text != "\n" && text.any { it == '\n' || it == '\r' }
 
         private fun splitsSurrogatePair(text: String, index: Int): Boolean =
             index in 1 until text.length &&

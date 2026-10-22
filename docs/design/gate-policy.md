@@ -18,9 +18,9 @@ The defaults and the reasons for them are in [decisions/0006](../decisions/0006-
 | Method | What it sends |
 |---|---|
 | `sendKey(stroke, modes)` | The bytes xterm sends for the key and modifiers under the terminal modes (application cursor keys and so on), encoded by `KeyEncoder` inside the gate. Its inputs are only the key, the modifiers, and the modes, which are enums, booleans, and the code point of a character key, so no text from the host can reach the output ([decisions/0005](../decisions/0005-key-bytes-through-gate.md)). Only Ctrl makes a control from a character: a character key whose code point is itself a control (C0, DEL, or C1) sends nothing, and an unpaired surrogate is sent as U+FFFD, as in text (section 2.1). |
-| `sendText(text)` | Text that the user typed or the IME committed, converted as in section 2.1. |
+| `sendText(text)` | Text that the user typed or the IME committed on one line, converted as in section 2.1. |
 | `sendDeletes(count)` | `count` DELs, which erase text already sent in IME editing. A count outside 1 to 65536 is a programming error. |
-| `sendPaste(text, bracketed)` | Pasted text, converted as in section 2.1, and wrapped in `ESC [ 200 ~` and `ESC [ 201 ~` when `bracketed`. |
+| `sendPaste(text, bracketed)` | Pasted text, converted as in section 2.1, and wrapped in `ESC [ 200 ~` and `ESC [ 201 ~` when `bracketed`. Text of several lines that the IME commits, such as a clipboard suggestion, is a paste too (section 4.2 of [ime-contract.md](ime-contract.md), [decisions/0050](../decisions/0050-ime-text-of-several-lines-is-a-paste.md)). |
 | `sendReply(query, colors)` | The reply to a query (section 3). |
 | `sendMouse(report, tracking, encoding)` | A mouse report, only if the host asked for this kind of event with the tracking mode. Positions that the encoding cannot express are not sent. |
 | `sendFocus(focused)` | `CSI I` or `CSI O`. |

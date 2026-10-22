@@ -661,12 +661,13 @@ public class TerminalSession(
         notifyUserInput()
     }
 
-    /** Sends text as if typed. Composing text is committed first. */
+    /**
+     * Sends text as if typed. Composing text is committed first. Each line break is sent as Enter,
+     * even if the host enabled bracketed paste: send text from elsewhere, such as the clipboard,
+     * with [paste].
+     */
     public fun sendText(text: String) {
-        input {
-            it.finishComposingText()
-            it.commitText(text)
-        }
+        input { it.typeText(text) }
         notifyUserInput()
     }
 
