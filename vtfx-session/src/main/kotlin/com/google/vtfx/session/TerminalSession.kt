@@ -322,18 +322,9 @@ public class TerminalSession(
                             if (stickyModifiersState.isEmpty)
                                 outbox += { writer.sendText(input.text) }
                             else sendTextWithModifiers(input.text, modes)
-                        is HostInput.Delete -> {
-                            // The count is bounded by the history's limit and the DELs before the
-                            // history, twice the limit, far below what the writer takes at once.
-                            // It is split anyway, so that the editor's limit is not tied to the
-                            // writer's.
-                            var remaining = input.count
-                            while (remaining > 0) {
-                                val count = minOf(remaining, DELETES_PER_WRITE)
-                                outbox += { writer.sendDeletes(count) }
-                                remaining -= count
-                            }
-                        }
+                        // The count is bounded by the history's limit and the DELs before the
+                        // history, twice the default limit, far below what the writer takes.
+                        is HostInput.Delete -> outbox += { writer.sendDeletes(input.count) }
                         is HostInput.Key -> {
                             val stroke =
                                 if (keepStickyModifiers) input.stroke
@@ -818,9 +809,6 @@ public class TerminalSession(
 
         /** The number of rows until the session is resized. */
         public val DEFAULT_ROWS: Int = 24
-
-        /** DELs per call of `HostWriter.sendDeletes`, well below its limit. */
-        private const val DELETES_PER_WRITE = 4096
     }
 }
 
