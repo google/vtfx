@@ -149,4 +149,3 @@ Only open reports are listed.
 
 | Report | Target | State |
 |---|---|---|
-| [2026-10-22-device-checks.md](2026-10-22-device-checks.md) | `c8ca7d7` | Open |
