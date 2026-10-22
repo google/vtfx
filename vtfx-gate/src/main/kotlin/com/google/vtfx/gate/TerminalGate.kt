@@ -71,7 +71,18 @@ public class TerminalGate(
         clipboard != null &&
             policy.allowClipboardWrite &&
             ClipboardSelection.parse(selection) != null &&
-            text.length <= policy.maxClipboardWriteLength
+            text.length <= policy.maxClipboardWriteLength &&
+            text.none { isHidingInClipboard(it) }
+
+    /**
+     * Returns whether [c] must not be in text that the host puts on the clipboard: a control other
+     * than HT, LF, and CR, which pasted into another app could run commands there, or a bidi
+     * control, which reorders the text that the clipboard preview shows (docs/decisions/0059).
+     */
+    private fun isHidingInClipboard(c: Char): Boolean =
+        (c < ' ' && c != '\t' && c != '\n' && c != '\r') ||
+            c in '\u007f'..'\u009f' ||
+            c in BIDI_CONTROLS
 
     /**
      * Replies with OSC 52, built by [Replies], and returns whether it replied. The reply carries
@@ -210,6 +221,10 @@ public class TerminalGate(
 
     private companion object {
         const val MAX_URL_LENGTH = 8192
+
+        /** The characters with the Bidi_Control property of Unicode. */
+        const val BIDI_CONTROLS =
+            "\u061c\u200e\u200f\u202a\u202b\u202c\u202d\u202e\u2066\u2067\u2068\u2069"
 
         /**
          * The schemes in which [isAllowedUrl] refuses userinfo and characters that are not ASCII in

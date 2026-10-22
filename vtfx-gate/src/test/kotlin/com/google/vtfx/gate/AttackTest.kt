@@ -202,6 +202,37 @@ class AttackTest {
             assertEquals(listOf("100", "next"), clipboard.writes)
         }
 
+        // Pasted into another app, controls could run commands, and bidi controls reorder what the
+        // preview of the clipboard shows.
+        @Test
+        fun writeWithControlsOrBidiControlsIsRefused() {
+            val gate = gate(GatePolicy(allowClipboardWrite = true))
+            for (text in
+                listOf(
+                    "a\u001b[201~b",
+                    "a\u0000",
+                    "a\u007f",
+                    "a\u0085",
+                    "a\u009b",
+                    "\u202ea",
+                    "a\u2066",
+                )) {
+                host(gate, "\u001b]52;c;${base64(text)}\u0007")
+            }
+
+            assertEquals(emptyList(), clipboard.writes)
+        }
+
+        @Test
+        fun writeWithLineBreaksTabsAndEmojiSequencesIsAllowed() {
+            val gate = gate(GatePolicy(allowClipboardWrite = true))
+            val text = "a\tb\r\nc\n\ud83d\udc68\u200d\ud83d\udc69\u2764\ufe0f"
+
+            host(gate, "\u001b]52;c;${base64(text)}\u0007")
+
+            assertEquals(listOf(text), clipboard.writes)
+        }
+
         // Before Android 13 the OS shows no preview of the clipboard, so a host could replace it
         // unnoticed (docs/decisions/0006).
         @Test
