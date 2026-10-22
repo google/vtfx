@@ -154,7 +154,7 @@ Keys arriving from the IME through `sendKeyEvent` and physical keys the IME did 
 
 When `KEYCODE_DEL` or another non-character key arrives while there is composing text, from the IME, a physical keyboard, or the app's API (an extra key bar and so on), the composing text is committed and sent first, and then the key is sent ([decisions/0004](../decisions/0004-ime-editor-details.md)).
 
-When the app arms sticky modifiers (`TerminalSession.stickyModifiers`) while there is composing text, the composing text is committed and sent first, without the modifiers, and the input history is reset, so that the modifiers apply only to what is typed after them ([decisions/0033](../decisions/0033-sticky-modifiers-and-composing-text.md)).
+When the app arms sticky modifiers (`TerminalSession.stickyModifiers`), the composing text, if any, is committed and sent first, without the modifiers, and the input history is reset, so that the modifiers apply only to what is typed after them, and not to text typed before that the IME corrects or reconverts later ([decisions/0033](../decisions/0033-sticky-modifiers-and-composing-text.md), [decisions/0055](../decisions/0055-arming-sticky-modifiers-resets.md)).
 
 ### 6.4 Others
 

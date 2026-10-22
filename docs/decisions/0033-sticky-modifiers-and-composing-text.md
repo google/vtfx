@@ -1,6 +1,6 @@
 # Sticky modifiers and the composing text
 
-- Status: Approved (2026-10-20, approved by a human in a review of the review queue)
+- Status: Approved (2026-10-20, approved by a human in a review of the review queue); the item on arming without composing text superseded by [0055](0055-arming-sticky-modifiers-resets.md), and the wait of the reset for the end of the batch by [0054](0054-resets-during-batch-edits.md)
 - Date: 2026-10-15
 - Related: Requirement 5.4, section 8 of [compose-input.md](../design/compose-input.md), [0012](0012-touch-and-selection.md), [ime-contract.md](../design/ime-contract.md) section 6.3, `TerminalSession.stickyModifiers`, `ImeEditor.sendPendingInput`
 

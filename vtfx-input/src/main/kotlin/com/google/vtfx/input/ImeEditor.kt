@@ -401,16 +401,15 @@ public class ImeEditor(
     /**
      * Commits the composing text and sends it with the edits not sent yet, even during a batch
      * edit, so that a change that applies to later input, such as the app arming sticky modifiers,
-     * does not apply to it (section 6.3). Resets if there was composing text, since the IME still
-     * has it.
+     * does not apply to it (section 6.3). Then resets, so that the IME can no longer correct the
+     * text typed before, which would be sent again with the change; the reset restarts the IME only
+     * if it saw an edit since the last restart (docs/decisions/0055).
      */
     public fun sendPendingInput() {
         selectionFrom = -1
-        val hadComposingText = composing.isNotEmpty()
         history += composing
         composing = ""
-        flush()
-        if (hadComposingText) requestReset()
+        requestReset()
     }
 
     // --- Resets (section 5) ---

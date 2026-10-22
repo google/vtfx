@@ -412,11 +412,29 @@ class TerminalSessionTest {
     }
 
     @Test
-    fun armingStickyModifiersWithoutComposingTextDoesNotRestartTheIme() {
-        session.edit { it.commitText("ab") }
+    fun stickyModifiersDoNotApplyToTextTypedBeforeArmingThatTheImeCorrects() {
+        session.edit { it.commitText("teh") }
+        session.stickyModifiers = KeyModifiers.of(ctrl = true)
+        // The text typed before arming is out of the IME's reach, so no Ctrl+H is sent.
+        assertFalse(session.edit { it.replaceText(0, 3, "the") })
+        assertEquals("teh", sent.toString())
+        assertEquals(1, restarts)
+        session.sendText("c")
+        assertEquals("teh\u0003", sent.toString())
+    }
+
+    @Test
+    fun stickyModifiersDoNotApplyToReconvertedTextTypedBeforeArming() {
+        session.edit { it.commitText("teh") }
+        session.stickyModifiers = KeyModifiers.of(ctrl = true)
+        assertFalse(session.edit { it.setComposingRegion(0, 3) })
+        assertEquals("teh", sent.toString())
+    }
+
+    @Test
+    fun armingStickyModifiersWithNothingTypedDoesNotRestartTheIme() {
         session.stickyModifiers = KeyModifiers.of(ctrl = true)
         session.stickyModifiers = KeyModifiers.None
-        assertEquals("ab", session.edit { it.text })
         assertEquals(0, restarts)
         assertEquals(
             listOf(KeyModifiers.of(ctrl = true), KeyModifiers.None),

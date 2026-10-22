@@ -276,7 +276,8 @@ public class TerminalSession(
             // The modifiers are changed inside the input operation, which reports the change.
             input(notifySent = true) { editor ->
                 if (value == stickyModifiersState) return@input
-                // Text typed before the modifiers must not take them (docs/decisions/0033).
+                // Text typed before the modifiers must not take them, not even when the IME
+                // corrects it later (docs/decisions/0033, docs/decisions/0055).
                 if (!value.isEmpty) editor.sendPendingInput()
                 stickyModifiersState = value
             }

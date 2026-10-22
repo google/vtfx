@@ -485,12 +485,15 @@ class ImeEditorTest {
     }
 
     @Test
-    fun pendingInputWithoutComposingTextDoesNotReset() {
+    fun pendingInputWithoutComposingTextResets() {
         editor.commitText("ab")
         editor.sendPendingInput()
         assertEquals(listOf<HostInput>(text("ab")), sent)
-        assertEquals("ab", editor.text)
-        assertEquals(0, restarts)
+        // The IME could otherwise correct the text later, after the app armed its modifiers.
+        assertEquals("", editor.text)
+        assertEquals(1, restarts)
+        editor.sendPendingInput()
+        assertEquals(1, restarts)
     }
 
     @Test
