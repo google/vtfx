@@ -27,6 +27,7 @@ import com.google.vtfx.core.TerminalLimits
 import java.util.Base64
 import kotlin.random.Random
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.junit.Test
@@ -580,6 +581,17 @@ class AttackTest {
                 OpenUrlResult.Opened,
                 gate(GatePolicy(urlSchemes = setOf("mailto"))).openUrl("mailto:a@b"),
             )
+        }
+
+        // Android throws FileUriExposedException when an app targeting API 24 or later starts an
+        // activity for a file: URI, so allowing the scheme would let a host link crash the app.
+        @Test
+        fun fileSchemeCannotBeAllowed() {
+            for (scheme in listOf("file", "FILE", "File")) {
+                assertFailsWith<IllegalArgumentException>(scheme) {
+                    GatePolicy(urlSchemes = setOf("https", scheme))
+                }
+            }
         }
 
         @Test

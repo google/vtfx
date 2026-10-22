@@ -113,6 +113,10 @@ public class GatePolicy(
      * case-insensitive. They apply to every link that the app opens through vtfx: OSC 8 hyperlinks,
      * URLs found in the text, and URLs that the app's link patterns build. Which text becomes a
      * link is decided by the link patterns, not by this set.
+     *
+     * `file` may not be given: Android throws `FileUriExposedException` when an app that targets
+     * API 24 or later starts an activity for a `file:` URL, so a link from the host would crash the
+     * app.
      */
     public val urlSchemes: Set<String> = urlSchemes.mapTo(LinkedHashSet()) { it.lowercase() }
 
@@ -120,6 +124,8 @@ public class GatePolicy(
         require(maxClipboardWriteLength >= 0) { "maxClipboardWriteLength must not be negative" }
         require(maxClipboardReadLength >= 0) { "maxClipboardReadLength must not be negative" }
         require(this.urlSchemes.none { it.isEmpty() }) { "schemes must not be empty" }
+        // docs/decisions/0058.
+        require("file" !in this.urlSchemes) { "file URLs cannot be opened in another app" }
     }
 
     public companion object {
