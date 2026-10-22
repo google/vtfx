@@ -121,7 +121,8 @@ class TerminalInputViewTest {
         val input = focusAndType(first)
         input.setComposingText("か", 1)
         view.dispatchWindowFocusChanged(false)
-        assertEquals("oldか", input.getTextBeforeCursor(100, 0).toString())
+        // The history is reset at once; only the restart waits for the composition.
+        assertEquals("か", input.getTextBeforeCursor(100, 0).toString())
         input.finishComposingText()
         assertEquals("\u001b[Oか", first.take())
         assertEquals("", input.getTextBeforeCursor(100, 0).toString())

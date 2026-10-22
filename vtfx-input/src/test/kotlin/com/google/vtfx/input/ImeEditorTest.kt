@@ -421,11 +421,13 @@ class ImeEditorTest {
     }
 
     @Test
-    fun characterKeyIsCommittedAfterTheComposingText() {
+    fun characterKeyIsCommittedAfterTheComposingTextAndResets() {
         editor.setComposingText("か")
         editor.onKeyDown(KeyStroke.Character('x'.code))
         assertEquals(listOf<HostInput>(text("かx")), sent)
-        assertEquals(0, restarts)
+        // The IME still has the composing text, which the host received (docs/decisions/0054).
+        assertEquals("", editor.text)
+        assertEquals(1, restarts)
     }
 
     @Test
@@ -473,7 +475,8 @@ class ImeEditorTest {
         editor.setComposingText("か")
         editor.sendPendingInput()
         assertEquals(listOf(delete(1), text("か")), sent)
-        assertEquals("aか", editor.text)
+        // The history is reset at once, and only the restart waits.
+        assertEquals("", editor.text)
         assertEquals(0, restarts)
         assertFalse(editor.endBatchEdit())
         assertEquals(listOf(delete(1), text("か")), sent)
@@ -491,15 +494,74 @@ class ImeEditorTest {
     }
 
     @Test
-    fun resetWaitsForTheCompositionToFinish() {
+    fun theRestartWaitsForTheCompositionToFinish() {
         editor.commitText("a")
         editor.setComposingText("か")
         editor.requestReset()
         assertEquals(0, restarts)
-        assertEquals("aか", editor.text)
+        // The history is reset at once; the composing text stays, since the IME has it.
+        assertEquals("か", editor.text)
         editor.finishComposingText()
         assertEquals(1, restarts)
         assertEquals("", editor.text)
+    }
+
+    @Test
+    fun aPasteInABatchResetsForTheRestOfTheBatch() {
+        editor.commitText("ab")
+        editor.beginBatchEdit()
+        editor.paste("XY")
+        assertFalse(editor.replaceText(0, 2, "cd"))
+        assertFalse(editor.endBatchEdit())
+        assertEquals(listOf(text("ab"), HostInput.Paste("XY")), sent)
+    }
+
+    @Test
+    fun aKeyInABatchResetsForTheRestOfTheBatch() {
+        editor.commitText("ab")
+        editor.beginBatchEdit()
+        editor.onKeyDown(KeyStroke.Special(TerminalKey.Left))
+        assertFalse(editor.replaceText(0, 2, "cd"))
+        assertFalse(editor.endBatchEdit())
+        assertEquals(
+            listOf<HostInput>(text("ab"), HostInput.Key(KeyStroke.Special(TerminalKey.Left))),
+            sent,
+        )
+    }
+
+    @Test
+    fun aResetInABatchSendsTheEditsMadeBeforeIt() {
+        editor.commitText("ab")
+        editor.beginBatchEdit()
+        editor.replaceText(1, 2, "c")
+        editor.requestReset()
+        assertEquals(listOf(text("ab"), delete(1), text("c")), sent)
+        assertEquals("", editor.text)
+        editor.deleteSurroundingText(1, 0)
+        assertFalse(editor.endBatchEdit())
+        // The deletion reaches before the empty history, as BS.
+        assertEquals(listOf(text("ab"), delete(1), text("c"), delete(1)), sent)
+        assertEquals(1, restarts)
+    }
+
+    @Test
+    fun aBackspaceThatCommitsTheComposingTextResets() {
+        editor.setComposingText("か")
+        editor.onKeyDown(KeyStroke.Special(TerminalKey.Backspace))
+        assertEquals(
+            listOf(text("か"), HostInput.Key(KeyStroke.Special(TerminalKey.Backspace))),
+            sent,
+        )
+        assertEquals("", editor.text)
+        assertEquals(1, restarts)
+    }
+
+    @Test
+    fun aCharacterKeyWithoutComposingTextKeepsTheHistory() {
+        editor.commitText("a")
+        editor.onKeyDown(KeyStroke.Character('b'.code))
+        assertEquals("ab", editor.text)
+        assertEquals(0, restarts)
     }
 
     @Test

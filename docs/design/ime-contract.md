@@ -88,6 +88,7 @@ This removal of control characters is not a defense against a malicious IME, bec
 | Switching the alternate screen, resetting the terminal (RIS) | Same as above. Also reset when the cursor's row does not change, or when switching to the alternate screen and back within one receive (`Terminal.lineChanges`). |
 | Focus was lost | Input was interrupted. A session receives input only while it is connected to the focused View and the window also has focus. Whether the View or the window loses focus, and also when the View reconnects to another session or leaves the screen, the previous session loses focus. Focus notifications to the host (mode 1004) follow the same judgment. |
 | The input history exceeded its limit | Invariant 5. |
+| A character key or BS committed the composing text (6.3) | The IME still has the composing text, which the host received, and would commit it again; `updateSelection` does not make IMEs drop their composition ([decisions/0054](../decisions/0054-resets-during-batch-edits.md)). |
 
 BS (`KEYCODE_DEL`) does not reset. BS is treated as an edit that erases the last code point of the input history (6.3).
 
@@ -95,9 +96,9 @@ A reset that host output triggers applies to every edit made after the output wa
 
 ### 5.2 Reset procedure
 
-1. When there is composing text, delay the reset until it is gone, because `restartInput` forcibly commits the composition. The exception is the limit of the input history (invariant 5): the composing text is then committed and sent first, as `restartInput` would commit it.
-2. Empty the input history.
-3. Call `InputMethodManager.restartInput`, unless the editing buffer has not changed since the last restart (or since the connection, if there was no restart), so that the IME already has it empty. Host output that moves the cursor to another line then does not restart the IME on every receive while the user types nothing. A display posts at most one restart to the main thread at a time.
+1. Send the edits not sent yet, even during a batch edit: they were made before the reset.
+2. Empty the input history at once, even during a batch edit and while there is composing text, so that the IME's later edits apply to the empty history: a replacement of the old text is rejected as outside the editing buffer, and a deletion of it is sent as BS (6.1). The composing text stays, since the IME still has it. At the limit of the input history (invariant 5), the composing text is committed and sent first, as `restartInput` would commit it.
+3. Once the batch edit has ended and there is no composing text (`restartInput` forcibly commits the composition), drop what was committed since the reset from the input history, and call `InputMethodManager.restartInput`, unless the editing buffer has not changed since the last restart (or since the connection, if there was no restart), so that the IME already has it empty. Host output that moves the cursor to another line then does not restart the IME on every receive while the user types nothing. A display posts at most one restart to the main thread at a time.
 
 ## 6. Contract for each call
 
@@ -146,9 +147,9 @@ Keys arriving from the IME through `sendKeyEvent` and physical keys the IME did 
 | Key | Effect |
 |---|---|
 | Any key up | Ignored: keys act on down ([decisions/0004](../decisions/0004-ime-editor-details.md)). |
-| `KEYCODE_DEL` | Sends DEL. If the input history is not empty, erases its last code point. |
+| `KEYCODE_DEL` | Sends DEL. If the input history is not empty, erases its last code point. If it committed composing text, resets (5.1). |
 | `KEYCODE_ENTER`, `KEYCODE_NUMPAD_ENTER` | Sends CR and resets. |
-| Keys that produce a character (`getUnicodeChar` is not 0, and the only modifier is Shift) | Commits the composing text, if any, and adds the character after it, like `commitText` of the character. |
+| Keys that produce a character (`getUnicodeChar` is not 0, and the only modifier is Shift) | Commits the composing text, if any, and adds the character after it, like `commitText` of the character. If there was composing text, resets (5.1). |
 | Anything else | Sends it with `vtfx-gate`'s key encoding and resets. |
 
 When `KEYCODE_DEL` or another non-character key arrives while there is composing text, from the IME, a physical keyboard, or the app's API (an extra key bar and so on), the composing text is committed and sent first, and then the key is sent ([decisions/0004](../decisions/0004-ime-editor-details.md)).
@@ -205,8 +206,8 @@ What `ImeEditor` does in the cases that the tables of section 6 leave open ([dec
 |---|---|
 | `setComposingRegion` with a range that does not end at the cursor | Rejected (`false`). Making it composing text would leave committed text after the composing text, against invariant 1. An empty range finishes the composition, as in `BaseInputConnection`. |
 | `replaceText` while there is composing text | The composing text is committed first, then the range is replaced, and the whole result becomes the input history. |
-| A character key while there is composing text | The composing text is committed, and the character is added after it. The composing text is not replaced by the character. |
-| BS or a non-character key while there is composing text | The composing text is committed and sent, then the key is sent, so that the host receives them in the order typed. This applies to keys from the IME, from physical keyboards, and from the app's API alike. |
+| A character key while there is composing text | The composing text is committed, and the character is added after it. The composing text is not replaced by the character. Then the input history is reset, so that the IME, which still has the composing text, restarts ([decisions/0054](../decisions/0054-resets-during-batch-edits.md)). |
+| BS or a non-character key while there is composing text | The composing text is committed and sent, then the key is sent, so that the host receives them in the order typed, and the input history is reset. This applies to keys from the IME, from physical keyboards, and from the app's API alike. |
 | Key up | Ignored, whatever key it is. No state tracks which downs have had their ups. |
 | The part of `deleteSurroundingText` before the input history | One DEL per UTF-16 code unit, since the content of that text is unknown and cannot be counted in code points (`deleteSurroundingTextInCodePoints` counts code points). At most the limit of the input history in total (section 6.1). |
 | Text from the app (`TerminalSession.sendText`, `ImeEditor.typeText`) | The composing text is committed and sent, then the text, each line break as Enter, at once even during a batch edit, since the app's call is not part of the IME's edit. The input history is then reset, so that the IME never sees the app's text, which may be a secret such as a saved password. The reset restarts the IME only if it saw an edit since the last restart (5.2) ([decisions/0056](../decisions/0056-app-text-not-shown-to-the-ime.md)). |

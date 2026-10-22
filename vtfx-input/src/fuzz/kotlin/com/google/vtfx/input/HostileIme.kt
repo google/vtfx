@@ -44,13 +44,6 @@ internal object HostileIme {
         val line = StringBuilder(prompt)
         var largestDelete = 0
 
-        /**
-         * Whether a key other than Backspace was sent and the editor has not reset since. The
-         * editor's history then no longer matches the host's line, until the reset that waits for
-         * the composing text to finish (docs/design/ime-contract.md section 5).
-         */
-        var awaitingReset = false
-
         override fun send(input: HostInput) {
             when (input) {
                 is HostInput.Text -> line.append(input.text)
@@ -65,22 +58,16 @@ internal object HostileIme {
                         KeyStroke.Special(TerminalKey.Backspace) ->
                             if (line.isNotEmpty())
                                 line.setLength(line.offsetByCodePoints(line.length, -1))
-                        KeyStroke.Special(TerminalKey.Enter) -> {
-                            line.append('\n')
-                            awaitingReset = true
-                        }
-                        else -> awaitingReset = true
+                        KeyStroke.Special(TerminalKey.Enter) -> line.append('\n')
+                        // The host's line can no longer be predicted, but the editor resets its
+                        // history at once, so its later edits apply only to what follows.
+                        else -> {}
                     }
-                is HostInput.Paste -> {
-                    line.append(input.text)
-                    awaitingReset = true
-                }
+                is HostInput.Paste -> line.append(input.text)
             }
         }
 
-        override fun restartInput() {
-            awaitingReset = false
-        }
+        override fun restartInput() {}
     }
 
     /**
@@ -178,7 +165,7 @@ internal object HostileIme {
         val history =
             editor.text.substring(0, editor.composingStart.takeIf { it >= 0 } ?: editor.cursor)
         check(history.codePointCount(0, history.length) <= maxHistoryLength) { context }
-        if (!editor.isBatchEditInProgress && !host.awaitingReset) {
+        if (!editor.isBatchEditInProgress) {
             // The host has exactly the committed part of the history at the end of its line.
             val committed =
                 editor.text

@@ -588,6 +588,34 @@ class TerminalSessionTest {
     }
 
     @Test
+    fun anEditInABatchOpenedBeforeOutputMovedToAnotherLineErasesNothing() {
+        session.edit { it.commitText("ls") }
+        session.edit { it.beginBatchEdit() }
+        feed("ls\r\n$ ")
+        assertFalse(session.edit { it.replaceText(0, 2, "cat") })
+        session.edit { it.endBatchEdit() }
+        assertEquals("ls", sent.toString())
+    }
+
+    @Test
+    fun anAppKeyThatCommitsTheComposingTextRestartsTheIme() {
+        // The IME would otherwise keep composing the text the host received, and send it again.
+        session.edit { it.setComposingText("か") }
+        session.sendKey(KeyStroke.Character('x'.code))
+        assertEquals("かx", sent.toString())
+        assertEquals("", session.edit { it.text })
+        assertEquals(1, restarts)
+    }
+
+    @Test
+    fun appTextThatCommitsTheComposingTextRestartsTheIme() {
+        session.edit { it.setComposingText("か") }
+        session.sendText("|")
+        assertEquals("か|", sent.toString())
+        assertEquals(1, restarts)
+    }
+
+    @Test
     fun losingFocusResetsTheIme() {
         session.edit { it.commitText("abc") }
         session.onFocusChanged(false)

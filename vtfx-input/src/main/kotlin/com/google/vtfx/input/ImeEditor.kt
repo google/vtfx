@@ -344,12 +344,16 @@ public class ImeEditor(
                 !stroke.modifiers.alt &&
                 !stroke.modifiers.meta
         ) {
+            val hadComposingText = composing.isNotEmpty()
             history +=
                 composing + withoutDroppedControls(String(Character.toChars(stroke.codePoint)))
             composing = ""
             endOperation()
+            // The IME still has the composing text, which the host received (docs/decisions/0054).
+            if (hadComposingText) requestReset()
             return
         }
+        val hadComposingText = composing.isNotEmpty()
         history += composing
         composing = ""
         flush()
@@ -360,6 +364,7 @@ public class ImeEditor(
                 history = history.substring(0, history.offsetByCodePoints(history.length, -1))
                 sentHistory = history
             }
+            if (hadComposingText) requestReset()
         } else {
             requestReset()
         }
@@ -412,12 +417,16 @@ public class ImeEditor(
 
     /**
      * Resets the input history, for example because the host moved the cursor to another line
-     * (section 5.1). If there is composing text, the reset waits until it is finished, since
-     * restarting the input would commit it.
+     * (section 5.1). The edits not sent yet are sent first, and the history is emptied at once,
+     * even during a batch edit, so that the IME's later edits do not apply to text the host's line
+     * may no longer end with. Restarting the IME's input waits for the end of the batch edit, and
+     * for the composing text to finish, since restarting the input would commit it
+     * (docs/decisions/0054).
      */
     public fun requestReset() {
-        resetPending = true
-        if (batchDepth == 0) flush()
+        flush()
+        clearHistory()
+        restartIfReady()
     }
 
     private fun endOperation() {
@@ -450,17 +459,32 @@ public class ImeEditor(
         if (deletes > 0) listener.send(HostInput.Delete(deletes))
         val added = history.substring(prefix)
         sentHistory = history
-        if (sendText(added)) resetPending = true
-        if (isHistoryOverLimit()) resetPending = true
-        if (resetPending && composing.isEmpty()) {
-            resetPending = false
-            selectionFrom = -1
-            history = ""
-            sentHistory = ""
-            if (changedSinceRestart) {
-                changedSinceRestart = false
-                listener.restartInput()
-            }
+        if (sendText(added) || isHistoryOverLimit()) clearHistory()
+        restartIfReady()
+    }
+
+    /** Empties the input history, and restarts the IME's input once it can (section 5.2). */
+    private fun clearHistory() {
+        selectionFrom = -1
+        history = ""
+        sentHistory = ""
+        resetPending = true
+    }
+
+    /**
+     * Restarts the IME's input if a reset waits for it, outside batch edits and without composing
+     * text. What was committed since the reset is dropped from the history too, since the IME
+     * restarts without it.
+     */
+    private fun restartIfReady() {
+        if (!resetPending || batchDepth > 0 || composing.isNotEmpty()) return
+        resetPending = false
+        selectionFrom = -1
+        history = ""
+        sentHistory = ""
+        if (changedSinceRestart) {
+            changedSinceRestart = false
+            listener.restartInput()
         }
     }
 
