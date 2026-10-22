@@ -296,23 +296,28 @@ internal class Line(columns: Int, style: CellStyle = CellStyle.Default) {
         if (from >= end) return
         breakWide(from)
         breakWide(end - 1)
-        codes.fill(BLANK, from, end)
-        styles.fill(style.bits, from, end)
-        clusters?.fill(null, from, end)
-        links?.fill(0, from, end)
-        underlineColors?.fill(0, from, end)
+        fillBlank(from, end, style)
     }
 
-    /** Inserts [count] blank cells at [column], shifting the cells right and dropping overflow. */
+    /**
+     * Inserts [count] blank cells at [column], shifting the cells right and dropping overflow. A
+     * wide character starting at [column] shifts whole; one that [column] splits is erased.
+     */
     fun insertBlanks(column: Int, count: Int, style: CellStyle) {
         val n = minOf(count, codes.size - column)
         if (n <= 0) return
-        breakWide(column)
+        if (codes[column] == WIDE_TAIL) {
+            // Both halves, so that the right half does not shift alone.
+            breakWide(column)
+            codes[column] = BLANK
+        }
         // A wide character split by the right edge is dropped.
         val lastKept = codes.size - n - 1
         if (lastKept >= column && isWideHead(lastKept)) erase(lastKept, lastKept + 2, style)
         shift(column, column + n, codes.size - column - n)
-        erase(column, column + n, style)
+        // The cells to fill still hold their values from before the shift, so they are filled
+        // without breakWide, which would erase half of a character that has moved.
+        fillBlank(column, column + n, style)
     }
 
     /**
@@ -420,6 +425,15 @@ internal class Line(columns: Int, style: CellStyle = CellStyle.Default) {
         }
         line.isWrapped = isWrapped
         return line
+    }
+
+    /** Fills [from, to) with blanks, without looking at the characters around it. */
+    private fun fillBlank(from: Int, to: Int, style: CellStyle) {
+        codes.fill(BLANK, from, to)
+        styles.fill(style.bits, from, to)
+        clusters?.fill(null, from, to)
+        links?.fill(0, from, to)
+        underlineColors?.fill(0, from, to)
     }
 
     private fun shift(from: Int, to: Int, length: Int) {

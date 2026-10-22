@@ -128,6 +128,58 @@ class TerminalTest {
         assertEquals(" ab ", t.lines()[0])
     }
 
+    private fun Terminal.widths(row: Int): List<Int> {
+        val line = snapshot().line(row)
+        return List(columns) { line.widthAt(it) }
+    }
+
+    private fun Terminal.cellTexts(row: Int): List<String?> {
+        val line = snapshot().line(row)
+        return List(columns) { line.textAt(it) }
+    }
+
+    @Test
+    fun insertBlanksAtAWideCharacterShiftsItWhole() {
+        for (count in 1..2) {
+            val t = terminal(6, 1)
+            t.write("あい\r\u001b[${count}@")
+            assertEquals(
+                List(count) { null } + listOf("あ", null, "い", null),
+                t.cellTexts(0).take(count + 4),
+            )
+            assertEquals(List(count) { 1 } + listOf(2, 0, 2, 0), t.widths(0).take(count + 4))
+        }
+    }
+
+    @Test
+    fun insertBlanksInTheRightHalfOfAWideCharacterErasesItWhole() {
+        for (count in 1..2) {
+            val t = terminal(5, 1)
+            t.write("あb\u001b[2G\u001b[${count}@")
+            assertEquals(List(count + 2) { null } + "b", t.cellTexts(0).take(count + 3))
+            assertEquals(List(5) { 1 }, t.widths(0))
+        }
+    }
+
+    @Test
+    fun insertModeBeforeAWideCharacterShiftsItWhole() {
+        val t = terminal(6, 1)
+        t.write("あい\r\u001b[4hx")
+        assertEquals(listOf("x", "あ", null, "い", null, null), t.cellTexts(0))
+        assertEquals(listOf(1, 2, 0, 2, 0, 1), t.widths(0))
+        t.write("\r\u001b[4hう")
+        assertEquals(listOf("う", null, "x", "あ", null, null), t.cellTexts(0))
+        assertEquals(listOf(2, 0, 1, 2, 0, 1), t.widths(0))
+    }
+
+    @Test
+    fun insertModeInTheRightHalfOfAWideCharacterErasesIt() {
+        val t = terminal(5, 1)
+        t.write("あb\u001b[2G\u001b[4hx")
+        assertEquals(listOf(null, "x", null, "b", null), t.cellTexts(0))
+        assertEquals(List(5) { 1 }, t.widths(0))
+    }
+
     @Test
     fun linesScrolledOffTheTopGoToTheScrollback() {
         val t = terminal(3, 2)

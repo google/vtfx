@@ -140,6 +140,7 @@ The policy is in [decisions/0011](../decisions/0011-unicode.md).
 - A sequence of emoji joined with ZWJ takes the cells of each emoji.
 - A pair of regional indicators (a flag) is combined into one character two cells wide, which is the width the two indicators take anyway. They are not combined across the end of a line (with a pending wrap), in insert mode, or across different hyperlinks.
 - Mode 2027 (counting a grapheme cluster as one unit) is not supported.
+- Editing keeps a wide character whole. An operation that splits one (printing over, erasing, or deleting one half of it, or inserting cells at its right half) erases both halves. ICH and insert mode at its left half shift it whole, as in xterm; one pushed past the right edge by half is dropped.
 
 ### 7.3 Drawing of characters
 
