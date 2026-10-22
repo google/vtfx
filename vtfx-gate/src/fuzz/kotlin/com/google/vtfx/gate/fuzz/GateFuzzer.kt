@@ -46,8 +46,12 @@ import java.util.Base64
  * - Bytes 3 and 4: the width of a cell in pixels, big-endian, % 1001. Bytes 5 and 6: the height,
  *   the same way. The cell size is set, as a display sets it, only if both are nonzero, so that the
  *   replies to XTWINOPS 14 and 16 are made and their ranges checked.
- * - The rest: host output. 0xFE, which does not appear in UTF-8, splits it into separate writes.
- *   The rest is also pasted, decoded as UTF-8.
+ * - The rest: host output. 0xFE, which does not appear in UTF-8, splits it into separate writes. A
+ *   write that starts with 0xFD and two more bytes first resizes the terminal to 1 + the first byte
+ *   columns and 1 + the second byte rows; one that starts with 0xFC and two more bytes first sets
+ *   the cell size to 1 + byte × 999 / 255 pixels (up to the largest allowed), as a display does
+ *   when the font changes. So the ranges of the replies are checked across sizes up to 256 × 256,
+ *   after output at another size. The rest is also pasted, decoded as UTF-8.
  */
 object GateFuzzer {
     @JvmStatic
@@ -92,7 +96,20 @@ object GateFuzzer {
         val events = mutableListOf<TerminalEvent>()
         val terminal = Terminal(columns, rows) { events += it }
         if (cellWidth != 0 && cellHeight != 0) terminal.setCellSize(cellWidth, cellHeight)
-        for (write in output.split(SPLIT)) {
+        for (part in output.split(SPLIT)) {
+            val write =
+                if (part.size >= 3 && (part[0] == RESIZE || part[0] == CELL_SIZE)) {
+                    val first = part[1].toInt() and 0xFF
+                    val second = part[2].toInt() and 0xFF
+                    if (part[0] == RESIZE) {
+                        terminal.resize(1 + first, 1 + second)
+                    } else {
+                        terminal.setCellSize(1 + first * 999 / 255, 1 + second * 999 / 255)
+                    }
+                    part.copyOfRange(3, part.size)
+                } else {
+                    part
+                }
             terminal.write(write)
             gate.handle(events.toList())
             events.clear()
@@ -170,6 +187,8 @@ object GateFuzzer {
 
     private const val HEADER_SIZE = 7
     private const val SPLIT = 0xFE.toByte()
+    private const val RESIZE = 0xFD.toByte()
+    private const val CELL_SIZE = 0xFC.toByte()
 
     /** Text with a sequence that would answer the host, were it not encoded. */
     private const val CLIPBOARD_TEXT = "x\u001b[6n\u001b]52;c;?\u0007"
