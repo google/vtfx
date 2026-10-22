@@ -87,9 +87,11 @@ internal object Names {
     }
 
     /**
-     * Removes control characters and the characters that change the direction of text, which could
-     * make the name show as something else, replaces unpaired surrogates, and cuts the name to
-     * [MAX_LENGTH] code points. Returns null for a name left empty.
+     * Removes control characters, format characters (among them those that change the direction of
+     * text, zero width ones, and tags), and line and paragraph separators, which could make the
+     * name show as something else, on more than one line, or as nothing; replaces unpaired
+     * surrogates; and cuts the name to [MAX_LENGTH] code points. Returns null for a name left
+     * blank.
      */
     private fun clean(name: String): String? {
         val out = StringBuilder()
@@ -98,40 +100,31 @@ internal object Names {
         while (i < name.length && codePoints < MAX_LENGTH) {
             val c = name[i]
             val next = name.getOrNull(i + 1)
-            if (c.isHighSurrogate() && next != null && next.isLowSurrogate()) {
-                out.append(c).append(next)
-                codePoints++
-                i += 2
-                continue
-            }
-            i++
+            val codePoint =
+                if (c.isHighSurrogate() && next != null && next.isLowSurrogate()) {
+                    Character.toCodePoint(c, next)
+                } else {
+                    c.code
+                }
+            i += Character.charCount(codePoint)
             when {
-                c.isSurrogate() -> out.append(REPLACEMENT)
-                Character.getType(c) == Character.CONTROL.toInt() || c in BIDI_FORMATTING ->
-                    continue
-                else -> out.append(c)
+                Character.isSurrogate(c) && codePoint == c.code -> out.append(REPLACEMENT)
+                Character.getType(codePoint) in REMOVED_TYPES -> continue
+                else -> out.appendCodePoint(codePoint)
             }
             codePoints++
         }
-        return out.toString().takeIf { it.isNotEmpty() }
+        return out.toString().takeIf { it.isNotBlank() }
     }
 
     private const val REPLACEMENT = '\uFFFD'
 
-    /** The marks, embeddings, overrides, and isolates of the bidirectional algorithm. */
-    private val BIDI_FORMATTING =
+    /** The general categories removed: Cc, Cf, Zl, and Zp. */
+    private val REMOVED_TYPES =
         setOf(
-            '\u061C',
-            '\u200E',
-            '\u200F',
-            '\u202A',
-            '\u202B',
-            '\u202C',
-            '\u202D',
-            '\u202E',
-            '\u2066',
-            '\u2067',
-            '\u2068',
-            '\u2069',
+            Character.CONTROL.toInt(),
+            Character.FORMAT.toInt(),
+            Character.LINE_SEPARATOR.toInt(),
+            Character.PARAGRAPH_SEPARATOR.toInt(),
         )
 }

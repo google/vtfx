@@ -21,8 +21,8 @@ package com.google.vtfx.font
  * face of a collection.
  *
  * The names come from the file, so they are untrusted text: they are cut to 64 characters and
- * stripped of control characters and of the characters that change the direction of text, but they
- * may still say anything.
+ * stripped of control characters, of format characters (such as those that change the direction of
+ * text and zero width ones), and of line and paragraph separators, but they may still say anything.
  */
 public class FaceInfo
 internal constructor(

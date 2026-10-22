@@ -108,6 +108,23 @@ class FontFileTest {
     }
 
     @Test
+    fun namesLoseLineSeparatorsAndInvisibleFormatCharacters() {
+        // Line and paragraph separators, zero width space, joiner, byte order mark, a tag
+        // character (U+E0041), and soft hyphen.
+        val name = "a\u2028b\u2029c\u200Bd\u200De\uFEFFf\uDB40\uDC41g\u00ADh"
+        val font = fontWithNames(windowsName(1, name))
+
+        assertEquals("abcdefgh", FontFile.inspect(font, limits).single().familyName)
+    }
+
+    @Test
+    fun nameLeftBlankIsNoName() {
+        val font = fontWithNames(windowsName(1, " \u200B \u3000"))
+
+        assertNull(FontFile.inspect(font, limits).single().familyName)
+    }
+
+    @Test
     fun namesAreCutTo64CodePointsWithoutSplittingSurrogatePairs() {
         val font = fontWithNames(windowsName(1, "a".repeat(63) + "\uD83D\uDE00" + "b"))
 
