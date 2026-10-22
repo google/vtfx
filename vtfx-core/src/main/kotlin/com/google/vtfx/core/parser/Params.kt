@@ -71,6 +71,9 @@ internal class Params {
 
     internal fun nextParameter(isSubParameter: Boolean) {
         started = true
+        // Saturates rather than counts every separator, so that a sequence of 2^31 separators
+        // cannot overflow the index.
+        if (index >= MAX_COUNT) return
         index++
         if (index < MAX_COUNT) {
             values[index] = 0

@@ -166,6 +166,19 @@ class ParserTest {
     }
 
     @Test
+    fun moreSeparatorsThanAnIntCanCountDoNotOverflow() {
+        val recorder = Recorder()
+        val parser = Parser(recorder, 100)
+        parser.parse("\u001b[1;2".toByteArray())
+        val separators = ByteArray(1 shl 24) { ';'.code.toByte() }
+        // 2^31 separators in total, one more than Int.MAX_VALUE.
+        repeat(128) { parser.parse(separators) }
+        parser.parse("mx".toByteArray())
+        val expected = "1;2" + ";0".repeat(Params.MAX_COUNT - 2)
+        assertEquals(listOf("csi(${expected}m)", "print(x)"), recorder.result())
+    }
+
+    @Test
     fun executesControlsInsideCsi() {
         assertEquals(listOf("execute(08)", "csi(1C)"), parse("\u001b[1\bC"))
     }
