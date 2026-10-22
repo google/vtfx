@@ -38,18 +38,20 @@ internal class LaunchOptions(
         const val EXTRA_LOCALE = "locale"
 
         /**
-         * Reads the extras with [booleanExtra] and [stringExtra]. Only a [debuggable] build takes
-         * those for testing, which log what the user types or run the benchmark: the activity is
-         * exported, so any app can start it with them (docs/decisions/0053).
+         * Reads the extras with [booleanExtra] and [stringExtra]. The activity is exported, so any
+         * app can start it with them: only a [debuggable] build takes the one that logs what the
+         * user types, and only a debuggable build or one [profileable] by the shell, as the
+         * benchmark build is, takes the one that runs the benchmark (docs/decisions/0067).
          */
         fun read(
             debuggable: Boolean,
+            profileable: Boolean,
             booleanExtra: (String) -> Boolean,
             stringExtra: (String) -> String?,
         ): LaunchOptions =
             LaunchOptions(
                 logHostInput = debuggable && booleanExtra(EXTRA_LOG_HOST_INPUT),
-                benchmark = debuggable && booleanExtra(EXTRA_BENCHMARK),
+                benchmark = (debuggable || profileable) && booleanExtra(EXTRA_BENCHMARK),
                 locale = stringExtra(EXTRA_LOCALE),
             )
     }

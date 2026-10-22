@@ -27,16 +27,17 @@ class LaunchOptionsTest {
             LaunchOptions.EXTRA_BENCHMARK to true,
         )
 
-    private fun read(debuggable: Boolean) =
+    private fun read(debuggable: Boolean, profileable: Boolean) =
         LaunchOptions.read(
             debuggable,
+            profileable,
             { extras[it] ?: false },
             { if (it == "locale") "ja" else null },
         )
 
     @Test
     fun aDebuggableBuildTakesEveryExtra() {
-        val options = read(debuggable = true)
+        val options = read(debuggable = true, profileable = false)
         assertTrue(options.logHostInput)
         assertTrue(options.benchmark)
         assertEquals("ja", options.locale)
@@ -45,9 +46,24 @@ class LaunchOptionsTest {
     @Test
     fun aReleaseBuildDoesNotLogInputOrRunTheBenchmarkForAnotherApp() {
         // The activity is exported: any app can start it with these extras.
-        val options = read(debuggable = false)
+        val options = read(debuggable = false, profileable = false)
         assertFalse(options.logHostInput)
         assertFalse(options.benchmark)
         assertEquals("ja", options.locale)
+    }
+
+    @Test
+    fun theBenchmarkBuildRunsTheBenchmark() {
+        // The benchmark build is profileable by the shell, not debuggable.
+        val options = read(debuggable = false, profileable = true)
+
+        assertTrue(options.benchmark)
+    }
+
+    @Test
+    fun theBenchmarkBuildDoesNotLogInputForAnotherApp() {
+        val options = read(debuggable = false, profileable = true)
+
+        assertFalse(options.logHostInput)
     }
 }

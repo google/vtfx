@@ -79,9 +79,9 @@ def render(serial):
     def adb(*args):
         return subprocess.run([ADB, "-s", serial, *args], capture_output=True, text=True).stdout
 
-    subprocess.run([os.path.join(ROOT, "gradlew"), "--console=plain", "-q", ":vtfx-sample:assembleDebug"], cwd=ROOT,
+    subprocess.run([os.path.join(ROOT, "gradlew"), "--console=plain", "-q", ":vtfx-sample:assembleBenchmark"], cwd=ROOT,
                    check=True)
-    adb("install", "-r", os.path.join(ROOT, "vtfx-sample", "build", "outputs", "apk", "debug", "vtfx-sample-debug.apk"))
+    adb("install", "-r", os.path.join(ROOT, "vtfx-sample", "build", "outputs", "apk", "benchmark", "vtfx-sample-benchmark.apk"))
     adb("shell", "svc", "power", "stayon", "true")
     adb("shell", "input", "keyevent", "KEYCODE_WAKEUP")
     adb("logcat", "-c")

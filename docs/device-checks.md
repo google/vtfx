@@ -18,7 +18,7 @@ adb -s SERIAL install -r vtfx-sample/build/outputs/apk/debug/vtfx-sample-debug.a
 
 The sample app is a terminal connected to a fake host (a small shell that echoes input). `help` lists the commands. The extra key bar (Esc, Tab, Ctrl, Alt, arrows, Direct) is shown only while the software keyboard is shown.
 
-The extras that can be passed at startup are as follows. A build that is not debuggable ignores `logHostInput` and `benchmark`, since the activity is exported and any app could pass them ([decisions/0053](decisions/0053-sample-test-extras-debug-only.md)).
+The extras that can be passed at startup are as follows. The activity is exported and any app could pass them, so only a debuggable build takes `logHostInput`, and only a debuggable build or the benchmark build (section 5) takes `benchmark` ([decisions/0067](decisions/0067-profileable-benchmark-build.md)).
 
 | extra | Meaning |
 |---|---|
@@ -109,7 +109,15 @@ Enable Settings → Accessibility → TalkBack, open the sample app, and type `u
 
 [decisions/0014](decisions/0014-performance.md). On the emulator (software GPU), only the UI thread's drawing time (`DRAW_DURATION`) was a target. On a real device, also check whether the time of the whole frame (`TOTAL_DURATION`) stays around 16 ms.
 
-Run it with the following steps, or with `scripts/benchmark.py --serial SERIAL`, which writes the results to `build/reports/performance.md`.
+Run it with the following steps, or with `scripts/benchmark.py --serial SERIAL`, which writes the results to `build/reports/performance.md`. The benchmark runs in the benchmark build, a release build that is not debuggable, as an app that users install is, but profileable by the shell ([decisions/0067](decisions/0067-profileable-benchmark-build.md)): a debuggable build runs much slower.
+
+```bash
+./gradlew :vtfx-sample:assembleBenchmark
+```
+
+```bash
+adb -s SERIAL install -r vtfx-sample/build/outputs/apk/benchmark/vtfx-sample-benchmark.apk
+```
 
 ```bash
 adb -s SERIAL logcat -c

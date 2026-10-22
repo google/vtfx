@@ -69,6 +69,7 @@ class MainActivity : ComponentActivity() {
         val options =
             LaunchOptions.read(
                 debuggable = applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0,
+                profileable = applicationInfo.isProfileableByShell,
                 booleanExtra = { intent.getBooleanExtra(it, false) },
                 stringExtra = { intent.getStringExtra(it) },
             )

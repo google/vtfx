@@ -1,6 +1,6 @@
 # The sample app takes its test extras only in debuggable builds
 
-- Status: Provisional
+- Status: Superseded by [0067](0067-profileable-benchmark-build.md)
 - Date: 2026-10-22
 - Related: Requirement 6.1, section 1 of [device-checks.md](../device-checks.md), `LaunchOptions` and `MainActivity` in `vtfx-sample`, `scripts/e2e_ime.py`, `scripts/benchmark.py`
 
