@@ -55,7 +55,7 @@ Names are the JVM's internal names: classes as `android/content/Intent`, nested 
 ### 4.1 Which classes are read
 
 - Each module says with `check_classes` whether its classes are checked. Every library module is checked; `vtfx-sample` is not: it plays a third-party app, which may use any capability.
-- The check reads the main classes that the module ships: in the JVM modules, the output of the source set `main`; in the Android modules, AGP's `ScopedArtifact.CLASSES` (Kotlin and Java) of each variant, in one task per variant. Class files under `META-INF/` in jars are skipped.
+- The check reads the main classes that the module ships: in the JVM modules, the output of the source set `main`; in the Android modules, AGP's `ScopedArtifact.CLASSES` (Kotlin and Java) of each variant, in one task per variant. Class files under `META-INF/` in jars are skipped. Every class file that a library's artifact ships must be one of the classes read here (section 6).
 - The classes of tests are not read: they are not shipped, and fakes in them may implement anything.
 - **The classes of the project** are the module's own and those of the projects on its compile classpath (for Android modules, the classes jars that AGP makes of them), by their exact names, so that a class of a library under a name of vtfx is not taken for one of the project. Only the rules of section 4 apply to references to them; the allowlists of section 5 cover references outside the project.
 
@@ -155,6 +155,10 @@ It leaves out `kotlin.io`, `kotlin.concurrent`, `kotlin.reflect`, `System`, `Run
 - Files under `META-INF/services/`, through which `ServiceLoader` instantiates classes.
 - `lint.jar`, which runs in the app's build.
 - Any jar besides an AAR's `classes.jar`, whose classes the checks of classes do not read.
+- Rules for R8, which apply to the app's classes: entries under `META-INF/proguard/` and `META-INF/com.android.tools/`, and an AAR's `proguard.txt`.
+- A class file that is not, byte for byte, one of the classes that `checkClassReferences` reads (section 4.1; for an AAR, those of the release variant), wherever it is in the artifact, including under `META-INF/`. The jar of a JVM module also takes in its resources, and a class file among them would otherwise be shipped unchecked ([decisions/0060](../decisions/0060-artifacts-ship-only-checked-classes.md)).
+
+An AAR's `classes.jar` is checked against the same list, as an artifact of its own.
 
 The artifact is checked rather than the source directories, so that a change to the source sets, or a plugin, cannot route around it. `vtfx-sample` is not a library, and has no such check.
 

@@ -30,7 +30,7 @@ class LibraryArtifactsTest {
                 "R.txt" to "",
             )
 
-        assertEquals(emptyList(), LibraryArtifacts.violations("library.aar", aar))
+        assertEquals(emptyList(), LibraryArtifacts.violations("library.aar", aar, NO_CLASSES))
     }
 
     @Test
@@ -43,7 +43,7 @@ class LibraryArtifactsTest {
                     )
             )
 
-        val violations = LibraryArtifacts.violations("library.aar", aar)
+        val violations = LibraryArtifacts.violations("library.aar", aar, NO_CLASSES)
 
         assertEquals(
             listOf(
@@ -64,7 +64,7 @@ class LibraryArtifactsTest {
                     )
             )
 
-        assertEquals(1, LibraryArtifacts.violations("library.aar", aar).size)
+        assertEquals(1, LibraryArtifacts.violations("library.aar", aar, NO_CLASSES).size)
     }
 
     @Test
@@ -77,7 +77,7 @@ class LibraryArtifactsTest {
                     )
             )
 
-        assertEquals(1, LibraryArtifacts.violations("library.aar", aar).size)
+        assertEquals(1, LibraryArtifacts.violations("library.aar", aar, NO_CLASSES).size)
     }
 
     @Test
@@ -90,7 +90,7 @@ class LibraryArtifactsTest {
                     )
             )
 
-        assertEquals(1, LibraryArtifacts.violations("library.aar", aar).size)
+        assertEquals(1, LibraryArtifacts.violations("library.aar", aar, NO_CLASSES).size)
     }
 
     @Test
@@ -103,7 +103,7 @@ class LibraryArtifactsTest {
                     )
             )
 
-        assertEquals(1, LibraryArtifacts.violations("library.aar", aar).size)
+        assertEquals(1, LibraryArtifacts.violations("library.aar", aar, NO_CLASSES).size)
     }
 
     @Test
@@ -112,7 +112,7 @@ class LibraryArtifactsTest {
 
         assertEquals(
             listOf("library.aar: jni/arm64-v8a/libleak.so is native code"),
-            LibraryArtifacts.violations("library.aar", aar),
+            LibraryArtifacts.violations("library.aar", aar, NO_CLASSES),
         )
     }
 
@@ -125,7 +125,7 @@ class LibraryArtifactsTest {
                 "library.jar: META-INF/services/java.nio.file.spi.FileSystemProvider registers a " +
                     "service for ServiceLoader"
             ),
-            LibraryArtifacts.violations("library.jar", jar),
+            LibraryArtifacts.violations("library.jar", jar, NO_CLASSES),
         )
     }
 
@@ -133,14 +133,14 @@ class LibraryArtifactsTest {
     fun violations_emptyDirectoryOfServices_none() {
         val jar = zip("META-INF/services/" to "")
 
-        assertEquals(emptyList(), LibraryArtifacts.violations("library.jar", jar))
+        assertEquals(emptyList(), LibraryArtifacts.violations("library.jar", jar, NO_CLASSES))
     }
 
     @Test
     fun violations_lintChecks_reportsIt() {
         val aar = zip("lint.jar" to "")
 
-        assertEquals(1, LibraryArtifacts.violations("library.aar", aar).size)
+        assertEquals(1, LibraryArtifacts.violations("library.aar", aar, NO_CLASSES).size)
     }
 
     @Test
@@ -149,7 +149,130 @@ class LibraryArtifactsTest {
 
         assertEquals(
             listOf("library.aar: libs/leak.jar is a jar whose classes are not checked"),
-            LibraryArtifacts.violations("library.aar", aar),
+            LibraryArtifacts.violations("library.aar", aar, NO_CLASSES),
+        )
+    }
+
+    @Test
+    fun violations_classThatWasChecked_none() {
+        val jar = zip("a/B.class" to "checked")
+
+        assertEquals(
+            emptyList(),
+            LibraryArtifacts.violations("library.jar", jar, classes("a/B.class" to "checked")),
+        )
+    }
+
+    @Test
+    fun violations_classThatWasNotChecked_reportsIt() {
+        // A class file among the resources, which the jar takes in besides the compiled classes.
+        val jar = zip("a/B.class" to "checked", "com/google/vtfx/gate/C.class" to "unchecked")
+
+        assertEquals(
+            listOf(
+                "library.jar: com/google/vtfx/gate/C.class is not a class that the check of " +
+                    "classes read"
+            ),
+            LibraryArtifacts.violations("library.jar", jar, classes("a/B.class" to "checked")),
+        )
+    }
+
+    @Test
+    fun violations_classDifferentFromTheCheckedOne_reportsIt() {
+        val jar = zip("a/B.class" to "replaced")
+
+        assertEquals(
+            listOf("library.jar: a/B.class is not a class that the check of classes read"),
+            LibraryArtifacts.violations("library.jar", jar, classes("a/B.class" to "checked")),
+        )
+    }
+
+    @Test
+    fun violations_secondEntryOfACheckedClass_reportsIt() {
+        // ZipOutputStream refuses a second entry of the same name, so the entry is renamed after.
+        val jar = zip("a/B.class" to "checked", "a/D.class" to "replaced").renamed("a/D", "a/B")
+
+        assertEquals(
+            listOf("library.jar: a/B.class is not a class that the check of classes read"),
+            LibraryArtifacts.violations("library.jar", jar, classes("a/B.class" to "checked")),
+        )
+    }
+
+    @Test
+    fun violations_classOfAMultiReleaseJar_reportsIt() {
+        val jar = zip("META-INF/versions/21/a/B.class" to "unchecked")
+
+        assertEquals(
+            listOf(
+                "library.jar: META-INF/versions/21/a/B.class is not a class that the check of " +
+                    "classes read"
+            ),
+            LibraryArtifacts.violations("library.jar", jar, NO_CLASSES),
+        )
+    }
+
+    @Test
+    fun violations_checkedClassInClassesJar_none() {
+        val aar = zipOf("classes.jar" to zip("a/B.class" to "checked"))
+
+        assertEquals(
+            emptyList(),
+            LibraryArtifacts.violations("library.aar", aar, classes("a/B.class" to "checked")),
+        )
+    }
+
+    @Test
+    fun violations_uncheckedClassInClassesJar_reportsIt() {
+        val aar = zipOf("classes.jar" to zip("a/B.class" to "unchecked"))
+
+        assertEquals(
+            listOf(
+                "library.aar: classes.jar!/a/B.class is not a class that the check of classes read"
+            ),
+            LibraryArtifacts.violations("library.aar", aar, NO_CLASSES),
+        )
+    }
+
+    @Test
+    fun violations_proguardRules_reportsIt() {
+        val jar = zip("META-INF/proguard/leak.pro" to "-assumevalues class a.B { boolean c(); }")
+
+        assertEquals(
+            listOf(
+                "library.jar: META-INF/proguard/leak.pro holds rules that R8 applies in the " +
+                    "app's build"
+            ),
+            LibraryArtifacts.violations("library.jar", jar, NO_CLASSES),
+        )
+    }
+
+    @Test
+    fun violations_r8Rules_reportsIt() {
+        val jar = zip("META-INF/com.android.tools/r8/leak.pro" to "")
+
+        assertEquals(1, LibraryArtifacts.violations("library.jar", jar, NO_CLASSES).size)
+    }
+
+    @Test
+    fun violations_consumerRulesOfAnAar_reportsIt() {
+        val aar = zip("proguard.txt" to "")
+
+        assertEquals(
+            listOf("library.aar: proguard.txt holds rules that R8 applies in the app's build"),
+            LibraryArtifacts.violations("library.aar", aar, NO_CLASSES),
+        )
+    }
+
+    @Test
+    fun violations_rulesInClassesJar_reportsIt() {
+        val aar = zipOf("classes.jar" to zip("META-INF/proguard/leak.pro" to ""))
+
+        assertEquals(
+            listOf(
+                "library.aar: classes.jar!/META-INF/proguard/leak.pro holds rules that R8 " +
+                    "applies in the app's build"
+            ),
+            LibraryArtifacts.violations("library.aar", aar, NO_CLASSES),
         )
     }
 
@@ -157,12 +280,26 @@ class LibraryArtifactsTest {
         const val MANIFEST =
             """<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="a.b">%s</manifest>"""
 
-        fun zip(vararg entries: Pair<String, String>): ByteArray {
+        val NO_CLASSES: Map<String, ByteArray> = emptyMap()
+
+        fun classes(vararg classes: Pair<String, String>): Map<String, ByteArray> =
+            classes.associate { (path, content) ->
+                path to content.toByteArray()
+            }
+
+        /** This zip with every occurrence of [from] in its bytes replaced by [to], as long. */
+        fun ByteArray.renamed(from: String, to: String): ByteArray =
+            String(this, Charsets.ISO_8859_1).replace(from, to).toByteArray(Charsets.ISO_8859_1)
+
+        fun zip(vararg entries: Pair<String, String>): ByteArray =
+            zipOf(*entries.map { (name, content) -> name to content.toByteArray() }.toTypedArray())
+
+        fun zipOf(vararg entries: Pair<String, ByteArray>): ByteArray {
             val bytes = ByteArrayOutputStream()
             ZipOutputStream(bytes).use { zip ->
                 for ((name, content) in entries) {
                     zip.putNextEntry(ZipEntry(name))
-                    zip.write(content.toByteArray())
+                    zip.write(content)
                     zip.closeEntry()
                 }
             }

@@ -166,10 +166,47 @@ abstract class CheckLibraryArtifactTask : DefaultTask() {
     @get:PathSensitive(PathSensitivity.NAME_ONLY)
     abstract val artifact: RegularFileProperty
 
+    /**
+     * Directories of the classes that [CheckClassReferencesTask] reads, for the JVM modules: the
+     * classes that the artifact may ship.
+     */
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val classDirectories: ConfigurableFileCollection
+
+    /** Directories of the classes of the variant of the AAR, for the Android modules. */
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val variantDirectories: ListProperty<Directory>
+
+    /** Jars of the classes of the variant of the AAR, for the Android modules. */
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val variantJars: ListProperty<RegularFile>
+
     @TaskAction
     fun run() {
+        val directories = classDirectories.files + variantDirectories.get().map { it.asFile }
+        val checkedClasses =
+            directories.flatMap { directory ->
+                directory
+                    .walk()
+                    .filter { it.isFile && it.extension == "class" }
+                    .map { it.relativeTo(directory).invariantSeparatorsPath to it.readBytes() }
+            } +
+                variantJars.get().flatMap { jar ->
+                    ZipFile(jar.asFile).use { zip ->
+                        zip.entries()
+                            .asSequence()
+                            .filter { !it.isDirectory && it.name.endsWith(".class") }
+                            .map { entry ->
+                                entry.name to zip.getInputStream(entry).use { it.readBytes() }
+                            }
+                            .toList()
+                    }
+                }
         val file = artifact.get().asFile
-        failOn(LibraryArtifacts.violations(file.name, file.readBytes()))
+        failOn(LibraryArtifacts.violations(file.name, file.readBytes(), checkedClasses.toMap()))
     }
 }
 

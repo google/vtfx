@@ -75,6 +75,7 @@ subprojects {
             tasks.register<CheckLibraryArtifactTask>("checkLibraryArtifact") {
                 description = "Checks what the jar brings into apps besides classes."
                 artifact.set(tasks.named<Jar>("jar").flatMap { it.archiveFile })
+                classDirectories.from(main.map { it.output.classesDirs })
             }
         checkBoundaries.configure { dependsOn(checkArtifact) }
     }
@@ -88,6 +89,14 @@ subprojects {
                     description = "Checks what the AAR brings into apps besides classes."
                     artifact.set(variant.artifacts.get(SingleArtifact.AAR))
                 }
+            variant.artifacts
+                .forScope(ScopedArtifacts.Scope.PROJECT)
+                .use(checkArtifact)
+                .toGet(
+                    ScopedArtifact.CLASSES,
+                    CheckLibraryArtifactTask::variantJars,
+                    CheckLibraryArtifactTask::variantDirectories,
+                )
             checkBoundaries.configure { dependsOn(checkArtifact) }
         }
     }

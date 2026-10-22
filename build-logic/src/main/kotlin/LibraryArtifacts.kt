@@ -24,7 +24,8 @@ import org.w3c.dom.Element
  * What a library's artifact (a jar or an AAR) brings into an app besides classes, which the checks
  * of classes do not see (docs/decisions/0044): permissions and components in the manifest, which
  * the app's manifest merges, native code, services for ServiceLoader, lint checks, which run in the
- * app's build, and jars embedded in an AAR.
+ * app's build, rules for R8, which apply to the app's classes, jars embedded in an AAR, and class
+ * files that the checks of classes did not read.
  */
 object LibraryArtifacts {
     /** The manifest elements that a library must not declare. */
@@ -40,26 +41,54 @@ object LibraryArtifacts {
             "provider",
         )
 
-    /** The violations in the artifact whose bytes are [artifact], named [name] in the messages. */
-    fun violations(name: String, artifact: ByteArray): List<String> {
+    /** The entries under which a jar holds rules that R8 takes from it into the app's build. */
+    private val RULE_DIRECTORIES = listOf("META-INF/proguard/", "META-INF/com.android.tools/")
+
+    /**
+     * The violations in the artifact whose bytes are [artifact], named [name] in the messages.
+     * [checkedClasses] holds the class files that the check of classes read, by their paths: every
+     * class file that the artifact ships, in it or in an AAR's `classes.jar`, must be one of them,
+     * byte for byte, so that a class file that came in otherwise, such as from the resources, is
+     * not shipped unchecked (docs/decisions/0060).
+     */
+    fun violations(
+        name: String,
+        artifact: ByteArray,
+        checkedClasses: Map<String, ByteArray>,
+    ): List<String> = entryViolations(artifact, "", checkedClasses).map { "$name: $it" }
+
+    /** The violations in the zip [bytes], whose entries are named with [prefix] in the messages. */
+    private fun entryViolations(
+        bytes: ByteArray,
+        prefix: String,
+        checkedClasses: Map<String, ByteArray>,
+    ): List<String> {
         val violations = mutableListOf<String>()
-        ZipInputStream(ByteArrayInputStream(artifact)).use { zip ->
+        ZipInputStream(ByteArrayInputStream(bytes)).use { zip ->
             while (true) {
                 val entry = zip.nextEntry ?: break
                 val path = entry.name
+                val shown = "$prefix$path"
                 when {
                     entry.isDirectory -> Unit
+                    path.endsWith(".class") ->
+                        if (!zip.readBytes().contentEquals(checkedClasses[path])) {
+                            violations += "$shown is not a class that the check of classes read"
+                        }
                     path.startsWith("jni/") || path.endsWith(".so") ->
-                        violations += "$name: $path is native code"
+                        violations += "$shown is native code"
                     path.startsWith("META-INF/services/") ->
-                        violations += "$name: $path registers a service for ServiceLoader"
-                    path == "lint.jar" ->
-                        violations += "$name: $path runs lint checks in the app's build"
+                        violations += "$shown registers a service for ServiceLoader"
+                    RULE_DIRECTORIES.any { path.startsWith(it) } || path == "proguard.txt" ->
+                        violations += "$shown holds rules that R8 applies in the app's build"
+                    path == "lint.jar" -> violations += "$shown runs lint checks in the app's build"
                     // An AAR's own classes are in classes.jar; any other jar is not checked.
-                    path.endsWith(".jar") && path != "classes.jar" ->
-                        violations += "$name: $path is a jar whose classes are not checked"
+                    path == "classes.jar" ->
+                        violations += entryViolations(zip.readBytes(), "$shown!/", checkedClasses)
+                    path.endsWith(".jar") ->
+                        violations += "$shown is a jar whose classes are not checked"
                     path == "AndroidManifest.xml" ->
-                        manifestViolations(zip.readBytes()).mapTo(violations) { "$name: $it" }
+                        manifestViolations(zip.readBytes()).mapTo(violations) { "$prefix$it" }
                 }
             }
         }
