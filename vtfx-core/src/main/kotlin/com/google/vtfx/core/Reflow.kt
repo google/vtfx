@@ -80,7 +80,14 @@ internal object Reflow {
                 while (c < contentEnd) {
                     val width = if (line.isWideHead(c)) 2 else 1
                     if (width > newColumns) {
-                        // A wide character cannot be shown one column wide; it is dropped.
+                        // A wide character cannot be shown one column wide; it is dropped. The
+                        // cursor on it stays where the character would have been: on this row,
+                        // or waiting at its end if it is full.
+                        if (hasCursor && insertion >= c && insertion < c + width) {
+                            newCursorRow = out.size - 1
+                            newPendingWrap = column == newColumns
+                            newCursorColumn = minOf(column, newColumns - 1)
+                        }
                         c += width
                         continue
                     }

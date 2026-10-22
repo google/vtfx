@@ -961,6 +961,26 @@ class TerminalTest {
     }
 
     @Test
+    fun theCursorOnAWideCharacterDroppedAtOneColumnStaysOnItsLine() {
+        val t = terminal(4, 3)
+        t.write("ab\r\nあ\r")
+        t.resize(1, 3)
+        assertEquals(CursorState(0, 2), t.cursor)
+        t.write("x")
+        assertEquals(listOf("a", "b", "x"), t.lines())
+    }
+
+    @Test
+    fun theCursorOnAWideCharacterDroppedAtOneColumnWaitsAfterTheTextBeforeIt() {
+        val t = terminal(4, 3)
+        t.write("aあ\u001b[2G")
+        t.resize(1, 3)
+        assertEquals(CursorState(0, 0), t.cursor)
+        t.write("x")
+        assertEquals(listOf("a", "x", " "), t.lines())
+    }
+
+    @Test
     fun listenerMustNotCallBack() {
         lateinit var t: Terminal
         t = Terminal(5, 1) { t.write(byteArrayOf()) }

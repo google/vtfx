@@ -134,7 +134,7 @@ The size is from 1 to `TerminalLimits.MAX_DIMENSION` in each direction, and a ce
 - The cursor moves along with the character it was on. It is reflowed as an insertion point: a cursor waiting to wrap (right after writing in the last column) is treated as the position where the next character will be written, so it stays right after the character just written; if that position is exactly the end of a new row, it stays waiting to wrap.
 - The screen shows the last rows, ending at the last row with content or the cursor, and the rows above it are the scrollback. When the height decreases, upper rows move to the scrollback so that the cursor stays on the screen, and when it increases, they come back from the scrollback.
 - The alternate screen is not reflowed: it is cut or padded with blanks, because apps on it (vim, htop, and so on) learn the new size and redraw. While it is shown, the saved cursor of the main screen (mode 1049) is reflowed with the main screen.
-- A wide character cannot be shown at width 1, so it is dropped when the width becomes 1.
+- A wide character cannot be shown at width 1, so it is dropped when the width becomes 1. A cursor on it stays at the insertion point where it was, on the same row, waiting to wrap if that row is full.
 - A resize does not count as the cursor moving to another line, so it does not reset the IME input history (5.1 of [ime-contract.md](ime-contract.md)).
 
 ## 4. Lifecycle
