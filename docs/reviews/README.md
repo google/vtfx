@@ -76,7 +76,7 @@ Prioritize in the following order. Do not report matters of taste in appearance 
   }
   ```
 
-  The init script needs the Apache License header of the other source files (`scripts/check.sh` checks it).
+  The init script needs the Apache License header of the other source files (`scripts/check.sh` checks it). Run it with `--no-configuration-cache` (`./gradlew --no-configuration-cache --init-script <script> :vtfx-session:reviewRepro`): the compile task reads the task `compileTestKotlin` when it runs, which the configuration cache, enabled in `gradle.properties`, cannot store.
 - Show the basis of the expected value with one of the requirements, design documents, decisions, spec tests, or the behavior of a reference terminal (xterm). If there is no basis and either behavior is plausible, write it not as a bug but as an item asking for a decision in section 1 of [review-queue.md](../review-queue.md).
 
 ### 2.4 Writing the report
