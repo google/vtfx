@@ -91,9 +91,19 @@ internal class Scrollback(private val capacity: Int) {
     /** Removes every line, deleting their image placements. */
     fun clear() {
         generation++
-        for (line in lines) line.anchors?.forEach { it.kill() }
+        val removed = lines.toTypedArray()
         lines.clear()
         bytes = 0L
+        for (line in removed) line.anchors?.forEach { it.kill() }
+    }
+
+    /**
+     * Forgets [placement], which was deleted while its line was here, so that the line does not
+     * keep it.
+     */
+    fun unanchor(placement: Placement) {
+        val index = placement.scrollbackSerial - firstSerial
+        if (index in 0 until lines.size) lines[index.toInt()].unanchor(placement)
     }
 
     fun forEachLink(action: (Int) -> Unit) {
@@ -130,6 +140,9 @@ internal class Scrollback(private val capacity: Int) {
     }
 
     fun toList(): List<Line> = lines.map { it.expand() }
+
+    /** The number of placements that [lines] hold, for tests. */
+    fun anchorCount(): Int = lines.sumOf { it.anchors?.size ?: 0 }
 
     /** An estimate of the memory the lines take. */
     fun estimatedBytes(): Long = bytes

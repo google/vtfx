@@ -127,6 +127,8 @@ internal class GraphicsLayer(
 
     private fun forget(placement: Placement) {
         if (placements.remove(placement) && placement.virtual) virtualCount--
+        // A placement that is neither virtual nor on a line of the screen is in the scrollback.
+        if (!placement.virtual && placement.line == null) scrollback?.unanchor(placement)
         placement.forget()
     }
 

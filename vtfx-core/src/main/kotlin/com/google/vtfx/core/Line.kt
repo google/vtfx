@@ -481,12 +481,26 @@ internal class CompactLine(
     /** The underline colors of the cells of [codes], or null if all are 0. */
     private val underlineColors: IntArray?,
     val isWrapped: Boolean,
+    anchors: Array<Placement>? = null,
+) {
     /**
      * The image placements anchored to this line, which moved here with it from the screen, or
-     * null. Some may have been deleted since, which [Placement.isAlive] tells.
+     * null. The scrollback removes those deleted since ([unanchor]), so that deleted placements do
+     * not pile up beyond the limit on placements.
      */
-    val anchors: Array<Placement>? = null,
-) {
+    var anchors: Array<Placement>? = anchors
+        private set
+
+    /** Forgets [placement], which was deleted, if it is anchored to this line. */
+    fun unanchor(placement: Placement) {
+        val placements = anchors ?: return
+        val index = placements.indexOfFirst { it === placement }
+        if (index < 0) return
+        anchors =
+            if (placements.size == 1) null
+            else Array(placements.size - 1) { placements[if (it < index) it else it + 1] }
+    }
+
     fun expand(): Line {
         val line = Line(columns, CellStyle(trailingStyle))
         for (column in codes.indices) {
@@ -519,19 +533,22 @@ internal class CompactLine(
         links?.forEach { if (it != 0) action(it) }
     }
 
-    /** An estimate of the memory this line takes, for the scrollback's budget and benchmarks. */
-    val estimatedBytes: Int
-        get() =
-            OBJECT +
-                ARRAY +
-                codes.size * 4 +
-                ARRAY +
-                styles.size * 8 +
-                (clusterText?.let { OBJECT + ARRAY + it.length * 2 } ?: 0) +
-                (clusterIndex?.let { ARRAY + it.size * 4 } ?: 0) +
-                (links?.let { ARRAY + it.size * 4 } ?: 0) +
-                (underlineColors?.let { ARRAY + it.size * 4 } ?: 0) +
-                (anchors?.let { ARRAY + it.size * 4 } ?: 0)
+    /**
+     * An estimate of the memory this line takes, for the scrollback's budget and benchmarks. It is
+     * fixed when the line is made, so that the scrollback's sum stays right as [unanchor] removes
+     * placements.
+     */
+    val estimatedBytes: Int =
+        OBJECT +
+            ARRAY +
+            codes.size * 4 +
+            ARRAY +
+            styles.size * 8 +
+            (clusterText?.let { OBJECT + ARRAY + it.length * 2 } ?: 0) +
+            (clusterIndex?.let { ARRAY + it.size * 4 } ?: 0) +
+            (links?.let { ARRAY + it.size * 4 } ?: 0) +
+            (underlineColors?.let { ARRAY + it.size * 4 } ?: 0) +
+            (anchors?.let { ARRAY + it.size * 4 } ?: 0)
 
     companion object {
         private const val OBJECT = 16

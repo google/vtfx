@@ -18,6 +18,7 @@
 
 package com.google.vtfx.core
 
+import com.google.vtfx.core.graphics.Graphics
 import com.google.vtfx.core.graphics.PlaceholderDiacritics
 import com.google.vtfx.core.graphics.PngTestEncoder
 import java.util.Base64
@@ -601,6 +602,24 @@ class GraphicsTest {
             terminal.write(apc("a=t,i=1,f=24,s=1,v=1,q=2", byteArrayOf(0, 0, 0)))
             repeat(1030) { terminal.write(apc("a=p,i=1,C=1,q=2")) }
             assertEquals(1024, terminal.graphicsLayer.placementCount)
+            terminal.checkPlacements()
+        }
+
+        @Test
+        fun deletedPlacementsDoNotStayInTheScrollback() {
+            val terminal = terminal()
+            terminal.write(apc("a=t,i=1,f=24,s=1,v=1,q=2", byteArrayOf(0, 0, 0)))
+            val place = apc("a=p,i=1,C=1,q=2")
+            repeat(4) {
+                // The top line with placements scrolls into the scrollback (SU), and the next
+                // line's placements delete them beyond the limit.
+                terminal.write("\u001b[H" + place.repeat(Graphics.MAX_PLACEMENTS) + "\u001b[S")
+            }
+            assertEquals(Graphics.MAX_PLACEMENTS, terminal.graphicsLayer.placementCount)
+            assertTrue(
+                terminal.scrollbackAnchorCount() <= Graphics.MAX_PLACEMENTS,
+                "${terminal.scrollbackAnchorCount()} placements in the scrollback",
+            )
             terminal.checkPlacements()
         }
 

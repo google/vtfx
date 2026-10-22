@@ -1118,6 +1118,8 @@ internal class Emulator(
 
     fun estimatedScrollbackBytes(): Long = scrollback.estimatedBytes()
 
+    fun scrollbackAnchorCount(): Int = scrollback.anchorCount()
+
     companion object {
         private const val BEL = 0x07
         private const val BS = 0x08

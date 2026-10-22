@@ -328,6 +328,9 @@ public class Terminal(
     /** An estimate of the memory the scrollback takes, for benchmarks (docs/decisions/0014). */
     internal fun estimatedScrollbackBytes(): Long = emulator.estimatedScrollbackBytes()
 
+    /** The number of placements that the lines of the scrollback hold, for tests. */
+    internal fun scrollbackAnchorCount(): Int = emulator.scrollbackAnchorCount()
+
     /** The images and placements of the screen displayed, for tests. */
     internal val graphicsLayer: GraphicsLayer
         get() = emulator.layer
