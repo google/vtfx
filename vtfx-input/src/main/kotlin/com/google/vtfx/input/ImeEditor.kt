@@ -155,13 +155,21 @@ public class ImeEditor(
     }
 
     /**
-     * Commits the composing text and adds [text] after it, as typed: each line break is sent as
-     * Enter. For text from the app, which is not a paste.
+     * Commits the composing text and sends [text] after it, as typed: each line break is sent as
+     * Enter. For text from the app, which is not a paste. Both are sent at once, even during a
+     * batch edit, since the app's call is not part of the IME's edit, and the input history is then
+     * reset, so that the IME never sees the app's text, which may be a secret such as a saved
+     * password (docs/decisions/0056).
      */
     public fun typeText(text: String) {
-        finishComposingText()
+        selectionFrom = -1
+        history += composing
+        composing = ""
+        flush()
         history += withoutDroppedControls(text)
-        endOperation()
+        flush()
+        // Not an edit that the IME saw: the reset restarts it only if it saw one before.
+        requestReset()
     }
 
     /** Commits the composing text, which is sent to the host. */

@@ -310,6 +310,30 @@ class ImeEditorTest {
     }
 
     @Test
+    fun typedTextIsNotKeptInTheHistory() {
+        editor.commitText("ls ")
+        editor.typeText("hunter2")
+        assertEquals(listOf<HostInput>(text("ls "), text("hunter2")), sent)
+        assertEquals("", editor.text)
+        assertEquals("", editor.textBeforeCursor(100))
+    }
+
+    @Test
+    fun typedTextDoesNotRestartTheImeThatSawNothing() {
+        editor.typeText("a")
+        assertEquals(0, restarts)
+    }
+
+    @Test
+    fun typedTextIsSentAtOnceDuringABatchEdit() {
+        editor.beginBatchEdit()
+        editor.typeText("ls")
+        assertEquals(listOf<HostInput>(text("ls")), sent)
+        assertFalse(editor.endBatchEdit())
+        assertEquals(listOf<HostInput>(text("ls")), sent)
+    }
+
+    @Test
     fun typedTextOfSeveralLinesIsSentAsEnters() {
         editor.setComposingText("か")
         editor.typeText("ls\r\nx\ny")

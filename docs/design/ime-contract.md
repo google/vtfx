@@ -13,7 +13,7 @@ This document defines, for each `InputConnection` call from the IME, what vtfx s
 | Host | What the terminal is connected to. It receives bytes. |
 | Send | Sending bytes to the host through `HostWriter` in `vtfx-gate`. |
 | Editing buffer | The text shown to the IME. It is the **input history** followed by the **composing text**. |
-| Input history | Text committed through the IME and sent since the last reset. It has already been sent to the host. |
+| Input history | Text committed through the IME and sent since the last reset. It has already been sent to the host. Text that the app sends with `TerminalSession.sendText` is sent and then reset, so it never enters the input history ([decisions/0056](../decisions/0056-app-text-not-shown-to-the-ime.md)). |
 | Composing text | Text in the IME's composing region. It has not been sent yet. |
 | Reset | Emptying the input history and notifying the IME to restart input (`restartInput`). |
 
@@ -209,6 +209,7 @@ What `ImeEditor` does in the cases that the tables of section 6 leave open ([dec
 | BS or a non-character key while there is composing text | The composing text is committed and sent, then the key is sent, so that the host receives them in the order typed. This applies to keys from the IME, from physical keyboards, and from the app's API alike. |
 | Key up | Ignored, whatever key it is. No state tracks which downs have had their ups. |
 | The part of `deleteSurroundingText` before the input history | One DEL per UTF-16 code unit, since the content of that text is unknown and cannot be counted in code points (`deleteSurroundingTextInCodePoints` counts code points). At most the limit of the input history in total (section 6.1). |
+| Text from the app (`TerminalSession.sendText`, `ImeEditor.typeText`) | The composing text is committed and sent, then the text, each line break as Enter, at once even during a batch edit, since the app's call is not part of the IME's edit. The input history is then reset, so that the IME never sees the app's text, which may be a secret such as a saved password. The reset restarts the IME only if it saw an edit since the last restart (5.2) ([decisions/0056](../decisions/0056-app-text-not-shown-to-the-ime.md)). |
 | Control characters that are not sent (4.2) | Removed from committed, composing, replacement, and character key text before it enters the editing buffer. |
 | A committed newline | A line feed alone is the Enter key. Not part of `HostInput.Text`: it is sent as the Enter key (`HostInput.Key`), so that what Enter sends (CR, or CR LF with LNM) is decided by the key encoding alone. The editing buffer is then reset (5.1). Committed text with any other line break is a paste (`HostInput.Paste`, 4.2; [decisions/0050](../decisions/0050-ime-text-of-several-lines-is-a-paste.md)). Text from the app's `sendText`, and a character key of a line break, are typed: each `\n`, `\r`, or `\r\n` is sent as the Enter key, CR LF as one. |
 
