@@ -119,23 +119,24 @@ adb -s SERIAL logcat -c
 adb -s SERIAL shell am start -S -W -n com.google.vtfx.sample/.MainActivity --ez benchmark true
 ```
 
-Wait about a minute, then read the results.
+Wait about a minute and a half, then read the results.
 
 ```bash
 adb -s SERIAL logcat -d -s VtfxRenderBenchmark:I -v raw
 ```
 
-One line of JSON appears per `scenario` (`full`: the whole screen changes every time, `scroll`: colored log lines flow one at a time).
+One line of JSON appears per `scenario` (`full`: the whole screen changes every time, `scroll`: colored log lines flow one at a time, `flood`: colored log lines fed without a break for 5 s, [decisions/0066](decisions/0066-flood-benchmark.md)).
 
 | Value | Target |
 |---|---|
 | `drawP50` of `full` (UI thread drawing) | ≤ 25 ms |
 | `drawP50` of `scroll` | ≤ 10 ms |
 | `p50` (whole frame) | Around 16 ms (on a 60 Hz device). Not a target; look at it for reference |
+| `fps` and `janky` of `flood` (frames per second, and the share of frames longer than the refresh interval), and `mbps` against `headlessMbps` | No target yet; look at them for reference |
 
 What to tell us: the device model and Android version, and the JSON lines output.
 
-The benchmark feeds an update every 16 ms. Also have the host print a large file without a break (for example `cat` of a file of several MB over SSH), and tell us whether the display keeps scrolling smoothly and keys typed meanwhile reach the host without a long delay, which the benchmark does not cover ([decisions/0065](decisions/0065-fair-state-lock.md)).
+The `flood` scene measures the frames while output comes without a break, but not input. Also have the host print a large file without a break (for example `cat` of a file of several MB over SSH), and tell us whether the display keeps scrolling smoothly and keys typed meanwhile reach the host without a long delay ([decisions/0065](decisions/0065-fair-state-lock.md)).
 
 ## 6. Han glyphs
 

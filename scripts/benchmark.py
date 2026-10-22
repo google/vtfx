@@ -18,7 +18,8 @@
 - Throughput of vtfx-core (./gradlew :vtfx-core:benchmark) and, for comparison, of xterm.js
   (@xterm/headless on Node) with the same workloads, on this machine.
 - Memory of the scrollback, by estimate, from the same benchmark.
-- Frame times of the sample app on the emulator (RenderBenchmark), if an emulator is running.
+- Frame times of the sample app on the emulator or a device (RenderBenchmark), if one is connected: updates every
+  16 ms, and a flood of output without a break (docs/decisions/0066).
 
 The targets are in docs/decisions/0014; the report marks each result against them. Not part of the
 check: timing depends on the machine.
@@ -87,7 +88,7 @@ def render(serial):
     adb("shell", "am", "start", "-S", "-W", "-n", "com.google.vtfx.sample/.MainActivity", "--ez", "benchmark", "true")
     deadline = time.time() + 300
     results = {}
-    while time.time() < deadline and len(results) < 2:
+    while time.time() < deadline and len(results) < 3:
         time.sleep(5)
         for line in adb("logcat", "-d", "-s", "VtfxRenderBenchmark:I", "-v", "raw").splitlines():
             if line.startswith("{"):
@@ -153,6 +154,23 @@ def main():
         lines += ["", "The time of the whole frame includes rasterization on the emulator's software GPU (swiftshader), so it is not a guide for real devices."]
     else:
         lines.append("Not measured on the emulator.")
+    lines += ["", "## Output without a break (flood, docs/decisions/0066)", ""]
+    flood = renders.get("flood")
+    if flood:
+        lines += [
+            "Colored log lines fed from another thread in writes of 16 KiB for 5 s. Every frame shows new rows, so a frame is",
+            "due at every vsync. Janky: the share of frames longer than the refresh interval. Without a display: the same",
+            "output into a session that no display shows, on the same device.",
+            "No target yet (docs/review-queue.md).",
+            "",
+            "| Refresh (Hz) | Frames per second | Janky | Whole frame p50 / p90 / p99 (ms) | UI thread drawing p50 / p90 (ms) | "
+            "Throughput (MB/s) | Without a display (MB/s) |",
+            "|---|---|---|---|---|---|---|",
+            f"| {flood['refreshRate']} | {flood['fps']} | {flood['janky']} % | {flood['p50']} / {flood['p90']} / "
+            f"{flood['p99']} | {flood['drawP50']} / {flood['drawP90']} | {flood['mbps']} | {flood['headlessMbps']} |",
+        ]
+    else:
+        lines.append("Not measured.")
     path = os.path.join(ROOT, "build", "reports", "performance.md")
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
