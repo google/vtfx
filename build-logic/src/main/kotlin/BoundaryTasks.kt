@@ -15,6 +15,7 @@
  */
 
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 import java.util.zip.ZipFile
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
@@ -34,6 +35,9 @@ import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
+import org.gradle.api.services.BuildService
+import org.gradle.api.services.BuildServiceParameters
+import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
@@ -43,7 +47,46 @@ import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 
-/** Fails if the projects of the build differ from the modules of `config/boundaries.toml`. */
+/** The name under which [BoundaryChecks] is registered. */
+const val BOUNDARY_CHECKS_SERVICE = "vtfxBoundaryChecks"
+
+/**
+ * The paths of the check tasks that passed in this build. [CheckModulesTask] requires all of them,
+ * so that a check that was disabled, skipped, or left out of the task graph fails the build instead
+ * of passing unseen (docs/decisions/0061).
+ */
+abstract class BoundaryChecks : BuildService<BuildServiceParameters.None> {
+    private val passed: MutableSet<String> = ConcurrentHashMap.newKeySet()
+
+    fun pass(taskPath: String) {
+        passed += taskPath
+    }
+
+    fun passed(): Set<String> = passed.toSet()
+}
+
+/**
+ * A check of the module boundaries, which reports to [BoundaryChecks] when it passes. It has no
+ * outputs, so Gradle runs it in every build that asks for it rather than taking it as up to date.
+ */
+@DisableCachingByDefault(because = "A check with no outputs")
+abstract class BoundaryCheckTask : DefaultTask() {
+    @get:ServiceReference(BOUNDARY_CHECKS_SERVICE) abstract val checks: Property<BoundaryChecks>
+
+    @TaskAction
+    fun run() {
+        check()
+        checks.get().pass(path)
+    }
+
+    /** Fails if the check finds a violation. */
+    protected abstract fun check()
+}
+
+/**
+ * Fails if the projects of the build differ from the modules of `config/boundaries.toml`, or if one
+ * of [requiredChecks] did not pass in this build.
+ */
 @DisableCachingByDefault(because = "A check with no outputs")
 abstract class CheckModulesTask : DefaultTask() {
     @get:InputFile
@@ -53,11 +96,20 @@ abstract class CheckModulesTask : DefaultTask() {
     /** The paths of all projects of the build but the root project. */
     @get:Input abstract val projectPaths: SetProperty<String>
 
+    /** The paths of the check tasks of every project, which this task depends on. */
+    @get:Input abstract val requiredChecks: SetProperty<String>
+
+    @get:ServiceReference(BOUNDARY_CHECKS_SERVICE) abstract val checks: Property<BoundaryChecks>
+
     @TaskAction
     fun run() {
+        val passed = checks.get().passed()
         val violations =
             Boundaries.parse(boundaries.get().asFile.readText())
-                .moduleViolations(projectPaths.get())
+                .moduleViolations(projectPaths.get()) +
+                (requiredChecks.get() - passed).sorted().map {
+                    "$it did not run, so what it checks was not checked"
+                }
         failOn(violations)
     }
 }
@@ -67,7 +119,7 @@ abstract class CheckModulesTask : DefaultTask() {
  * its configurations.
  */
 @DisableCachingByDefault(because = "A check with no outputs")
-abstract class CheckDependenciesTask : DefaultTask() {
+abstract class CheckDependenciesTask : BoundaryCheckTask() {
     @get:InputFile
     @get:PathSensitive(PathSensitivity.NONE)
     abstract val boundaries: RegularFileProperty
@@ -78,8 +130,7 @@ abstract class CheckDependenciesTask : DefaultTask() {
      */
     @get:Input abstract val edges: ListProperty<DependencyEdge>
 
-    @TaskAction
-    fun run() {
+    override fun check() {
         val violations =
             Boundaries.parse(boundaries.get().asFile.readText()).dependencyViolations(edges.get())
         failOn(violations)
@@ -91,7 +142,7 @@ abstract class CheckDependenciesTask : DefaultTask() {
  * module to ([Boundaries.classViolations]).
  */
 @DisableCachingByDefault(because = "A check with no outputs")
-abstract class CheckClassReferencesTask : DefaultTask() {
+abstract class CheckClassReferencesTask : BoundaryCheckTask() {
     @get:InputFile
     @get:PathSensitive(PathSensitivity.NONE)
     abstract val boundaries: RegularFileProperty
@@ -123,8 +174,7 @@ abstract class CheckClassReferencesTask : DefaultTask() {
     /** The part of [classpath] that comes from the modules of the project. */
     @get:Classpath abstract val projectClasspath: ConfigurableFileCollection
 
-    @TaskAction
-    fun run() {
+    override fun check() {
         val directories = classDirectories.files + variantDirectories.get().map { it.asFile }
         val jars = variantJars.get().map { it.asFile }
         val classFiles =
@@ -160,7 +210,7 @@ abstract class CheckClassReferencesTask : DefaultTask() {
 
 /** Fails if a library's artifact brings into apps what [LibraryArtifacts] does not allow. */
 @DisableCachingByDefault(because = "A check with no outputs")
-abstract class CheckLibraryArtifactTask : DefaultTask() {
+abstract class CheckLibraryArtifactTask : BoundaryCheckTask() {
     /** The jar of a JVM library, or the AAR of an Android library. */
     @get:InputFile
     @get:PathSensitive(PathSensitivity.NAME_ONLY)
@@ -184,8 +234,7 @@ abstract class CheckLibraryArtifactTask : DefaultTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val variantJars: ListProperty<RegularFile>
 
-    @TaskAction
-    fun run() {
+    override fun check() {
         val directories = classDirectories.files + variantDirectories.get().map { it.asFile }
         val checkedClasses =
             directories.flatMap { directory ->

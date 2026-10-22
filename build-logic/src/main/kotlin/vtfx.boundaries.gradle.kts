@@ -35,6 +35,9 @@ val artifactType = Attribute.of("artifactType", String::class.java)
 
 val boundariesFile = layout.projectDirectory.file("config/boundaries.toml")
 
+// Collects the checks that pass, so that checkBoundaries fails if one did not run.
+gradle.sharedServices.registerIfAbsent(BOUNDARY_CHECKS_SERVICE, BoundaryChecks::class) {}
+
 val checkBoundaries =
     tasks.register<CheckModulesTask>("checkBoundaries") {
         description = "Checks the module boundaries declared in config/boundaries.toml."
@@ -45,12 +48,22 @@ val checkBoundaries =
 tasks.named("check") { dependsOn(checkBoundaries) }
 
 subprojects {
+    val projectPath = path
+
+    /** Makes [check] a check that checkBoundaries runs and requires to pass. */
+    fun requireCheck(check: TaskProvider<out BoundaryCheckTask>) {
+        checkBoundaries.configure {
+            dependsOn(check)
+            requiredChecks.add("$projectPath:${check.name}")
+        }
+    }
+
     val checkDependencies =
         tasks.register<CheckDependenciesTask>("checkDependencies") {
             description = "Checks the dependencies of the module against config/boundaries.toml."
             boundaries.set(boundariesFile)
         }
-    checkBoundaries.configure { dependsOn(checkDependencies) }
+    requireCheck(checkDependencies)
 
     // What the main classes refer to. Test classes are not checked: they are not shipped.
     val moduleName = name
@@ -70,14 +83,14 @@ subprojects {
                     }
                 )
             }
-        checkBoundaries.configure { dependsOn(checkClasses) }
+        requireCheck(checkClasses)
         val checkArtifact =
             tasks.register<CheckLibraryArtifactTask>("checkLibraryArtifact") {
                 description = "Checks what the jar brings into apps besides classes."
                 artifact.set(tasks.named<Jar>("jar").flatMap { it.archiveFile })
                 classDirectories.from(main.map { it.output.classesDirs })
             }
-        checkBoundaries.configure { dependsOn(checkArtifact) }
+        requireCheck(checkArtifact)
     }
     pluginManager.withPlugin("com.android.library") {
         // The AAR that is published; the debug one is built from the same sources.
@@ -97,7 +110,7 @@ subprojects {
                     CheckLibraryArtifactTask::variantJars,
                     CheckLibraryArtifactTask::variantDirectories,
                 )
-            checkBoundaries.configure { dependsOn(checkArtifact) }
+            requireCheck(checkArtifact)
         }
     }
     for (android in androidPlugins) {
@@ -135,7 +148,7 @@ subprojects {
                         CheckClassReferencesTask::variantJars,
                         CheckClassReferencesTask::variantDirectories,
                     )
-                checkBoundaries.configure { dependsOn(checkClasses) }
+                requireCheck(checkClasses)
             }
         }
     }

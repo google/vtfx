@@ -12,13 +12,14 @@ This document describes how the build checks the module boundaries declared in `
 
 | Task | Project | Checks |
 |---|---|---|
-| `checkBoundaries` | root | The projects of the build against the modules of the rules (section 3). Depends on all the tasks below, and runs with the root project's `check`, so with `./gradlew build` in `scripts/check.sh`. |
+| `checkBoundaries` | root | The projects of the build against the modules of the rules (section 3). Depends on all the tasks below, fails if any of them did not pass in the same build, and runs with the root project's `check`, so with `./gradlew build` in `scripts/check.sh`. |
 | `checkDependencies` | each module | The dependencies between modules (section 3). |
 | `checkClassReferences` | each JVM module | The main classes (section 4). |
 | `checkClassReferences<Variant>` | each Android module | The classes of each variant (section 4). |
 | `checkLibraryArtifact` | each library | The jar or the release AAR (section 6). |
 
 - A violation fails the task with one line for each violation, which names the rule's `reason` where the rule has one.
+- Each of the checks of the modules reports to a build service when it passes, and `checkBoundaries` fails, naming the check, if one that the plugin registered did not report in the same build: a check disabled, skipped with `onlyIf`, stopped before its action, or left out with `-x` fails the build rather than passing unseen. The checks have no outputs, so Gradle runs them in every build that asks for them ([decisions/0061](../decisions/0061-check-boundaries-requires-every-check.md)).
 - The root project is not checked: it only aggregates the API reference of the library modules, and ships nothing. Its build file is under security review like every other.
 
 ## 2. The rules file
