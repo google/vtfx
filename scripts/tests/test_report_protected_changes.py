@@ -189,6 +189,36 @@ class ReportProtectedChangesTest(unittest.TestCase):
             output,
         )
 
+    def test_repository_config_reports_every_file_that_configures_the_build(self):
+        # Gradle reads these besides the Kotlin build scripts: a Groovy script takes the place of a
+        # Kotlin one in the same directory, buildSrc is built and put on the classpath of every
+        # build script, and the properties of a project configure Gradle and its plugins.
+        config = (SCRIPT.parents[1] / "config/protected-paths.toml").read_text(encoding="utf-8")
+        self.write("config/protected-paths.toml", config)
+        base = self.commit("Use the repository's config")
+        paths = [
+            "settings.gradle",
+            "build.gradle",
+            "vtfx-core/build.gradle",
+            "vtfx-core/build.gradle.kts",
+            "build-logic/settings.gradle.kts",
+            "gradle/init.gradle",
+            "vtfx-core/gradle.properties",
+            "local.properties",
+            "vtfx-core/local.properties",
+            "buildSrc/build.gradle.kts",
+            "buildSrc/src/main/kotlin/Plugin.kt",
+        ]
+        for path in paths:
+            self.write(path, "\n")
+        self.commit("Change the build")
+
+        output = self.report(base)
+
+        security_review = output.split("## security_review")[1].split("\n## ")[0]
+        for path in paths:
+            self.assertIn(f"  - `{path}`\n", security_review)
+
 
 if __name__ == "__main__":
     unittest.main()

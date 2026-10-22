@@ -166,7 +166,7 @@ The artifact is checked rather than the source directories, so that a change to 
 
 These are left to review, backed by being able to audit afterward (requirement 6.1):
 
-- The build itself: build files, the build logic, the Gradle wrapper, and dependency verification can change what is checked. They are all under security review (`config/protected-paths.toml`), and so is `config/boundaries.toml`.
+- The build itself: build files, the build logic, the Gradle wrapper, and dependency verification can change what is checked. They are all under security review (`config/protected-paths.toml`), and so is `config/boundaries.toml`. Build files are every file that Gradle and its plugins read to configure the build, at any depth: Kotlin and Groovy scripts (a Groovy script takes the place of a Kotlin one in the same directory), `buildSrc/`, and `gradle.properties` and `local.properties`.
 - How an allowed API is used: what is written to the log, what is shown to accessibility services, what a library that a module may use does inside. Tests and review keep checking these.
 - The classes of tests, which are not shipped, and `vtfx-sample`, an app.
 - A new external dependency is reviewed with its build file and `gradle/verification-metadata.xml` ([decisions/0035](../decisions/0035-dependency-verification.md)); using its classes then fails until an allowlist names them.

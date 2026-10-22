@@ -29,10 +29,16 @@ paths = [
     "vtfx-gate-android/**",
     "vtfx-font-gate/**",
     "vtfx-font-gate-android/**",
-    "settings.gradle.kts",
-    "build.gradle.kts",
-    "**/build.gradle.kts",
+    # Every file that Gradle or its plugins read to configure the build, at any depth: Groovy
+    # scripts, which take the place of Kotlin ones in the same directory, buildSrc, which is built
+    # and put on the classpath of every build script, and the properties of each project.
+    "*.gradle.kts",
+    "*.gradle",
     "gradle.properties",
+    "*/gradle.properties",
+    "local.properties",
+    "*/local.properties",
+    "buildSrc/**",
     "gradle/**",
     "gradlew",
     "gradlew.bat",
