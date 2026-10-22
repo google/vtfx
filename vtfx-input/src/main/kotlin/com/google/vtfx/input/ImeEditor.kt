@@ -85,7 +85,8 @@ public class ImeEditor(
      * Whether the IME may have seen an edit since the last restart of its input, or since the
      * editor was made. Until then its edit buffer is empty, and a reset does not restart it again,
      * so that host output that moves the cursor to another line does not restart the IME on every
-     * receive while the user types nothing (section 5.2).
+     * receive while the user types nothing (section 5.2). An edit that leaves the edit buffer
+     * empty, such as [finishComposingText] without composing text, is not one.
      */
     private var changedSinceRestart = false
 
@@ -441,7 +442,12 @@ public class ImeEditor(
     }
 
     private fun endOperation() {
-        changedSinceRestart = true
+        // The edit buffer is empty after a restart until an edit puts something in it, so an edit
+        // that leaves it empty changed nothing the IME sees. Android calls finishComposingText
+        // without composing text on the connection that a restart closed, right after the restart,
+        // and the host's echo of Enter must not restart the IME a second time: a key that the IME
+        // commits in between, to the connection that the second restart closes, would be lost.
+        if (history.isNotEmpty() || composing.isNotEmpty()) changedSinceRestart = true
         if (isHistoryOverLimit()) {
             // Past the limit, the history is sent and reset at once, even during a batch edit and
             // with composing text, which is committed as restarting the input would commit it.

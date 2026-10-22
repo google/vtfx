@@ -270,6 +270,36 @@ class ImeEditorTest {
     }
 
     @Test
+    fun callsThatLeaveTheBufferEmptyAfterARestartDoNotMakeAResetRestartTheImeAgain() {
+        editor.commitText("ab")
+        editor.onKeyDown(KeyStroke.Special(TerminalKey.Enter))
+        assertEquals(1, restarts)
+
+        // Calls that Android or an IME makes right after a restart, which change nothing.
+        editor.finishComposingText()
+        editor.setComposingRegion(0, 0)
+        editor.beginBatchEdit()
+        editor.endBatchEdit()
+        editor.setComposingText("")
+        editor.commitText("")
+        editor.replaceText(0, 0, "")
+        // The host's echo of Enter, and a prompt drawn in several receives.
+        editor.requestReset()
+        editor.requestReset()
+
+        assertEquals(1, restarts)
+        assertEquals(listOf<HostInput>(text("ab"), enter), sent)
+    }
+
+    @Test
+    fun aCommitThatTheHistoryDoesNotKeepRestartsTheIme() {
+        // The history is reset after a committed HT at once, but the IME has the HT.
+        editor.commitText("\t")
+        assertEquals("", editor.text)
+        assertEquals(1, restarts)
+    }
+
+    @Test
     fun committedTextOfSeveralLinesIsAPaste() {
         editor.commitText("ab")
         editor.setComposingText("か")

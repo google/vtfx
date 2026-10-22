@@ -283,6 +283,21 @@ class TerminalSessionTest {
     }
 
     @Test
+    fun theEchoOfEnterDoesNotRestartTheImeAgainAfterAFinishWithoutComposingText() {
+        session.edit { it.commitText("ab") }
+        session.edit { it.onKeyDown(KeyStroke.Special(TerminalKey.Enter)) }
+        assertEquals(1, restarts)
+        // Android calls this on the connection that the restart closed, right after the restart.
+        session.edit { it.finishComposingText() }
+        // The echo, and a prompt drawn in several receives.
+        feed("ab\r\n")
+        feed("\r\n")
+        feed("$ ")
+        assertEquals(1, restarts)
+        assertEquals("ab\r", sent.toString())
+    }
+
+    @Test
     fun aResetOfTheTerminalWaitsForTheComposition() {
         session.sendText("old")
         session.edit { it.setComposingText("か") }
