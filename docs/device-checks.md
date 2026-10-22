@@ -135,6 +135,8 @@ One line of JSON appears per `scenario` (`full`: the whole screen changes every 
 
 What to tell us: the device model and Android version, and the JSON lines output.
 
+The benchmark feeds an update every 16 ms. Also have the host print a large file without a break (for example `cat` of a file of several MB over SSH), and tell us whether the display keeps scrolling smoothly and keys typed meanwhile reach the host without a long delay, which the benchmark does not cover ([decisions/0065](decisions/0065-fair-state-lock.md)).
+
 ## 6. Han glyphs
 
 Section 7.3 of [emulation.md](design/emulation.md). On the emulator (Android 17, system locale en-US), it was confirmed that with each of `--es locale ja` and `--es locale zh-CN`, the second line of the `unicode` command (骨 直 角 説) is drawn with Japanese and Chinese glyphs respectively.

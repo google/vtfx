@@ -32,6 +32,8 @@ import com.google.vtfx.gate.ReportedColors
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
@@ -1114,6 +1116,45 @@ class TerminalSessionTest {
         while (thread.state != Thread.State.BLOCKED && thread.state != Thread.State.WAITING) {
             check(System.nanoTime() < deadline) { "$thread did not wait for a lock" }
             Thread.yield()
+        }
+    }
+
+    @Test
+    fun aReaderOfTheScreenWaitsForAFewFeedsAtMostWhileOutputFloods() {
+        val line = "0123456789".repeat(7) + " a line of output\r\n"
+        val chunk = line.repeat(16 * 1024 / line.length).toByteArray(Charsets.UTF_8)
+        val feeds = AtomicLong()
+        val running = AtomicBoolean(true)
+        // As an app's reader thread does while the host prints a large file.
+        val feeder = Thread {
+            while (running.get()) {
+                session.feed(chunk)
+                feeds.incrementAndGet()
+            }
+        }
+        feeder.start()
+        try {
+            // Until the JIT has compiled the feeding loop, which then takes the lock again within
+            // nanoseconds of releasing it.
+            Thread.sleep(500)
+            // Counted in feeds rather than in time, which depends on the machine.
+            val feedsDuringSnapshots =
+                List(21) {
+                        Thread.sleep(2)
+                        val before = feeds.get()
+                        session.snapshot()
+                        feeds.get() - before
+                    }
+                    .sorted()
+            // The feed that holds the lock, and one that the counter may count after the
+            // snapshot returns; an unfair lock hands it back to the feeder for hundreds of feeds.
+            assertTrue(
+                feedsDuringSnapshots[feedsDuringSnapshots.size / 2] <= 3,
+                "feeds during snapshots: $feedsDuringSnapshots",
+            )
+        } finally {
+            running.set(false)
+            feeder.join()
         }
     }
 

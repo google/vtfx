@@ -155,8 +155,14 @@ public class TerminalSession(
     // (docs/decisions/0027).
     private val writer = HostWriter(connection)
 
-    /** Guards the state of the session: the terminal, the IME editing model, and the fields. */
-    private val lock = Any()
+    /**
+     * Guards the state of the session: the terminal, the IME editing model, and the fields. Fair,
+     * so that a thread that waits for it, such as the main thread taking the screen for a frame,
+     * gets it when the holder releases it: while output floods, [feed] takes it again for each
+     * chunk at once, and an intrinsic lock may hand it back to [feed] for hundreds of milliseconds
+     * (docs/decisions/0065).
+     */
+    private val lock = ReentrantLock(/* fair= */ true)
 
     /**
      * Serializes the user's input with its sending, so that the host receives it in the order that
@@ -261,7 +267,7 @@ public class TerminalSession(
 
     /** The window title set by the host. Untrusted text. */
     public val title: String
-        get() = synchronized(lock) { titleState }
+        get() = lock.withLock { titleState }
 
     private var stickyModifiersState = KeyModifiers.None
 
@@ -272,7 +278,7 @@ public class TerminalSession(
      * without them: they apply only to what is typed after.
      */
     public var stickyModifiers: KeyModifiers
-        get() = synchronized(lock) { stickyModifiersState }
+        get() = lock.withLock { stickyModifiersState }
         set(value) {
             // The modifiers are changed inside the input operation, which reports the change.
             input(notifySent = true) { editor ->
@@ -296,7 +302,7 @@ public class TerminalSession(
      * from a toggle on an auxiliary key bar.
      */
     public var directInput: Boolean
-        get() = synchronized(lock) { directInputState }
+        get() = lock.withLock { directInputState }
         set(value) {
             val changed = input { editor ->
                 if (value == directInputState) return@input false
@@ -389,7 +395,7 @@ public class TerminalSession(
         val sent: Boolean
         inputLock.withLock {
             val sends: List<() -> Unit>
-            synchronized(lock) {
+            lock.withLock {
                 check(outbox.isEmpty() && !restartRequested && !resetRequested)
                 val stickyModifiersBefore = stickyModifiersState
                 editingThread = Thread.currentThread()
@@ -464,35 +470,34 @@ public class TerminalSession(
         var scrollbackShrank = false
         var rang = false
         var requests: List<TerminalEvent> = emptyList()
-        val moved =
-            synchronized(lock) {
-                val lineChangesBefore = terminal.lineChanges
-                val scrollbackBefore = terminal.scrollbackSize
-                val pushesBefore = terminal.scrollbackPushes
-                terminal.write(bytes, offset, length)
-                scrolledLines = terminal.scrollbackPushes - pushesBefore
-                scrollbackShrank = terminal.scrollbackSize < scrollbackBefore
-                synchronizing = terminal.modes.synchronizedOutput
-                rang = bellRung
-                titleSet?.let {
-                    titleState = it
-                    titleNotifier.record(it)
-                }
-                bellRung = false
-                titleSet = null
-                if (gateRequests.isNotEmpty()) {
-                    requests = gateRequests.toList()
-                    gateRequests.clear()
-                }
-                // Following the echo of long input over autowrapped rows is not a move to another
-                // line, while switching the screen or a reset is (docs/design/ime-contract.md
-                // section 5.1). Counting them during the write also catches a switch there and
-                // back. The reset is marked here, with the lock held, so that an input operation
-                // that runs before this feed takes the input lock applies it before its edit.
-                val moved = terminal.lineChanges != lineChangesBefore
-                if (moved) hostResetPending = true
-                moved
+        val moved = lock.withLock {
+            val lineChangesBefore = terminal.lineChanges
+            val scrollbackBefore = terminal.scrollbackSize
+            val pushesBefore = terminal.scrollbackPushes
+            terminal.write(bytes, offset, length)
+            scrolledLines = terminal.scrollbackPushes - pushesBefore
+            scrollbackShrank = terminal.scrollbackSize < scrollbackBefore
+            synchronizing = terminal.modes.synchronizedOutput
+            rang = bellRung
+            titleSet?.let {
+                titleState = it
+                titleNotifier.record(it)
             }
+            bellRung = false
+            titleSet = null
+            if (gateRequests.isNotEmpty()) {
+                requests = gateRequests.toList()
+                gateRequests.clear()
+            }
+            // Following the echo of long input over autowrapped rows is not a move to another
+            // line, while switching the screen or a reset is (docs/design/ime-contract.md
+            // section 5.1). Counting them during the write also catches a switch there and
+            // back. The reset is marked here, with the lock held, so that an input operation
+            // that runs before this feed takes the input lock applies it before its edit.
+            val moved = terminal.lineChanges != lineChangesBefore
+            if (moved) hostResetPending = true
+            moved
+        }
         // Applies the reset, unless an input operation on another thread already did.
         if (moved) input {}
         for (observer in observers) observer.onOutput(
@@ -511,8 +516,9 @@ public class TerminalSession(
      * display shows it. The offset is clamped to [scrollbackSize]; with the default of 0, the
      * snapshot is the screen.
      */
-    public fun snapshot(scrollOffset: Int = 0): TerminalSnapshot =
-        synchronized(lock) { terminal.snapshot(scrollOffset) }
+    public fun snapshot(scrollOffset: Int = 0): TerminalSnapshot = lock.withLock {
+        terminal.snapshot(scrollOffset)
+    }
 
     /**
      * Returns copies of the last [maxLines] lines of the scrollback and the screen, oldest first,
@@ -523,8 +529,7 @@ public class TerminalSession(
      * @suppress
      */
     @InternalVtfxApi
-    public fun lines(maxLines: Int): List<LineSnapshot> =
-        synchronized(lock) { terminal.lines(maxLines) }
+    public fun lines(maxLines: Int): List<LineSnapshot> = lock.withLock { terminal.lines(maxLines) }
 
     /**
      * Returns copies of lines for a display's search, from line [from], taken at once: at least
@@ -536,16 +541,16 @@ public class TerminalSession(
      * @suppress
      */
     @InternalVtfxApi
-    public fun searchLines(from: Long, minLines: Int): SearchLines =
-        synchronized(lock) { terminal.searchLines(from, minLines) }
+    public fun searchLines(from: Long, minLines: Int): SearchLines = lock.withLock {
+        terminal.searchLines(from, minLines)
+    }
 
     /**
      * The number of lines in the scrollback that [snapshot] can show: none on the alternate screen,
      * which has no scrollback.
      */
     public val scrollbackSize: Int
-        get() =
-            synchronized(lock) { if (terminal.isAlternateScreen) 0 else terminal.scrollbackSize }
+        get() = lock.withLock { if (terminal.isAlternateScreen) 0 else terminal.scrollbackSize }
 
     /**
      * Resizes the terminal to [columns] and [rows] at once, and calls
@@ -574,7 +579,7 @@ public class TerminalSession(
             "cell size must have both sides or neither: ${cellWidth}x$cellHeight"
         }
         val (report, changed) =
-            synchronized(lock) {
+            lock.withLock {
                 val changed = terminal.columns != columns || terminal.rows != rows
                 if (changed) terminal.resize(columns, rows)
                 val cellChanged =
@@ -688,7 +693,7 @@ public class TerminalSession(
      */
     @InternalVtfxApi
     public fun setDefaultCursorStyle(shape: CursorShape, blinking: Boolean) {
-        val changed = synchronized(lock) { terminal.setDefaultCursorStyle(shape, blinking) }
+        val changed = lock.withLock { terminal.setDefaultCursorStyle(shape, blinking) }
         if (changed) for (observer in observers) observer.onScreenChanged()
     }
 
@@ -736,7 +741,7 @@ public class TerminalSession(
      *
      * @suppress
      */
-    @InternalVtfxApi public fun modes(): TerminalModes = synchronized(lock) { terminal.modes }
+    @InternalVtfxApi public fun modes(): TerminalModes = lock.withLock { terminal.modes }
 
     /**
      * Returns whether the alternate screen is shown.
@@ -744,7 +749,7 @@ public class TerminalSession(
      * @suppress
      */
     @InternalVtfxApi
-    public fun isAlternateScreen(): Boolean = synchronized(lock) { terminal.isAlternateScreen }
+    public fun isAlternateScreen(): Boolean = lock.withLock { terminal.isAlternateScreen }
 
     /**
      * Returns the number of columns and rows.
@@ -752,7 +757,7 @@ public class TerminalSession(
      * @suppress
      */
     @InternalVtfxApi
-    public fun size(): Pair<Int, Int> = synchronized(lock) { Pair(terminal.columns, terminal.rows) }
+    public fun size(): Pair<Int, Int> = lock.withLock { Pair(terminal.columns, terminal.rows) }
 
     /**
      * Returns the cursor as (column, row).
@@ -760,11 +765,10 @@ public class TerminalSession(
      * @suppress
      */
     @InternalVtfxApi
-    public fun cursorPosition(): Pair<Int, Int> =
-        synchronized(lock) {
-            val cursor = terminal.cursor
-            Pair(cursor.column, cursor.row)
-        }
+    public fun cursorPosition(): Pair<Int, Int> = lock.withLock {
+        val cursor = terminal.cursor
+        Pair(cursor.column, cursor.row)
+    }
 
     /**
      * Starts telling [observer] about the changes that a display shows.

@@ -76,7 +76,7 @@ The display receives screen changes, sent input, and requests to restart the IME
 
 `TerminalSession` is thread-safe: any operation may be called from any thread, and the calls are serialized internally. It has two locks:
 
-- **The state lock** guards the terminal, the IME editing model, and the fields.
+- **The state lock** guards the terminal, the IME editing model, and the fields. It is fair (`ReentrantLock(true)`), so that a thread waiting for it, such as the main thread taking the screen for a frame or handling a key, gets it when the holder releases it. While output floods, `feed` takes it again for each chunk at once, and an intrinsic lock may hand it back to the feeding thread for hundreds of milliseconds ([decisions/0065](../decisions/0065-fair-state-lock.md)). A reader waits for at most the `feed` that holds the lock, which interprets one chunk of the app's.
 - **The input lock** serializes user input up to sending, so that the host receives it in the order the IME editing model produced it, also from several threads. It is taken before the state lock and held while `HostConnection.write` runs for the input, which is the exception for locks that serialize calls (rule 2 of section 1.3). It is fair (`ReentrantLock(true)`): while one thread is inside `HostConnection.write`, the threads with input take it in the order they came.
 
 An input operation (keys, text, pastes, sticky modifiers, direct input, mouse and focus reports, and IME operations through `edit`) takes the input lock, then runs on the editing model inside the state lock, collecting what to send; it sends after releasing the state lock, holding only the input lock; then, without either lock, it notifies the observers and the listener.
