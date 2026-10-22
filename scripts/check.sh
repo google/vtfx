@@ -30,8 +30,11 @@ python3 -I scripts/check_doc_links.py
 
 echo "== License headers"
 # Files that are not Google's own source code have no header (docs/decisions/0018). To add missing
-# headers, run the same command with `-c "Google LLC" -l apache` instead of `-check`.
-git ls-files -z | xargs -0 go run github.com/google/addlicense@v1.2.0 -check \
+# headers, run the same command with `-c "Google LLC" -l apache` instead of `-check`. The version
+# of addlicense and the checksums of its modules are pinned in tools/addlicense/go.mod and go.sum,
+# and -mod=readonly keeps the build from changing them.
+go build -C tools/addlicense -mod=readonly -o "$(pwd)/build/tools/addlicense" github.com/google/addlicense
+git ls-files -z | xargs -0 build/tools/addlicense -check \
     -ignore 'spec/**' \
     -ignore 'tools/ime-probe/traces/**' \
     -ignore 'third_party/**'
