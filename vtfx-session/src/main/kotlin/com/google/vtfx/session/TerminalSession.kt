@@ -666,8 +666,9 @@ public class TerminalSession(
     /**
      * Sends text as if typed. Composing text is committed first. Each line break is sent as Enter,
      * even if the host enabled bracketed paste: send text from elsewhere, such as the clipboard,
-     * with [paste]. The IME does not see the text afterwards, so it may be a secret, such as a
-     * saved password.
+     * with [paste]. HT is sent as is, and other control characters, such as ESC, are removed: send
+     * Esc and keys with Ctrl with [sendKey]. The IME does not see the text afterwards, so it may be
+     * a secret, such as a saved password.
      */
     public fun sendText(text: String) {
         input { it.typeText(text) }

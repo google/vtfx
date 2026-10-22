@@ -476,6 +476,13 @@ class TerminalSessionTest {
     }
 
     @Test
+    fun controlsInTheAppsTextAreRemoved() {
+        // As its KDoc says; Esc is sent with sendKey (docs/decisions/0057).
+        session.sendText("\u001b:wq\t\r")
+        assertEquals(":wq\t\r", sent.toString())
+    }
+
+    @Test
     fun textOfSeveralLinesThatTheAppSendsIsTyped() {
         feed("\u001b[?2004h")
         session.sendText("cd\nls\n")
