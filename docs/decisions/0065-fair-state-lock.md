@@ -1,6 +1,6 @@
 # The state lock of the session is fair
 
-- Status: Provisional
+- Status: Approved (2026-10-22, approved by a human)
 - Date: 2026-10-22
 - Related: Requirement 6.2, section 2.2 of [session-and-threads.md](../design/session-and-threads.md), [0014](0014-performance.md), [0024](0024-thread-conventions.md), [0026](0026-session-module.md), `TerminalSession`
 
