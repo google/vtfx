@@ -24,6 +24,9 @@ import com.google.vtfx.core.KeyStroke
 import com.google.vtfx.core.TerminalKey
 import com.google.vtfx.gate.ClipboardAccess
 import com.google.vtfx.gate.GatePolicy
+import com.google.vtfx.gate.MouseAction
+import com.google.vtfx.gate.MouseButton
+import com.google.vtfx.gate.MouseReport
 import com.google.vtfx.gate.OpenUrlResult
 import com.google.vtfx.gate.ReportedColors
 import java.io.ByteArrayOutputStream
@@ -631,6 +634,26 @@ class TerminalSessionTest {
         session.sendText("|")
         assertEquals("か|", sent.toString())
         assertEquals(1, restarts)
+    }
+
+    @Test
+    fun aMousePressSendsTheComposingTextFirstAndResets() {
+        // A click can move the host's cursor, as in vim's insert mode (docs/decisions/0057).
+        feed("\u001b[?1000h")
+        session.edit { it.commitText("ab") }
+        session.edit { it.setComposingText("か") }
+        session.sendMouse(MouseReport(MouseButton.Left, MouseAction.Press, 1, 1))
+        assertEquals("abか\u001b[M !!", sent.toString())
+        assertEquals("", session.edit { it.text })
+        assertFalse(session.edit { it.replaceText(0, 2, "cd") })
+    }
+
+    @Test
+    fun mouseMotionLeavesTheComposingText() {
+        feed("\u001b[?1003h")
+        session.edit { it.setComposingText("か") }
+        session.sendMouse(MouseReport(MouseButton.Left, MouseAction.Motion, 1, 1))
+        assertEquals("か", session.edit { it.text })
     }
 
     @Test

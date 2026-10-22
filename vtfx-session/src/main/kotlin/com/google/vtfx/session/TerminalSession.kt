@@ -35,6 +35,7 @@ import com.google.vtfx.gate.ClipboardAccess
 import com.google.vtfx.gate.GatePolicy
 import com.google.vtfx.gate.HostConnection
 import com.google.vtfx.gate.HostWriter
+import com.google.vtfx.gate.MouseAction
 import com.google.vtfx.gate.MouseReport
 import com.google.vtfx.gate.OpenUrlResult
 import com.google.vtfx.gate.ReportedColors
@@ -708,13 +709,17 @@ public class TerminalSession(
     @InternalVtfxApi public fun copyToClipboard(text: String): Boolean = gate.copyToClipboard(text)
 
     /**
-     * Sends a mouse report, if the host asked for this kind of event.
+     * Sends a mouse report, if the host asked for this kind of event. A press first sends the
+     * composing text and resets the IME editing model, since it can move the host's cursor.
      *
      * @suppress
      */
     @InternalVtfxApi
     public fun sendMouse(report: MouseReport) {
-        input {
+        input { editor ->
+            // As a key would (docs/decisions/0057). Not motion, which comes in streams while the
+            // user may be composing.
+            if (report.action == MouseAction.Press) editor.sendPendingInput()
             val modes = terminal.modes
             outbox += { writer.sendMouse(report, modes.mouseTracking, modes.mouseEncoding) }
         }
