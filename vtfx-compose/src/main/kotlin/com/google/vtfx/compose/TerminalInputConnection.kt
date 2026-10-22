@@ -184,6 +184,9 @@ internal class TerminalInputConnection(
         session.edit { editor ->
             ExtractedText().apply {
                 text = editor.text
+                // The whole text, not a change of a part of it, which the default 0 would mean.
+                partialStartOffset = -1
+                partialEndOffset = -1
                 startOffset = 0
                 selectionStart = editor.selectionStart
                 selectionEnd = editor.cursor

@@ -193,6 +193,15 @@ class TerminalInputConnectionTest {
     }
 
     @Test
+    fun extractedTextIsTheWholeEditBuffer() {
+        connection.commitText("ls", 1)
+        val extracted = connection.getExtractedText(null, 0)
+        // -1 marks the whole text rather than a change of a part of it.
+        assertEquals(-1, extracted.partialStartOffset)
+        assertEquals(-1, extracted.partialEndOffset)
+    }
+
+    @Test
     fun onlySelectionsEndingAtTheCursorAreAccepted() {
         connection.commitText("abc", 1)
         assertFalse(connection.setSelection(0, 1))

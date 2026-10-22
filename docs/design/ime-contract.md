@@ -137,7 +137,7 @@ Notes:
 | `getTextAfterCursor(n, flags)` | The empty string |
 | `getSelectedText(flags)` | The selected text. `null` if the selection is empty |
 | `getSurroundingText(before, after, flags)` | The last `before` characters of the editing buffer, and the cursor position at the end. Only IMEs on API 31 and later call it, since it was added in API 31 |
-| `getExtractedText(request, flags)` | The whole editing buffer (the fullscreen input UI is disabled) |
+| `getExtractedText(request, flags)` | The whole editing buffer (the fullscreen input UI is disabled), with `partialStartOffset` and `partialEndOffset` -1, which mark the whole text. `GET_EXTRACTED_TEXT_MONITOR` is ignored: `updateExtractedText` is never called |
 | `getCursorCapsMode(reqModes)` | 0 (no automatic capitalization) |
 
 ### 6.3 Key events
