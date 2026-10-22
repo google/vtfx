@@ -469,6 +469,23 @@ class TerminalSessionTest {
     }
 
     @Test
+    fun theTrailingLineFeedOfAClipboardSuggestionDoesNotRunThePastedLines() {
+        // What Gboard 18.4 calls when the user taps a clipboard suggestion of several lines that
+        // ends with a line feed (docs/decisions/0064).
+        feed("\u001b[?2004h")
+        session.edit {
+            it.beginBatchEdit()
+            it.commitText("echo one\necho two")
+            it.commitText("\n")
+            it.endBatchEdit()
+        }
+        assertEquals(
+            "\u001b[200~echo one\recho two\u001b[201~\u001b[200~\r\u001b[201~",
+            sent.toString(),
+        )
+    }
+
+    @Test
     fun textThatTheAppSendsIsNotShownToTheIme() {
         session.sendText("hunter2")
         assertEquals("hunter2", sent.toString())

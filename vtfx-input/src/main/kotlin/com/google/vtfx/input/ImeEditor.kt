@@ -76,6 +76,12 @@ public class ImeEditor(
     private var resetPending = false
 
     /**
+     * Whether a paste was sent in the batch edit in progress, after which a line feed alone that
+     * the IME commits is pasted too, rather than Enter (section 4.2).
+     */
+    private var pastedInBatch = false
+
+    /**
      * Whether the IME may have seen an edit since the last restart of its input, or since the
      * editor was made. Until then its edit buffer is empty, and a reset does not restart it again,
      * so that host output that moves the cursor to another line does not restart the IME on every
@@ -139,13 +145,14 @@ public class ImeEditor(
 
     /**
      * Replaces the composing text, or the selection if there is one, with [text] and commits it.
-     * Text with a line break, other than a line feed alone, is pasted (section 4.2).
+     * Text with a line break, other than a line feed alone, is pasted, and so is a line feed alone
+     * after a paste in the same batch edit (section 4.2).
      */
     public fun commitText(text: CharSequence): Boolean {
         removeSelectedText()
         composing = ""
         val committed = withoutDroppedControls(text)
-        if (isPaste(committed)) {
+        if (isPaste(committed) || (committed == "\n" && pastedInBatch)) {
             sendPaste(committed)
         } else {
             history += committed
@@ -300,7 +307,10 @@ public class ImeEditor(
     public fun endBatchEdit(): Boolean {
         if (batchDepth == 0) return false
         batchDepth--
-        if (batchDepth == 0) flush()
+        if (batchDepth == 0) {
+            pastedInBatch = false
+            flush()
+        }
         return batchDepth > 0
     }
 
@@ -309,6 +319,7 @@ public class ImeEditor(
         selectionFrom = -1
         if (composing.isNotEmpty()) finishComposingText()
         batchDepth = 0
+        pastedInBatch = false
         flush()
     }
 
@@ -390,6 +401,7 @@ public class ImeEditor(
         changedSinceRestart = true
         flush()
         listener.send(HostInput.Paste(text))
+        if (batchDepth > 0) pastedInBatch = true
         requestReset()
     }
 

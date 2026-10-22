@@ -290,6 +290,43 @@ class ImeEditorTest {
     }
 
     @Test
+    fun aLineFeedThatTheImeCommitsAfterAPasteInTheSameBatchEditIsPastedToo() {
+        // Gboard commits the trailing line feed of a clipboard suggestion on its own.
+        editor.beginBatchEdit()
+        editor.commitText("echo one\necho two")
+        editor.commitText("\n")
+        assertFalse(editor.endBatchEdit())
+        assertEquals(
+            listOf<HostInput>(HostInput.Paste("echo one\necho two"), HostInput.Paste("\n")),
+            sent,
+        )
+    }
+
+    @Test
+    fun aLineFeedAfterTheBatchEditOfAPasteIsEnter() {
+        editor.beginBatchEdit()
+        editor.commitText("echo one\necho two")
+        editor.endBatchEdit()
+        editor.beginBatchEdit()
+        editor.commitText("\n")
+        editor.endBatchEdit()
+        assertEquals(
+            listOf(HostInput.Paste("echo one\necho two"), enter),
+            sent,
+        )
+    }
+
+    @Test
+    fun aLineFeedAfterOneLineInTheSameBatchEditIsEnter() {
+        // A clipboard suggestion of one line and a line feed: the line runs, as a human decided.
+        editor.beginBatchEdit()
+        editor.commitText("echo evil")
+        editor.commitText("\n")
+        editor.endBatchEdit()
+        assertEquals(listOf(text("echo evil"), enter), sent)
+    }
+
+    @Test
     fun committedTextOfSeveralLinesIsPastedAtOnceDuringABatchEdit() {
         editor.beginBatchEdit()
         editor.commitText("a")
