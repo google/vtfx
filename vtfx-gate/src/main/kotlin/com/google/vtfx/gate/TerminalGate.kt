@@ -156,23 +156,25 @@ public class TerminalGate(
 
     /**
      * Returns whether the authority of the http or https [url] whose scheme ends at [colon] has
-     * userinfo, a backslash, or a character that is not ASCII. Userinfo lets the shown URL begin
-     * with another host (`https://good.example@evil.example`), and a long one can push the real
-     * host out of view. Browsers treat `\` in the authority as `/` but other parsers do not, so
-     * they disagree on the host of `https://evil.example\@good.example`. Characters that are not
+     * userinfo, a backslash, a `%`, or a character that is not ASCII. Userinfo lets the shown URL
+     * begin with another host (`https://good.example@evil.example`), and a long one can push the
+     * real host out of view. Browsers treat `\` in the authority as `/` but other parsers do not,
+     * so they disagree on the host of `https://evil.example\@good.example`. Characters that are not
      * ASCII let the host look like another one: letters of other scripts (`https://apple.com` with
      * U+0430 CYRILLIC SMALL LETTER A for the `a`), and characters that look like `.` or `/` but are
-     * mapped to `.` or stay in the host (U+FF0E FULLWIDTH FULL STOP, U+2215 DIVISION SLASH). A host
-     * in punycode (`xn--`) is ASCII and shows where it goes. As browsers do (the WHATWG URL
-     * Standard), the authority starts after any `/` and `\` that follow the scheme, with or without
-     * `//`, and ends at the first `/`, `?`, or `#`. Refusing `\` instead of ending the authority
-     * there also refuses an `@` after it, whichever way it is parsed.
+     * mapped to `.` or stay in the host (U+FF0E FULLWIDTH FULL STOP, U+2215 DIVISION SLASH).
+     * Browsers percent-decode the host, so `%` does the same in ASCII
+     * (`https://good.example%2Eevil.example`, or `%D0%B0` for U+0430). A host in punycode (`xn--`)
+     * is ASCII and shows where it goes. As browsers do (the WHATWG URL Standard), the authority
+     * starts after any `/` and `\` that follow the scheme, with or without `//`, and ends at the
+     * first `/`, `?`, or `#`. Refusing `\` instead of ending the authority there also refuses an
+     * `@` after it, whichever way it is parsed.
      */
     private fun hasMisleadingAuthority(url: String, colon: Int): Boolean {
         var i = colon + 1
         while (i < url.length && (url[i] == '/' || url[i] == '\\')) i++
         while (i < url.length && url[i] !in "/?#") {
-            if (url[i] == '@' || url[i] == '\\' || url[i] > '\u007f') return true
+            if (url[i] == '@' || url[i] == '\\' || url[i] == '%' || url[i] > '\u007f') return true
             i++
         }
         return false

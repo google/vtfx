@@ -456,6 +456,36 @@ class AttackTest {
         }
 
         @Test
+        fun percentEncodedDotInTheHostIsRejected() {
+            val gate = gate()
+
+            // Browsers percent-decode the host, so it is accounts.google.com.evil.example.
+            val allowed = gate.isAllowedUrl("https://accounts.google.com%2Eevil.example/login")
+
+            assertFalse(allowed)
+        }
+
+        @Test
+        fun percentEncodedNonAsciiLetterInTheHostIsRejected() {
+            val gate = gate()
+
+            // Browsers decode %D0%B0 to U+0430 CYRILLIC SMALL LETTER A, so the host is not the
+            // ASCII one shown.
+            val allowed = gate.isAllowedUrl("https://%D0%B0pple.com/")
+
+            assertFalse(allowed)
+        }
+
+        @Test
+        fun percentEncodingAfterTheHostIsAllowed() {
+            val gate = gate()
+
+            val allowed = gate.isAllowedUrl("https://example.com/a%20b?q=%2E#%40")
+
+            assertTrue(allowed)
+        }
+
+        @Test
         fun nonAsciiAfterAPortIsRejected() {
             val gate = gate()
 
