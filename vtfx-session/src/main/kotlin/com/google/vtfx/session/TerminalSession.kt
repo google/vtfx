@@ -534,9 +534,9 @@ public class TerminalSession(
 
     /**
      * Returns copies of lines for a display's search, from line [from], taken at once: at least
-     * [minLines] lines of the scrollback and more to the end of a line, or through the screen
-     * (`Terminal.searchLines`). A display reads [minLines] at a time, so that the lock is not held
-     * while the whole scrollback is copied.
+     * [minLines] lines of the scrollback and more to the end of a text to search, or through the
+     * screen (`Terminal.searchLines`). A display reads [minLines] at a time, so that the lock is
+     * not held while the whole scrollback is copied.
      *
      * @throws IllegalArgumentException unless [minLines] is positive.
      * @suppress

@@ -193,6 +193,51 @@ class SearchTest {
     }
 
     @Test
+    fun aLineThatAutowrapJoinsThroughManyRowsIsSearchedInParts() {
+        // "ab" goes over the end of the first part.
+        val output = "x".repeat(10 * MAX_SEARCH_TEXT_ROWS - 1) + "ab" + "y".repeat(20)
+        val terminal = terminal(10, 4, output)
+
+        val index = search(terminal, "ab")
+
+        assertEquals(emptyList(), found(index))
+    }
+
+    @Test
+    fun readingFewLinesAtATimeFindsTheSameMatchesInALongLine() {
+        val terminal = terminal(10, 4, "match ab ".repeat(500) + "\r\nend")
+
+        val oneAtATime = search(terminal, "match", minLines = 1)
+
+        assertEquals(found(search(terminal, "match")), found(oneAtATime))
+    }
+
+    @Test
+    fun aReadOfALineThatAutowrapJoinsThroughTheScrollbackEndsInIt() {
+        val terminal = terminal(120, 24, "a".repeat(120 * 10_100))
+
+        val read = terminal.searchLines(Long.MIN_VALUE, minLines = 1000)
+
+        assertFalse(read.isComplete)
+        assertTrue(read.lines.size < 1000 + MAX_SEARCH_TEXT_ROWS, "${read.lines.size} lines")
+    }
+
+    @Test
+    fun anUpdateInALineThatAutowrapJoinsThroughTheScrollbackReadsOnlyItsLastPart() {
+        val terminal = terminal(120, 24, "a".repeat(120 * 10_100))
+        val index = search(terminal, "b")
+        terminal.write("a")
+
+        var linesRead = 0
+        do {
+            val read = terminal.searchLines(index.nextLine, minLines = 1000)
+            linesRead += read.lines.size
+        } while (index.update(read))
+
+        assertTrue(linesRead < MAX_SEARCH_TEXT_ROWS + terminal.rows, "$linesRead lines")
+    }
+
+    @Test
     fun aMatchOfTheScreenGoesWhenTheScreenChanges() {
         val terminal = terminal(20, 4, "match")
         val index = search(terminal, "match")

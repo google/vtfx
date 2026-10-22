@@ -149,9 +149,10 @@ public class Terminal(
     /**
      * Returns copies of lines for a search, from line [from], numbered as [SearchLines] says: at
      * least [minLines] lines of the scrollback, if there are as many, and more up to the end of a
-     * line that autowrap does not join to the next, or, once the lines reach the screen, through
-     * the screen's last row. [from] is clamped to the oldest line kept and the screen's first row.
-     * Lines of the scrollback are resized to [columns], as in [snapshot].
+     * text to search (a line that autowrap does not join to the next, or [MAX_SEARCH_TEXT_ROWS]
+     * rows of one that it does), or, once the lines reach the screen, through the screen's last
+     * row. [from] is clamped to the oldest line kept and the screen's first row. Lines of the
+     * scrollback are resized to [columns], as in [snapshot].
      *
      * @throws IllegalArgumentException unless [minLines] is positive.
      */
@@ -164,10 +165,15 @@ public class Terminal(
         val firstLine = from.coerceIn(oldestLine, screenLine)
         val lines = ArrayList<LineSnapshot>()
         var line = firstLine
-        while (line < screenLine && (line - firstLine < minLines || lines.last().isWrapped)) {
+        // The rows read of a text that has not ended, as SearchIndex divides the lines into texts.
+        var textRows = 0
+        while (line < screenLine && (line - firstLine < minLines || textRows > 0)) {
             val index = (line - oldestLine).toInt()
-            lines +=
+            val snapshot =
                 lineSnapshot(emulator.scrollbackLine(index).resized(emulator.columns), copy = false)
+            lines += snapshot
+            textRows =
+                if (snapshot.isWrapped && textRows + 1 < MAX_SEARCH_TEXT_ROWS) textRows + 1 else 0
             line++
         }
         val isComplete = line == screenLine

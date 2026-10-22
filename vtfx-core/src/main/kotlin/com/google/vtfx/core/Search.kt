@@ -91,8 +91,8 @@ internal constructor(
     /** The number of the first of [lines]. */
     public val firstLine: Long,
     /**
-     * Lines from the start of a line that autowrap does not join to the one before it, up to the
-     * end of one that it does not join to the next, or through the last row of the screen.
+     * Lines from the start of a text to search, up to the end of one, or through the last row of
+     * the screen. A text is the rows that autowrap joins, up to [MAX_SEARCH_TEXT_ROWS] of them.
      */
     public val lines: List<LineSnapshot>,
     /** The number of the oldest line that the terminal keeps. */
@@ -108,13 +108,15 @@ internal constructor(
  *
  * Read the lines from [nextLine] with [Terminal.searchLines] and give them to [update] until it
  * returns false. Lines that have entered the scrollback do not change until the lines are numbered
- * again, so later updates search only the lines that entered it since, and the screen. The text of
- * those lines is kept, so that [withQuery] searches it for another query without reading the lines
- * again: a few bytes for each character of the scrollback, which ends with no trailing blanks.
+ * again, so later updates search only the lines that entered it since, and the screen, with the
+ * text that goes on into the screen. The text of those lines is kept, so that [withQuery] searches
+ * it for another query without reading the lines again: a few bytes for each character of the
+ * scrollback, which ends with no trailing blanks.
  *
  * Rows that autowrap joins are searched as one text, as [LinkFinder] reads them, without the blanks
- * at its end, which copying leaves out too. A match that covers a concealed cell (SGR 8), which the
- * display does not draw, is not a match. Only the newest [MAX_MATCHES] matches are kept.
+ * at its end, which copying leaves out too, in parts of [MAX_SEARCH_TEXT_ROWS] rows when there are
+ * more. A match that covers a concealed cell (SGR 8), which the display does not draw, is not a
+ * match. Only the newest [MAX_MATCHES] matches are kept.
  *
  * Not thread-safe.
  *
@@ -213,7 +215,13 @@ private constructor(
         var row = 0
         while (row < lines.size) {
             val first = row
-            while (row < lines.lastIndex && lines[row].isWrapped) row++
+            while (
+                row < lines.lastIndex &&
+                    lines[row].isWrapped &&
+                    row - first + 1 < MAX_SEARCH_TEXT_ROWS
+            ) {
+                row++
+            }
             val text = SearchText(read.firstLine + first, lines.subList(first, row + 1))
             find(text)
             // A line that ends in the scrollback does not change; the next reads start after it.
@@ -268,6 +276,14 @@ private constructor(
         public val MAX_MATCHES: Int = 1000
     }
 }
+
+/**
+ * The most rows that a search joins into one text. A line that autowrap joins through more rows is
+ * searched in parts of this many rows from where the search started reading it, and a match does
+ * not go from one part to the next. So a line that wraps through the whole scrollback, which the
+ * host decides, does not make each update read and search all of it again (docs/decisions/0062).
+ */
+internal const val MAX_SEARCH_TEXT_ROWS = 100
 
 /** The text of [rows], which autowrap joins, the first of them being line [firstLine]. */
 private class SearchText(val firstLine: Long, rows: List<LineSnapshot>) {
