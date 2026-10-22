@@ -123,6 +123,15 @@ class CanonicalVerifierTest {
     }
 
     @Test
+    fun fontTooLargeToCopyIsTooLargeRatherThanOutOfMemory() {
+        // Larger than half the heap: one more copy of it does not fit.
+        val size = minOf(Runtime.getRuntime().maxMemory() * 3 / 5, Int.MAX_VALUE - 8L).toInt()
+        val bytes = ByteArray(size)
+
+        assertEquals(Kind.TooLarge, verifyFailure(bytes, limits))
+    }
+
+    @Test
     fun fontAsLargeAsTheOutputLimitPasses() {
         val limits = FontLimits(maxOutputBytes = variations.size)
 

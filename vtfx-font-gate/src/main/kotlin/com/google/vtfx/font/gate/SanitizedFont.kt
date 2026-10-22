@@ -76,9 +76,17 @@ private constructor(
          *   [FontLimits.maxOutputBytes].
          */
         @Throws(InvalidFontException::class)
-        public fun fromCanonical(canonical: ByteArray, limits: FontLimits): SanitizedFont =
+        public fun fromCanonical(canonical: ByteArray, limits: FontLimits): SanitizedFont {
+            // Checked before the copy, so that bytes over the limit take no more memory.
+            if (canonical.size > limits.maxOutputBytes) {
+                throw InvalidFontException(
+                    InvalidFontException.Kind.TooLarge,
+                    "font of ${canonical.size} bytes",
+                )
+            }
             // Copied first, so that the caller cannot change the bytes after they are checked.
-            verified(canonical.copyOf(), limits)
+            return verified(canonical.copyOf(), limits)
+        }
 
         /** A font of [bytes], which no one else holds, if they pass [CanonicalVerifier]. */
         private fun verified(bytes: ByteArray, limits: FontLimits): SanitizedFont {
