@@ -29,6 +29,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.SearchIndex
+import com.google.vtfx.core.SearchLines
 import com.google.vtfx.core.SearchMatch
 import com.google.vtfx.core.SearchQuery
 import com.google.vtfx.core.TerminalSnapshot
@@ -252,9 +253,7 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
     }
 
     private fun readLines(index: SearchIndex) {
-        while (index.update(session.searchLines(index.nextLine, SEARCH_READ_LINES))) {
-            // Each read holds the session's lock only for a part of the scrollback.
-        }
+        readSearchLines(index, SEARCH_READ_LINES, session::searchLines)
     }
 
     /**
@@ -415,6 +414,20 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
          * Binder transaction, which fails above about 1 MB; this is 512 KB of UTF-16.
          */
         const val MAX_COPIED_LENGTH = 256 * 1024
+    }
+}
+
+/**
+ * Brings [index] up to date with the lines that [read] returns, [minLines] at a time, as
+ * `TerminalSession.searchLines` returns them.
+ */
+internal fun readSearchLines(
+    index: SearchIndex,
+    minLines: Int,
+    read: (from: Long, minLines: Int) -> SearchLines,
+) {
+    while (index.update(read(index.nextLine, minLines))) {
+        // Each read holds the session's lock only for a part of the scrollback.
     }
 }
 
