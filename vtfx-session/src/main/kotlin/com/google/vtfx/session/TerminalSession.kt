@@ -88,8 +88,9 @@ public interface TerminalSessionListener {
 
     /**
      * The host set the window title to [title], which [TerminalSession.title] now returns.
-     * Untrusted text. Called on the thread that called [TerminalSession.feed], once per call with
-     * the last title the output set.
+     * Untrusted text, at most 1024 UTF-16 units long, without control, line separator, and
+     * bidirectional formatting characters. Called on the thread that called [TerminalSession.feed],
+     * once per call with the last title the output set.
      */
     public fun onTitleChanged(title: String) {}
 

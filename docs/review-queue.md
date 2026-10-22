@@ -10,6 +10,7 @@ Until decided, the provisional decision is implemented. The impact of reversing 
 
 | Item | What to decide | Related |
 |---|---|---|
+| The window title | Whether the limit of 1024 UTF-16 units and the characters removed from the title (OSC 0, 2) are right | [0063](decisions/0063-window-title-limits.md) |
 | Robolectric's Android jars | Whether and how to verify the `android-all` jars that Robolectric downloads into `~/.m2` with its own downloader, outside Gradle, so that `gradle/verification-metadata.xml` does not cover them. Candidates: declare them as Gradle dependencies and run Robolectric offline from them, or keep relying on the repository | [0035](decisions/0035-dependency-verification.md), `build-logic` |
 
 ## 2. Work only humans can do

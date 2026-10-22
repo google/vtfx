@@ -91,6 +91,7 @@ The reasons for each are in [decisions/0009](../decisions/0009-emulation-scope.m
 | 1 of XTWINOPS 22, 23 (icon name only) | Pushes an entry with only the icon name. Pop takes the top entry and fills missing values from the entries below | Does nothing, as in VTE. 0 and 2 push only the title. With usage like vim's, which saves and restores the title and the icon name separately, the resulting title is the same as in xterm | [decisions/0009](../decisions/0009-emulation-scope.md) |
 | Limit of the title stack | A ring of 10 | 10, and a total length up to the string limit; beyond that, the oldest are dropped | [decisions/0002](../decisions/0002-resource-limits.md) |
 | DECSCUSR 0 | Blinking block (ctlseqs) | Returns to the app's default (`TerminalStyle.cursorShape`, `cursorBlinking`), as in VTE, kitty, and Windows Terminal. RIS does the same. The app's default is shown until the host sets DECSCUSR 1–6 or mode 12 | [decisions/0009](../decisions/0009-emulation-scope.md) |
+| Window title (OSC 0, 2) | Passed as sent | Cut to 1024 UTF-16 units, without C0 and C1 controls, DEL, U+2028, U+2029, and the bidirectional formatting characters, so that an app can show it outside the terminal | [decisions/0063](../decisions/0063-window-title-limits.md) |
 
 The deviations of the syntax are in section 2.
 
@@ -265,6 +266,7 @@ Host output is untrusted (requirement 6.1). The policy and the reasons for each 
 | REP (`CSI Ps b`) count | The number of cells on the screen (columns × rows). In insert mode, the cells for the characters on each row are inserted at once, so the work stays within the screen | Not configurable | The count is truncated |
 | Length of OSC 8 URIs | 2083 characters (the recommendation of the OSC 8 specification) | Not configurable (`Emulator.MAX_URI_LENGTH`) | Not made a link |
 | Length of OSC 8 ids | 250 UTF-16 units (as VTE limits it) | Not configurable (`Emulator.MAX_LINK_ID_LENGTH`) | Not made a link |
+| Length of the window title | 1024 UTF-16 units, after removing the characters of section 5 | Not configurable (`Emulator.MAX_TITLE_LENGTH`) | Cut, without splitting a surrogate pair |
 | Saved titles (XTWINOPS 22) | 10, with a total length up to the string limit, counted in UTF-16 units | The count is not configurable (`Emulator.MAX_SAVED_TITLES`); the length follows `TerminalLimits.maxStringLength` | The oldest are dropped |
 | Hyperlinks held at once | 4096 | Not configurable (`Emulator.MAX_HYPERLINKS`) | Links not referenced by any cell are dropped, and if that is still not enough, the new link is not attached. The search for referenced links (every cell of the screens and the scrollback) happens at most once per 2048 requests for new links; if the table is full in between, new links are not attached |
 | Pixels of the images of the kitty graphics protocol | 32 MiB of decoded pixels (4 bytes each) by default, for both screens together (at most 1 GiB; 0 turns the protocol off) | `TerminalLimits.maxImageBytes` | The oldest images are dropped, those without placements first. An image larger than the limit by itself is refused with `EFBIG` |

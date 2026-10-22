@@ -553,6 +553,38 @@ internal class Emulator(
         }
     }
 
+    /**
+     * The title in [data] from [start], without control and reordering characters, cut to
+     * [MAX_TITLE_LENGTH] (docs/decisions/0063).
+     */
+    private fun cleanTitle(data: CharSequence, start: Int): String {
+        val title = StringBuilder(minOf(data.length - start, MAX_TITLE_LENGTH))
+        var i = start
+        while (i < data.length) {
+            val codePoint = Character.codePointAt(data, i)
+            val length = Character.charCount(codePoint)
+            if (!isRemovedFromTitle(codePoint)) {
+                if (title.length + length > MAX_TITLE_LENGTH) break
+                title.appendCodePoint(codePoint)
+            }
+            i += length
+        }
+        return title.toString()
+    }
+
+    /**
+     * C0 and C1 controls, DEL, the line and paragraph separators, and the bidirectional formatting
+     * characters.
+     */
+    private fun isRemovedFromTitle(codePoint: Int): Boolean =
+        codePoint < 0x20 ||
+            codePoint in 0x7F..0x9F ||
+            codePoint == 0x061C ||
+            codePoint == 0x200E ||
+            codePoint == 0x200F ||
+            codePoint in 0x2028..0x202E ||
+            codePoint in 0x2066..0x2069
+
     private fun setTitle(newTitle: String) {
         title = newTitle
         listener.onEvent(TerminalEvent.TitleChanged(newTitle))
@@ -920,7 +952,7 @@ internal class Emulator(
         if (separator < 0) return
         when (data.substring(0, separator)) {
             "0",
-            "2" -> setTitle(data.substring(separator + 1))
+            "2" -> setTitle(cleanTitle(data, separator + 1))
             "4" -> paletteQuery(data.substring(separator + 1))
             "8" -> hyperlink(data.substring(separator + 1))
             "10" -> colorQuery(data.substring(separator + 1), ColorTarget.Foreground)
@@ -1181,6 +1213,9 @@ internal class Emulator(
          * The number of window titles that XTWINOPS 22 saves, as in xterm (docs/decisions/0002).
          */
         const val MAX_SAVED_TITLES = 10
+
+        /** The length of the window title, in UTF-16 units (docs/decisions/0063). */
+        const val MAX_TITLE_LENGTH = 1024
 
         /** ANSI modes that vtfx recognizes but never sets, and their DECRQM state, as in xterm. */
         private val FIXED_ANSI_MODES: Map<Int, ModeState> = buildMap {

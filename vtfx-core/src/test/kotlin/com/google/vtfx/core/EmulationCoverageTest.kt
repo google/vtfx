@@ -514,6 +514,47 @@ class EmulationCoverageTest {
             assertEquals(listOf("b".repeat(60)), titles())
         }
     }
+
+    /** The length and the characters of the window title (docs/decisions/0063). */
+    class Titles : EventRecorder by TerminalEvents() {
+        private fun titles() =
+            events.filterIsInstance<TerminalEvent.TitleChanged>().map { it.title }
+
+        @Test
+        fun controlAndReorderingCharactersAreRemoved() {
+            val t = terminal()
+            t.write(
+                "\u001b]0;a\u0085b\u2028c\u2029d\u202eexe.txt\u200f\u2066e\u2069\u061c\u009b\u0007"
+            )
+            assertEquals(listOf("abcdexe.txte"), titles())
+        }
+
+        @Test
+        fun emojiSequencesAndOtherFormatCharactersStay() {
+            val t = terminal()
+            val title = "\ud83d\udc69\u200d\ud83d\udcbb \u2764\ufe0f a\u200bb"
+            t.write("\u001b]2;$title\u0007")
+            assertEquals(listOf(title), titles())
+        }
+
+        @Test
+        fun aLongTitleIsCutWithoutSplittingASurrogatePair() {
+            val t = terminal()
+            t.write("\u001b]2;${"a".repeat(Emulator.MAX_TITLE_LENGTH)}\u0007")
+            t.write("\u001b]2;${"a".repeat(Emulator.MAX_TITLE_LENGTH - 1)}\ud83d\ude00\u0007")
+            t.write(
+                "\u001b]2;${"\u202e".repeat(10)}${"b".repeat(Emulator.MAX_TITLE_LENGTH + 1)}\u0007"
+            )
+            assertEquals(
+                listOf(
+                    "a".repeat(Emulator.MAX_TITLE_LENGTH),
+                    "a".repeat(Emulator.MAX_TITLE_LENGTH - 1),
+                    "b".repeat(Emulator.MAX_TITLE_LENGTH),
+                ),
+                titles(),
+            )
+        }
+    }
 }
 
 /** The events of the terminals of a test of [EmulationCoverageTest]. */
