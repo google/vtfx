@@ -349,8 +349,8 @@ internal class Graphics(
         val givenRows = minOf(command.rows, maxCells).toInt()
         // The size of the image's area in pixels: the cells given, else the source's size, or its
         // aspect ratio if only one of them is given.
-        val width: Double
-        val height: Double
+        var width: Double
+        var height: Double
         when {
             givenColumns > 0 && givenRows > 0 -> {
                 width = givenColumns * cellWidth
@@ -369,6 +369,10 @@ internal class Graphics(
                 height = sourceHeight.toDouble()
             }
         }
+        // Clamped like the cells, so that the area drawn is never larger than the cells that
+        // deletions and visibility go by.
+        width = minOf(width, maxCells * cellWidth)
+        height = minOf(height, maxCells * cellHeight)
         val columns =
             if (givenColumns > 0) givenColumns else cells(offsetX + width, cellWidth, maxCells)
         val rows = if (givenRows > 0) givenRows else cells(offsetY + height, cellHeight, maxCells)

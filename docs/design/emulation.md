@@ -269,7 +269,7 @@ Host output is untrusted (requirement 6.1). The policy and the reasons for each 
 | Width and height of an image | 10000 pixels each (as kitty) | Not configurable (`Graphics.MAX_SIDE`) | Refused with `EFBIG` before anything is allocated |
 | Pixels of one image | 64 MiB of decoded pixels (16,777,216 pixels), or `maxImageBytes` if smaller, below the size of a bitmap that Android refuses to draw ([decisions/0051](../decisions/0051-largest-image.md)) | Not configurable (`Graphics.MAX_BYTES_PER_IMAGE`) | Refused with `EFBIG` before the pixels are allocated |
 | Images, placements | 1024 of each per screen | Not configurable (`Graphics.MAX_IMAGES`, `MAX_PLACEMENTS`) | The oldest are dropped |
-| Columns and rows of a placement | `TerminalLimits.MAX_DIMENSION` | Not configurable | Clamped |
+| Columns and rows of a placement, and the width and height of the area it is drawn in | `TerminalLimits.MAX_DIMENSION` cells | Not configurable | Clamped, also a side computed from the image's aspect ratio when only `c` or `r` is given |
 
 - String lengths are counted in UTF-16 units, which bound the memory of the held strings directly.
 - Commands of the graphics protocol that look at every placement (deletions by position, clearing the screen) do work up to 1024 placements for a few bytes of output.

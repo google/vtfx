@@ -656,6 +656,17 @@ class GraphicsTest {
             val placement = terminal.snapshot().imagePlacements.single()
             assertEquals(TerminalLimits.MAX_DIMENSION.toFloat(), placement.width)
         }
+
+        @Test
+        fun theAreaOfAPlacementIsClampedLikeItsCells() {
+            val terminal = terminal()
+            // A 1 × 10000 image 2048 columns wide would be 10 million rows high by its ratio.
+            terminal.write(apc("a=T,i=1,f=24,s=1,v=10000,c=2048,C=1,q=2", ByteArray(30000)))
+            terminal.write(apc("a=T,i=2,f=24,s=10000,v=1,r=2048,C=1,q=2", ByteArray(30000)))
+            val max = TerminalLimits.MAX_DIMENSION.toFloat()
+            val areas = terminal.snapshot().imagePlacements.map { Pair(it.width, it.height) }
+            assertEquals(listOf(Pair(max, max), Pair(max, max)), areas)
+        }
     }
 
     class UnicodePlaceholders : GraphicsEvents by GraphicsRecorder() {
