@@ -566,6 +566,23 @@ class AttackTest {
             assertTrue(allowed)
         }
 
+        // Browsers parse the authority of ftp, ws, and wss as that of http (the special schemes of
+        // the WHATWG URL Standard).
+        @Test
+        fun authorityOfOtherSpecialSchemesIsChecked() {
+            val gate = gate(GatePolicy(urlSchemes = setOf("ftp", "ws", "wss")))
+            for (url in
+                listOf(
+                    "ftp://good.example@evil.example/",
+                    "ws://good.example\\@evil.example",
+                    "wss://\u0430pple.com/",
+                    "wss://good.example%2Eevil.example",
+                )) {
+                assertFalse(gate.isAllowedUrl(url), url)
+            }
+            assertTrue(gate.isAllowedUrl("ftp://example.com/a@b"))
+        }
+
         @Test
         fun nonAsciiInOtherSchemesIsNotCheckedForAHost() {
             val gate = gate(GatePolicy(urlSchemes = setOf("mailto")))
