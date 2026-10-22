@@ -315,6 +315,18 @@ class SearchTest {
     }
 
     @Test
+    fun aSearchStaysCappedAfterOutputWhenALineOfTheScrollbackHasTooManyMatches() {
+        val output = "ab ".repeat(SearchIndex.MAX_MATCHES + 500) + "\r\n" + "x\r\n".repeat(30)
+        val terminal = terminal(80, 24, output)
+        val index = search(terminal, "ab")
+        terminal.write("x\r\n")
+
+        index.update(terminal)
+
+        assertTrue(index.isCapped)
+    }
+
+    @Test
     fun aSearchWithFewerMatchesIsNotCapped() {
         val terminal = terminal(100, 20, "a".repeat(SearchIndex.MAX_MATCHES))
 

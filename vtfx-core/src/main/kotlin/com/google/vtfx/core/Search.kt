@@ -165,7 +165,7 @@ private constructor(
 
     init {
         for (text in texts) {
-            find(text)
+            find(text, closing = true)
             closedCount = kept.size
         }
     }
@@ -223,9 +223,10 @@ private constructor(
                 row++
             }
             val text = SearchText(read.firstLine + first, lines.subList(first, row + 1))
-            find(text)
             // A line that ends in the scrollback does not change; the next reads start after it.
-            if (text.lastLine < read.screenLine) {
+            val closing = text.lastLine < read.screenLine
+            find(text, closing)
+            if (closing) {
                 texts.addLast(text)
                 closedCount = kept.size
                 nextLine = text.lastLine + 1
@@ -235,32 +236,35 @@ private constructor(
         return !read.isComplete
     }
 
-    /** Adds the matches in [line]. */
-    private fun find(line: SearchText) {
+    /** Adds the matches in [line], which goes into [texts] if [closing]. */
+    private fun find(line: SearchText, closing: Boolean) {
         val text = line.text
         finder.find(text.text) { start, end ->
             val visible = !text.isConcealed(start, end)
             if (visible) {
                 val spans = text.spans(start, end)
                 add(
+                    closing,
                     SearchMatch(
                         line.firstLine + spans.first().row,
                         spans.first().start,
                         line.firstLine + spans.last().row,
                         spans.last().end,
-                    )
+                    ),
                 )
             }
             visible
         }
     }
 
-    private fun add(match: SearchMatch) {
+    /** Adds [match], of a line that goes into [texts] if [closing]. */
+    private fun add(closing: Boolean, match: SearchMatch) {
         kept.addLast(match)
         if (kept.size <= MAX_MATCHES) return
         val dropped = kept.removeFirst()
-        if (closedCount > 0) {
-            closedCount--
+        // The oldest match is of a line in texts, or else of the line being searched.
+        if (closedCount > 0 || closing) {
+            if (closedCount > 0) closedCount--
             droppedClosedLine = maxOf(droppedClosedLine, dropped.firstLine)
         } else {
             droppedOpen = true
