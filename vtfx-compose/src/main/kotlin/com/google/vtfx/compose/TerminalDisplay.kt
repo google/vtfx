@@ -420,14 +420,25 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
 /**
  * Brings [index] up to date with the lines that [read] returns, [minLines] at a time, as
  * `TerminalSession.searchLines` returns them.
+ *
+ * Each read holds the session's lock only for a part of the scrollback, so output may scroll the
+ * terminal between two reads, and faster than they go. So that a redraw ends, it reads at most
+ * about twice the lines that the terminal kept at the first read, and leaves the rest to the next
+ * redraw, which the output brings (docs/decisions/0062).
  */
 internal fun readSearchLines(
     index: SearchIndex,
     minLines: Int,
     read: (from: Long, minLines: Int) -> SearchLines,
 ) {
-    while (index.update(read(index.nextLine, minLines))) {
-        // Each read holds the session's lock only for a part of the scrollback.
+    var reads = 0L
+    var maxReads = Long.MAX_VALUE
+    while (true) {
+        val lines = read(index.nextLine, minLines)
+        // Enough to start over, once, after the lines were numbered again, and read them all.
+        if (reads == 0L) maxReads = 2 * ((lines.screenLine - lines.oldestLine) / minLines + 2)
+        reads++
+        if (!index.update(lines) || reads >= maxReads) return
     }
 }
 

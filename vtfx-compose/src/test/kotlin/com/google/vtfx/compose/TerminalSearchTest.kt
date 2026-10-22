@@ -19,7 +19,9 @@
 package com.google.vtfx.compose
 
 import com.google.vtfx.core.InternalVtfxApi
+import com.google.vtfx.core.SearchIndex
 import com.google.vtfx.core.SearchQuery
+import com.google.vtfx.core.Terminal
 import com.google.vtfx.session.TerminalSession
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -146,6 +148,28 @@ class TerminalSearchTest {
         feed("\u001b[2K")
 
         assertEquals(result(1, 0), display.searchResult)
+    }
+
+    @Test
+    fun readingStopsWhileOutputScrollsFasterThanTheReads() {
+        val terminal = Terminal(80, 24)
+        terminal.write("y\r\n".repeat(20_000).toByteArray(Charsets.UTF_8))
+        val index = SearchIndex(query("y"))
+        readSearchLines(index, minLines = 1000, terminal::searchLines)
+        // About 8 KiB, which scrolls more lines than a read reads.
+        val output = "y\r\n".repeat(2730).toByteArray(Charsets.UTF_8)
+        var reads = 0
+
+        readSearchLines(index, minLines = 1000) { from, minLines ->
+            check(++reads < 1000) { "the reads did not stop" }
+            // The output that the session takes between two reads.
+            terminal.write(output)
+            terminal.searchLines(from, minLines)
+        }
+        readSearchLines(index, minLines = 1000, terminal::searchLines)
+
+        val screenLine = terminal.searchLines(Long.MAX_VALUE, 1).screenLine
+        assertEquals(screenLine + terminal.rows - 2, index.matches.last().firstLine)
     }
 
     @Test
