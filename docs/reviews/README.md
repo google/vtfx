@@ -145,7 +145,8 @@ Closed reports and their reproduction tests are not kept in the tree, to keep th
 
 ## 4. List of reports
 
-Only open reports are listed. There are none at the moment.
+Only open reports are listed.
 
 | Report | Target | State |
 |---|---|---|
+| [2026-10-22-device-checks.md](2026-10-22-device-checks.md) | `c8ca7d7` | Open |
