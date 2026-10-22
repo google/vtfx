@@ -17,6 +17,7 @@
 package com.google.vtfx.sample
 
 import android.app.AlertDialog
+import android.content.pm.ApplicationInfo
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -65,13 +66,19 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         val viewModel = ViewModelProvider(this)[SampleViewModel::class.java]
-        if (intent.getBooleanExtra(EXTRA_LOG_HOST_INPUT, false)) viewModel.logHostInput = true
-        if (intent.getBooleanExtra(EXTRA_BENCHMARK, false) && savedInstanceState == null) {
+        val options =
+            LaunchOptions.read(
+                debuggable = applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0,
+                booleanExtra = { intent.getBooleanExtra(it, false) },
+                stringExtra = { intent.getStringExtra(it) },
+            )
+        if (options.logHostInput) viewModel.logHostInput = true
+        if (options.benchmark && savedInstanceState == null) {
             RenderBenchmark(this, viewModel.session).start()
         }
         // The locale of Han glyphs, such as "ja", for checking them on a device in another
         // language.
-        val locale = intent.getStringExtra(EXTRA_LOCALE)?.let { LocaleList(it) }
+        val locale = options.locale?.let { LocaleList(it) }
         setContent {
             val state = rememberTerminalState()
             var searching by rememberSaveable { mutableStateOf(false) }
@@ -170,14 +177,5 @@ class MainActivity : ComponentActivity() {
                 LinkPattern.Urls,
                 LinkPattern(Regex("""\bcrbug/(\d+)"""), "https://crbug.com/{1}"),
             )
-
-        /** A boolean extra that turns on [SampleViewModel.logHostInput]. */
-        const val EXTRA_LOG_HOST_INPUT = "logHostInput"
-
-        /** A boolean extra that runs [RenderBenchmark]. */
-        const val EXTRA_BENCHMARK = "benchmark"
-
-        /** A string extra with a language tag, such as "ja", for [TerminalStyle.locale]. */
-        const val EXTRA_LOCALE = "locale"
     }
 }

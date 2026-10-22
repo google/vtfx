@@ -18,7 +18,7 @@ adb -s SERIAL install -r vtfx-sample/build/outputs/apk/debug/vtfx-sample-debug.a
 
 The sample app is a terminal connected to a fake host (a small shell that echoes input). `help` lists the commands. The extra key bar (Esc, Tab, Ctrl, Alt, arrows, Direct) is shown only while the software keyboard is shown.
 
-The extras that can be passed at startup are as follows.
+The extras that can be passed at startup are as follows. A build that is not debuggable ignores `logHostInput` and `benchmark`, since the activity is exported and any app could pass them ([decisions/0053](decisions/0053-sample-test-extras-debug-only.md)).
 
 | extra | Meaning |
 |---|---|
