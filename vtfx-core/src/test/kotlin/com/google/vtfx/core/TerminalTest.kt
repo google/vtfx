@@ -953,6 +953,23 @@ class TerminalTest {
     }
 
     @Test
+    fun aCursorSavedWaitingToWrapDoesNotWaitAfterWidening() {
+        val t = terminal(10, 3)
+        // The alternate screen, which is not reflowed, and the last column.
+        t.write("\u001b[?1049h0123456789\u001b7")
+        t.resize(20, 3)
+        t.write("\u001b8Z")
+        assertEquals(listOf("012345678Z" + " ".repeat(10), " ".repeat(20)), t.lines().take(2))
+        // Back at the width it was saved at, it waits to wrap again.
+        val u = terminal(10, 3)
+        u.write("\u001b[?1049h0123456789\u001b7")
+        u.resize(20, 3)
+        u.resize(10, 3)
+        u.write("\u001b8Y")
+        assertEquals(listOf("0123456789", "Y" + " ".repeat(9)), u.lines().take(2))
+    }
+
+    @Test
     fun aWideCharacterIsDroppedAtOneColumn() {
         val t = terminal(4, 1)
         t.write("aあ")

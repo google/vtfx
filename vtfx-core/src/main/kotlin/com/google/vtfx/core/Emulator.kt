@@ -877,7 +877,8 @@ internal class Emulator(
         rendition.underlineColor = saved.underlineColor
         originMode = saved.originMode
         charsets = saved.charsets
-        pendingWrap = saved.pendingWrap && autowrap
+        // A pending wrap holds only at the last column, which a resize since DECSC may have moved.
+        pendingWrap = saved.pendingWrap && autowrap && cursorX == columns - 1
     }
 
     // --- Strings ---
