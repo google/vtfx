@@ -123,7 +123,10 @@ class SampleViewModel(application: Application) : AndroidViewModel(application) 
         host.start()
         fontExecutor.execute {
             val loaded = fontStore.load()
-            mainHandler.post { fonts = loaded }
+            mainHandler.post {
+                fonts = loaded.fonts
+                if (loaded.problems.isNotEmpty()) host.report(loaded.problems.joinToString("\n"))
+            }
         }
     }
 
@@ -169,6 +172,8 @@ class SampleViewModel(application: Application) : AndroidViewModel(application) 
                         host.report(result.report + describeFonts(result.fonts))
                     }
                 is FontStore.ImportResult.Failed -> mainHandler.post { host.report(result.message) }
+                // The view model is cleared: there is no one to tell.
+                FontStore.ImportResult.Cancelled -> Unit
             }
         }
     }

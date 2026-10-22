@@ -45,7 +45,7 @@ class FontStoreTest {
 
         val imported = (result as FontStore.ImportResult.Imported).fonts
         assertEquals(listOf(SanitizedFont.fromCanonical(font, limits)), imported)
-        assertEquals(imported, store().load())
+        assertEquals(imported, store().load().fonts)
     }
 
     @Test
@@ -53,7 +53,44 @@ class FontStoreTest {
         val result = store().import({ ByteArrayInputStream(ByteArray(100)) }, null)
 
         assertTrue((result as FontStore.ImportResult.Failed).message.startsWith("Not imported"))
-        assertEquals(emptyList<SanitizedFont>(), store().load())
+        assertEquals(emptyList<SanitizedFont>(), store().load().fonts)
+    }
+
+    @Test
+    fun fileThatCannotBeOpenedIsNotImported() {
+        val result = store().import({ null }, null)
+
+        assertTrue(result is FontStore.ImportResult.Failed)
+    }
+
+    @Test
+    fun fileWhosePermissionWasRevokedIsNotImported() {
+        val result = store().import({ throw SecurityException("revoked") }, null)
+
+        assertTrue(result is FontStore.ImportResult.Failed)
+    }
+
+    @Test
+    fun importOnAnInterruptedThreadIsCancelledAndKeepsTheInterrupt() {
+        Thread.currentThread().interrupt()
+
+        val result = store().import({ ByteArrayInputStream(font) }, null)
+
+        assertTrue(Thread.interrupted())
+        assertTrue(result is FontStore.ImportResult.Cancelled)
+        assertEquals(emptyList<SanitizedFont>(), store().load().fonts)
+    }
+
+    @Test
+    fun savedFontThatFailsTheCheckIsLeftOutAndReported() {
+        store().import({ ByteArrayInputStream(font) }, null)
+        File(directory, "001.ttf").writeBytes(font.copyOf(font.size - 1))
+
+        val loaded = store().load()
+
+        assertEquals(listOf(SanitizedFont.fromCanonical(font, limits)), loaded.fonts)
+        assertEquals(1, loaded.problems.size)
+        assertTrue(loaded.problems.single().contains("001.ttf"))
     }
 
     private companion object {

@@ -21,6 +21,7 @@ import com.google.vtfx.font.gate.FontLimits
 import com.google.vtfx.font.gate.InvalidFontException
 import com.google.vtfx.font.gate.SanitizedFont
 import java.io.File
+import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.InputStream
 
@@ -43,22 +44,47 @@ class FontStore(private val directory: File, private val limits: FontLimits) {
 
         /** The file was not imported, for the reason that [message] gives. */
         class Failed(val message: String) : ImportResult
+
+        /** The thread was interrupted, and the file was not imported. */
+        data object Cancelled : ImportResult
     }
 
-    /** Loads the fonts saved before, checking them again, and returns them. */
-    fun load(): List<SanitizedFont> {
+    /**
+     * The saved fonts that passed the check again, and a message for each one that did not, which
+     * is left out: files in storage can be damaged, and the checks of a newer vtfx can be stricter.
+     */
+    class Loaded(val fonts: List<SanitizedFont>, val problems: List<String>)
+
+    /**
+     * Loads the fonts saved before, checking them again. The files of the fonts left out are
+     * deleted at the next save.
+     */
+    fun load(): Loaded {
         val files = directory.listFiles().orEmpty().sortedBy { it.name }
-        saved = files.map { SanitizedFont.fromCanonical(it.readBytes(), limits) }
-        return saved
+        val fonts = mutableListOf<SanitizedFont>()
+        val problems = mutableListOf<String>()
+        for (file in files) {
+            try {
+                fonts += SanitizedFont.fromCanonical(file.readBytes(), limits)
+            } catch (e: InvalidFontException) {
+                problems += "Saved font ${file.name} not loaded: ${e.kind}: ${e.message}"
+            } catch (e: IOException) {
+                problems += "Saved font ${file.name} not loaded: $e"
+            }
+        }
+        saved = fonts
+        return Loaded(fonts, problems)
     }
 
     /**
      * Imports face [face] of the font file that [open] opens, or the first face that vtfx reads if
-     * [face] is null, adding it to the saved fonts.
+     * [face] is null, adding it to the saved fonts. Every failure, of the file, of reading it, or
+     * of an interrupt, is a result: an exception on the font thread would end the app.
      */
     fun import(open: () -> InputStream?, face: Int?): ImportResult =
         try {
-            val bytes = checkNotNull(open()) { "cannot open the file" }.use { it.readBytes() }
+            val input = open() ?: throw FileNotFoundException("cannot open the file")
+            val bytes = input.use { it.readBytes() }
             val faces = FontFile.inspect(bytes, limits)
             val chosen =
                 face
@@ -81,6 +107,13 @@ class FontStore(private val directory: File, private val limits: FontLimits) {
             ImportResult.Failed("Not imported: ${e.message}")
         } catch (e: IOException) {
             ImportResult.Failed("Not imported: $e")
+        } catch (e: SecurityException) {
+            // The provider of the file no longer lets the app read it.
+            ImportResult.Failed("Not imported: $e")
+        } catch (_: InterruptedException) {
+            // FontFile.sanitize clears the interrupt when it stops; set it again for the caller.
+            Thread.currentThread().interrupt()
+            ImportResult.Cancelled
         }
 
     /** Saves [fonts] in place of the saved fonts. */
