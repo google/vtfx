@@ -44,5 +44,14 @@ echo "== Generated sources"
 # (docs/decisions/0029). Fails if they are not what the UCD files in third_party/unicode generate.
 python3 -I scripts/generate_unicode_tables.py --check
 
+echo "== Gradle wrapper"
+# gradle-wrapper.jar is the first code that ./gradlew runs, before distributionSha256Sum and
+# dependency verification apply, and a binary that a review of the diff cannot judge. This is the
+# checksum that Gradle publishes for the jar of the version in gradle-wrapper.properties
+# (https://services.gradle.org/distributions/gradle-<version>-wrapper.jar.sha256); update both
+# together.
+echo "3b8a25775a69158b5ad2b1d17a80a88dc7b40a352a73eb27d06c612a7ce68e98  gradle/wrapper/gradle-wrapper.jar" |
+    sha256sum --check --strict -
+
 echo "== Gradle build"
 ./gradlew --console=plain build
