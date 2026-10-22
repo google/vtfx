@@ -66,9 +66,9 @@ public class TerminalState {
      * Lines are separated by "\n", except where autowrap joined them, and the trailing blanks of
      * each line are left out. Concealed text (SGR 8), which the terminal does not draw, is copied
      * as blanks. After [selectAll], the text is that of the newest lines of the scrollback and the
-     * screen, at most 10,000 lines (fewer when there are more than 2,097,152 cells in them), cut to
-     * the newest lines that fit in 262,144 characters, so that the system's clipboard can take it.
-     * Empty lines at the end are left out.
+     * screen, at most 10,000 lines (fewer when there are more than 2,097,152 cells in them), and
+     * empty lines at the end are left out. The text is cut to the newest lines that fit in 262,144
+     * characters, so that the system's clipboard can take it.
      */
     public fun copySelection(): Boolean = display?.copySelection(clear = false) ?: false
 

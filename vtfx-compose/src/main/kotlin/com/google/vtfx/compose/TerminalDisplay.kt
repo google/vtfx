@@ -128,12 +128,12 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
     }
 
     /**
-     * Returns the text of [selected]. All the text is that of the newest lines, at most
-     * [MAX_COPIED_LINES] of them and [MAX_COPIED_CELLS] cells, of which the newest that fit in
-     * [MAX_COPIED_LENGTH] characters.
+     * Returns the text of [selected], of which the newest lines that fit in [MAX_COPIED_LENGTH]
+     * characters. All the text is that of the newest lines, at most [MAX_COPIED_LINES] of them and
+     * [MAX_COPIED_CELLS] cells.
      */
     private fun selectedText(selected: TerminalSelection): String {
-        if (!selected.isAll) return selected.text(displaySnapshot())
+        if (!selected.isAll) return newestThatFit(selected.text(displaySnapshot()))
         val columns = session.size().first
         val lines = session.lines(minOf(MAX_COPIED_LINES, MAX_COPIED_CELLS / columns))
         if (lines.isEmpty()) return ""
@@ -144,6 +144,14 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
                     Cell(lines.last().columns - 1, lines.size - 1),
                 )
                 .trimEnd('\n')
+        return newestThatFit(text)
+    }
+
+    /**
+     * Returns the newest whole lines of [text] that fit in [MAX_COPIED_LENGTH] characters, or the
+     * end of its last line if that alone is longer, without splitting a surrogate pair.
+     */
+    private fun newestThatFit(text: String): String {
         if (text.length <= MAX_COPIED_LENGTH) return text
         // The newest lines that fit, from the start of a line, or the end of a line too long.
         val from = text.length - MAX_COPIED_LENGTH
@@ -410,8 +418,9 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
         const val MAX_COPIED_CELLS = 2 * 1024 * 1024
 
         /**
-         * The longest text that copying all the text copies. A clip goes to the system in one
-         * Binder transaction, which fails above about 1 MB; this is 512 KB of UTF-16.
+         * The longest text that copying copies, all the text or a selection of the display. A clip
+         * goes to the system in one Binder transaction, which fails above about 1 MB; this is 512
+         * KB of UTF-16.
          */
         const val MAX_COPIED_LENGTH = 256 * 1024
     }

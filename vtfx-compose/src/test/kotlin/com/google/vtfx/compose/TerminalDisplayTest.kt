@@ -18,10 +18,12 @@ package com.google.vtfx.compose
 
 import android.os.Looper
 import com.google.vtfx.core.TerminalLimits
+import com.google.vtfx.gate.ClipboardAccess
 import com.google.vtfx.session.TerminalSession
 import com.google.vtfx.session.TerminalSessionListener
 import java.time.Duration
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -47,6 +49,37 @@ class TerminalDisplayTest {
     private val display = TerminalDisplay(session).also { it.attach() }
 
     private fun feed(text: String) = session.feed(text.toByteArray(Charsets.UTF_8))
+
+    @Test
+    fun copyingASelectionOfTheDisplayIsCutLikeAllTheText() {
+        val copied = mutableListOf<String>()
+        val clipboard =
+            object : ClipboardAccess {
+                override fun write(text: String) {
+                    copied += text
+                }
+
+                override fun read(): String? = null
+            }
+        val session = TerminalSession({}, columns = 300, rows = 100, clipboard = clipboard)
+        // Each cell holds 32 UTF-16 units, as many as a cell takes: 9,600 characters a row.
+        val cluster = "a" + "\u0301".repeat(31)
+        session.feed(cluster.repeat(300 * 100).toByteArray(Charsets.UTF_8))
+        val display = TerminalDisplay(session)
+        display.selection = TerminalSelection(Cell(0, 0), Cell(299, 99))
+
+        display.copySelection()
+
+        val text = copied.single()
+        assertTrue("${text.length}", text.length <= MAX_COPIED_LENGTH)
+        // Autowrap joined the rows into one line, longer than what is copied: its end.
+        assertEquals(cluster.repeat(300 * 100).takeLast(MAX_COPIED_LENGTH), text)
+    }
+
+    private companion object {
+        /** The most characters that are copied (section 4 of compose-input.md). */
+        const val MAX_COPIED_LENGTH = 256 * 1024
+    }
 
     @Test
     fun theFirstSizeIsAppliedAtOnce() {
