@@ -262,7 +262,7 @@ Host output is untrusted (requirement 6.1). The policy and the reasons for each 
 | Number of parameters | 32 | Not configurable (`Params.MAX_COUNT`) | The 33rd and later are dropped |
 | Parameter values | 65535 | Not configurable (`ProtocolLimits.MAX_PARAMETER`) | Set to 65535 |
 | Text of a cell (a character and its combining characters) | 32 UTF-16 units | Not configurable (`Line.MAX_CLUSTER_LENGTH`) | Later combining characters are dropped |
-| REP (`CSI Ps b`) count | The number of cells on the screen (columns × rows) | Not configurable | The count is truncated |
+| REP (`CSI Ps b`) count | The number of cells on the screen (columns × rows). In insert mode, the cells for the characters on each row are inserted at once, so the work stays within the screen | Not configurable | The count is truncated |
 | Length of OSC 8 URIs | 2083 characters (the recommendation of the OSC 8 specification) | Not configurable (`Emulator.MAX_URI_LENGTH`) | Not made a link |
 | Length of OSC 8 ids | 250 UTF-16 units (as VTE limits it) | Not configurable (`Emulator.MAX_LINK_ID_LENGTH`) | Not made a link |
 | Saved titles (XTWINOPS 22) | 10, with a total length up to the string limit, counted in UTF-16 units | The count is not configurable (`Emulator.MAX_SAVED_TITLES`); the length follows `TerminalLimits.maxStringLength` | The oldest are dropped |

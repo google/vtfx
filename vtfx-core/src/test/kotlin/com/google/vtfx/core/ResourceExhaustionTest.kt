@@ -89,6 +89,27 @@ class ResourceExhaustionTest {
         }
     }
 
+    /**
+     * REP in insert mode, on the widest screen: each repeated character inserts cells, which shifts
+     * the rest of the line, so its work must not grow with the count times the width.
+     */
+    @Test
+    fun repeatInInsertModeIsBoundedByTheScreen() {
+        val terminal = Terminal(TerminalLimits.MAX_DIMENSION, 32)
+        val input = "\u001b[4hx" + "\u001b[65535b".repeat(4096)
+        val cpuNanos =
+            assertCompletesWithin(Duration.ofSeconds(HANG_LIMIT_SECONDS)) {
+                val threads = ManagementFactory.getThreadMXBean()
+                val start = threads.currentThreadCpuTime
+                terminal.write(input.toByteArray(Charsets.UTF_8))
+                threads.currentThreadCpuTime - start
+            }
+        assertTrue(
+            cpuNanos <= CPU_TIME_LIMIT_SECONDS * 1_000_000_000L,
+            "${cpuNanos / 1_000_000} ms of CPU time",
+        )
+    }
+
     private companion object {
         private const val COLUMNS = 80
         private const val ROWS = 24

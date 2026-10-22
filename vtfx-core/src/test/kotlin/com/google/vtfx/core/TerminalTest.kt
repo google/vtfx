@@ -563,6 +563,32 @@ class TerminalTest {
     }
 
     @Test
+    fun repeatInInsertModeIsTheSameAsPrintingEachCharacter() {
+        val random = Random(1)
+        repeat(2000) {
+            val columns = 1 + random.nextInt(8)
+            val rows = 1 + random.nextInt(3)
+            val character = listOf("x", "あ", "\u0301").random(random)
+            val count = random.nextInt(2 * columns * rows + 2)
+            val setup =
+                "a あb".repeat(4) +
+                    "\u001b[${1 + random.nextInt(rows)};${1 + random.nextInt(columns)}H" +
+                    (if (random.nextBoolean()) "\u001b[?7l" else "") +
+                    "\u001b[4h$character"
+            val repeated = terminal(columns, rows)
+            repeated.write(setup + "\u001b[${count}b")
+            val printed = terminal(columns, rows)
+            printed.write(setup + character.repeat(maxOf(count, 1).coerceAtMost(columns * rows)))
+            val case = "$columns x $rows, ${setup.replace("\u001b", "ESC")}, $count"
+            assertEquals(printed.lines(), repeated.lines(), case)
+            assertEquals(printed.cursor, repeated.cursor, case)
+            repeated.write("Z")
+            printed.write("Z")
+            assertEquals(printed.lines(), repeated.lines(), "$case, then Z")
+        }
+    }
+
+    @Test
     fun saveCursorRestoresStyleAndOriginMode() {
         val t = terminal(5, 3)
         t.write("\u001b[1m\u001b7\u001b[0m\u001b8X")

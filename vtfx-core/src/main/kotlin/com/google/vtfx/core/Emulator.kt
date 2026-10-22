@@ -151,7 +151,7 @@ internal class Emulator(
     override fun print(codePoint: Int) {
         // REP repeats the character as received, before the character set maps it.
         lastPrinted = codePoint
-        printMapped(if (codePoint < 0x7F) charsets.map(codePoint) else codePoint)
+        printMapped(if (codePoint < 0x7F) charsets.map(codePoint) else codePoint, insertMode)
     }
 
     override fun printAscii(bytes: ByteArray, from: Int, to: Int) {
@@ -189,7 +189,11 @@ internal class Emulator(
         lastPrinted = bytes[to - 1].toInt()
     }
 
-    private fun printMapped(codePoint: Int) {
+    /**
+     * Prints [codePoint], after the character set. With [insert], it first inserts the cells it
+     * takes, shifting the rest of the line (IRM).
+     */
+    private fun printMapped(codePoint: Int, insert: Boolean) {
         if (isRegionalIndicator(codePoint) && pairRegionalIndicator(codePoint)) return
         val width = CharWidth.of(codePoint, ambiguousWidth)
         if (width == 0) {
@@ -207,7 +211,7 @@ internal class Emulator(
             }
         }
         val line = screen[cursorY]
-        if (insertMode) line.insertBlanks(cursorX, width, style.erased())
+        if (insert) line.insertBlanks(cursorX, width, style.erased())
         // A placeholder of an image keeps the underline color without an underline: it is the
         // placement id (docs/decisions/0038).
         val underlineColor =
@@ -220,6 +224,34 @@ internal class Emulator(
             pendingWrap = autowrap
         } else {
             cursorX = next
+        }
+    }
+
+    /**
+     * REP. In insert mode, each character would shift the rest of the line, so a few bytes would
+     * shift lines count times; instead, the cells for the characters that fit on the cursor's row
+     * are inserted at once, with the same result.
+     */
+    private fun repeatLastPrinted(count: Int) {
+        val mapped = if (lastPrinted < 0x7F) charsets.map(lastPrinted) else lastPrinted
+        val width = CharWidth.of(mapped, ambiguousWidth)
+        if (!insertMode || width == 0) {
+            repeat(count) { print(lastPrinted) }
+            return
+        }
+        var left = count
+        while (left > 0) {
+            if (pendingWrap && autowrap) wrap()
+            val run = minOf(left, (columns - cursorX) / width)
+            if (run == 0) {
+                // A wide character at the last column, which print moves or wraps.
+                print(lastPrinted)
+                left--
+                continue
+            }
+            screen[cursorY].insertBlanks(cursorX, run * width, style.erased())
+            repeat(run) { printMapped(mapped, insert = false) }
+            left -= run
         }
     }
 
@@ -466,7 +498,7 @@ internal class Emulator(
             'a' -> moveTo(cursorX + n, cursorY)
             // Repeating more than a screenful only scrolls, so the count is bounded to keep a few
             // bytes from costing unbounded work (docs/decisions/0002).
-            'b' -> if (lastPrinted >= 0) repeat(minOf(n, columns * rows)) { print(lastPrinted) }
+            'b' -> if (lastPrinted >= 0) repeatLastPrinted(minOf(n, columns * rows))
             'c' ->
                 if (params[0] == 0) {
                     listener.onEvent(
