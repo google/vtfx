@@ -548,7 +548,7 @@ private fun hyperlinkText(snapshot: TerminalSnapshot, cell: Cell, link: Hyperlin
         while (hasLink(row, column)) {
             val line = snapshot.line(row)
             // The right half of a wide character adds nothing; a blank cell is a space.
-            if (line.widthAt(column) > 0) append(line.textAt(column) ?: " ")
+            if (line.widthAt(column) > 0) append(line.visibleTextAt(column) ?: " ")
             if (column < columns - 1) {
                 column++
             } else if (line.isWrapped && row < snapshot.rows - 1) {
@@ -596,7 +596,7 @@ private class DisplayText(private val display: TerminalDisplay) {
         val currentOffset = display.scrollOffset
         if (currentVersion != version || currentOffset != scrollOffset) {
             val snapshot = display.displaySnapshot()
-            lines = List(snapshot.rows) { snapshot.line(it).text().trimEnd() }
+            lines = List(snapshot.rows) { snapshot.line(it).visibleText().trimEnd() }
             version = currentVersion
             scrollOffset = currentOffset
         }

@@ -55,7 +55,7 @@ public abstract class TerminalLink internal constructor() {
     internal constructor(
         /**
          * The text of the cells around the tapped one that have the same hyperlink, joined across
-         * rows that autowrap joins.
+         * rows that autowrap joins. Concealed cells (SGR 8), which are not drawn, are blanks.
          */
         override val text: String,
         /** The hyperlink of the tapped cell. */

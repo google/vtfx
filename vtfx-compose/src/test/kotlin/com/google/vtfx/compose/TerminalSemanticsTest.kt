@@ -68,6 +68,14 @@ class TerminalSemanticsTest {
     }
 
     @Test
+    fun concealedTextIsNotExposed() {
+        composeRule.setContent { Terminal(display, Modifier.size(300.dp, 200.dp)) }
+        session.feed("visible\u001b[8mhidden\u001b[28m!".toByteArray())
+        composeRule.onNode(hasText("visible      !", substring = false)).assertExists()
+        composeRule.onAllNodes(hasText("hidden", substring = true)).assertCountEquals(0)
+    }
+
+    @Test
     fun scrolledBackTextIsExposed() {
         composeRule.setContent { Terminal(display, Modifier.size(300.dp, 200.dp)) }
         composeRule.waitForIdle()

