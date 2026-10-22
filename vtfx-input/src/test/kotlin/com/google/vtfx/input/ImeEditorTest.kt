@@ -357,10 +357,14 @@ class ImeEditorTest {
     }
 
     @Test
-    fun tabIsKeptInTheHistory() {
-        editor.commitText("a\tb")
-        assertEquals(listOf<HostInput>(text("a\tb")), sent)
-        assertEquals("a\tb", editor.text)
+    fun committedTabIsSentAndResetsLikeTheTabKey() {
+        editor.commitText("cd Doc\t")
+        assertEquals(listOf<HostInput>(text("cd Doc\t")), sent)
+        // The shell may have completed the word, so the history no longer predicts the line.
+        assertEquals("", editor.text)
+        assertEquals(1, restarts)
+        assertFalse(editor.setComposingRegion(3, 7))
+        assertEquals(listOf<HostInput>(text("cd Doc\t")), sent)
     }
 
     @Test

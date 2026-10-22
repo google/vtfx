@@ -458,7 +458,9 @@ public class ImeEditor(
         if (deletes > 0) listener.send(HostInput.Delete(deletes))
         val added = history.substring(prefix)
         sentHistory = history
-        if (sendText(added) || isHistoryOverLimit()) clearHistory()
+        // A committed HT resets as the Tab key does: the shell may complete the word, and the
+        // history no longer predicts the host's line (docs/decisions/0057).
+        if (sendText(added) || '\t' in added || isHistoryOverLimit()) clearHistory()
         restartIfReady()
     }
 

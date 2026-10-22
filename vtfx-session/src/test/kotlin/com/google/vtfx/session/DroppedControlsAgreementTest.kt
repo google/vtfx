@@ -66,9 +66,12 @@ class DroppedControlsAgreementTest {
     private fun Char.label(): String = "U+%04X".format(code)
 
     @Test
-    fun theHostReceivesWhatTheEditorKeeps_forEveryCodeUnitButSurrogatesAndLineBreaks() {
+    fun theHostReceivesWhatTheEditorKeeps_forEveryCodeUnitButSurrogatesLineBreaksAndTab() {
         val codeUnits =
-            ('\u0000'..'\uffff').filter { !it.isSurrogate() && it != '\r' && it != '\n' }
+            // Line breaks and HT reset the history, which is then empty.
+            ('\u0000'..'\uffff').filter {
+                !it.isSurrogate() && it != '\r' && it != '\n' && it != '\t'
+            }
 
         val mismatches = codeUnits.filter {
             commitToNewSession("a${it}b").let { c -> c.kept != c.received }
@@ -78,15 +81,26 @@ class DroppedControlsAgreementTest {
     }
 
     @Test
-    fun theEditorKeepsWhatTheGateLetsThrough_forEveryCodeUnitButSurrogatesAndLineBreaks() {
+    fun theEditorKeepsWhatTheGateLetsThrough_forEveryCodeUnitButSurrogatesLineBreaksAndTab() {
         val codeUnits =
-            ('\u0000'..'\uffff').filter { !it.isSurrogate() && it != '\r' && it != '\n' }
+            // Line breaks and HT reset the history, which is then empty.
+            ('\u0000'..'\uffff').filter {
+                !it.isSurrogate() && it != '\r' && it != '\n' && it != '\t'
+            }
 
         val mismatches = codeUnits.filter {
             commitToNewSession("a${it}b").kept != pasteToNewSession("a${it}b")
         }
 
         assertEquals(emptyList(), mismatches.map { it.label() })
+    }
+
+    @Test
+    fun aTabIsReceivedAndResetsTheHistory() {
+        val commit = commitToNewSession("a\tb")
+        assertEquals("a\tb", commit.received)
+        assertEquals("", commit.kept)
+        assertEquals("a\tb", pasteToNewSession("a\tb"))
     }
 
     @Test

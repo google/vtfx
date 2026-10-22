@@ -132,6 +132,7 @@ Hardware keys go to the focused terminal. `TerminalInputView` passes the keys th
   - The pending input is sent even during a batch edit of the IME, as a paste is, since the app's call is not part of the IME's edit; the input history is emptied at once, and only the restart of the IME waits for the end of the batch (section 5.2 of [ime-contract.md](ime-contract.md)).
   - The reset restarts the IME only if it saw an edit since the last restart, so that tapping Ctrl with nothing typed does not restart the IME every time (section 5.2 of [ime-contract.md](ime-contract.md)).
   - If modifiers are already armed and the app adds another one, the composing text typed after the first takes the first, as it would have when it was committed.
+- A deletion that is part of an IME edit (`deleteSurroundingText`) is sent as plain DELs and does not take the sticky modifiers; BS as a key event (`KEYCODE_DEL`) does ([decisions/0057](../decisions/0057-provisional-ime-details.md)).
 - The keys of scroll gestures (section 2) do not take the sticky modifiers, which stay armed.
 
 ## 9. Cursor blinking

@@ -161,7 +161,8 @@ class TerminalInputConnectionTest {
     fun editsDeleteOnlyTheCharactersThatTheGateSent() {
         // The editor keeps out what the gate drops; this checks that both follow the same rule.
         for (c in (0..0xff).map { it.toChar() } + '\ud800') {
-            if (c == '\r' || c == '\n') continue
+            // Line breaks and HT reset the history, so there is nothing to delete.
+            if (c == '\r' || c == '\n' || c == '\t') continue
             val host = StringBuilder()
             val session = TerminalSession({ host.append(String(it, Charsets.UTF_8)) })
             session.edit { it.commitText("a${c}b") }

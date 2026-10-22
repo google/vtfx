@@ -59,7 +59,7 @@ When sending committed text, `sendText` in `vtfx-gate` performs the following co
 | Character | What is sent |
 |---|---|
 | `\n`, `\r\n`, `\r` | CR (0x0d). Reset after sending (5.1). |
-| `\t` | As is. |
+| `\t` | As is. Reset after sending, as for the Tab key (5.1). |
 | Other C0 control characters, DEL, C1 control characters | Not sent. |
 | Anything else | Sent as UTF-8. |
 
@@ -83,7 +83,7 @@ This removal of control characters is not a defense against a malicious IME, bec
 | Trigger | Reason |
 |---|---|
 | Enter (a key event, a committed newline character, `performEditorAction`) | The line is finished, and later edits are for a new line. |
-| Non-character keys (arrows, Esc, Tab, Home, End, combinations with Ctrl or Alt, Forward Delete) | The content of the line on the host and the cursor position can no longer be predicted from the input history. |
+| Non-character keys (arrows, Esc, Tab, Home, End, combinations with Ctrl or Alt, Forward Delete), and a committed HT (`\t`), which the shell takes as Tab | The content of the line on the host and the cursor position can no longer be predicted from the input history. |
 | Host output moved the cursor to another line | The prompt has likely changed. Lines are counted as logical lines joined by autowrap. No reset for moves within the same line (echo and so on), moves where the echo of long input merely advanced to the next row by autowrap, or moves between rows joined by autowrap. Reset when the screen scrolls and the cursor's row number does not change, as with a newline on the bottom row, or when the cursor moves to another line and back within one receive (`Terminal.lineChanges`). |
 | Switching the alternate screen, resetting the terminal (RIS) | Same as above. Also reset when the cursor's row does not change, or when switching to the alternate screen and back within one receive (`Terminal.lineChanges`). |
 | Focus was lost | Input was interrupted. A session receives input only while it is connected to the focused View and the window also has focus. Whether the View or the window loses focus, and also when the View reconnects to another session or leaves the screen, the previous session loses focus. Focus notifications to the host (mode 1004) follow the same judgment. |
