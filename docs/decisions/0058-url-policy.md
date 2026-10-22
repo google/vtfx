@@ -13,14 +13,17 @@
 1. `GatePolicy` refuses `file` in `urlSchemes`, in any case, with `IllegalArgumentException`. Section 5.2 of [gate-policy.md](../design/gate-policy.md) says so.
 2. `AndroidUrlOpener` is unchanged: the gate decides which URLs are opened, and vtfx-gate-android only performs what the gate allowed.
 3. `content` stays allowed if an app adds it: starting an activity for a `content:` URL does not throw by default, and the app that takes it decides whether it can read it.
+4. `GatePolicy` is immutable, as its documentation says, also to Java: `urlSchemes` and `GatePolicy.DEFAULT_URL_SCHEMES` are unmodifiable sets (`Collections.unmodifiableSet`). Before, both returned a `LinkedHashSet` that Java code could add to (and Kotlin code by a cast), which changed a policy after it was built, or the default of every later policy in the process (found in the same review).
 
 ## Alternatives considered
 
 - **Convert `FileUriExposedException` into `Refused` in `AndroidUrlOpener`**: no change to `GatePolicy`, but every `file:` link would be offered to the user and then fail, and the opener would take a decision that belongs to the gate. The failure is known when the policy is built, so failing then is earlier.
 - **Refuse `content` too**: such links rarely work without a grant of access, but they do not crash the app, and refusing them would take away a scheme that some apps may use.
 - **Leave it to the app**: the crash comes from host output, after an action of the user, in a configuration that looks harmless.
+- **Return a new copy on each read**: also safe, but a copy per read for no gain over an unmodifiable set.
 
 ## Impact of reversing
 
 - Remove the check from `GatePolicy`, its test in `AttackTest.Hyperlinks`, and the sentence in section 5.2 of gate-policy.md.
 - Decide again what `AndroidUrlOpener` does with `FileUriExposedException`; catching nothing brings back the crash.
+- Item 4: store the sets without the unmodifiable wrapper; nothing else depends on it.

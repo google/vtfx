@@ -16,6 +16,8 @@
 
 package com.google.vtfx.gate
 
+import java.util.Collections
+
 /**
  * Access to the system clipboard, implemented by vtfx-gate-android. Only vtfx-gate calls it: for
  * OSC 52 after the [GatePolicy] allowed the request, and for the user's copy and paste, to which
@@ -117,8 +119,11 @@ public class GatePolicy(
      * `file` may not be given: Android throws `FileUriExposedException` when an app that targets
      * API 24 or later starts an activity for a `file:` URL, so a link from the host would crash the
      * app.
+     *
+     * Unmodifiable, also from Java, so that the policy cannot change after it is built.
      */
-    public val urlSchemes: Set<String> = urlSchemes.mapTo(LinkedHashSet()) { it.lowercase() }
+    public val urlSchemes: Set<String> =
+        Collections.unmodifiableSet(urlSchemes.mapTo(LinkedHashSet()) { it.lowercase() })
 
     init {
         require(maxClipboardWriteLength >= 0) { "maxClipboardWriteLength must not be negative" }
@@ -144,7 +149,11 @@ public class GatePolicy(
          */
         public val DEFAULT_MAX_CLIPBOARD_READ_LENGTH: Int = 64 * 1024
 
-        /** The default of [urlSchemes][GatePolicy.urlSchemes]: http and https. */
-        public val DEFAULT_URL_SCHEMES: Set<String> = setOf("http", "https")
+        /**
+         * The default of [urlSchemes][GatePolicy.urlSchemes]: http and https. Unmodifiable, also
+         * from Java, since every policy built without schemes uses it.
+         */
+        public val DEFAULT_URL_SCHEMES: Set<String> =
+            Collections.unmodifiableSet(setOf("http", "https"))
     }
 }

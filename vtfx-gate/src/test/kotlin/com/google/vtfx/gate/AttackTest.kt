@@ -594,6 +594,25 @@ class AttackTest {
             }
         }
 
+        // Java code can call add on any Set, as the cast does here.
+        @Test
+        fun schemesOfAPolicyCannotBeChangedAfterItIsBuilt() {
+            val policy = GatePolicy()
+
+            runCatching { (policy.urlSchemes as MutableSet<String>).add("javascript") }
+
+            assertEquals(setOf("http", "https"), policy.urlSchemes)
+            assertFalse(gate(policy).isAllowedUrl("javascript:alert(1)"))
+        }
+
+        @Test
+        fun defaultSchemesCannotBeChangedForLaterPolicies() {
+            runCatching { (GatePolicy.DEFAULT_URL_SCHEMES as MutableSet<String>).add("javascript") }
+
+            assertEquals(setOf("http", "https"), GatePolicy.DEFAULT_URL_SCHEMES)
+            assertFalse(gate(GatePolicy()).isAllowedUrl("javascript:alert(1)"))
+        }
+
         @Test
         fun schemesAreAllowedInAnyCase() {
             val policy = GatePolicy(urlSchemes = setOf("HTTPS", "Mailto"))
