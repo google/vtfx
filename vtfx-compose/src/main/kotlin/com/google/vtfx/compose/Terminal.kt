@@ -39,6 +39,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -290,6 +291,9 @@ internal fun Terminal(
     Box(
         modifier
             .preferredGridSize(metrics, style.padding)
+            // The host's glyphs, stacked combining marks or a glyph wider than its cell, may reach
+            // beyond the grid; they must not draw over the app's UI around the terminal.
+            .clipToBounds()
             .drawBehind {
                 drawRect(if (reverseVideo) style.colors.foreground else style.colors.background)
             }

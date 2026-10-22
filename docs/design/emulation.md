@@ -145,6 +145,7 @@ The policy is in [decisions/0011](../decisions/0011-unicode.md).
 
 - Box-drawing (U+2500–U+257F) and block elements (U+2580–U+259F) are drawn as shapes by `BoxDrawing` in `vtfx-compose`, not with font glyphs, so that they join across cells. Light, heavy, double, rounded-corner, diagonal, and dashed lines (drawn as solid) are drawn.
 - CJK characters are drawn with Android's system font fallback. The glyphs of Han characters follow `TerminalStyle.locale`, which defaults to the system locale.
+- A glyph may reach beyond its cell: combining marks stacked on a character, or a glyph wider than its cell (U+FDFD, cuneiform). Within the `Terminal`, this is left as fonts draw it; the `Terminal` clips its drawing to its bounds, padding included, so that what the host writes never draws over the app's UI around it.
 
 ## 8. Character attributes and decorations
 
