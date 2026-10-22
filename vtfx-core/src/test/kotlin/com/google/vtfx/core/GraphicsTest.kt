@@ -21,6 +21,7 @@ package com.google.vtfx.core
 import com.google.vtfx.core.graphics.Graphics
 import com.google.vtfx.core.graphics.PlaceholderDiacritics
 import com.google.vtfx.core.graphics.PngTestEncoder
+import java.lang.management.ManagementFactory
 import java.util.Base64
 import java.util.zip.Deflater
 import kotlin.test.assertEquals
@@ -760,6 +761,36 @@ class GraphicsTest {
             assertEquals(listOf("0,0: 0,0 of 2x2", "0,1: 0,0 of 3x3"), terminal.tiles())
             // The color does not make the cell underlined.
             assertEquals(UnderlineStyle.None, terminal.snapshot().line(0).styleAt(0).underline)
+        }
+
+        @Test
+        fun resolvingPlaceholdersDoesNotScanThePlacementsForEachCell() {
+            val size = 512
+            val terminal = terminal(size, size)
+            // The screen full of placeholders of image 1 naming a placement id that no virtual
+            // placement has, so that each cell would look at every one of them.
+            val text = StringBuilder("\u001b[38;5;1m\u001b[58;2;0;100;0m")
+            val row = buildString { repeat(size) { appendCodePoint(0x10EEEE) } }
+            repeat(size) { text.append("\u001b[${it + 1};1H").append(row) }
+            terminal.write(text.toString())
+            terminal.write(apc("a=t,i=1,f=24,s=1,v=1,q=2", byteArrayOf(0, 0, 0)))
+            val threads = ManagementFactory.getThreadMXBean()
+            fun cpuMillis(): Long {
+                terminal.snapshot()
+                val start = threads.currentThreadCpuTime
+                repeat(3) { terminal.snapshot() }
+                return (threads.currentThreadCpuTime - start) / 3 / 1_000_000
+            }
+            terminal.write(apc("a=p,i=1,U=1,p=1,c=1,r=1,q=2"))
+            val one = cpuMillis()
+            for (id in 2..Graphics.MAX_PLACEMENTS) {
+                terminal.write(apc("a=p,i=1,U=1,p=$id,c=1,r=1,q=2"))
+            }
+            val many = cpuMillis()
+            assertTrue(
+                many < 4 * one + 100,
+                "a snapshot took $many ms with 1024 virtual placements, $one ms with 1",
+            )
         }
 
         @Test

@@ -273,6 +273,7 @@ Host output is untrusted (requirement 6.1). The policy and the reasons for each 
 
 - String lengths are counted in UTF-16 units, which bound the memory of the held strings directly.
 - Commands of the graphics protocol that look at every placement (deletions by position, clearing the screen) do work up to 1024 placements for a few bytes of output.
+- Resolving the Unicode placeholders of a snapshot looks up the virtual placement of each cell in a table made once per image, so the work is linear in the cells and the placements, not their product.
 - The tests of the limits are listed in section 12 of [testing.md](testing.md).
 
 ## 11. Verification

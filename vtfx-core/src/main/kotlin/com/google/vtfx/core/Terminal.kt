@@ -19,6 +19,7 @@ package com.google.vtfx.core
 import com.google.vtfx.core.graphics.GraphicsLayer
 import com.google.vtfx.core.graphics.Placeholders
 import com.google.vtfx.core.graphics.Placement
+import com.google.vtfx.core.graphics.StoredImage
 import com.google.vtfx.core.parser.Parser
 
 /**
@@ -254,14 +255,24 @@ public class Terminal(
     private fun imageTiles(lines: List<LineSnapshot>): List<ImageTile> {
         val layer = emulator.layer
         if (!layer.hasVirtualPlacements) return emptyList()
+        // The newest virtual placement of each id of an image, and the newest of all under id 0,
+        // made once per image, so that the work is linear in the cells and the placements rather
+        // than their product.
+        val placementsByImage = HashMap<StoredImage, HashMap<Long, Placement>>()
         val tiles = ArrayList<ImageTile>()
         for ((row, line) in lines.withIndex()) {
             for (cell in Placeholders.resolve(line.line)) {
                 val image = layer.imageById(cell.imageId) ?: continue
-                val placement =
-                    image.virtualPlacements.lastOrNull {
-                        cell.placementId == 0L || it.id == cell.placementId
-                    } ?: continue
+                val byId =
+                    placementsByImage.getOrPut(image) {
+                        HashMap<Long, Placement>().also { map ->
+                            for (placement in image.virtualPlacements) {
+                                map[placement.id] = placement
+                                map[0L] = placement
+                            }
+                        }
+                    }
+                val placement = byId[cell.placementId] ?: continue
                 if (cell.row >= placement.rows || cell.imageColumn >= placement.columns) continue
                 tiles +=
                     ImageTile(
