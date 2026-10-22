@@ -506,16 +506,19 @@ internal class TerminalRenderer(
                     BoxDrawing.isDrawn(text.codePointAt(0))
             ) {
                 val color = foreground(cellStyle, defaultForeground, defaultBackground)
+                // Over both cells of a wide one: these are East Asian Ambiguous, two cells wide
+                // when the session takes them so.
+                val width = line.widthAt(column)
                 with(BoxDrawing) {
                     drawBox(
                         text.codePointAt(0),
                         Offset(column * metrics.width, row * metrics.height),
-                        Size(metrics.width, metrics.height),
+                        Size(width * metrics.width, metrics.height),
                         color,
                         fill,
                     )
                 }
-                column++
+                column += width
                 continue
             }
             if (!isGridAligned(text, line, column)) {
