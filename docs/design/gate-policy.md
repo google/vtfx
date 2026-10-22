@@ -70,7 +70,7 @@ The clipboard is reached through `ClipboardAccess`, which `vtfx-gate-android` im
 
 | Request | Default | When allowed |
 |---|---|---|
-| Write | Denied (`GatePolicy.allowClipboardWrite = false`) | Text longer than `maxClipboardWriteLength` UTF-16 code units (by default 64 Ki, `DEFAULT_MAX_CLIPBOARD_WRITE_LENGTH`) is dropped as a whole. |
+| Write | Denied (`GatePolicy.allowClipboardWrite = false`) | Text longer than `maxClipboardWriteLength` UTF-16 code units (by default 64 Ki, `DEFAULT_MAX_CLIPBOARD_WRITE_LENGTH`) is dropped as a whole. Of the writes in one write of host output, only the last allowed one is performed ([decisions/0059](../decisions/0059-osc52-limits.md)). |
 | Read | Denied (`GatePolicy.allowClipboardRead = false`) | The reply is `OSC 52 ; selection ; data ST`, where data is the clipboard text in base64, so it is never interpreted as control sequences. An empty or unreadable clipboard is replied to as empty. Of the reads in one write of host output (one `TerminalSession.feed`), only the first is answered with the clipboard; the others are replied to as empty without reading it. A text longer than `maxClipboardReadLength` UTF-16 code units (by default 64 Ki, `DEFAULT_MAX_CLIPBOARD_READ_LENGTH`) is replied to as empty. So the replies stay proportional to the host's output ([decisions/0059](../decisions/0059-osc52-limits.md)). |
 
 Apps that want remote copy in tmux and vim set `GatePolicy(allowClipboardWrite = true)`.

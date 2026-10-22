@@ -41,15 +41,20 @@ public class TerminalGate(
     /**
      * Handles the [events] that the terminal model emitted for one write of host output, in order:
      * replies to queries and decides on clipboard requests. Events without external effects (title,
-     * bell) are ignored.
+     * bell) are ignored. Of the clipboard writes, only the last that is allowed is performed, so
+     * that the host cannot make the system clipboard change, and show its preview, many times at
+     * once (docs/decisions/0059).
      */
     public fun handle(events: List<TerminalEvent>) {
+        val lastWrite = events.indexOfLast {
+            it is TerminalEvent.ClipboardWriteRequested && mayWriteClipboard(it.selection, it.text)
+        }
         var clipboardRead = false
-        for (event in events) {
+        for ((index, event) in events.withIndex()) {
             when (event) {
                 is TerminalEvent.ReplyRequested -> writer.sendReply(event.query, colors)
                 is TerminalEvent.ClipboardWriteRequested ->
-                    writeClipboard(event.selection, event.text)
+                    if (index == lastWrite) clipboard?.write(event.text)
                 is TerminalEvent.ClipboardReadRequested ->
                     if (readClipboard(event.selection, fromClipboard = !clipboardRead)) {
                         clipboardRead = true
@@ -62,12 +67,11 @@ public class TerminalGate(
 
     // Both clipboard requests parse the selection with the gate's own list of targets, rather than
     // trust the model's check, since vtfx-core is not under security review.
-    private fun writeClipboard(selection: String, text: String) {
-        val clipboard = clipboard ?: return
-        if (!policy.allowClipboardWrite || ClipboardSelection.parse(selection) == null) return
-        if (text.length > policy.maxClipboardWriteLength) return
-        clipboard.write(text)
-    }
+    private fun mayWriteClipboard(selection: String, text: String): Boolean =
+        clipboard != null &&
+            policy.allowClipboardWrite &&
+            ClipboardSelection.parse(selection) != null &&
+            text.length <= policy.maxClipboardWriteLength
 
     /**
      * Replies with OSC 52, built by [Replies], and returns whether it replied. The reply carries

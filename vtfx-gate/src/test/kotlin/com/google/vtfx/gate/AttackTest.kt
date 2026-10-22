@@ -191,6 +191,17 @@ class AttackTest {
             assertEquals(listOf("12345"), clipboard.writes)
         }
 
+        @Test
+        fun onlyTheLastWriteOfAWriteOfOutputIsPerformed() {
+            val gate = gate(GatePolicy(allowClipboardWrite = true))
+            val writes = (1..100).joinToString("") { "\u001b]52;c;${base64("$it")}\u0007" }
+
+            host(gate, writes)
+            host(gate, "\u001b]52;c;${base64("next")}\u0007")
+
+            assertEquals(listOf("100", "next"), clipboard.writes)
+        }
+
         // Before Android 13 the OS shows no preview of the clipboard, so a host could replace it
         // unnoticed (docs/decisions/0006).
         @Test

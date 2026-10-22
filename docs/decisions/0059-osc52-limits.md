@@ -13,8 +13,9 @@ When an app allows OSC 52 reads (`GatePolicy(allowClipboardRead = true)`), the g
 1. `TerminalGate.handle` takes the events of one write of host output together, as `TerminalSession` already collected them for each `feed`. Of the OSC 52 reads among them, only the first that the policy allows is answered with the clipboard; the others are replied to as empty, without reading the clipboard.
 2. A clipboard text longer than `GatePolicy.maxClipboardReadLength` UTF-16 code units (by default 64 Ki, `DEFAULT_MAX_CLIPBOARD_READ_LENGTH`, the same as the limit on writes) is replied to as empty.
 3. Both are replied to as empty, as an unreadable clipboard already is, rather than left unanswered, so that a program waiting for the reply does not wait for a timeout, and the reply stays a few bytes per read.
+4. Of the OSC 52 writes among the events of one write of host output, only the last that the policy allows is performed. A host could otherwise change the system clipboard thousands of times from one write, each a Binder call and, on Android 13 and later, a preview that the system shows; the earlier writes would be replaced at once anyway. Like titles, only the latest value counts.
 
-So the replies to the reads of one write are at most one clipboard, of at most 256 KiB with the default limit (64 Ki code units, at most 3 bytes each in UTF-8, in base64), and a few bytes for each other read. Section 4.1 of [gate-policy.md](../design/gate-policy.md) describes the result.
+Items 1 to 3 bound the replies: those to the reads of one write are at most one clipboard, of at most 256 KiB with the default limit (64 Ki code units, at most 3 bytes each in UTF-8, in base64), and a few bytes for each other read. Section 4.1 of [gate-policy.md](../design/gate-policy.md) describes the result.
 
 ## Alternatives considered
 
@@ -27,4 +28,5 @@ So the replies to the reads of one write are at most one clipboard, of at most 2
 
 - Make `TerminalGate.handle` take one event again, and update `TerminalSession`, the tests, the esctest harness, and `GateFuzzer`.
 - Remove `maxClipboardReadLength` and `DEFAULT_MAX_CLIPBOARD_READ_LENGTH` from `GatePolicy` and their entries in `api/`.
+- Item 4: perform every write again.
 - Revert section 4.1 of gate-policy.md and the tests in `AttackTest.Clipboard` and `AttackTest.ResourceExhaustion`.
