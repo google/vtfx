@@ -174,7 +174,7 @@ The underline color, the drawing of underlines and overlines, and the cursor's t
 
 ## 9. Images: the kitty graphics protocol
 
-vtfx implements the kitty graphics protocol (kitty 0.48) with direct transmission. It is on by default, and `TerminalLimits.maxImageBytes = 0` turns it off: APC strings are then ignored and queries are not answered. The reasons are in [decisions/0038](../decisions/0038-kitty-graphics.md). The code is in the `graphics` package of `vtfx-core`, and the images that the display draws are in `TerminalSnapshot` as internal API (`@InternalVtfxApi`).
+vtfx implements the kitty graphics protocol (kitty 0.48) with direct transmission. It is on by default, and `TerminalLimits.maxImageBytes = 0` turns it off: APC strings are then ignored and queries are not answered. The reasons are in [decisions/0038](../decisions/0038-kitty-graphics.md), and those for the size of one image in [decisions/0051](../decisions/0051-largest-image.md). The code is in the `graphics` package of `vtfx-core`, and the images that the display draws are in `TerminalSnapshot` as internal API (`@InternalVtfxApi`).
 
 ### 9.1 Scope
 
@@ -206,7 +206,7 @@ vtfx implements the kitty graphics protocol (kitty 0.48) with direct transmissio
 ### 9.4 Storage and eviction
 
 - Each screen has its own images and placements, so the images of the main screen stay while a program runs on the alternate screen. The memory limit counts both screens together (section 10).
-- When a new image does not fit, the oldest images go first, those without placements before those with them. An image larger than the limit by itself is refused with `EFBIG`. Beyond 1024 images on a screen, the oldest goes; beyond 1024 placements, the oldest placement goes.
+- When a new image does not fit, the oldest images go first, those without placements before those with them. An image larger than the limit by itself, or larger than 64 MiB of decoded pixels whatever the limit ([decisions/0051](../decisions/0051-largest-image.md)), is refused with `EFBIG`. Beyond 1024 images on a screen, the oldest goes; beyond 1024 placements, the oldest placement goes.
 - An image without an id or number goes with its last placement.
 - A transmission that is still in chunks when the screen changes (entering or leaving the alternate screen) is refused with `EINVAL` when it ends.
 
@@ -239,7 +239,7 @@ vtfx implements the kitty graphics protocol (kitty 0.48) with direct transmissio
 
 ## 10. Resource limits
 
-Host output is untrusted (requirement 6.1). The policy and the reasons for each limit are in [decisions/0002](../decisions/0002-resource-limits.md); the limits of images are explained in [decisions/0038](../decisions/0038-kitty-graphics.md).
+Host output is untrusted (requirement 6.1). The policy and the reasons for each limit are in [decisions/0002](../decisions/0002-resource-limits.md); the limits of images are explained in [decisions/0038](../decisions/0038-kitty-graphics.md) and [decisions/0051](../decisions/0051-largest-image.md).
 
 ### 10.1 Policy
 
@@ -267,6 +267,7 @@ Host output is untrusted (requirement 6.1). The policy and the reasons for each 
 | Pixels of the images of the kitty graphics protocol | 32 MiB of decoded pixels (4 bytes each) by default, for both screens together (at most 1 GiB; 0 turns the protocol off) | `TerminalLimits.maxImageBytes` | The oldest images are dropped, those without placements first. An image larger than the limit by itself is refused with `EFBIG` |
 | Data of a transmission in progress | `maxImageBytes` of decoded base64 | Follows `maxImageBytes` | Refused with `EFBIG` when it ends |
 | Width and height of an image | 10000 pixels each (as kitty) | Not configurable (`Graphics.MAX_SIDE`) | Refused with `EFBIG` before anything is allocated |
+| Pixels of one image | 64 MiB of decoded pixels (16,777,216 pixels), or `maxImageBytes` if smaller, below the size of a bitmap that Android refuses to draw ([decisions/0051](../decisions/0051-largest-image.md)) | Not configurable (`Graphics.MAX_BYTES_PER_IMAGE`) | Refused with `EFBIG` before the pixels are allocated |
 | Images, placements | 1024 of each per screen | Not configurable (`Graphics.MAX_IMAGES`, `MAX_PLACEMENTS`) | The oldest are dropped |
 | Columns and rows of a placement | `TerminalLimits.MAX_DIMENSION` | Not configurable | Clamped |
 

@@ -588,6 +588,30 @@ class GraphicsTest {
         }
 
         @Test
+        fun oneImageIsAtMost64MiBWhateverTheLimit() {
+            val terminal =
+                terminal(limits = TerminalLimits(maxImageBytes = TerminalLimits.MAX_IMAGE_BYTES))
+            // 4096 × 4096 pixels are 64 MiB: the data is short, so only the size is accepted.
+            terminal.write(apc("a=t,i=1,f=24,s=4096,v=4096", byteArrayOf(0, 0, 0)))
+            terminal.write(apc("a=t,i=2,f=32,s=4097,v=4096", byteArrayOf(0, 0, 0, 0)))
+            val png =
+                PngTestEncoder.png(
+                    PngTestEncoder.ihdr(4097, 4096, bitDepth = 8, colorType = 0),
+                    PngTestEncoder.chunk("IDAT", PngTestEncoder.deflate(ByteArray(1))),
+                    PngTestEncoder.chunk("IEND"),
+                )
+            terminal.write(apc("a=t,i=3,f=100", png))
+            assertEquals(
+                listOf(
+                    reply(1, GraphicsStatus.InsufficientData),
+                    reply(2, GraphicsStatus.TooLarge),
+                    reply(3, GraphicsStatus.TooLarge),
+                ),
+                replies(),
+            )
+        }
+
+        @Test
         fun theDataOfATransmissionIsBounded() {
             val terminal = terminal(limits = TerminalLimits(maxImageBytes = 1000))
             val chunk = "A".repeat(4096)

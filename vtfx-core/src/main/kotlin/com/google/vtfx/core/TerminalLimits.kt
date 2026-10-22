@@ -38,8 +38,9 @@ public class TerminalLimits(
     /**
      * The most memory, in bytes, that images sent with the kitty graphics protocol may take,
      * decoded at 4 bytes per pixel, for the main and the alternate screen together. The oldest
-     * images go to make room for new ones. 0 turns the protocol off: the terminal then ignores it,
-     * and programs see a terminal without images.
+     * images go to make room for new ones. Whatever this is, one image takes at most 64 MiB, and
+     * larger ones are refused. 0 turns the protocol off: the terminal then ignores it, and programs
+     * see a terminal without images.
      */
     public val maxImageBytes: Int = 32 * 1024 * 1024,
 ) {

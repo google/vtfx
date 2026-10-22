@@ -206,7 +206,7 @@ internal class Graphics(
         if (format != 24L && format != 32L && format != 100L) {
             return Pair(null, GraphicsStatus.InvalidCommand)
         }
-        val maxPixels = maxBytes / 4
+        val maxPixels = minOf(maxBytes, MAX_BYTES_PER_IMAGE) / 4
         var data = loading.data
         var size = loading.size
         if (format != 100L) {
@@ -576,6 +576,12 @@ internal class Graphics(
 
         /** The largest width or height of an image, as in kitty (docs/decisions/0002). */
         const val MAX_SIDE = 10000L
+
+        /**
+         * The most memory of the pixels of one image, whatever the limit for all images: below the
+         * size of a bitmap that Android refuses to draw (docs/decisions/0051).
+         */
+        const val MAX_BYTES_PER_IMAGE = 64L * 1024 * 1024
 
         /** The most images and placements of a screen (docs/decisions/0002). */
         const val MAX_IMAGES = 1024
