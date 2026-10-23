@@ -152,14 +152,23 @@ public class ImeEditor(
     public fun commitText(text: CharSequence): Boolean {
         removeSelectedText()
         composing = ""
-        val committed = withoutDroppedControls(text)
+        commit(withoutDroppedControls(text))
+        endOperation()
+        return true
+    }
+
+    /**
+     * Adds [committed], text that the IME commits, to the input history. Text with a line break,
+     * other than a line feed alone, is pasted instead, and so is a line feed alone after a paste in
+     * the same batch edit (section 4.2). Every edit that commits text goes through here, also the
+     * composing text, which may have line breaks too: otherwise its lines would run one by one.
+     */
+    private fun commit(committed: String) {
         if (isPaste(committed) || (committed == "\n" && pastedInBatch)) {
             sendPaste(committed)
         } else {
             history += committed
-            endOperation()
         }
-        return true
     }
 
     /**
@@ -197,8 +206,15 @@ public class ImeEditor(
         if (from < 0 || to > buffer.length || splitsSurrogatePair(buffer, from)) return false
         if (from == to) return finishComposingText()
         if (to != buffer.length) return false
-        history = buffer.substring(0, from)
-        composing = buffer.substring(from)
+        if (from < history.length) {
+            history = buffer.substring(0, from)
+            composing = buffer.substring(from)
+        } else {
+            // The composing text before the region is committed.
+            val committed = composing.substring(0, from - history.length)
+            composing = composing.substring(from - history.length)
+            commit(committed)
+        }
         endOperation()
         return true
     }
@@ -244,8 +260,10 @@ public class ImeEditor(
 
     /**
      * Replaces [start, end) with [text]. A range outside the edit buffer is rejected, since its
-     * content is unknown. The composing text is finished first. Text with a line break, other than
-     * a line feed alone, is pasted with the rest of the edit buffer after it (section 4.2).
+     * content is unknown. The composing text is finished first. The text that the replacement
+     * commits is from the start of the range, or of the composing text if the range starts after
+     * it, to the end of the edit buffer; if it has a line break, other than a line feed alone, it
+     * is pasted, after deleting from that start (section 4.2).
      */
     public fun replaceText(start: Int, end: Int, text: CharSequence): Boolean {
         val buffer = this.text
@@ -254,15 +272,11 @@ public class ImeEditor(
         if (from < 0 || to > buffer.length) return false
         if (splitsSurrogatePair(buffer, from) || splitsSurrogatePair(buffer, to)) return false
         selectionFrom = -1
-        val replacement = withoutDroppedControls(text)
+        val kept = minOf(from, history.length)
+        history = buffer.substring(0, kept)
         composing = ""
-        if (isPaste(replacement)) {
-            history = buffer.substring(0, from)
-            sendPaste(replacement + buffer.substring(to))
-        } else {
-            history = buffer.substring(0, from) + replacement + buffer.substring(to)
-            endOperation()
-        }
+        commit(buffer.substring(kept, from) + withoutDroppedControls(text) + buffer.substring(to))
+        endOperation()
         return true
     }
 
@@ -446,11 +460,15 @@ public class ImeEditor(
         }
     }
 
-    /** Moves the composing text into the input history, and collapses the selection. */
+    /**
+     * Commits the composing text, which is added to the input history or pasted (section 4.2), and
+     * collapses the selection.
+     */
     private fun commitComposingText() {
         selectionFrom = -1
-        history += composing
+        val committed = composing
         composing = ""
+        commit(committed)
     }
 
     private fun isHistoryOverLimit(): Boolean =

