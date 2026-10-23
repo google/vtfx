@@ -50,7 +50,7 @@ Examples:
 - When `Dont` is replaced with `Don't ` (measured with Gboard's autocorrect): send `DEL` + `'t `.
 - When `ok ` is replaced with `ok. `: send `DEL` + `. `.
 
-The difference is computed all at once **when the outermost batch edit ends**, not per edit. For an operation called outside a batch edit, it is computed when that operation ends. The exception is an edit that takes the input history over its limit, after which the difference is sent at once (invariant 5).
+The difference is computed all at once **when the outermost batch edit ends**, not per edit. For an operation called outside a batch edit, it is computed when that operation ends. The exceptions are an edit that takes the input history over its limit, after which the difference is sent at once (invariant 5), and an edit that commits a line break or HT, which resets (5.1) and so sends the difference at once, as in 5.2: a later edit in the batch must not take back the line break before it reaches the host, or delete across it.
 
 ### 4.2 Text conversion
 

@@ -455,7 +455,11 @@ public class ImeEditor(
             // bound (invariant 5).
             commitComposingText()
             flush()
-        } else if (batchDepth == 0) {
+        } else if (batchDepth == 0 || history.any { it == '\n' || it == '\r' || it == '\t' }) {
+            // A line break or HT resets after it is sent (section 5.1), which sends the edits made
+            // before it and empties the history at once, also during a batch edit (section 5.2).
+            // Otherwise a later edit in the batch could delete the line break before it reached
+            // the host, or delete across it.
             flush()
         }
     }

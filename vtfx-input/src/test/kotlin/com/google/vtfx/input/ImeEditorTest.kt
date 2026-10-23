@@ -250,6 +250,72 @@ class ImeEditorTest {
     }
 
     @Test
+    fun aNewlineCommittedInABatchEditIsSentAndResetsAtOnce() {
+        editor.commitText("ls")
+        sent.clear()
+        editor.beginBatchEdit()
+        editor.commitText("\n")
+        assertEquals(listOf<HostInput>(enter), sent)
+        assertEquals("", editor.text)
+        // The deletion cannot take back the Enter: it is BS on the new line.
+        editor.deleteSurroundingText(1, 0)
+        assertEquals(0, restarts)
+        assertFalse(editor.endBatchEdit())
+        assertEquals(listOf(enter, delete(1)), sent)
+        assertEquals(1, restarts)
+    }
+
+    @Test
+    fun anHtCommittedInABatchEditIsSentAndResetsAtOnce() {
+        editor.beginBatchEdit()
+        editor.commitText("ab")
+        editor.commitText("\t")
+        assertEquals(listOf<HostInput>(text("ab\t")), sent)
+        assertEquals("", editor.text)
+        assertFalse(editor.replaceText(0, 1, "x"))
+        editor.commitText("cd")
+        assertFalse(editor.endBatchEdit())
+        assertEquals(listOf<HostInput>(text("ab\t"), text("cd")), sent)
+        // What was committed since the reset is dropped by the restart (section 5.2).
+        assertEquals("", editor.text)
+        assertEquals(1, restarts)
+    }
+
+    @Test
+    fun textAroundAnHtCommittedInABatchEditIsSentWithItAtOnce() {
+        editor.beginBatchEdit()
+        editor.commitText("a\tb")
+        assertEquals(listOf<HostInput>(text("a\tb")), sent)
+        assertEquals("", editor.text)
+        assertFalse(editor.endBatchEdit())
+        assertEquals(listOf<HostInput>(text("a\tb")), sent)
+    }
+
+    @Test
+    fun anHtReplacingTextInABatchEditIsSentAndResetsAtOnce() {
+        editor.commitText("cd Doc")
+        sent.clear()
+        editor.beginBatchEdit()
+        editor.replaceText(3, 6, "Doc\t")
+        assertEquals(listOf<HostInput>(text("\t")), sent)
+        assertEquals("", editor.text)
+        assertFalse(editor.endBatchEdit())
+    }
+
+    @Test
+    fun characterKeysOfHtAndLineBreaksInABatchEditAreSentAtOnce() {
+        editor.beginBatchEdit()
+        editor.commitText("a")
+        editor.onKeyDown(KeyStroke.Character('\t'.code))
+        editor.commitText("b")
+        editor.onKeyDown(KeyStroke.Character('\r'.code))
+        assertEquals(listOf(text("a\t"), text("b"), enter), sent)
+        assertEquals("", editor.text)
+        assertFalse(editor.endBatchEdit())
+        assertEquals(1, restarts)
+    }
+
+    @Test
     fun aResetDoesNotRestartTheImeIfNothingChangedSinceTheLastRestart() {
         editor.requestReset()
         assertEquals(0, restarts)
