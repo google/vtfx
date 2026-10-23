@@ -16,11 +16,21 @@
 
 package com.google.vtfx.gate
 
-/** A clipboard that holds one text in memory, as the system clipboard does. */
+/**
+ * A clipboard that holds one text in memory, as the system clipboard does, and records the writes
+ * and counts the reads.
+ */
 class FakeClipboard(var text: String?) : ClipboardAccess {
+    val writes = mutableListOf<String>()
+    var reads = 0
+
     override fun write(text: String) {
+        writes += text
         this.text = text
     }
 
-    override fun read(): String? = text
+    override fun read(): String? {
+        reads++
+        return text
+    }
 }

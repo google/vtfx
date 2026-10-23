@@ -763,7 +763,7 @@ interface AttackFixture {
     /** The URLs opened. */
     val opened: MutableList<String>
 
-    val clipboard: AttackClipboard
+    val clipboard: FakeClipboard
 
     /**
      * A gate with [policy] that writes to [sent], uses [clipboard], and opens URLs into [opened].
@@ -776,27 +776,11 @@ interface AttackFixture {
     fun base64(text: String): String
 }
 
-/** A clipboard that holds text from another app and counts the reads. */
-class AttackClipboard(var text: String?) : ClipboardAccess {
-    val writes = mutableListOf<String>()
-    var reads = 0
-
-    override fun write(text: String) {
-        writes += text
-        this.text = text
-    }
-
-    override fun read(): String? {
-        reads++
-        return text
-    }
-}
-
 /** A fresh [AttackFixture] for each test. */
 private class GateUnderAttack : AttackFixture {
     override val sent = mutableListOf<String>()
     override val opened = mutableListOf<String>()
-    override val clipboard = AttackClipboard("secret from another app")
+    override val clipboard = FakeClipboard("secret from another app")
 
     override fun gate(policy: GatePolicy) =
         TerminalGate(
