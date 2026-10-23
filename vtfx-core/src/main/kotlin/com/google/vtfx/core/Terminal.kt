@@ -132,18 +132,10 @@ public class Terminal(
      */
     public fun lines(maxLines: Int): List<LineSnapshot> {
         require(maxLines >= 0) { "maxLines must not be negative: $maxLines" }
-        val screen = emulator.screen
-        val scrollbackSize = if (emulator.isAlternateScreen) 0 else emulator.scrollback.size
-        val lineCount = scrollbackSize + screen.rows
+        val scrollbackSize = visibleScrollbackSize()
+        val lineCount = scrollbackSize + emulator.rows
         val first = maxOf(0, lineCount - maxLines)
-        return List(lineCount - first) {
-            val index = first + it
-            if (index < scrollbackSize) {
-                lineSnapshot(emulator.scrollback[index].resized(emulator.columns), copy = false)
-            } else {
-                lineSnapshot(screen[index - scrollbackSize])
-            }
-        }
+        return List(lineCount - first) { lineAt(first + it, scrollbackSize) }
     }
 
     /**
@@ -161,7 +153,7 @@ public class Terminal(
         val alternate = emulator.isAlternateScreen
         val screen = emulator.screen
         val screenLine = emulator.scrollback.pushes
-        val oldestLine = screenLine - if (alternate) 0 else emulator.scrollback.size
+        val oldestLine = screenLine - visibleScrollbackSize()
         val firstLine = from.coerceIn(oldestLine, screenLine)
         val lines = ArrayList<LineSnapshot>()
         var line = firstLine
@@ -169,15 +161,14 @@ public class Terminal(
         var textRows = 0
         while (line < screenLine && (line - firstLine < minLines || textRows > 0)) {
             val index = (line - oldestLine).toInt()
-            val snapshot =
-                lineSnapshot(emulator.scrollback[index].resized(emulator.columns), copy = false)
+            val snapshot = lineSnapshot(emulator.scrollback[index].resized(emulator.columns))
             lines += snapshot
             textRows =
                 if (snapshot.isWrapped && textRows + 1 < MAX_SEARCH_TEXT_ROWS) textRows + 1 else 0
             line++
         }
         val isComplete = line == screenLine
-        if (isComplete) for (row in 0 until screen.rows) lines += lineSnapshot(screen[row])
+        if (isComplete) for (row in 0 until screen.rows) lines += lineSnapshot(screen[row].copy())
         return SearchLines(
             // Switching the screen numbers the lines again too.
             generation = emulator.scrollback.generation * 2 + if (alternate) 1 else 0,
@@ -198,31 +189,23 @@ public class Terminal(
         val screen = emulator.screen
         // Lines are counted from the oldest in the scrollback, which the alternate screen does not
         // show, through the last of the screen.
-        val scrollbackSize = if (emulator.isAlternateScreen) 0 else emulator.scrollback.size
+        val scrollbackSize = visibleScrollbackSize()
         val lineCount = scrollbackSize + screen.rows
         val offset = scrollOffset.coerceIn(0, scrollbackSize)
         val first = scrollbackSize - offset
-
-        fun lineAt(index: Int): LineSnapshot =
-            if (index < scrollbackSize) {
-                // Lines in the scrollback may be narrower or wider after a resize.
-                lineSnapshot(emulator.scrollback[index].resized(emulator.columns), copy = false)
-            } else {
-                lineSnapshot(screen[index - scrollbackSize])
-            }
-
-        val lines = List(screen.rows) { lineAt(first + it) }
+        val lines = List(screen.rows) { lineAt(first + it, scrollbackSize) }
         // The rows of the display's first and last lines that autowrap joins to them beyond it, up
         // to a screen each way.
         val linesAbove = ArrayDeque<LineSnapshot>()
         var above = first - 1
         while (above >= 0 && linesAbove.size < screen.rows) {
-            val line = lineAt(above)
+            val line = lineAt(above, scrollbackSize)
             if (!line.isWrapped) break
             linesAbove.addFirst(line)
             above--
         }
-        val isCutAbove = linesAbove.size == screen.rows && above >= 0 && lineAt(above).isWrapped
+        val isCutAbove =
+            linesAbove.size == screen.rows && above >= 0 && lineAt(above, scrollbackSize).isWrapped
         val linesBelow = mutableListOf<LineSnapshot>()
         var below = first + screen.rows
         while (
@@ -230,7 +213,7 @@ public class Terminal(
                 linesBelow.size < screen.rows &&
                 (linesBelow.lastOrNull() ?: lines.last()).isWrapped
         ) {
-            linesBelow += lineAt(below)
+            linesBelow += lineAt(below, scrollbackSize)
             below++
         }
         // The last row is marked as wrapped without a row after it where autowrap stays on the
@@ -357,19 +340,33 @@ public class Terminal(
         get() = emulator.graphics.bytes
 
     /** Returns a copy of the scrollback line at [index], where 0 is the oldest. */
-    public fun scrollbackLine(index: Int): LineSnapshot =
-        lineSnapshot(emulator.scrollback[index], copy = false)
+    public fun scrollbackLine(index: Int): LineSnapshot = lineSnapshot(emulator.scrollback[index])
 
-    /** [copy] is false for a line that is already a fresh copy, such as one from the scrollback. */
-    private fun lineSnapshot(line: Line, copy: Boolean = true): LineSnapshot {
-        val copy = if (copy) line.copy() else line
-        if (!copy.hasLinks()) return LineSnapshot(copy)
+    /** The number of lines of the scrollback shown: none on the alternate screen. */
+    private fun visibleScrollbackSize(): Int =
+        if (emulator.isAlternateScreen) 0 else emulator.scrollback.size
+
+    /**
+     * Returns a copy of line [index] among the [scrollbackSize] lines of the scrollback shown,
+     * followed by the screen's rows.
+     */
+    private fun lineAt(index: Int, scrollbackSize: Int): LineSnapshot =
+        if (index < scrollbackSize) {
+            // Lines in the scrollback may be narrower or wider after a resize.
+            lineSnapshot(emulator.scrollback[index].resized(emulator.columns))
+        } else {
+            lineSnapshot(emulator.screen[index - scrollbackSize].copy())
+        }
+
+    /** Wraps [line], which must already be a fresh copy, in a [LineSnapshot]. */
+    private fun lineSnapshot(line: Line): LineSnapshot {
+        if (!line.hasLinks()) return LineSnapshot(line)
         val links = HashMap<Int, Hyperlink>()
-        for (column in 0 until copy.columns) {
-            val id = copy.linkAt(column)
+        for (column in 0 until line.columns) {
+            val id = line.linkAt(column)
             if (id != 0 && id !in links) emulator.hyperlink(id)?.let { links[id] = it }
         }
-        return LineSnapshot(copy, links)
+        return LineSnapshot(line, links)
     }
 
     private inline fun runGuarded(block: () -> Unit) {
