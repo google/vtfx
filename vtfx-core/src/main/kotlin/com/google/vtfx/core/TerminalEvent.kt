@@ -188,16 +188,15 @@ public enum class GraphicsStatus {
  * @suppress
  */
 @InternalVtfxApi
-public enum class ModeState(internal val value: Int) {
+public enum class ModeState(
+    /** The Ps value of the reply. */
+    public val code: Int
+) {
     NotRecognized(0),
     Set(1),
     Reset(2),
     PermanentlySet(3),
-    PermanentlyReset(4);
-
-    /** The Ps value of the reply. */
-    public val code: Int
-        get() = value
+    PermanentlyReset(4),
 }
 
 /**
