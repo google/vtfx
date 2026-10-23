@@ -80,9 +80,4 @@ internal class HyperlinkTable(private val capacity: Int) {
         byLink[link] = id
         return id
     }
-
-    fun clear() {
-        byId.clear()
-        byLink.clear()
-    }
 }

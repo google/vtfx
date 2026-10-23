@@ -34,7 +34,7 @@ internal interface ParserHandler {
 
     /**
      * Dispatches an escape sequence. [intermediates] packs up to two intermediate bytes, the first
-     * in bits 8-15 (see [Parser.intermediates]).
+     * in bits 8-15.
      */
     fun escDispatch(intermediates: Int, final: Int)
 
@@ -54,7 +54,7 @@ internal interface ParserHandler {
      * Dispatches an application program command, such as a kitty graphics command. Not called if
      * the string exceeded the limit.
      */
-    fun apcDispatch(data: CharSequence) {}
+    fun apcDispatch(data: CharSequence)
 }
 
 /**
@@ -419,9 +419,5 @@ internal class Parser(
         private const val OSC_STRING = 12
         private const val SOS_PM_STRING = 13
         private const val APC_STRING = 14
-
-        /** Packs [first] and [second] intermediate bytes as [ParserHandler] receives them. */
-        fun intermediates(first: Char, second: Char? = null): Int =
-            if (second == null) first.code else (first.code shl 8) or second.code
     }
 }
