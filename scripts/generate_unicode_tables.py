@@ -142,21 +142,17 @@ def classify(east_asian_width_lines, category_lines):
     # The East_Asian_Width of each code point that matters. The @missing lines give the defaults,
     # including those for unassigned code points in the CJK blocks, and the data lines that follow
     # override them.
-    east_asian = bytearray(CODE_POINTS)
+    classes = bytearray(CODE_POINTS)
     for first, last, value in parse_ranges(east_asian_width_lines, missing=True):
         eaw = WIDE if value in ("W", "F") else AMBIGUOUS if value == "A" else OTHER
-        east_asian[first : last + 1] = bytes([eaw]) * (last + 1 - first)
-    combining = bytearray(CODE_POINTS)
+        classes[first : last + 1] = bytes([eaw]) * (last + 1 - first)
+    soft_hyphen = classes[0x00AD]
     for first, last, value in parse_ranges(category_lines, missing=False):
-        flag = 1 if value in ("Mn", "Me", "Cf") else 0
-        combining[first : last + 1] = bytes([flag]) * (last + 1 - first)
-
-    classes = east_asian
-    for code in range(CODE_POINTS):
-        if code == 0x00AD:
-            continue
-        if combining[code] or 0x1160 <= code <= 0x11FF or 0xD7B0 <= code <= 0xD7FF or code == 0x200B:
-            classes[code] = ZERO
+        if value in ("Mn", "Me", "Cf"):
+            classes[first : last + 1] = bytes([ZERO]) * (last + 1 - first)
+    for first, last in ((0x1160, 0x11FF), (0xD7B0, 0xD7FF), (0x200B, 0x200B)):
+        classes[first : last + 1] = bytes([ZERO]) * (last + 1 - first)
+    classes[0x00AD] = soft_hyphen
     return classes
 
 
@@ -277,17 +273,11 @@ def diacritics(category_lines, combining_class_lines, decomposition_lines, age_l
 
 def default_ignorables(core_property_lines):
     """Returns the merged, inclusive ranges of the Default_Ignorable_Code_Point property, in order."""
-    result = []
-    items = sorted(
-        (first, last)
-        for first, last, value in parse_ranges(core_property_lines, missing=False)
-        if value == "Default_Ignorable_Code_Point")
-    for first, last in items:
-        if result and first <= result[-1][1] + 1:
-            result[-1] = (result[-1][0], max(result[-1][1], last))
-        else:
-            result.append((first, last))
-    return result
+    flags = bytearray(CODE_POINTS)
+    for first, last, value in parse_ranges(core_property_lines, missing=False):
+        if value == "Default_Ignorable_Code_Point":
+            flags[first : last + 1] = bytes([1]) * (last + 1 - first)
+    return ranges(flags, 1)
 
 
 def kotlin_object(package, name, unicode_version, body):
