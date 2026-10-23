@@ -170,7 +170,7 @@ When the app arms sticky modifiers (`TerminalSession.stickyModifiers`), the comp
 | `performPrivateCommand(...)` | Does nothing. | `false` |
 | `setImeConsumesInput(value)` | Does nothing. | `true` |
 | Handwriting gestures | Not accepted (open). | Failure |
-| `closeConnection()` | Commits the composing text if any (`finishComposingText`). Discarding it would lose the user's input, so it commits, like `EditText`. | None |
+| `closeConnection()` | Commits the composing text if any, and sends it with the edits not sent yet, even during a batch edit, which the closing ends. Discarding it would lose the user's input, so it commits, like `EditText`. | None |
 
 ## 7. Display and notifications to the IME
 

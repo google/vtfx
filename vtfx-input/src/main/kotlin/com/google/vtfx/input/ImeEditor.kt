@@ -312,8 +312,7 @@ public class ImeEditor(
 
     /** Finishes the composing text, which would otherwise be lost (section 6.4). */
     public fun closeConnection() {
-        selectionFrom = -1
-        if (composing.isNotEmpty()) finishComposingText()
+        commitComposingText()
         batchDepth = 0
         pastedInBatch = false
         flush()
