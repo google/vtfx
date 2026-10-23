@@ -255,30 +255,25 @@ internal class Line(columns: Int, style: CellStyle = CellStyle.Default) {
 
     /**
      * Copies the character at [column], with its right half if it is wide, to [targetColumn] of
-     * [target], which the caller ensures has room. Returns its width.
+     * [target], whose cells there the caller ensures exist and are blank. The right half of a wide
+     * character has the style, hyperlink, and underline color of its left half and no cluster, so
+     * only the left half is read.
      */
-    fun copyCellTo(column: Int, target: Line, targetColumn: Int): Int {
+    fun copyCellTo(column: Int, target: Line, targetColumn: Int) {
         val width = if (isWideHead(column)) 2 else 1
-        for (i in 0 until width) {
-            target.codes[targetColumn + i] = codes[column + i]
-            target.styles[targetColumn + i] = styles[column + i]
-            val cluster = clusters?.get(column + i)
-            if (cluster != null) {
-                (target.clusters
-                    ?: arrayOfNulls<String>(target.codes.size).also { target.clusters = it })[
-                    targetColumn + i] = cluster
-            }
-            val link = linkAt(column + i)
-            if (link != 0)
-                (target.links ?: IntArray(target.codes.size).also { target.links = it })[
-                    targetColumn + i] = link
-            val underlineColor = underlineColorAt(column + i)
-            if (underlineColor != 0)
-                (target.underlineColors
-                    ?: IntArray(target.codes.size).also { target.underlineColors = it })[
-                    targetColumn + i] = underlineColor
+        target.set(
+            targetColumn,
+            codes[column],
+            width,
+            CellStyle(styles[column]),
+            linkAt(column),
+            underlineColorAt(column),
+        )
+        clusters?.get(column)?.let { cluster ->
+            (target.clusters
+                ?: arrayOfNulls<String>(target.codes.size).also { target.clusters = it })[
+                targetColumn] = cluster
         }
-        return width
     }
 
     /** Erases the cells in [from, to). */
