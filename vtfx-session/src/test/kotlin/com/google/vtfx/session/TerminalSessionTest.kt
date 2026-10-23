@@ -1235,6 +1235,53 @@ class TerminalSessionTest {
     }
 
     @Test
+    fun feedingFromTheClipboardThatTheGateCallsFails() {
+        // The output lock is reentrant: the nested output's replies would go before the rest of
+        // the outer output's.
+        lateinit var feeding: TerminalSession
+        val clipboard =
+            object : ClipboardAccess {
+                override fun write(text: String) = feeding.feed("\u001b[c".toByteArray())
+
+                override fun read(): String? = null
+            }
+        feeding =
+            TerminalSession(
+                {},
+                policy = GatePolicy(allowClipboardWrite = true),
+                clipboard = clipboard,
+            )
+
+        assertFailsWith<IllegalStateException> {
+            feeding.feed("\u001b]52;c;eA==\u0007".toByteArray())
+        }
+    }
+
+    @Test
+    fun sendingFromTheClipboardThatTheGateCallsFails() {
+        val sent = mutableListOf<String>()
+        lateinit var typing: TerminalSession
+        val clipboard =
+            object : ClipboardAccess {
+                override fun write(text: String) {}
+
+                override fun read(): String {
+                    typing.sendText("a")
+                    return "x"
+                }
+            }
+        typing =
+            TerminalSession(
+                { sent += String(it, Charsets.UTF_8) },
+                policy = GatePolicy(allowClipboardRead = true),
+                clipboard = clipboard,
+            )
+
+        assertFailsWith<IllegalStateException> { typing.feed("\u001b]52;c;?\u0007".toByteArray()) }
+        assertEquals(emptyList(), sent)
+    }
+
+    @Test
     fun feedingFromTheHostConnectionFails() {
         // It would re-enter the session, and it fails even when the output asks for no reply, so
         // that the mistake does not depend on what the host sends (docs/decisions/0024).

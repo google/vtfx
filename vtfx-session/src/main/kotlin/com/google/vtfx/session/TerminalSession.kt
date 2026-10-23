@@ -411,6 +411,10 @@ public class TerminalSession(
         check(!isEditingOnCurrentThread()) {
             "an input operation must not call back into the session"
         }
+        // The input would reach the host before the rest of the output's replies.
+        check(!outputLock.isHeldByCurrentThread) {
+            "input must not be sent from the app's code that handles the host's output"
+        }
         val result: T
         val restart: Boolean
         val sent: Boolean
@@ -471,8 +475,9 @@ public class TerminalSession(
     /**
      * Interprets output from the host: the [length] bytes of [bytes] from [offset]. Calls are
      * serialized, and the session does not keep [bytes]. Must not be called from the app's code
-     * that sends to the host, behind [HostConnection], and throws [IllegalStateException] there:
-     * hand the output to another task instead.
+     * that sends to the host, behind [HostConnection], or that handles the host's output, behind
+     * `clipboard` for OSC 52, and throws [IllegalStateException] there: hand the output to another
+     * task instead.
      *
      * @throws IllegalArgumentException if [offset] and [length] are not within [bytes].
      */
@@ -485,6 +490,11 @@ public class TerminalSession(
         // The output would change the terminal in the middle of an input operation.
         check(!isEditingOnCurrentThread()) {
             "an input operation must not call back into the session"
+        }
+        // The output lock is reentrant, so the nested output's replies would go before the rest of
+        // this output's, such as from a ClipboardAccess that the gate calls.
+        check(!outputLock.isHeldByCurrentThread) {
+            "feed must not be called from the app's code that handles the host's output; post it"
         }
         val synchronizing: Boolean
         val scrolledLines: Long

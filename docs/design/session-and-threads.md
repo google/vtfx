@@ -95,6 +95,7 @@ Calls back into the session that would break its state are detected with `check`
 - `feed` from within `HostConnection.write` is detected at the entry of `feed`. It fails as soon as `feed` is called, not only when a reply arises, so it is found regardless of host output. A host that answers at once, such as a local loopback, hands its output to another task.
 - Sending input (`sendKey` and so on) from within `HostConnection.write` is detected at the entry of the input operation, before the IME editing model changes. The input lock is reentrant, so the check in `HostWriter` alone would come after the model had taken the input for sent.
 - Sending input or calling `feed` from within an operation that `edit` runs, which holds the session's lock, is detected the same way.
+- Sending input or calling `feed` from within the app's code that the gate calls for host requests (`ClipboardAccess` for OSC 52, `ReportedColors`), which runs holding the output lock, is detected at the entry of the input operation or of `feed`. The output lock is reentrant, so a nested `feed` would otherwise send its replies before the rest of the outer one's.
 
 ### 2.5 Notifications
 
