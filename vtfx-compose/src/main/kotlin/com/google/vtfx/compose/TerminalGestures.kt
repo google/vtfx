@@ -106,12 +106,7 @@ internal fun Modifier.terminalGestures(
                                 val snapshot = display.displaySnapshot()
                                 onLinkTap(
                                     snapshot,
-                                    displayCell(
-                                        down.position,
-                                        metrics,
-                                        snapshot.columns,
-                                        snapshot.rows,
-                                    ),
+                                    displayCell(down.position, metrics, snapshot),
                                     down.type,
                                     currentEvent.keyboardModifiers,
                                 )
@@ -122,8 +117,7 @@ internal fun Modifier.terminalGestures(
                     null -> {
                         // A long press: select the word, then follow the finger until it is lifted.
                         val snapshot = display.displaySnapshot()
-                        val start =
-                            displayCell(down.position, metrics, snapshot.columns, snapshot.rows)
+                        val start = displayCell(down.position, metrics, snapshot)
                         val word = TerminalSelection.word(snapshot, start)
                         var selected: TerminalSelection? = word
                         display.selection = word
@@ -144,8 +138,7 @@ internal fun Modifier.terminalGestures(
                             if (display.selection !== selected) selected = null
                             if (selected == null) continue
                             position = change.position
-                            val cell =
-                                displayCell(position, metrics, snapshot.columns, snapshot.rows)
+                            val cell = displayCell(position, metrics, snapshot)
                             selected =
                                 if (cell == start) word
                                 else {
@@ -197,8 +190,11 @@ private enum class Press {
     Moved,
 }
 
-/** Returns the 0-based cell of the display at [position]. */
-internal fun displayCell(position: Offset, metrics: CellMetrics, columns: Int, rows: Int): Cell =
+/** Returns the 0-based cell of [snapshot] at [position]. */
+internal fun displayCell(position: Offset, metrics: CellMetrics, snapshot: TerminalSnapshot): Cell =
+    displayCell(position, metrics, snapshot.columns, snapshot.rows)
+
+private fun displayCell(position: Offset, metrics: CellMetrics, columns: Int, rows: Int): Cell =
     Cell(
         (position.x / metrics.width).toInt().coerceIn(0, columns - 1),
         (position.y / metrics.height).toInt().coerceIn(0, rows - 1),

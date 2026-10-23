@@ -266,7 +266,7 @@ private class MouseHandler(
 
     private fun select(change: PointerInputChange, modifiers: PointerKeyboardModifiers) {
         val snapshot = display.displaySnapshot()
-        val cell = displayCell(grid(change.position), metrics, snapshot.columns, snapshot.rows)
+        val cell = displayCell(grid(change.position), metrics, snapshot)
         val time = change.uptimeMillis
         clicks =
             if (
@@ -340,12 +340,12 @@ private class MouseHandler(
     private fun hover(position: Offset) {
         reportedCell = null
         val snapshot = display.displaySnapshot()
-        onHover(snapshot, displayCell(grid(position), metrics, snapshot.columns, snapshot.rows))
+        onHover(snapshot, displayCell(grid(position), metrics, snapshot))
     }
 
     private fun extend(drag: SelectionDrag, position: Offset) {
         val snapshot = drag.snapshot
-        val cell = displayCell(position, metrics, snapshot.columns, snapshot.rows)
+        val cell = displayCell(position, metrics, snapshot)
         val unit = drag.unit
         if (!drag.started && cell == unit.start) return
         // The selection is dropped when the display changes, and the snapshot is then out of
@@ -393,7 +393,7 @@ private class MouseHandler(
         if (drag.started) return
         // A click: a tap, without the keyboard's long press.
         val snapshot = display.displaySnapshot()
-        val cell = displayCell(drag.position, metrics, snapshot.columns, snapshot.rows)
+        val cell = displayCell(drag.position, metrics, snapshot)
         if (!onLinkClick(snapshot, cell, change.type, modifiers)) onClick()
     }
 
