@@ -116,7 +116,6 @@ internal class TerminalInputView(context: Context) : View(context), InputHost {
         return TerminalInputConnection(
             view = this,
             session = session,
-            keys = KeyEventHandler(session),
             cursorAnchor = anchor,
             onPaste = { session.pasteFromClipboard() },
             onEditorChanged = {
@@ -143,7 +142,7 @@ internal class TerminalInputView(context: Context) : View(context), InputHost {
 
     private fun handleKey(event: KeyEvent): Boolean {
         val display = display ?: return false
-        val handled = KeyEventHandler(display.session).handle(event)
+        val handled = KeyEventHandler.handle(display.session, event)
         if (handled) display.notifyEditorChanged()
         return handled
     }

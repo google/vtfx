@@ -51,7 +51,6 @@ class TerminalInputConnectionTest {
         TerminalInputConnection(
             view = view,
             session = session,
-            keys = KeyEventHandler(session),
             cursorAnchor = CursorAnchorReporter(view, session) { null },
             onPaste = { pastes++ },
             onEditorChanged = { changes++ },
@@ -245,7 +244,6 @@ class TerminalInputConnectionTest {
             TerminalInputConnection(
                 view = view,
                 session = session,
-                keys = KeyEventHandler(session),
                 cursorAnchor = CursorAnchorReporter(view, session) { null },
                 onPaste = { session.paste("x") },
                 onEditorChanged = {},

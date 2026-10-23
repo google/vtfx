@@ -49,7 +49,6 @@ import com.google.vtfx.session.TerminalSession
 internal class TerminalInputConnection(
     private val view: View,
     private val session: TerminalSession,
-    private val keys: KeyEventHandler,
     private val cursorAnchor: CursorAnchorReporter,
     private val onPaste: () -> Unit,
     /**
@@ -198,7 +197,7 @@ internal class TerminalInputConnection(
     // --- Keys (section 6.3) ---
 
     override fun sendKeyEvent(event: KeyEvent): Boolean {
-        keys.handle(event)
+        KeyEventHandler.handle(session, event)
         reportSelection()
         return true
     }
