@@ -98,18 +98,12 @@ internal object Names {
         var codePoints = 0
         var i = 0
         while (i < name.length && codePoints < MAX_LENGTH) {
-            val c = name[i]
-            val next = name.getOrNull(i + 1)
-            val codePoint =
-                if (c.isHighSurrogate() && next != null && next.isLowSurrogate()) {
-                    Character.toCodePoint(c, next)
-                } else {
-                    c.code
-                }
+            // A surrogate pair is one code point; an unpaired surrogate is itself, of type Cs.
+            val codePoint = name.codePointAt(i)
             i += Character.charCount(codePoint)
-            when {
-                Character.isSurrogate(c) && codePoint == c.code -> out.append(REPLACEMENT)
-                Character.getType(codePoint) in REMOVED_TYPES -> continue
+            when (Character.getType(codePoint)) {
+                Character.SURROGATE.toInt() -> out.append(REPLACEMENT)
+                in REMOVED_TYPES -> continue
                 else -> out.appendCodePoint(codePoint)
             }
             codePoints++
