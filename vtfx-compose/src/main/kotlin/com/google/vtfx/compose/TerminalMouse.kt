@@ -38,7 +38,6 @@ import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.unit.LayoutDirection
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.KeyStroke
-import com.google.vtfx.core.MouseTracking
 import com.google.vtfx.core.TerminalKey
 import com.google.vtfx.core.TerminalSnapshot
 import com.google.vtfx.gate.MouseAction
@@ -218,9 +217,7 @@ private class MouseHandler(
      * tell. A button's press decides it for its release and its drag.
      */
     private fun isReporting(modifiers: PointerKeyboardModifiers): Boolean =
-        !modifiers.isShiftPressed &&
-            !display.isScrolledBack &&
-            session.modes().mouseTracking != MouseTracking.None
+        !modifiers.isShiftPressed && isReportingTouches(display)
 
     private fun report(
         button: MouseButton,

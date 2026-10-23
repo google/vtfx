@@ -182,7 +182,7 @@ internal fun Modifier.terminalGestures(
  * Whether the host gets touches as the mouse: it asked for mouse reports, and the display does not
  * show the scrollback, whose rows a report, which carries a row of the screen, cannot tell.
  */
-private fun isReportingTouches(display: TerminalDisplay): Boolean =
+internal fun isReportingTouches(display: TerminalDisplay): Boolean =
     !display.isScrolledBack && display.session.modes().mouseTracking != MouseTracking.None
 
 private enum class Press {
