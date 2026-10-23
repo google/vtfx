@@ -78,8 +78,9 @@ The replies to queries are built by `vtfx-gate` from the state, never from the r
 | Reverse wraparound (DECSET 45), the more(1) workaround (DECSET 41), saving and restoring DEC modes (XTSAVE, XTRESTORE) | Ignored; BS and CUB stop at the left edge |
 | Conformance level (DECSCL), DSR extensions (printer, UDK, keyboard, locator, and so on) | Ignored |
 | Setting the modes KAM, SRM, DECBKM, DECHEBM, DECNRCM, DECPEX, DECPFF, DECSCLM, DECCOLM, DECLRMM | Ignored. DECRQM reports them as reset, and DECHCCM and some ANSI modes as permanently reset, as xterm does |
+| The mouse pointer shape (OSC 22), the cursor shape by OSC 50 (`CursorShape=`; the font in xterm), urgency hints (DECSET 1042) | Ignored |
 
-The reasons for each are in [decisions/0009](../decisions/0009-emulation-scope.md). The esctest2 cases that fail because of these are listed with their reasons in `tools/esctest/reasons.toml`.
+The reasons for each are in [decisions/0009](../decisions/0009-emulation-scope.md), and for the last row in [decisions/0068](../decisions/0068-features-of-alacritty-terminal.md). The esctest2 cases that fail because of these are listed with their reasons in `tools/esctest/reasons.toml`.
 
 ## 5. Deviations from the references
 
