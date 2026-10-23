@@ -87,13 +87,13 @@ class PrintAsciiTest {
             )
         }
         assertEquals(
-            expected.scrollbackSize(),
-            actual.scrollbackSize(),
+            expected.scrollback.size,
+            actual.scrollback.size,
             "$message: scrollback size",
         )
-        for (i in 0 until expected.scrollbackSize()) {
+        for (i in 0 until expected.scrollback.size) {
             assertTrue(
-                actual.scrollbackLine(i).contentEquals(expected.scrollbackLine(i)),
+                actual.scrollback[i].contentEquals(expected.scrollback[i]),
                 "$message: scrollback $i",
             )
         }

@@ -44,7 +44,7 @@ internal class Emulator(
     var rows: Int = rows
         private set
 
-    private val scrollback = Scrollback(limits.scrollbackLines)
+    val scrollback = Scrollback(limits.scrollbackLines)
     private val mainScreen = ScreenBuffer(columns, rows, scrollback)
     private val alternateScreen = ScreenBuffer(columns, rows, null)
     var screen: ScreenBuffer = mainScreen
@@ -1157,18 +1157,6 @@ internal class Emulator(
         cursorY = cursorY.coerceIn(0, newRows - 1)
         pendingWrap = mainCursor == null && result.pendingWrap
     }
-
-    fun scrollbackSize(): Int = scrollback.size
-
-    fun scrollbackPushes(): Long = scrollback.pushes
-
-    fun scrollbackGeneration(): Long = scrollback.generation
-
-    fun scrollbackLine(index: Int): Line = scrollback[index]
-
-    fun estimatedScrollbackBytes(): Long = scrollback.estimatedBytes()
-
-    fun scrollbackAnchorCount(): Int = scrollback.anchorCount()
 
     companion object {
         private const val BEL = 0x07

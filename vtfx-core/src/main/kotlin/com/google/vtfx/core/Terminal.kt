@@ -82,7 +82,7 @@ public class Terminal(
 
     /** The number of lines in the scrollback. */
     public val scrollbackSize: Int
-        get() = emulator.scrollbackSize()
+        get() = emulator.scrollback.size
 
     /**
      * The number of lines that have entered the scrollback, including ones dropped since because of
@@ -90,7 +90,7 @@ public class Terminal(
      * [scrollbackSize] stops telling once the scrollback is full.
      */
     public val scrollbackPushes: Long
-        get() = emulator.scrollbackPushes()
+        get() = emulator.scrollback.pushes
 
     /**
      * Interprets [length] bytes of host output from [offset]. Sequences may be split across calls.
@@ -133,13 +133,13 @@ public class Terminal(
     public fun lines(maxLines: Int): List<LineSnapshot> {
         require(maxLines >= 0) { "maxLines must not be negative: $maxLines" }
         val screen = emulator.screen
-        val scrollbackSize = if (emulator.isAlternateScreen) 0 else emulator.scrollbackSize()
+        val scrollbackSize = if (emulator.isAlternateScreen) 0 else emulator.scrollback.size
         val lineCount = scrollbackSize + screen.rows
         val first = maxOf(0, lineCount - maxLines)
         return List(lineCount - first) {
             val index = first + it
             if (index < scrollbackSize) {
-                lineSnapshot(emulator.scrollbackLine(index).resized(emulator.columns), copy = false)
+                lineSnapshot(emulator.scrollback[index].resized(emulator.columns), copy = false)
             } else {
                 lineSnapshot(screen[index - scrollbackSize])
             }
@@ -160,8 +160,8 @@ public class Terminal(
         require(minLines > 0) { "minLines must be positive: $minLines" }
         val alternate = emulator.isAlternateScreen
         val screen = emulator.screen
-        val screenLine = emulator.scrollbackPushes()
-        val oldestLine = screenLine - if (alternate) 0 else emulator.scrollbackSize()
+        val screenLine = emulator.scrollback.pushes
+        val oldestLine = screenLine - if (alternate) 0 else emulator.scrollback.size
         val firstLine = from.coerceIn(oldestLine, screenLine)
         val lines = ArrayList<LineSnapshot>()
         var line = firstLine
@@ -170,7 +170,7 @@ public class Terminal(
         while (line < screenLine && (line - firstLine < minLines || textRows > 0)) {
             val index = (line - oldestLine).toInt()
             val snapshot =
-                lineSnapshot(emulator.scrollbackLine(index).resized(emulator.columns), copy = false)
+                lineSnapshot(emulator.scrollback[index].resized(emulator.columns), copy = false)
             lines += snapshot
             textRows =
                 if (snapshot.isWrapped && textRows + 1 < MAX_SEARCH_TEXT_ROWS) textRows + 1 else 0
@@ -180,7 +180,7 @@ public class Terminal(
         if (isComplete) for (row in 0 until screen.rows) lines += lineSnapshot(screen[row])
         return SearchLines(
             // Switching the screen numbers the lines again too.
-            generation = emulator.scrollbackGeneration() * 2 + if (alternate) 1 else 0,
+            generation = emulator.scrollback.generation * 2 + if (alternate) 1 else 0,
             firstLine = firstLine,
             lines = lines,
             oldestLine = oldestLine,
@@ -198,7 +198,7 @@ public class Terminal(
         val screen = emulator.screen
         // Lines are counted from the oldest in the scrollback, which the alternate screen does not
         // show, through the last of the screen.
-        val scrollbackSize = if (emulator.isAlternateScreen) 0 else emulator.scrollbackSize()
+        val scrollbackSize = if (emulator.isAlternateScreen) 0 else emulator.scrollback.size
         val lineCount = scrollbackSize + screen.rows
         val offset = scrollOffset.coerceIn(0, scrollbackSize)
         val first = scrollbackSize - offset
@@ -206,7 +206,7 @@ public class Terminal(
         fun lineAt(index: Int): LineSnapshot =
             if (index < scrollbackSize) {
                 // Lines in the scrollback may be narrower or wider after a resize.
-                lineSnapshot(emulator.scrollbackLine(index).resized(emulator.columns), copy = false)
+                lineSnapshot(emulator.scrollback[index].resized(emulator.columns), copy = false)
             } else {
                 lineSnapshot(screen[index - scrollbackSize])
             }
@@ -243,7 +243,7 @@ public class Terminal(
             modes = emulator.modes,
             isAlternateScreen = emulator.isAlternateScreen,
             scrollOffset = offset,
-            firstLine = emulator.scrollbackPushes() - offset,
+            firstLine = emulator.scrollback.pushes - offset,
             lines = lines,
             linesAbove = linesAbove.toList(),
             linesBelow = linesBelow,
@@ -343,10 +343,10 @@ public class Terminal(
     }
 
     /** An estimate of the memory the scrollback takes, for benchmarks (docs/decisions/0014). */
-    internal fun estimatedScrollbackBytes(): Long = emulator.estimatedScrollbackBytes()
+    internal fun estimatedScrollbackBytes(): Long = emulator.scrollback.estimatedBytes()
 
     /** The number of placements that the lines of the scrollback hold, for tests. */
-    internal fun scrollbackAnchorCount(): Int = emulator.scrollbackAnchorCount()
+    internal fun scrollbackAnchorCount(): Int = emulator.scrollback.anchorCount()
 
     /** The images and placements of the screen displayed, for tests. */
     internal val graphicsLayer: GraphicsLayer
@@ -358,7 +358,7 @@ public class Terminal(
 
     /** Returns a copy of the scrollback line at [index], where 0 is the oldest. */
     public fun scrollbackLine(index: Int): LineSnapshot =
-        lineSnapshot(emulator.scrollbackLine(index), copy = false)
+        lineSnapshot(emulator.scrollback[index], copy = false)
 
     /** [copy] is false for a line that is already a fresh copy, such as one from the scrollback. */
     private fun lineSnapshot(line: Line, copy: Boolean = true): LineSnapshot {
