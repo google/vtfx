@@ -10,7 +10,7 @@ Reproduced 11 bugs with 11 test cases across `vtfx-compose` and `vtfx-sample`. T
 
 | ID | Severity | Bug | State | Fix commit / verification |
 |---|---|---|---|---|
-| R1 | High | An empty `LocaleList` in `TerminalStyle.locale` crashes `TextPaints` with `IllegalArgumentException` | Open | — |
+| R1 | High | An empty `LocaleList` in `TerminalStyle.locale` crashes `TextPaints` with `IllegalArgumentException` | Fixed | `12ff460eca5d91d21ca69fcf134012d05a18899f`: an empty list leaves the paints' text locales at the system's, like null. Failed before: `TerminalStyleTest.terminalWithAnEmptyLocaleDraws`, `TerminalStyleTest.emptyLocaleLeavesTheSystemsLocaleLikeNull` |
 | R2 | Medium | Clicking an OSC 8 hyperlink that wraps before a wide character truncates the reported link text | Open | — |
 | R3 | Medium | Word selection includes a preceding fullwidth space (`U+3000`) or concealed wide character | Open | — |
 | R4 | Medium | Touch gestures in the inner padding treat drags and long presses as taps and do not clear the selection on tap | Open | — |
