@@ -110,16 +110,12 @@ internal object Sgr {
         return Rendition(result, underlineColor)
     }
 
+    /**
+     * The style of SGR 4:[value]. SGR numbers the styles in the order of [UnderlineStyle]; an
+     * unknown value underlines once.
+     */
     private fun underlineStyle(value: Int): UnderlineStyle =
-        when (value) {
-            0 -> UnderlineStyle.None
-            1 -> UnderlineStyle.Single
-            2 -> UnderlineStyle.Double
-            3 -> UnderlineStyle.Curly
-            4 -> UnderlineStyle.Dotted
-            5 -> UnderlineStyle.Dashed
-            else -> UnderlineStyle.Single
-        }
+        UnderlineStyle.entries.getOrElse(value) { UnderlineStyle.Single }
 
     /**
      * Parses the color after 38, 48, or 58 at [i]. Returns the color, or null if it is malformed,
@@ -127,18 +123,20 @@ internal object Sgr {
      */
     private fun extendedColor(params: Params, i: Int, subCount: Int): Pair<TerminalColor?, Int> {
         if (subCount > 0) {
-            return when (params[i + 1]) {
-                // 38:5:N
-                5 -> Pair(if (subCount >= 2) indexed(params[i + 2]) else null, 0)
-                // 38:2:CS:R:G:B, with an optional color space id, or 38:2:R:G:B.
-                2 ->
-                    when {
-                        subCount >= 5 -> Pair(rgb(params[i + 3], params[i + 4], params[i + 5]), 0)
-                        subCount == 4 -> Pair(rgb(params[i + 2], params[i + 3], params[i + 4]), 0)
-                        else -> Pair(null, 0)
-                    }
-                else -> Pair(null, 0)
-            }
+            val color =
+                when (params[i + 1]) {
+                    // 38:5:N
+                    5 -> if (subCount >= 2) indexed(params[i + 2]) else null
+                    // 38:2:CS:R:G:B, with an optional color space id, or 38:2:R:G:B.
+                    2 ->
+                        when {
+                            subCount >= 5 -> rgb(params[i + 3], params[i + 4], params[i + 5])
+                            subCount == 4 -> rgb(params[i + 2], params[i + 3], params[i + 4])
+                            else -> null
+                        }
+                    else -> null
+                }
+            return Pair(color, 0)
         }
         return when (params[i + 1]) {
             5 ->
