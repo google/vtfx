@@ -43,19 +43,13 @@ internal object Placeholders {
         val imageColumn: Int,
         val highByte: Int,
         /** The colors, to compare with the next cell. */
-        val foreground: Long,
+        val foreground: TerminalColor,
         val underline: Int,
     )
 
-    /** Whether [line] has a placeholder. */
-    fun hasPlaceholders(line: Line): Boolean {
-        for (code in line.codes) if (code == CODE_POINT) return true
-        return false
-    }
-
     /** Returns the placeholder cells of [line] that name an image, left to right. */
     fun resolve(line: Line): List<Cell> {
-        if (!hasPlaceholders(line)) return emptyList()
+        if (CODE_POINT !in line.codes) return emptyList()
         val cells = ArrayList<Cell>()
         var previous: Cell? = null
         for (column in 0 until line.columns) {
@@ -63,8 +57,12 @@ internal object Placeholders {
                 previous = null
                 continue
             }
-            val style = CellStyle(line.styles[column])
-            val foreground = style.foreground
+            val foreground = CellStyle(line.styles[column]).foreground
+            val low = imageIdBits(foreground)
+            if (low < 0) {
+                previous = null
+                continue
+            }
             val underlineBits = line.underlineColorAt(column)
             val text = line.textAt(column) ?: ""
             // The diacritics after the placeholder: row, column, and high byte, -1 if absent.
@@ -77,33 +75,20 @@ internal object Placeholders {
                     PlaceholderDiacritics.CODE_POINTS.binarySearch(codePoint).coerceAtLeast(-1)
                 i += Character.charCount(codePoint)
             }
+            // previous is the cell just to the left, if it is a placeholder of an image.
             val left = previous?.takeIf {
-                it.foreground == foreground.bitsAsLong() &&
-                    it.underline == underlineBits &&
-                    it.column == column - 1
+                it.foreground == foreground && it.underline == underlineBits
             }
             var row = values[0]
             var imageColumn = values[1]
             var highByte = values[2]
-            when {
-                count == 0 && left != null -> {
-                    row = left.row
-                    imageColumn = left.imageColumn + 1
+            // Each missing diacritic continues the cell to the left, if those before it do.
+            if (left != null) {
+                if (count == 0) row = left.row
+                if (count <= 1 && row == left.row) imageColumn = left.imageColumn + 1
+                if (count <= 2 && row == left.row && imageColumn == left.imageColumn + 1) {
                     highByte = left.highByte
                 }
-                count == 1 && left != null && left.row == row -> {
-                    imageColumn = left.imageColumn + 1
-                    highByte = left.highByte
-                }
-                count == 2 &&
-                    left != null &&
-                    left.row == row &&
-                    left.imageColumn == imageColumn - 1 -> highByte = left.highByte
-            }
-            val low = imageIdBits(foreground)
-            if (low < 0) {
-                previous = null
-                continue
             }
             val cell =
                 Cell(
@@ -113,7 +98,7 @@ internal object Placeholders {
                     row = maxOf(row, 0),
                     imageColumn = maxOf(imageColumn, 0),
                     highByte = maxOf(highByte, 0),
-                    foreground = foreground.bitsAsLong(),
+                    foreground = foreground,
                     underline = underlineBits,
                 )
             cells += cell
@@ -129,6 +114,4 @@ internal object Placeholders {
             color.isIndexed -> color.index.toLong()
             else -> color.rgb.toLong() and 0xFFFFFF
         }
-
-    private fun TerminalColor.bitsAsLong(): Long = bits.toLong()
 }
