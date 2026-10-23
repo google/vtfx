@@ -69,19 +69,22 @@ def annotation_start(lines: list[str], end: int) -> int | None:
     return None
 
 
-def annotations_before(lines: list[str], index: int) -> str:
-    """Returns the annotations on the lines right before lines[index]."""
+def line_before_annotations(lines: list[str], index: int) -> int:
+    """Returns the index of the first line before the annotations preceding lines[index]."""
     j = index - 1
     while j >= 0 and (start := annotation_start(lines, j)) is not None:
         j = start - 1
-    return "\n".join(lines[j + 1 : index])
+    return j
+
+
+def annotations_before(lines: list[str], index: int) -> str:
+    """Returns the annotations on the lines right before lines[index]."""
+    return "\n".join(lines[line_before_annotations(lines, index) + 1 : index])
 
 
 def kdoc_before(lines: list[str], index: int) -> str | None:
     """Returns the KDoc that ends right before lines[index], skipping annotations, or None."""
-    j = index - 1
-    while j >= 0 and (start := annotation_start(lines, j)) is not None:
-        j = start - 1
+    j = line_before_annotations(lines, index)
     if j < 0 or not lines[j].rstrip().endswith("*/"):
         return None
     end = j
