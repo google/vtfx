@@ -138,10 +138,10 @@ private data object UrlMatcher : TextMatcher {
     }
 }
 
-private class TemplateMatcher(private val regex: Regex, template: String) : TextMatcher {
+private class TemplateMatcher(private val regex: Regex, private val template: String) :
+    TextMatcher {
     private val parts: List<TemplatePart> =
         parseTemplate(template, regex.toPattern().matcher("").groupCount())
-    private val template = template
 
     override fun find(text: String, onMatch: (start: Int, end: Int, url: String) -> Unit) {
         val matcher = regex.toPattern().matcher(text)
