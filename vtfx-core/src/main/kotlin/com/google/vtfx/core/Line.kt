@@ -110,15 +110,6 @@ internal class Line(columns: Int, style: CellStyle = CellStyle.Default) {
     }
 
     /**
-     * Anchors [placements] to this line. Used for lines that are about to be laid out again, such
-     * as expanded scrollback lines for reflow: the placements do not learn of it, so this line must
-     * only be read.
-     */
-    fun restoreAnchors(placements: Array<Placement>?) {
-        anchors = placements?.let { ArrayList(it.asList()) }
-    }
-
-    /**
      * Moves the anchors to [target], which takes this line's place, deleting those beyond its
      * width.
      */
@@ -334,13 +325,21 @@ internal class Line(columns: Int, style: CellStyle = CellStyle.Default) {
     }
 
     /**
-     * Sets the clusters, links, and underline colors of the first cells, when expanding a
-     * [CompactLine].
+     * Sets the clusters, links, and underline colors of the first cells, and the anchored
+     * [placements], when expanding a [CompactLine] into this new line. [clusters], unlike the
+     * others, must be a new array of [columns] cells, which this line takes. The placements do not
+     * learn of it, so this line must only be read or laid out again, as reflow does.
      */
-    fun restore(clusters: Array<String?>?, links: IntArray?, underlineColors: IntArray?) {
-        clusters?.let { this.clusters = it.copyOf(codes.size) }
-        links?.let { this.links = it.copyOf(codes.size) }
-        underlineColors?.let { this.underlineColors = it.copyOf(codes.size) }
+    fun restore(
+        clusters: Array<String?>?,
+        links: IntArray?,
+        underlineColors: IntArray?,
+        placements: ArrayList<Placement>?,
+    ) {
+        this.clusters = clusters
+        this.links = links?.copyOf(codes.size)
+        this.underlineColors = underlineColors?.copyOf(codes.size)
+        anchors = placements
     }
 
     fun clear(style: CellStyle) {
@@ -496,7 +495,7 @@ internal class CompactLine(
     /** The underline colors of the cells of [codes], or null if all are 0. */
     private val underlineColors: IntArray?,
     val isWrapped: Boolean,
-    anchors: Array<Placement>? = null,
+    anchors: Array<Placement>?,
 ) {
     /**
      * The image placements anchored to this line, which moved here with it from the screen, or
@@ -518,22 +517,26 @@ internal class CompactLine(
 
     fun expand(): Line {
         val line = Line(columns, CellStyle(trailingStyle))
-        for (column in codes.indices) {
-            line.codes[column] = codes[column]
-            line.styles[column] = if (styles.size == codes.size) styles[column] else styles[0]
+        codes.copyInto(line.codes)
+        if (styles.size == codes.size) {
+            styles.copyInto(line.styles)
+        } else {
+            line.styles.fill(styles[0], 0, codes.size)
         }
-        line.restore(expandClusters(), links, underlineColors)
-        line.isWrapped = isWrapped
-        line.restoreAnchors(
-            anchors?.filter { it.isAlive }?.toTypedArray()?.takeIf { it.isNotEmpty() }
+        line.restore(
+            expandClusters(),
+            links,
+            underlineColors,
+            anchors?.filterTo(ArrayList()) { it.isAlive }?.takeIf { it.isNotEmpty() },
         )
+        line.isWrapped = isWrapped
         return line
     }
 
     private fun expandClusters(): Array<String?>? {
         val text = clusterText ?: return null
         val index = clusterIndex ?: return null
-        val clusters = arrayOfNulls<String>(codes.size)
+        val clusters = arrayOfNulls<String>(columns)
         var start = 0
         for (entry in index) {
             val end = entry and END_MASK
