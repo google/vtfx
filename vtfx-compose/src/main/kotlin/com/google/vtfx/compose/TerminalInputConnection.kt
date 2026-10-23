@@ -283,7 +283,7 @@ internal class TerminalInputConnection(
          * the IME is asked for plain characters without suggestions, which it then commits one by
          * one.
          */
-        fun configure(outAttrs: EditorInfo, editor: ImeEditor, directInput: Boolean = false) {
+        fun configure(outAttrs: EditorInfo, editor: ImeEditor, directInput: Boolean) {
             outAttrs.inputType =
                 if (directInput) {
                     InputType.TYPE_CLASS_TEXT or

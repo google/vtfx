@@ -183,7 +183,7 @@ internal class TerminalRenderer(
         /** The matches of a search that [snapshot] shows, highlighted under the selection. */
         searchMatches: VisibleMatches?,
         /** False during the off phase of a blinking cursor. */
-        cursorOn: Boolean = true,
+        cursorOn: Boolean,
     ) {
         val reverse = snapshot.modes.reverseVideo
         val defaultForeground = if (reverse) colors.background else colors.foreground

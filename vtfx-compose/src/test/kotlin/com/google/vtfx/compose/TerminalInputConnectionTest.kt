@@ -61,7 +61,7 @@ class TerminalInputConnectionTest {
     fun editorInfoFollowsTheContract() {
         session.edit { it.commitText("ab") }
         val info = EditorInfo()
-        session.edit { TerminalInputConnection.configure(info, it) }
+        session.edit { TerminalInputConnection.configure(info, it, directInput = false) }
         assertEquals(InputType.TYPE_CLASS_TEXT, info.inputType)
         assertEquals(
             EditorInfo.IME_ACTION_NONE or
@@ -80,7 +80,7 @@ class TerminalInputConnectionTest {
     fun editorInfoBeforeApi30HasNoInitialSurroundingText() {
         session.edit { it.commitText("ab") }
         val info = EditorInfo()
-        session.edit { TerminalInputConnection.configure(info, it) }
+        session.edit { TerminalInputConnection.configure(info, it, directInput = false) }
         assertEquals(InputType.TYPE_CLASS_TEXT, info.inputType)
         assertEquals(
             EditorInfo.IME_ACTION_NONE or

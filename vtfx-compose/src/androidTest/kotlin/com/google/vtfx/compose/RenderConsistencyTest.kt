@@ -121,6 +121,7 @@ class RenderConsistencyTest {
                         focused = false,
                         selection = null,
                         searchMatches = null,
+                        cursorOn = true,
                     )
                 }
             }
