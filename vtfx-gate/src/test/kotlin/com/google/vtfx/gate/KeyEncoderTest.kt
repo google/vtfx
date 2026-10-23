@@ -45,7 +45,9 @@ class KeyEncoderTest {
      * Every key, with any modifiers, under any modes, encodes to the shape of a key: a CSI or SS3
      * sequence, CR LF, or one character, optionally after ESC for Alt, or nothing. So no key can
      * send a string (OSC, DCS) or several characters, which the gate checked of the bytes it was
-     * given before it encoded keys itself (docs/decisions/0005).
+     * given before it encoded keys itself (docs/decisions/0005). This holds for the forms of the
+     * kitty keyboard protocol too, whose CSI u carries a code point only in digits
+     * (docs/decisions/0070).
      */
     @Test
     fun everyKeyHasTheShapeOfAKey() {
@@ -59,11 +61,12 @@ class KeyEncoderTest {
                 )
             }
         val modes =
-            (0 until 8).map {
+            (0 until 16).map {
                 terminalModes(
                     applicationCursorKeys = it and 1 != 0,
                     applicationKeypad = it and 2 != 0,
                     newLine = it and 4 != 0,
+                    disambiguateEscapeCodes = it and 8 != 0,
                 )
             }
         val codePoints = (0..0x3FF) + listOf(0x3042, 0xD800, 0xDFFF, 0xFFFD, 0x1F600, 0x10FFFF)
@@ -85,7 +88,10 @@ class KeyEncoderTest {
     }
 
     private companion object {
-        /** A bound on the length of a key. The longest, such as ESC [ 2 4 ; 1 6 ~, are 8 bytes. */
+        /**
+         * A bound on the length of a key. The longest, such as ESC [ 1 1 1 4 1 1 1 ; 1 6 u for
+         * U+10FFFF with every modifier in the kitty keyboard protocol, are 13 bytes.
+         */
         private const val MAX_KEY_LENGTH = 16
         private val KEY_SHAPE =
             Regex("(?:\u001b?(?:\u001b\\[[0-9;]*[A-Za-z~]|\u001bO[A-Za-z]|\r\n|(?s:.)))?")
@@ -94,10 +100,20 @@ class KeyEncoderTest {
         private val application = terminalModes(applicationCursorKeys = true)
         private val newLine = terminalModes(newLine = true)
         private val keypad = terminalModes(applicationKeypad = true)
+        private val kitty = terminalModes(disambiguateEscapeCodes = true)
+        private val kittyApplication =
+            terminalModes(
+                applicationCursorKeys = true,
+                applicationKeypad = true,
+                disambiguateEscapeCodes = true,
+            )
+        private val kittyNewLine = terminalModes(newLine = true, disambiguateEscapeCodes = true)
         private val shift = KeyModifiers.of(shift = true)
         private val ctrl = KeyModifiers.of(ctrl = true)
         private val alt = KeyModifiers.of(alt = true)
         private val ctrlShift = KeyModifiers.of(ctrl = true, shift = true)
+        private val altShift = KeyModifiers.of(alt = true, shift = true)
+        private val meta = KeyModifiers.of(meta = true)
 
         private fun special(key: TerminalKey, modifiers: KeyModifiers = KeyModifiers.None) =
             KeyStroke.Special(key, modifiers)
@@ -105,6 +121,10 @@ class KeyEncoderTest {
         /** A character key with no place on a keyboard, as a key bar of an app sends. */
         private fun char(c: Char, modifiers: KeyModifiers = KeyModifiers.None) =
             KeyStroke.Character(c.code, modifiers, Character.toLowerCase(c.code), null)
+
+        /** A character key whose key without modifiers is [unshifted]. */
+        private fun key(c: Char, unshifted: Char, modifiers: KeyModifiers) =
+            KeyStroke.Character(c.code, modifiers, unshifted.code, null)
 
         private fun case(
             stroke: KeyStroke,
@@ -179,7 +199,87 @@ class KeyEncoderTest {
                 case(special(TerminalKey.KeypadDelete), "."),
                 case(special(TerminalKey.KeypadBegin), "\\eOu", keypad, "DECKPAM"),
                 case(special(TerminalKey.KeypadInsert, ctrl), "\\e[1;5p", keypad, "DECKPAM"),
+            ) + kittyCases()
+
+        /**
+         * Flag 1 of the kitty keyboard protocol, as kitty encodes the keys (docs/decisions/0070).
+         */
+        private fun kittyCases(): List<Case> {
+            fun kitty(stroke: KeyStroke, expected: String) = case(stroke, expected, kitty, "kitty")
+            return listOf(
+                kitty(special(TerminalKey.Escape), "\\e[27u"),
+                kitty(special(TerminalKey.Escape, alt), "\\e[27;3u"),
+                // Enter, Tab, and Backspace keep their legacy bytes without modifiers.
+                kitty(special(TerminalKey.Enter), "\r"),
+                case(special(TerminalKey.Enter), "\r\n", kittyNewLine, "kitty LNM"),
+                kitty(special(TerminalKey.Enter, shift), "\\e[13;2u"),
+                kitty(special(TerminalKey.Enter, ctrl), "\\e[13;5u"),
+                kitty(special(TerminalKey.Tab), "\t"),
+                kitty(special(TerminalKey.Tab, shift), "\\e[9;2u"),
+                kitty(special(TerminalKey.Tab, ctrlShift), "\\e[9;6u"),
+                kitty(special(TerminalKey.Backspace), "\u007f"),
+                kitty(special(TerminalKey.Backspace, ctrl), "\\e[127;5u"),
+                kitty(special(TerminalKey.Backspace, alt), "\\e[127;3u"),
+                kitty(special(TerminalKey.Up), "\\e[A"),
+                kitty(special(TerminalKey.Up, ctrl), "\\e[1;5A"),
+                // DECCKM does not apply.
+                case(special(TerminalKey.Up), "\\e[A", kittyApplication, "kitty DECCKM"),
+                case(special(TerminalKey.Home), "\\e[H", kittyApplication, "kitty DECCKM"),
+                kitty(special(TerminalKey.End, shift), "\\e[1;2F"),
+                kitty(special(TerminalKey.Delete, shift), "\\e[3;2~"),
+                kitty(special(TerminalKey.PageUp), "\\e[5~"),
+                kitty(special(TerminalKey.F1), "\\e[P"),
+                kitty(special(TerminalKey.F1, shift), "\\e[1;2P"),
+                kitty(special(TerminalKey.F3), "\\e[13~"),
+                kitty(special(TerminalKey.F3, ctrl), "\\e[13;5~"),
+                kitty(special(TerminalKey.F4), "\\e[S"),
+                kitty(special(TerminalKey.F12, meta), "\\e[24;9~"),
+                // Characters without Ctrl, Alt, or Meta are text.
+                kitty(char('a'), "a"),
+                kitty(char('A', shift), "A"),
+                kitty(char('c', ctrl), "\\e[99;5u"),
+                kitty(char('i', ctrl), "\\e[105;5u"),
+                kitty(char('[', ctrl), "\\e[91;5u"),
+                kitty(char(' ', ctrl), "\\e[32;5u"),
+                kitty(char('x', alt), "\\e[120;3u"),
+                kitty(char('x', meta), "\\e[120;9u"),
+                // The code is the unshifted key: Shift is reported if held, and Caps Lock is not.
+                kitty(key('A', 'a', ctrlShift), "\\e[97;6u"),
+                kitty(key('A', 'a', altShift), "\\e[97;4u"),
+                kitty(key('C', 'c', ctrl), "\\e[99;5u"),
+                kitty(key('!', '1', ctrlShift), "\\e[49;6u"),
+                kitty(key('Я', 'я', ctrlShift), "\\e[1103;6u"),
+                kitty(char('é', ctrl), "\\e[233;5u"),
+                // Controls send nothing and unpaired surrogates are U+FFFD, as in the legacy keys.
+                kitty(char('\u001b', ctrl), ""),
+                kitty(char('\u009b', alt), ""),
+                kitty(char('\ud800', alt), "\\e[65533;3u"),
+                kitty(key('a', '\udc00', ctrl), "\\e[65533;5u"),
+                // The keypad's keys that produce text send it unless Ctrl, Alt, or Meta is held.
+                kitty(special(TerminalKey.Keypad5), "5"),
+                kitty(special(TerminalKey.Keypad5, shift), "5"),
+                kitty(special(TerminalKey.Keypad5, ctrl), "\\e[57404;5u"),
+                kitty(special(TerminalKey.KeypadDivide, alt), "\\e[57410;3u"),
+                kitty(special(TerminalKey.KeypadEquals, meta), "\\e[57415;9u"),
+                // DECKPAM does not apply.
+                case(special(TerminalKey.Keypad0), "0", kittyApplication, "kitty DECKPAM"),
+                case(special(TerminalKey.KeypadPlus), "+", kittyApplication, "kitty DECKPAM"),
+                // The keys with NumLock off produce no text.
+                kitty(special(TerminalKey.KeypadLeft), "\\e[57417u"),
+                kitty(special(TerminalKey.KeypadRight), "\\e[57418u"),
+                kitty(special(TerminalKey.KeypadUp), "\\e[57419u"),
+                kitty(special(TerminalKey.KeypadDown), "\\e[57420u"),
+                kitty(special(TerminalKey.KeypadPageUp), "\\e[57421u"),
+                kitty(special(TerminalKey.KeypadPageDown), "\\e[57422u"),
+                kitty(special(TerminalKey.KeypadHome), "\\e[57423u"),
+                kitty(special(TerminalKey.KeypadEnd), "\\e[57424u"),
+                kitty(special(TerminalKey.KeypadInsert), "\\e[57425u"),
+                kitty(special(TerminalKey.KeypadDelete, shift), "\\e[57426;2u"),
+                kitty(special(TerminalKey.KeypadBegin), "\\e[57427u"),
+                kitty(special(TerminalKey.KeypadEnter), "\\e[57414u"),
+                kitty(special(TerminalKey.KeypadEnter, shift), "\\e[57414;2u"),
             )
+        }
     }
 
     /** A key under [modes], named [modeName], and what it encodes to, with ESC as `\e`. */

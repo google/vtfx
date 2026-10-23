@@ -226,6 +226,130 @@ class EmulationCoverageTest {
         }
     }
 
+    /** The flags of the kitty keyboard protocol (docs/decisions/0070). */
+    class KeyboardFlags : EventRecorder by TerminalEvents() {
+        private fun Terminal.flags(): Boolean {
+            events.clear()
+            write("\u001b[?u")
+            return (replies().single() as TerminalQuery.KeyboardFlags).disambiguateEscapeCodes
+        }
+
+        @Test
+        fun pushingSetsTheFlagsAndPoppingRestoresThem() {
+            val t = terminal()
+            t.write("\u001b[>1u")
+            assertTrue(t.modes.disambiguateEscapeCodes)
+            assertTrue(t.flags())
+            t.write("\u001b[>0u")
+            assertFalse(t.modes.disambiguateEscapeCodes)
+            t.write("\u001b[<u")
+            assertTrue(t.modes.disambiguateEscapeCodes)
+            t.write("\u001b[<u")
+            assertFalse(t.modes.disambiguateEscapeCodes)
+            assertFalse(t.flags())
+        }
+
+        @Test
+        fun onlyTheSupportedFlagIsKeptAndReported() {
+            val t = terminal()
+            t.write("\u001b[>31u\u001b[?u")
+            assertEquals(listOf<TerminalQuery>(TerminalQuery.KeyboardFlags(true)), replies())
+            // Flags 2, 4, 8, and 16 are not supported, so alone they set nothing.
+            t.write("\u001b[>30u")
+            assertFalse(t.flags())
+        }
+
+        @Test
+        fun setReplacesAddsOrRemovesTheFlagsOfTheNewestEntry() {
+            val t = terminal()
+            t.write("\u001b[=1u")
+            assertTrue(t.modes.disambiguateEscapeCodes)
+            t.write("\u001b[=1;3u")
+            assertFalse(t.modes.disambiguateEscapeCodes)
+            t.write("\u001b[=5;2u")
+            assertTrue(t.modes.disambiguateEscapeCodes)
+            t.write("\u001b[=4;1u")
+            assertFalse(t.modes.disambiguateEscapeCodes)
+            // An unknown mode changes nothing, and neither does 0, unlike an omitted mode.
+            t.write("\u001b[=1;4u")
+            assertFalse(t.modes.disambiguateEscapeCodes)
+            t.write("\u001b[=1;0u")
+            assertFalse(t.modes.disambiguateEscapeCodes)
+            // The entry that the first set made is popped like a pushed one.
+            t.write("\u001b[=1u\u001b[>0u\u001b[=1;2u\u001b[<u")
+            assertTrue(t.modes.disambiguateEscapeCodes)
+            t.write("\u001b[<u")
+            assertFalse(t.modes.disambiguateEscapeCodes)
+        }
+
+        @Test
+        fun eachScreenHasItsOwnStack() {
+            val t = terminal()
+            t.write("\u001b[>1u\u001b[?1049h")
+            assertFalse(t.modes.disambiguateEscapeCodes)
+            t.write("\u001b[>1u\u001b[>0u")
+            assertFalse(t.flags())
+            t.write("\u001b[?1049l")
+            assertTrue(t.modes.disambiguateEscapeCodes)
+            // Popping on the main screen leaves the alternate screen's stack alone.
+            t.write("\u001b[<u\u001b[?1049h")
+            assertFalse(t.modes.disambiguateEscapeCodes)
+            t.write("\u001b[<u")
+            assertTrue(t.modes.disambiguateEscapeCodes)
+        }
+
+        @Test
+        fun aPushOntoAFullStackDropsTheOldestEntry() {
+            val t = terminal()
+            t.write("\u001b[>1u")
+            repeat(KeyboardFlagStack.MAX_DEPTH - 1) { t.write("\u001b[>0u") }
+            t.write("\u001b[<${KeyboardFlagStack.MAX_DEPTH - 1}u")
+            assertTrue(t.modes.disambiguateEscapeCodes)
+            repeat(KeyboardFlagStack.MAX_DEPTH) { t.write("\u001b[>0u") }
+            t.write("\u001b[<${KeyboardFlagStack.MAX_DEPTH - 1}u")
+            assertFalse(t.modes.disambiguateEscapeCodes)
+        }
+
+        @Test
+        fun poppingMoreThanWasPushedClearsTheFlags() {
+            val t = terminal()
+            t.write("\u001b[>1u\u001b[>1u\u001b[<5u")
+            assertFalse(t.modes.disambiguateEscapeCodes)
+        }
+
+        @Test
+        fun poppingZeroEntriesChangesNothing() {
+            val t = terminal()
+            t.write("\u001b[>1u\u001b[>0u\u001b[<0u")
+            assertFalse(t.modes.disambiguateEscapeCodes)
+            // An omitted count pops one entry.
+            t.write("\u001b[<u")
+            assertTrue(t.modes.disambiguateEscapeCodes)
+        }
+
+        @Test
+        fun decstrEmptiesBothStacks() {
+            val t = terminal()
+            t.write("\u001b[>1u\u001b[?1049h\u001b[>1u\u001b[!p")
+            assertFalse(t.modes.disambiguateEscapeCodes)
+            t.write("\u001b[?1049l")
+            assertFalse(t.modes.disambiguateEscapeCodes)
+            t.write("\u001b[?1049h")
+            assertFalse(t.modes.disambiguateEscapeCodes)
+        }
+
+        @Test
+        fun risEmptiesBothStacks() {
+            val t = terminal()
+            t.write("\u001b[>1u\u001b[?1049h\u001b[>1u\u001bc")
+            assertFalse(t.modes.disambiguateEscapeCodes)
+            t.write("\u001b[?1049h")
+            assertFalse(t.modes.disambiguateEscapeCodes)
+            t.write("\u001b[?1049l\u001b[<u")
+            assertFalse(t.modes.disambiguateEscapeCodes)
+        }
+    }
+
     class Unicode : EventRecorder by TerminalEvents() {
         @Test
         fun charactersBeyondTheBmpDoNotEndSequencesAsAscii() {

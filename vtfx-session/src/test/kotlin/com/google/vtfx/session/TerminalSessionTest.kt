@@ -322,6 +322,19 @@ class TerminalSessionTest {
     }
 
     @Test
+    fun keysFollowTheKittyKeyboardFlagsOfTheHost() {
+        feed("\u001b[>1u")
+        session.sendKey(KeyStroke.Special(TerminalKey.Escape))
+        session.stickyModifiers = KeyModifiers.of(ctrl = true)
+        session.sendText("c")
+        // Typed text without modifiers stays text.
+        session.sendText("d")
+        feed("\u001b[<u")
+        session.sendKey(KeyStroke.Special(TerminalKey.Escape))
+        assertEquals("\u001b[27u\u001b[99;5ud\u001b", sent.toString())
+    }
+
+    @Test
     fun enterSendsCrLfInNewlineMode() {
         feed("\u001b[20h")
         session.sendText("\n")

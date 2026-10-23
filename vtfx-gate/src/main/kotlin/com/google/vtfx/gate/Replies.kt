@@ -109,6 +109,10 @@ internal object Replies {
                     "${DCS}1\$r${cursorStyle(query.shape, query.isBlinking)} q$ST"
                 TerminalQuery.UnsupportedStatus -> "${DCS}0\$r$ST"
                 TerminalQuery.TerminalVersion -> "$DCS>|$VERSION$ST"
+                // The flags of the kitty keyboard protocol, of which only 1 is supported
+                // (docs/decisions/0070).
+                is TerminalQuery.KeyboardFlags ->
+                    "\u001b[?${if (query.disambiguateEscapeCodes) 1 else 0}u"
                 is TerminalQuery.TextAreaSize -> {
                     checkPosition(query.rows)
                     checkPosition(query.columns)

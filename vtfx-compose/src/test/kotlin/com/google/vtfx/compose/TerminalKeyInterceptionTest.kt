@@ -276,6 +276,16 @@ class TerminalKeyInterceptionTest {
         assertEquals("\u0003", sent.toString())
     }
 
+    @Test
+    fun theKittyKeyboardProtocolGetsShiftWithTheShortcut() {
+        session.feed("\u001b[>1u".toByteArray())
+        show(takesShortcut = false)
+        pressCtrlShiftC()
+        // The character key reports Shift, which the protocol sends with the key in lower case
+        // (docs/decisions/0070).
+        assertEquals("\u001b[99;6u", sent.toString())
+    }
+
     private companion object {
         const val CTRL = KeyEvent.META_CTRL_ON or KeyEvent.META_CTRL_LEFT_ON
         const val CTRL_SHIFT = CTRL or KeyEvent.META_SHIFT_ON or KeyEvent.META_SHIFT_LEFT_ON

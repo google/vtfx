@@ -79,6 +79,10 @@ internal class Emulator(
     private var mainSavedCursor = SavedCursor()
     private var alternateSavedCursor = SavedCursor()
 
+    /** The flags of the kitty keyboard protocol, one stack per screen (docs/decisions/0070). */
+    private var mainKeyboardFlags = KeyboardFlagStack.Empty
+    private var alternateKeyboardFlags = KeyboardFlagStack.Empty
+
     private var scrollTop = 0
     private var scrollBottom = rows - 1
     private var tabStops = defaultTabStops(columns)
@@ -440,14 +444,28 @@ internal class Emulator(
                         'J' -> eraseInDisplay(params[0])
                         'K' -> eraseInLine(params[0])
                         'n' -> if (params[0] == 6) reportCursorPosition(isDecPrivate = true)
+                        'u' -> reportKeyboardFlags()
                     }
                 }
             '>'.code ->
-                if (intermediates == 0 && params[0] == 0) {
+                if (intermediates == 0) {
                     when (final.toChar()) {
-                        'c' -> reply(TerminalQuery.SecondaryDeviceAttributes)
-                        'q' -> reply(TerminalQuery.TerminalVersion)
+                        'c' -> if (params[0] == 0) reply(TerminalQuery.SecondaryDeviceAttributes)
+                        'q' -> if (params[0] == 0) reply(TerminalQuery.TerminalVersion)
+                        'u' -> changeKeyboardFlags { it.push(params[0]) }
                     }
+                }
+            '='.code ->
+                if (intermediates == 0 && final == 'u'.code) {
+                    // An omitted mode is 1, and 0 is a mode that changes nothing, as in kitty.
+                    val mode = if (params.size < 2) 1 else params[1]
+                    changeKeyboardFlags { it.set(params[0], mode) }
+                }
+            '<'.code ->
+                if (intermediates == 0 && final == 'u'.code) {
+                    // An omitted count is 1, and 0 pops nothing, as in kitty.
+                    val count = if (params.size == 0) 1 else params[0]
+                    changeKeyboardFlags { it.pop(count) }
                 }
         }
     }
@@ -705,6 +723,31 @@ internal class Emulator(
 
     private fun modeState(set: Boolean): ModeState = if (set) ModeState.Set else ModeState.Reset
 
+    // --- The kitty keyboard protocol (docs/decisions/0070) ---
+
+    /** Applies [change] to the stack of keyboard flags of the screen displayed. */
+    private fun changeKeyboardFlags(change: (KeyboardFlagStack) -> KeyboardFlagStack) {
+        if (isAlternateScreen) {
+            alternateKeyboardFlags = change(alternateKeyboardFlags)
+        } else {
+            mainKeyboardFlags = change(mainKeyboardFlags)
+        }
+        applyKeyboardFlags()
+    }
+
+    /** Puts the keyboard flags of the screen displayed into [modes]. */
+    private fun applyKeyboardFlags() {
+        val flags = (if (isAlternateScreen) alternateKeyboardFlags else mainKeyboardFlags).flags
+        modes =
+            modes.copy(
+                disambiguateEscapeCodes = flags and KeyboardFlagStack.DISAMBIGUATE_ESCAPE_CODES != 0
+            )
+    }
+
+    private fun reportKeyboardFlags() {
+        reply(TerminalQuery.KeyboardFlags(modes.disambiguateEscapeCodes))
+    }
+
     private fun cursorUp(n: Int) {
         val limit = if (cursorY >= scrollTop) scrollTop else 0
         moveTo(cursorX, maxOf(cursorY - n, limit))
@@ -874,6 +917,8 @@ internal class Emulator(
         if (!alternate) alternateLayer.clear()
         screen = if (alternate) alternateScreen else mainScreen
         if (alternate && clearAlternate) alternateScreen.eraseAll(CellStyle.Default)
+        // Each screen has its own keyboard flags, as the kitty keyboard protocol requires.
+        applyKeyboardFlags()
     }
 
     /**
@@ -1076,13 +1121,18 @@ internal class Emulator(
             )
         mainSavedCursor = SavedCursor()
         alternateSavedCursor = SavedCursor()
+        // kitty empties the stacks of the keyboard flags on DECSTR too.
+        mainKeyboardFlags = KeyboardFlagStack.Empty
+        alternateKeyboardFlags = KeyboardFlagStack.Empty
+        applyKeyboardFlags()
         charsets = CharsetState()
         pendingWrap = false
     }
 
     /**
      * RIS. The scrollback, the window title, and the saved titles are kept, as in xterm. The images
-     * on the screen go, as the protocol says, and those of the alternate screen.
+     * on the screen go, as the protocol says, and those of the alternate screen. The stacks of the
+     * keyboard flags are emptied by DECSTR, as in kitty.
      */
     fun reset() {
         // The line the cursor was on is gone, even if the cursor stays on its row.

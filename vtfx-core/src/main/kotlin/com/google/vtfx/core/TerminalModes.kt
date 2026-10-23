@@ -102,6 +102,13 @@ internal constructor(
      * @suppress
      */
     @InternalVtfxApi public val mouseEncoding: MouseEncoding = MouseEncoding.Default,
+    /**
+     * Flag 1 of the kitty keyboard protocol (`CSI > 1 u` and the like): keys are sent in its
+     * unambiguous forms, such as `CSI 27 u` for Esc (docs/decisions/0070).
+     *
+     * @suppress
+     */
+    @InternalVtfxApi public val disambiguateEscapeCodes: Boolean = false,
 ) {
     /** Returns these modes with the given ones replaced. */
     internal fun copy(
@@ -117,6 +124,7 @@ internal constructor(
         synchronizedOutput: Boolean = this.synchronizedOutput,
         mouseTracking: MouseTracking = this.mouseTracking,
         mouseEncoding: MouseEncoding = this.mouseEncoding,
+        disambiguateEscapeCodes: Boolean = this.disambiguateEscapeCodes,
     ): TerminalModes =
         TerminalModes(
             applicationCursorKeys,
@@ -131,6 +139,7 @@ internal constructor(
             synchronizedOutput,
             mouseTracking,
             mouseEncoding,
+            disambiguateEscapeCodes,
         )
 
     override fun equals(other: Any?): Boolean =
@@ -146,7 +155,8 @@ internal constructor(
             other.focusEvents == focusEvents &&
             other.synchronizedOutput == synchronizedOutput &&
             other.mouseTracking == mouseTracking &&
-            other.mouseEncoding == mouseEncoding
+            other.mouseEncoding == mouseEncoding &&
+            other.disambiguateEscapeCodes == disambiguateEscapeCodes
 
     override fun hashCode(): Int {
         var hash = 0
@@ -162,6 +172,7 @@ internal constructor(
         hash = 31 * hash + synchronizedOutput.hashCode()
         hash = 31 * hash + mouseTracking.hashCode()
         hash = 31 * hash + mouseEncoding.hashCode()
+        hash = 31 * hash + disambiguateEscapeCodes.hashCode()
         return hash
     }
 
@@ -178,6 +189,7 @@ internal constructor(
             "focusEvents=$focusEvents, " +
             "synchronizedOutput=$synchronizedOutput, " +
             "mouseTracking=$mouseTracking, " +
-            "mouseEncoding=$mouseEncoding" +
+            "mouseEncoding=$mouseEncoding, " +
+            "disambiguateEscapeCodes=$disambiguateEscapeCodes" +
             ")"
 }

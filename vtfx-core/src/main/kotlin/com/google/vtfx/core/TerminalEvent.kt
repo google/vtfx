@@ -118,6 +118,13 @@ public sealed interface TerminalQuery {
     /** DECRQSS for a setting that is not supported. */
     @InternalVtfxApi public data object UnsupportedStatus : TerminalQuery
 
+    /**
+     * The flags of the kitty keyboard protocol (CSI ? u), of which vtfx supports only
+     * [disambiguateEscapeCodes] (docs/decisions/0070).
+     */
+    @InternalVtfxApi
+    public data class KeyboardFlags(val disambiguateEscapeCodes: Boolean) : TerminalQuery
+
     /** XTVERSION (CSI > q): the name and version of the terminal. */
     @InternalVtfxApi public data object TerminalVersion : TerminalQuery
 

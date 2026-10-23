@@ -149,7 +149,7 @@ Keys arriving from the IME through `sendKeyEvent` and physical keys the IME did 
 |---|---|
 | Any key up | Ignored: keys act on down ([decisions/0004](../decisions/0004-ime-editor-details.md)). |
 | `KEYCODE_DEL` | Sends DEL. If the input history is not empty, erases its last code point. If it committed composing text, resets (5.1). |
-| `KEYCODE_ENTER`, `KEYCODE_NUMPAD_ENTER` | Sends CR and resets. |
+| `KEYCODE_ENTER`, `KEYCODE_NUMPAD_ENTER` | Sends CR and resets. While the host set flag 1 of the kitty keyboard protocol, Keypad Enter is sent as `CSI 57414 u` (section 2.2 of [gate-policy.md](gate-policy.md)). |
 | A key that produces HT, LF, or CR, also from the app's `sendKey` | The Tab or Enter key, with its modifiers, as below: the key encoding drops a control character with modifiers. |
 | Keys that produce a character (`getUnicodeChar` is not 0, and the only modifier is Shift) | Commits the composing text, if any, and adds the character after it, like `commitText` of the character. If there was composing text, resets (5.1). |
 | Anything else | Sends it with `vtfx-gate`'s key encoding and resets. |

@@ -17,7 +17,7 @@ The defaults and the reasons for them are in [decisions/0006](../decisions/0006-
 
 | Method | What it sends |
 |---|---|
-| `sendKey(stroke, modes)` | The bytes xterm sends for the key and modifiers under the terminal modes (application cursor keys and so on), encoded by `KeyEncoder` inside the gate. Its inputs are only the key, the modifiers, and the modes, which are enums, booleans, and the code point of a character key, so no text from the host can reach the output ([decisions/0005](../decisions/0005-key-bytes-through-gate.md)). Only Ctrl makes a control from a character: a character key whose code point is itself a control (C0, DEL, or C1) sends nothing, and an unpaired surrogate is sent as U+FFFD, as in text (section 2.1). |
+| `sendKey(stroke, modes)` | The bytes xterm sends for the key and modifiers under the terminal modes (application cursor keys and so on), or, while the host set flag 1 of the kitty keyboard protocol, the forms of that protocol (section 2.2), encoded by `KeyEncoder` inside the gate. Its inputs are only the key, the modifiers, and the modes, which are enums, booleans, and the code points of a character key, so no text from the host can reach the output ([decisions/0005](../decisions/0005-key-bytes-through-gate.md), [decisions/0070](../decisions/0070-kitty-keyboard-protocol.md)). Only Ctrl makes a control from a character: a character key whose code point is itself a control (C0, DEL, or C1) sends nothing, and an unpaired surrogate is sent as U+FFFD, as in text (section 2.1). |
 | `sendText(text)` | Text that the user typed or the IME committed on one line, converted as in section 2.1. |
 | `sendDeletes(count)` | `count` DELs, which erase text already sent in IME editing. A count outside 1 to 65536 is a programming error. |
 | `sendPaste(text, bracketed)` | Pasted text, converted as in section 2.1, and wrapped in `ESC [ 200 ~` and `ESC [ 201 ~` when `bracketed`. Text of several lines that the IME commits, such as a clipboard suggestion, is a paste too (section 4.2 of [ime-contract.md](ime-contract.md), [decisions/0050](../decisions/0050-ime-text-of-several-lines-is-a-paste.md)). |
@@ -36,6 +36,25 @@ The defaults and the reasons for them are in [decisions/0006](../decisions/0006-
 
 The same conversion is done whether or not the host enabled bracketed paste mode. `ImeEditor` in `vtfx-input` keeps a copy of the rule for removing controls, so that its input history matches what the host receives; section 4.2 of [ime-contract.md](ime-contract.md) describes the conversion from the side of the IME.
 
+### 2.2 Keys in the kitty keyboard protocol
+
+While the host set flag 1 of the kitty keyboard protocol, disambiguate escape codes (section 3 of [emulation.md](emulation.md)), `KeyEncoder` encodes keys as kitty does with that flag ([decisions/0070](../decisions/0070-kitty-keyboard-protocol.md)). `m` below is the modifier parameter, 1 + 1 for Shift, 2 for Alt, 4 for Ctrl, and 8 for Meta (the protocol's Super), the same as in xterm's sequences; `;m` is left out without modifiers.
+
+| Key | Without modifiers | With modifiers |
+|---|---|---|
+| Esc | `CSI 27 u` | `CSI 27 ; m u` |
+| Enter | CR, or CR LF with LNM, as without the flag | `CSI 13 ; m u` |
+| Tab | HT | `CSI 9 ; m u` (Shift+Tab is `CSI 9 ; 2 u`, not `CSI Z`) |
+| Backspace | DEL | `CSI 127 ; m u` |
+| The arrows, Home, End, F1, F2, F4 | `CSI A` to `CSI D`, `CSI H`, `CSI F`, `CSI P`, `CSI Q`, `CSI S`, also with DECCKM | `CSI 1 ; m A` and so on |
+| Insert, Delete, Page Up, Page Down, F3, F5 to F12 | `CSI n ~`, with F3 as `CSI 13 ~` | `CSI n ; m ~` |
+| A character key | The character, as text | With Ctrl, Alt, or Meta: `CSI code ; m u`, where the code is the unshifted key; with Shift alone, the character |
+| A digit of the numeric keypad (NumLock on), its decimal point, or an operator | Its character, as text | With Ctrl, Alt, or Meta: `CSI code ; m u`, with the protocol's numbers from 57399 (`0`) to 57415 (`=`); with Shift alone, the character |
+| A navigation key of the keypad (a digit or the decimal point with NumLock off) | `CSI code u`, with the protocol's numbers from 57417 (Left) to 57427 (Begin) | `CSI code ; m u` |
+| Keypad Enter | `CSI 57414 u` | `CSI 57414 ; m u` |
+
+The code of a character key is `KeyStroke.Character.unshiftedCodePoint`, the character that the key produces without modifiers, as the protocol wants: `1` for Ctrl+Shift+1 and `a` for Ctrl+A with Caps Lock, with Shift in the modifiers when it was held. The lock keys are not reported. DECKPAM does not apply to the keypad, which follows NumLock instead. A character key of a control sends nothing, and an unpaired surrogate, as the character or the unshifted key, is U+FFFD, as without the flag.
+
 ## 3. Replies
 
 `vtfx-core` emits `ReplyRequested` with a `TerminalQuery`, a type that holds no text from the host, and `Replies` builds the reply. The queries that are recognized at all are decided in [decisions/0009](../decisions/0009-emulation-scope.md).
@@ -45,6 +64,7 @@ The same conversion is done whether or not the host enabled bracketed paste mode
 | DA1 (`CSI c`, DECID) | `CSI ? 62 ; 22 c` (VT220, ANSI color) |
 | DA2 (`CSI > c`) | `CSI > 0 ; 10 ; 1 c` (as Windows Terminal reports) |
 | XTVERSION (`CSI > q`) | `DCS > | vtfx(0.1) ST` |
+| The flags of the kitty keyboard protocol (`CSI ? u`) | `CSI ? 1 u` or `CSI ? 0 u`, whether flag 1, the only one supported, is set ([decisions/0070](../decisions/0070-kitty-keyboard-protocol.md)) |
 | DSR 5 | `CSI 0 n` |
 | DSR 6, DECXCPR | `CSI row ; column R`, `CSI ? row ; column R` |
 | DECRQM | `CSI mode ; state $ y`, with `?` for DEC private modes |

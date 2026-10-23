@@ -100,6 +100,13 @@ class RepliesAndMouseTest {
         }
 
         @Test
+        fun keyboardFlags() {
+            writer.sendReply(TerminalQuery.KeyboardFlags(disambiguateEscapeCodes = true))
+            writer.sendReply(TerminalQuery.KeyboardFlags(disambiguateEscapeCodes = false))
+            assertEquals(listOf("\\e[?1u", "\\e[?0u"), sent)
+        }
+
+        @Test
         fun colorsComeFromTheDisplay() {
             writer.sendReply(TerminalQuery.Color(ColorTarget.Foreground), colors)
             writer.sendReply(TerminalQuery.Color(ColorTarget.Background), colors)

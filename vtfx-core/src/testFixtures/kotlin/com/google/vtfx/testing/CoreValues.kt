@@ -42,6 +42,7 @@ public fun terminalModes(
     synchronizedOutput: Boolean = false,
     mouseTracking: MouseTracking = MouseTracking.None,
     mouseEncoding: MouseEncoding = MouseEncoding.Default,
+    disambiguateEscapeCodes: Boolean = false,
 ): TerminalModes =
     TerminalModes(
         applicationCursorKeys,
@@ -56,6 +57,7 @@ public fun terminalModes(
         synchronizedOutput,
         mouseTracking,
         mouseEncoding,
+        disambiguateEscapeCodes,
     )
 
 /** Returns a [Hyperlink] to [uri] with the id parameter [id]. */
