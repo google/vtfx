@@ -1,0 +1,57 @@
+/*
+ * Copyright 2026 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// Runs the review reproductions without adding them to the regular test suite.
+// See ../2026-10-22-font.md for the command and expected failures.
+gradle.projectsEvaluated {
+    def p = gradle.rootProject.findProject(':vtfx-font')
+    if (p == null) return
+    def sources = gradle.rootProject.file('docs/reviews/repro-2026-10-22-font')
+    def output = gradle.rootProject.layout.buildDirectory.dir('review-repros/2026-10-22-font').get().asFile
+    def original = p.tasks.named('test').get()
+    def kotlin = p.tasks.named('compileTestKotlin').get()
+    def compile = p.tasks.register('compileReviewRepro', JavaExec) {
+        dependsOn kotlin
+        classpath = p.configurations.getByName('kotlinCompilerClasspath')
+        mainClass.set('org.jetbrains.kotlin.cli.jvm.K2JVMCompiler')
+        inputs.file(new File(sources, 'ReviewReproTest.kt'))
+        inputs.files(kotlin.libraries)
+        inputs.dir(kotlin.destinationDirectory)
+        outputs.dir(new File(output, 'classes'))
+        doFirst {
+            def cp = (kotlin.libraries + p.files(kotlin.destinationDirectory)).asPath
+            def friends = (kotlin.friendPaths.files + [kotlin.destinationDirectory.get().asFile]).join(',')
+            args = ['-no-stdlib', '-no-reflect', '-jvm-target', '17',
+                    '-classpath', cp,
+                    '-Xfriend-paths=' + friends,
+                    '-d', new File(output, 'classes').path,
+                    new File(sources, 'ReviewReproTest.kt').path]
+            kotlin.pluginClasspath.files.each { args('-Xplugin=' + it.path) }
+        }
+    }
+    p.tasks.register('reviewRepro', Test) {
+        dependsOn compile
+        useJUnit()
+        testClassesDirs = p.files(new File(output, 'classes'))
+        classpath = p.files(new File(output, 'classes')) + original.classpath
+        systemProperties original.systemProperties
+        jvmArgs original.jvmArgs
+        workingDir original.workingDir
+        reports.html.outputLocation.set(new File(output, 'report'))
+        reports.junitXml.outputLocation.set(new File(output, 'results'))
+        testLogging { events 'passed', 'failed'; exceptionFormat 'full'; showStandardStreams true }
+    }
+}
