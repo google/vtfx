@@ -168,7 +168,8 @@ class RenderBenchmark(private val activity: Activity, private val session: Termi
     /** A full screen of colored text that differs from the previous one. */
     private fun screen(index: Int): String = buildString {
         append("\u001b[H")
-        val (columns, rows) = 120 to 50
+        val columns = 120
+        val rows = 50
         for (row in 0 until rows) {
             append("\u001b[${row + 1};1H")
             for (column in 0 until columns step 8) {
