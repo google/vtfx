@@ -229,7 +229,6 @@ internal fun cellAt(
     session: TerminalSession,
 ): Pair<Int, Int> {
     val (columns, rows) = session.size()
-    val column = (position.x / metrics.width).toInt().coerceIn(0, columns - 1) + 1
-    val row = (position.y / metrics.height).toInt().coerceIn(0, rows - 1) + 1
-    return Pair(column, row)
+    val cell = displayCell(position, metrics, columns, rows)
+    return Pair(cell.column + 1, cell.row + 1)
 }
