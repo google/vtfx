@@ -62,8 +62,8 @@ internal class CmapReader(private val cmap: Reader, private val numGlyphs: Int) 
             else -> error("format ${best.format} has no rank")
         }
         val sorted = entries.sorted()
-        val codePoints = IntArray(sorted.size) { (sorted[it] ushr 32).toInt() }
-        val glyphs = IntArray(sorted.size) { sorted[it].toInt() }
+        val codePoints = codePoints(sorted)
+        val glyphs = glyphs(sorted)
         for (i in 1 until codePoints.size) {
             if (codePoints[i] == codePoints[i - 1]) {
                 malformed("U+%X mapped twice".format(codePoints[i]))
@@ -188,13 +188,21 @@ internal class CmapReader(private val cmap: Reader, private val numGlyphs: Int) 
             selectors +=
                 VariationSelector(
                     selector,
-                    IntArray(defaultList.size) { (defaultList[it] ushr 32).toInt() },
-                    IntArray(nonDefaultList.size) { (nonDefaultList[it] ushr 32).toInt() },
-                    IntArray(nonDefaultList.size) { nonDefaultList[it].toInt() },
+                    codePoints(defaultList),
+                    codePoints(nonDefaultList),
+                    glyphs(nonDefaultList),
                 )
         }
         return selectors
     }
+
+    /** The code points of [entries] of a [MappingCollector]. */
+    private fun codePoints(entries: LongArray): IntArray =
+        IntArray(entries.size) { (entries[it] ushr 32).toInt() }
+
+    /** The glyphs of [entries] of a [MappingCollector]. */
+    private fun glyphs(entries: LongArray): IntArray =
+        IntArray(entries.size) { entries[it].toInt() }
 
     /** [sorted] without repeated code points; the same code point with two glyphs is malformed. */
     private fun distinct(sorted: LongArray): LongArray {
