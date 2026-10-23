@@ -273,12 +273,14 @@ internal fun Terminal(
         { snapshot: TerminalSnapshot, cell: Cell, type: PointerType, keys: PointerKeyboardModifiers
             ->
             val click = currentOnLinkClick
-            val link = if (click != null) linkAt(snapshot, cell, currentLinkFinder) else null
-            if (click != null && link != null) {
+            val link = click?.let { linkAt(snapshot, cell, currentLinkFinder) }
+            if (link != null) {
                 toolbar.hide()
                 click(TerminalLinkClick(link, type, keys))
+                true
+            } else {
+                false
             }
-            link != null
         }
 
     // The padding takes the grid's default background, which reverse video (DECSCNM) swaps.
