@@ -26,6 +26,11 @@ import kotlin.math.roundToInt
  * Each outline is moved horizontally by its left side bearing in `hmtx` less the `xMin` of its
  * header, as FreeType places it, so that it draws where it did although the canonical form sets the
  * left side bearing to `xMin`. In a canonical font the two are equal, and nothing moves.
+ *
+ * Not thread-safe: one builder, with its arrays, collects every glyph, so that converting the tens
+ * of thousands of glyphs of a CJK font does not allocate and grow new arrays for each of them. A
+ * glyph that fails to convert leaves the builder in the middle of it, which is fine since the font
+ * is then rejected and no other glyph is read.
  */
 internal class GlyfOutlines(
     private val glyf: Reader,
@@ -36,7 +41,11 @@ internal class GlyfOutlines(
     private val limits: FontLimits,
 ) : OutlineSource {
     private val offsets = IntArray(numGlyphs + 1)
+    private val builder = OutlineBuilder(limits.maxGlyphPoints)
     private val components = WorkBudget(MAX_FACE_COMPONENTS, "components")
+
+    /** The components of the glyph being read. */
+    private var glyphComponents = 0
 
     init {
         for (i in 0..numGlyphs) {
@@ -48,10 +57,9 @@ internal class GlyfOutlines(
 
     override fun outline(glyphId: Int): Outline {
         val data = glyphData(glyphId) ?: return Outline.EMPTY
-        val builder = OutlineBuilder(limits.maxGlyphPoints)
-        val budget = intArrayOf(MAX_COMPONENTS)
+        glyphComponents = 0
         val shift = leftSideBearings[glyphId] - data.s16(2)
-        append(glyphId, IDENTITY, shift.toDouble(), 0.0, builder, depth = 0, budget)
+        append(glyphId, IDENTITY, shift.toDouble(), 0.0, depth = 0)
         return builder.build()
     }
 
@@ -74,20 +82,20 @@ internal class GlyfOutlines(
         matrix: DoubleArray,
         dx: Double,
         dy: Double,
-        builder: OutlineBuilder,
         depth: Int,
-        budget: IntArray,
     ) {
         val data = glyphData(glyphId) ?: return
         val contours = data.s16(0)
         if (contours > 0) {
-            appendSimple(data, contours, matrix, dx, dy, builder)
+            appendSimple(data, contours, matrix, dx, dy)
             return
         }
         if (depth == MAX_DEPTH) tooComplex("composite glyphs nested deeper than $MAX_DEPTH")
         var at = 10
         do {
-            if (--budget[0] < 0) tooComplex("glyph of more than $MAX_COMPONENTS components")
+            if (++glyphComponents > MAX_COMPONENTS) {
+                tooComplex("glyph of more than $MAX_COMPONENTS components")
+            }
             components.spend()
             val flags = data.u16(at)
             val component = data.u16(at + 2)
@@ -155,9 +163,7 @@ internal class GlyfOutlines(
                 combined,
                 matrix[0] * ox + matrix[2] * oy + dx,
                 matrix[1] * ox + matrix[3] * oy + dy,
-                builder,
                 depth + 1,
-                budget,
             )
         } while (flags and MORE_COMPONENTS != 0)
     }
@@ -168,7 +174,6 @@ internal class GlyfOutlines(
         matrix: DoubleArray,
         dx: Double,
         dy: Double,
-        builder: OutlineBuilder,
     ) {
         val endPoints = IntArray(contours) { data.u16(10 + it * 2) }
         val points = endPoints.last() + 1
