@@ -173,6 +173,7 @@ class EchoHost(
 
     /** Runs [command] and returns whether to show the prompt. */
     private fun run(command: String): Boolean {
+        val argument = command.substringAfter(' ', "").trim()
         when (command.substringBefore(' ')) {
             "" -> {}
             "help" -> output(HELP)
@@ -182,14 +183,13 @@ class EchoHost(
             "links" -> output(LINKS)
             "size" -> output("$columns x $rows\r\n")
             // The recording is shown instead of the prompt.
-            "replay" -> if (replay(command.substringAfter(' ', "").trim())) return false
+            "replay" -> if (replay(argument)) return false
             "reset" -> output("\u001bc")
-            "font" -> font(command.substringAfter(' ', "").trim())
+            "font" -> font(argument)
             // Mouse reports (button events, SGR), to try a mouse as with vim's mouse=a.
             "mouse" ->
                 output(
-                    if (command.substringAfter(' ', "").trim() == "off")
-                        "\u001b[?1002l\u001b[?1006l"
+                    if (argument == "off") "\u001b[?1002l\u001b[?1006l"
                     else "\u001b[?1002h\u001b[?1006h"
                 )
             else -> output("$command\r\n")
