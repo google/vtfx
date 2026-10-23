@@ -922,4 +922,28 @@ class ImeEditorTest {
         assertEquals("😀", editor.textBeforeCursor(2))
         assertEquals("a😀", editor.textBeforeCursor(100))
     }
+
+    @Test
+    fun halvesOfAPairInTheHistoryAndTheComposingTextAreOneCharacter() {
+        // The IME sees the edit buffer, where they pair up, so its edits do not split them.
+        editor.commitText("\ud83d")
+        editor.setComposingText("\ude00")
+        sent.clear()
+        assertEquals("", editor.textBeforeCursor(1))
+        assertFalse(editor.setComposingRegion(1, 2))
+        assertFalse(editor.replaceText(1, 2, "x"))
+        // Deleting the character deletes the U+FFFD that the host got for the committed half.
+        editor.deleteSurroundingText(1, 0)
+        assertEquals(listOf<HostInput>(delete(1)), sent)
+        assertEquals("", editor.text)
+    }
+
+    @Test
+    fun halvesOfAPairInTheHistoryAndTheComposingTextAreSentWholeWhenCommitted() {
+        editor.commitText("\ud83d")
+        editor.setComposingText("\ude00")
+        sent.clear()
+        editor.finishComposingText()
+        assertEquals(listOf(delete(1), text("\ud83d\ude00")), sent)
+    }
 }
