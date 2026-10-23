@@ -499,12 +499,7 @@ internal class Emulator(
             // Repeating more than a screenful only scrolls, so the count is bounded to keep a few
             // bytes from costing unbounded work (docs/decisions/0002).
             'b' -> if (lastPrinted >= 0) repeatLastPrinted(minOf(n, columns * rows))
-            'c' ->
-                if (params[0] == 0) {
-                    listener.onEvent(
-                        TerminalEvent.ReplyRequested(TerminalQuery.PrimaryDeviceAttributes)
-                    )
-                }
+            'c' -> if (params[0] == 0) reply(TerminalQuery.PrimaryDeviceAttributes)
             'd' -> cursorPosition(n, cursorX + 1)
             'e' -> cursorDown(n)
             'g' ->
@@ -517,10 +512,7 @@ internal class Emulator(
             'm' -> rendition = Sgr.apply(rendition, params)
             'n' ->
                 when (params[0]) {
-                    5 ->
-                        listener.onEvent(
-                            TerminalEvent.ReplyRequested(TerminalQuery.OperatingStatus)
-                        )
+                    5 -> reply(TerminalQuery.OperatingStatus)
                     6 -> reportCursorPosition(isDecPrivate = false)
                 }
             'r' -> setScrollingRegion(params.getOrDefault(0, 1), params.getOrDefault(1, rows))
@@ -806,11 +798,7 @@ internal class Emulator(
 
     private fun reportCursorPosition(isDecPrivate: Boolean) {
         val row = if (originMode) cursorY - scrollTop + 1 else cursorY + 1
-        listener.onEvent(
-            TerminalEvent.ReplyRequested(
-                TerminalQuery.CursorPosition(row, cursorX + 1, isDecPrivate)
-            )
-        )
+        reply(TerminalQuery.CursorPosition(row, cursorX + 1, isDecPrivate))
     }
 
     private fun setAnsiMode(mode: Int, enabled: Boolean) {
