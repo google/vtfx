@@ -87,8 +87,8 @@ object TerminalFuzzer {
     }
 
     /**
-     * Images stay within their limits, and every placement anchored to a line is on the screen or
-     * in the scrollback (docs/decisions/0038).
+     * Images stay within their limits, and every placement anchored to a line has a row on the
+     * screen or in the scrollback (docs/decisions/0038, docs/decisions/0069).
      */
     private fun checkImages(terminal: Terminal, snapshot: TerminalSnapshot) {
         check(terminal.imageBytes in 0..MAX_IMAGE_BYTES) { "images take ${terminal.imageBytes}" }
@@ -97,9 +97,11 @@ object TerminalFuzzer {
         var anchored = 0
         layer.forEachPlacement { if (!it.virtual) anchored++ }
         var found = 0
-        layer.forEachAnchored { _, row ->
+        layer.forEachAnchored { placement, row ->
             found++
-            check(row >= -terminal.scrollbackSize && row < snapshot.rows) { "placement at $row" }
+            check(row + placement.rows > -terminal.scrollbackSize && row < snapshot.rows) {
+                "placement at $row"
+            }
         }
         check(found == anchored) { "$anchored placements, $found on lines" }
         for (placement in snapshot.imagePlacements) {

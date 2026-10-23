@@ -53,7 +53,8 @@ internal class StoredImage(
 /**
  * Where and how an image is shown. A placement that is not [virtual] is anchored to the cell of a
  * line at [column]: while that line is on the screen, [line] is it; once it is in the scrollback,
- * [scrollbackSerial] tells where (see `Scrollback.firstSerial`).
+ * [scrollbackSerial] tells where (see `Scrollback.firstSerial`). The image starts [rowsAbove] rows
+ * above that line.
  *
  * The size is kept in cells, computed when it was placed, so that it does not depend on the display
  * afterwards (docs/decisions/0038).
@@ -91,11 +92,31 @@ internal class Placement(
     var scrollbackSerial: Long = -1L
         private set
 
+    /**
+     * The rows of the image above the line it is anchored to: 0 until the line of its top row goes
+     * away while rows below are still kept, which moves the anchor down to the next line
+     * ([moveDown]; docs/decisions/0069).
+     */
+    var rowsAbove: Int = 0
+        private set
+
     /** Notes that the line this placement is anchored to went into the scrollback as [serial]. */
     fun moveToScrollback(serial: Long) {
         if (!isAlive) return
         line = null
         scrollbackSerial = serial
+    }
+
+    /**
+     * Notes that the line this placement is anchored to is going away and that the anchor moves to
+     * the line [lines] below it, which the caller anchors it to. Returns false, deleting this
+     * placement, if no row of the image would be left on that line or below.
+     */
+    fun moveDown(lines: Int): Boolean {
+        rowsAbove += lines
+        if (rowsAbove < rows) return true
+        kill()
+        return false
     }
 
     /** Deletes this placement, if it is not deleted yet. */

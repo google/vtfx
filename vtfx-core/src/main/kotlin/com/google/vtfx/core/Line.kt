@@ -44,10 +44,10 @@ internal class Line(columns: Int, style: CellStyle = CellStyle.Default) {
     private var underlineColors: IntArray? = null
 
     /**
-     * The image placements whose top left cell is on this line (docs/decisions/0038), allocated
-     * when the first is placed. They move with the line object: scrolling, the scrollback, and
-     * reflow take them along, and only [killAnchors] deletes them. Copies made for snapshots do not
-     * have them.
+     * The image placements whose top left cell is on this line (docs/decisions/0038), or whose top
+     * rows went away with the lines above (`Placement.rowsAbove`), allocated when the first is
+     * placed. They move with the line object: scrolling, the scrollback, and reflow take them
+     * along, and only [killAnchors] deletes them. Copies made for snapshots do not have them.
      */
     var anchors: ArrayList<Placement>? = null
         private set
@@ -491,9 +491,10 @@ internal class CompactLine(
     anchors: Array<Placement>?,
 ) {
     /**
-     * The image placements anchored to this line, which moved here with it from the screen, or
-     * null. The scrollback removes those deleted since ([unanchor]), so that deleted placements do
-     * not pile up beyond the limit on placements.
+     * The image placements anchored to this line, which moved here with it from the screen or from
+     * the line before it as that line left the scrollback ([addAnchors]), or null. The scrollback
+     * removes those deleted since ([unanchor]), so that deleted placements do not pile up beyond
+     * the limit on placements.
      */
     var anchors: Array<Placement>? = anchors
         private set
@@ -506,6 +507,15 @@ internal class CompactLine(
         anchors =
             if (placements.size == 1) null
             else Array(placements.size - 1) { placements[if (it < index) it else it + 1] }
+    }
+
+    /**
+     * Anchors [placements] to this line too, which moved down to it from a line that left the
+     * scrollback. [estimatedBytes] does not count them: the limit on placements bounds them.
+     */
+    fun addAnchors(placements: List<Placement>) {
+        if (placements.isEmpty()) return
+        anchors = anchors?.plus(placements) ?: placements.toTypedArray()
     }
 
     fun expand(): Line {

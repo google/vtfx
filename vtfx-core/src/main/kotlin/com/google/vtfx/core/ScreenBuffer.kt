@@ -25,7 +25,7 @@ import com.google.vtfx.core.graphics.Placement
  * combining characters, make the oldest lines go before the scrollback has [capacity] of them
  * (docs/decisions/0002).
  */
-internal class Scrollback(private val capacity: Int) {
+internal class Scrollback(val capacity: Int) {
     private val lines = ArrayDeque<CompactLine>()
 
     /** The sum of the [CompactLine.estimatedBytes] of [lines]. */
@@ -60,22 +60,21 @@ internal class Scrollback(private val capacity: Int) {
 
     /**
      * Keeps a compact copy of [line], with its image placements. The caller may reuse [line], which
-     * no longer has them.
+     * no longer has them. Requires a [capacity] above 0.
      */
     fun push(line: Line) {
+        require(capacity > 0) { "a scrollback without capacity keeps no lines" }
         val anchors = line.takeAnchors()
-        if (capacity == 0) {
-            anchors?.forEach { it.kill() }
-            return
-        }
         anchors?.forEach { it.moveToScrollback(pushes) }
-        add(line.compact(anchors), line.columns)
         pushes++
+        add(line.compact(anchors), line.columns)
     }
 
     /**
      * Adds [line] as the newest, and drops the oldest lines beyond the capacity or the budget for
-     * [columns]. The newest line is kept even if it alone is over the budget.
+     * [columns]. The newest line is kept even if it alone is over the budget. The image placements
+     * of a dropped line move down to the line after it, unless none of their rows are left there
+     * (docs/decisions/0069).
      */
     private fun add(line: CompactLine, columns: Int) {
         lines.addLast(line)
@@ -84,7 +83,10 @@ internal class Scrollback(private val capacity: Int) {
         while (lines.size > capacity || (bytes > budget && lines.size > 1)) {
             val dropped = lines.removeFirst()
             bytes -= dropped.estimatedBytes
-            dropped.anchors?.forEach { it.kill() }
+            val anchors = dropped.anchors ?: continue
+            val moved = anchors.filter { it.isAlive && it.moveDown(1) }
+            moved.forEach { it.moveToScrollback(firstSerial) }
+            lines.first().addAnchors(moved)
         }
     }
 
@@ -188,21 +190,37 @@ internal class ScreenBuffer(
     /**
      * Scrolls rows [top, bottom] up by [count], filling the bottom with blank lines. If
      * [saveToScrollback] and the region starts at the top of the screen, the lines that leave the
-     * screen are kept in the scrollback, with their image placements; otherwise their placements
-     * are deleted.
+     * screen are kept in the scrollback, with their image placements; without a scrollback to keep
+     * them, the placements that still have rows on the screen move down to the new top row. In
+     * other cases (deleting lines, a region below the top) their placements are deleted.
      */
     fun scrollUp(top: Int, bottom: Int, count: Int, style: CellStyle, saveToScrollback: Boolean) {
         val height = bottom - top + 1
         val n = minOf(count, height)
         if (n <= 0) return
-        val scrollback = scrollback?.takeIf { saveToScrollback && top == 0 }
+        val scrollOffTheTop = saveToScrollback && top == 0
+        val scrollback = scrollback?.takeIf { scrollOffTheTop && it.capacity > 0 }
+        // Placements whose lines leave the top of the screen without going to the scrollback, and
+        // which still have rows on the screen (docs/decisions/0069).
+        var moved: ArrayList<Placement>? = null
         for (i in 0 until n) {
             val line = this[top + i]
             // The scrollback keeps a compact copy, so the line is reused for the new row.
-            if (scrollback != null) scrollback.push(line) else line.killAnchors()
+            when {
+                scrollback != null -> scrollback.push(line)
+                scrollOffTheTop -> {
+                    val anchors = line.takeAnchors()
+                    if (anchors != null) {
+                        moved = anchors.filterTo(moved ?: ArrayList()) { it.moveDown(n - i) }
+                    }
+                }
+                else -> line.killAnchors()
+            }
             line.clear(style.erased())
         }
         rotate(top, bottom, n)
+        // Row 0 is the line that was row n, or a new blank line if all of them scrolled off.
+        moved?.forEach { this[0].anchor(it, it.column) }
     }
 
     /** Scrolls rows [top, bottom] down by [count], filling the top with blank lines. */

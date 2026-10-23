@@ -342,6 +342,86 @@ class GraphicsTest {
         }
 
         @Test
+        fun placementsLeavingTheScrollbackStayWhileTheirLastRowIsKept() {
+            val terminal = terminal(rows = 5, limits = TerminalLimits(scrollbackLines = 3))
+            terminal.place("i=1,c=1,r=4,C=1")
+            terminal.write("\u001b[5;1H" + "\n".repeat(6))
+            // Its top row left the scrollback three lines ago; its last row is the oldest line.
+            assertEquals(-3, terminal.snapshot(scrollOffset = 3).imagePlacements.single().row)
+            terminal.checkPlacements()
+            terminal.write("\n")
+            assertEquals(0, terminal.graphicsLayer.placementCount)
+            terminal.checkPlacements()
+        }
+
+        @Test
+        fun aFullScreenImageOnTheAlternateScreenStaysAfterTheCursorScrolls() {
+            val terminal = terminal(columns = 10, rows = 5)
+            terminal.write("\u001b[?1049h\u001b[H")
+            terminal.place("c=10,r=5")
+            // The cursor wrapped past the bottom, which scrolled the image's top row off.
+            assertEquals(Pair(0, 4), terminal.cursorAt())
+            assertEquals(-1, terminal.snapshot().imagePlacements.single().row)
+            terminal.write("\n\n\n")
+            assertEquals(-4, terminal.snapshot().imagePlacements.single().row)
+            terminal.checkPlacements()
+            terminal.write("\n")
+            assertEquals(emptyList(), terminal.snapshot().imagePlacements)
+            assertEquals(0, terminal.graphicsLayer.imageCount, "it had no id")
+        }
+
+        @Test
+        fun withoutAScrollbackPlacementsStayWhileRowsAreOnTheScreen() {
+            val terminal = terminal(rows = 5, limits = TerminalLimits(scrollbackLines = 0))
+            terminal.write("\u001b[2;1H")
+            terminal.place("i=1,c=1,r=3,C=1")
+            // Scrolling by more lines than the image's top row takes it off in one step.
+            terminal.write("\u001b[3S")
+            assertEquals(-2, terminal.snapshot().imagePlacements.single().row)
+            terminal.checkPlacements()
+            terminal.write("\u001b[S")
+            assertEquals(0, terminal.graphicsLayer.placementCount)
+        }
+
+        @Test
+        fun scrollingTheWholeScreenOffKeepsAnImageThatIsTallerThanIt() {
+            val terminal = terminal(rows = 5)
+            terminal.write("\u001b[?1049h")
+            terminal.place("i=1,c=1,r=8,C=1")
+            terminal.write("\u001b[5S")
+            assertEquals(-5, terminal.snapshot().imagePlacements.single().row)
+            terminal.checkPlacements()
+        }
+
+        @Test
+        fun placementsWhoseTopRowScrolledOffAreFoundByTheirRows() {
+            val terminal = terminal(rows = 5)
+            terminal.write("\u001b[?1049h")
+            terminal.place("i=1,c=1,r=3,C=1")
+            terminal.write("\u001b[S")
+            // Its second and third rows are on y=1 and y=2, counted from 1: y=3 does not delete it.
+            terminal.write(apc("a=d,d=y,y=3"))
+            assertEquals(1, terminal.graphicsLayer.placementCount)
+            terminal.write(apc("a=d,d=y,y=1"))
+            assertEquals(0, terminal.graphicsLayer.placementCount)
+        }
+
+        @Test
+        fun linesDeletedAtTheTopOrScrolledOffARegionTakeTheirPlacements() {
+            val terminal = terminal(rows = 10)
+            terminal.write("\u001b[?1049h")
+            terminal.place("i=1,c=1,r=3,C=1")
+            // Deleting the top line is not scrolling it off.
+            terminal.write("\u001b[M")
+            assertEquals(0, terminal.graphicsLayer.placementCount)
+            // Nor is scrolling a region below the top, since images are not cut at its margins.
+            terminal.write("\u001b[3;6r\u001b[3;1H")
+            terminal.place("i=1,c=1,r=3,C=1")
+            terminal.write("\u001b[S")
+            assertEquals(0, terminal.graphicsLayer.placementCount)
+        }
+
+        @Test
         fun anImageWithoutAnIdGoesWithItsLastPlacement() {
             val terminal = terminal(rows = 5, limits = TerminalLimits(scrollbackLines = 0))
             terminal.place("c=1,r=1")
@@ -922,7 +1002,10 @@ private fun Terminal.checkPlacements() {
     var found = 0
     graphicsLayer.forEachAnchored { placement, row ->
         found++
-        assertTrue(row >= -scrollbackSize && row < rows, "row $row of $placement")
+        assertTrue(
+            row + placement.rows > -scrollbackSize && row < rows,
+            "row $row of $placement",
+        )
     }
     assertEquals(anchored, found, "placements not on any line")
 }

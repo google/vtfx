@@ -127,8 +127,9 @@ internal class GraphicsLayer(
     }
 
     /**
-     * Calls [action] with each placement anchored to a line and the row of that line, from the top
-     * of the screen: negative for a line in the scrollback. The action may delete placements.
+     * Calls [action] with each placement anchored to a line and the row of the image's top, from
+     * the top of the screen: negative for a row in the scrollback or above it. The action may
+     * delete placements.
      */
     fun forEachAnchored(action: (Placement, Int) -> Unit) {
         if (placements.isEmpty()) return
@@ -146,7 +147,7 @@ internal class GraphicsLayer(
                             scrollback.size
                     else -> continue
                 }
-            action(placement, row)
+            action(placement, row - placement.rowsAbove)
         }
     }
 
