@@ -40,7 +40,7 @@ class ClassHierarchy(private val find: (String) -> ByteArray?) {
         val superclass: String?,
         val interfaces: List<String>,
         val members: Set<String>,
-        val instanceMethods: List<Pair<String, String>>,
+        val instanceMethods: Set<Pair<String, String>>,
     )
 
     private val infos = HashMap<String, ClassInfo>()
@@ -68,8 +68,9 @@ class ClassHierarchy(private val find: (String) -> ByteArray?) {
      * The methods that the class [name] inherits from its superclasses to implement the methods of
      * the interfaces that it implements and its superclass does not, each as a use through the
      * superclass that declares it. A call through such an interface reaches the method, though no
-     * class names it there (docs/design/boundaries.md section 4.3). None for an interface or
-     * `Object`.
+     * class names it there (docs/design/boundaries.md section 4.3). Static and private methods
+     * implement nothing, so the JVM passes over them to the next superclass, and so does this. None
+     * for an interface or `Object`.
      */
     fun inheritedImplementations(name: String): List<MemberReference> {
         val info = info(name)
@@ -80,10 +81,10 @@ class ClassHierarchy(private val find: (String) -> ByteArray?) {
             .filter { it != name && it !in inherited }
             .flatMap { info(it).instanceMethods }
             .distinct()
-            .filter { (method, descriptor) -> method + descriptor !in info.members }
+            .filter { it !in info.instanceMethods }
             .mapNotNull { (method, descriptor) ->
                 superclasses(superclass)
-                    .firstOrNull { method + descriptor in info(it).members }
+                    .firstOrNull { (method to descriptor) in info(it).instanceMethods }
                     ?.let { MemberReference(it, method, descriptor, MemberReference.Kind.METHOD) }
             }
             .toList()
@@ -154,7 +155,7 @@ class ClassHierarchy(private val find: (String) -> ByteArray?) {
         infos.getOrPut(name) {
             val bytes = checkNotNull(find(name)) { "class $name is not on the class path" }
             val members = mutableSetOf<String>()
-            val instanceMethods = mutableListOf<Pair<String, String>>()
+            val instanceMethods = mutableSetOf<Pair<String, String>>()
             var isInterface = false
             var superclass: String? = null
             var directInterfaces = emptyList<String>()

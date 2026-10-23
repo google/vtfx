@@ -161,6 +161,33 @@ class ClassHierarchyTest {
     }
 
     @Test
+    fun inheritedImplementations_privateOrStaticMethodOfNearerClass_isTheInstanceMethodBeyond() {
+        // Neither implements the interface's method, so the JVM selects the view's. Compilers
+        // reject such code; the bytecode is made by hand.
+        val hierarchy =
+            hierarchy(
+                classFile(
+                    "fixtures/Own",
+                    "fixtures/Hiding",
+                    listOf("fixtures/Haptics"),
+                    "static performHapticFeedback(I)Z",
+                    "hashCode()I",
+                ),
+                classFile(
+                    "fixtures/Hiding",
+                    "android/view/View",
+                    emptyList(),
+                    "private performHapticFeedback(I)Z",
+                ),
+            )
+
+        assertEquals(
+            listOf(method("android/view/View", "performHapticFeedback", "(I)Z")),
+            hierarchy.inheritedImplementations("fixtures/Own"),
+        )
+    }
+
+    @Test
     fun inheritedImplementations_interfaceThatTheSuperclassImplements_none() {
         // The view implements Callback itself, so a subclass that names it opens up nothing.
         val hierarchy =
@@ -221,7 +248,8 @@ class ClassHierarchyTest {
 
     /**
      * A class file of [name], extending [superName] and implementing [interfaces], that declares
-     * the [members]: methods by name and descriptor, and fields by name, `:`, and descriptor.
+     * the [members]: methods by name and descriptor, public and abstract unless `private ` or
+     * `static ` comes first, and fields by name, `:`, and descriptor.
      */
     private fun classFile(
         name: String,
@@ -265,11 +293,20 @@ class ClassHierarchyTest {
                     )
                     .visitEnd()
             } else {
-                val descriptor = member.substring(member.indexOf('('))
+                val modifier = member.substringBefore(' ', missingDelimiterValue = "")
+                val method = member.substringAfter(' ')
+                val descriptor = method.substring(method.indexOf('('))
+                val methodAccess =
+                    when (modifier) {
+                        "" -> Opcodes.ACC_PUBLIC or Opcodes.ACC_ABSTRACT
+                        "private" -> Opcodes.ACC_PRIVATE
+                        "static" -> Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC
+                        else -> error("unknown modifier $modifier")
+                    }
                 writer
                     .visitMethod(
-                        Opcodes.ACC_PUBLIC or Opcodes.ACC_ABSTRACT,
-                        member.removeSuffix(descriptor),
+                        methodAccess,
+                        method.removeSuffix(descriptor),
                         descriptor,
                         null,
                         null,
