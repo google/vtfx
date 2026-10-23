@@ -32,7 +32,10 @@ import java.util.BitSet
 internal class LineText(lines: List<LineSnapshot>, trimEnd: Boolean) {
     val text: String
 
-    /** The column of each character of [text], with [WIDE] if the character is wide. */
+    /**
+     * The column of each character of [text], with [WIDE] if the character is wide. Within a row,
+     * the columns never decrease.
+     */
     private val columns: ShortArray
 
     /** The index in [text] of the first character of each row. */
@@ -92,20 +95,20 @@ internal class LineText(lines: List<LineSnapshot>, trimEnd: Boolean) {
             // Skips rows without text, which start where the next one does.
             while (row < rowStarts.lastIndex && rowStarts[row + 1] <= index) row++
             val rowEnd = if (row < rowStarts.lastIndex) rowStarts[row + 1] else text.length
-            val first = columnAt(index)
-            var last = first
-            while (index < end && index < rowEnd) {
-                val value = columns[index].toInt()
-                last = maxOf(last, (value and WIDE.inv()) + if (value and WIDE != 0) 2 else 1)
-                index++
-            }
-            spans += CellSpan(row, first, last)
+            val next = minOf(end, rowEnd)
+            // The columns never decrease within the row, so its last character ends the run.
+            spans += CellSpan(row, columnAt(index), columnEndAt(next - 1))
+            index = next
             row++
         }
         return spans
     }
 
     private fun columnAt(index: Int): Int = columns[index].toInt() and WIDE.inv()
+
+    /** The column after the cells of the character at [index]. */
+    private fun columnEndAt(index: Int): Int =
+        columnAt(index) + if (columns[index].toInt() and WIDE != 0) 2 else 1
 
     private companion object {
         /** Marks a wide character in [columns], above [TerminalLimits.MAX_DIMENSION] columns. */
