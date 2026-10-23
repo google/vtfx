@@ -165,32 +165,32 @@ internal constructor(
      * The rows above the display that autowrap joins to its first line, at most [rows] of them,
      * from the top, for finding the links that the display cuts (docs/decisions/0019).
      */
-    internal val linesAbove: List<LineSnapshot> = emptyList(),
+    internal val linesAbove: List<LineSnapshot>,
     /** The rows below the display that autowrap joins to its last line, at most [rows] of them. */
-    internal val linesBelow: List<LineSnapshot> = emptyList(),
+    internal val linesBelow: List<LineSnapshot>,
     /**
      * Whether the first of [linesAbove] (or of the display, if none) continues a line further
      * above.
      */
-    internal val isCutAbove: Boolean = false,
+    internal val isCutAbove: Boolean,
     /**
      * Whether the last of [linesBelow] (or of the display, if none) continues a line further below.
      */
-    internal val isCutBelow: Boolean = false,
+    internal val isCutBelow: Boolean,
     /**
      * The images of the kitty graphics protocol that the snapshot shows, in the order to draw them:
      * by z-index, then in the order they were placed.
      *
      * @suppress
      */
-    @InternalVtfxApi public val imagePlacements: List<ImagePlacement> = emptyList(),
+    @InternalVtfxApi public val imagePlacements: List<ImagePlacement>,
     /**
      * The cells of the snapshot that are placeholders of images (U+10EEEE of the kitty graphics
      * protocol) of an image that exists, with the part of the image each shows, row by row.
      *
      * @suppress
      */
-    @InternalVtfxApi public val imageTiles: List<ImageTile> = emptyList(),
+    @InternalVtfxApi public val imageTiles: List<ImageTile>,
 ) {
     /**
      * Returns the line at [row], 0-based from the top.
