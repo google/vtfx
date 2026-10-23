@@ -91,20 +91,11 @@ internal class Type2Charstring(
                     if (at > code.length) malformed("hint mask beyond the charstring")
                 }
                 RMOVETO -> {
-                    val first = firstArgument(hasWidth = sp == 3)
-                    requireArguments(first, 2)
+                    val first = movetoArguments(2)
                     moveTo(x + stack[first], y + stack[first + 1])
                 }
-                HMOVETO -> {
-                    val first = firstArgument(hasWidth = sp == 2)
-                    requireArguments(first, 1)
-                    moveTo(x + stack[first], y)
-                }
-                VMOVETO -> {
-                    val first = firstArgument(hasWidth = sp == 2)
-                    requireArguments(first, 1)
-                    moveTo(x, y + stack[first])
-                }
+                HMOVETO -> moveTo(x + stack[movetoArguments(1)], y)
+                VMOVETO -> moveTo(x, y + stack[movetoArguments(1)])
                 RLINETO -> {
                     requirePath(sp > 0 && sp % 2 == 0)
                     lines(sp)
@@ -115,26 +106,8 @@ internal class Type2Charstring(
                     requirePath(sp > 0 && sp % 6 == 0)
                     relativeCurves(sp)
                 }
-                HHCURVETO -> {
-                    requirePath(sp >= 4 && sp % 4 <= 1)
-                    var i = sp % 4
-                    var dy1 = if (i == 1) stack[0] else 0.0
-                    while (i < sp) {
-                        curve(stack[i], dy1, stack[i + 1], stack[i + 2], stack[i + 3], 0.0)
-                        dy1 = 0.0
-                        i += 4
-                    }
-                }
-                VVCURVETO -> {
-                    requirePath(sp >= 4 && sp % 4 <= 1)
-                    var i = sp % 4
-                    var dx1 = if (i == 1) stack[0] else 0.0
-                    while (i < sp) {
-                        curve(dx1, stack[i], stack[i + 1], stack[i + 2], 0.0, stack[i + 3])
-                        dx1 = 0.0
-                        i += 4
-                    }
-                }
+                HHCURVETO -> parallelCurves(horizontal = true)
+                VVCURVETO -> parallelCurves(horizontal = false)
                 HVCURVETO -> alternatingCurves(horizontal = true)
                 VHCURVETO -> alternatingCurves(horizontal = false)
                 RCURVELINE -> {
@@ -259,8 +232,14 @@ internal class Type2Charstring(
         stems += count / 2
     }
 
-    private fun requireArguments(first: Int, count: Int) {
+    /**
+     * The index of the first of the [count] arguments of a moveto, after the width that may come
+     * before them.
+     */
+    private fun movetoArguments(count: Int): Int {
+        val first = firstArgument(hasWidth = sp == count + 1)
         if (sp - first != count) malformed("moveto with ${sp - first} arguments")
+        return first
     }
 
     private fun requirePath(argumentsValid: Boolean) {
@@ -274,6 +253,25 @@ internal class Type2Charstring(
         for (i in 0 until sp) {
             if (alongX) lineTo(x + stack[i], y) else lineTo(x, y + stack[i])
             alongX = !alongX
+        }
+    }
+
+    /**
+     * `hhcurveto` and `vvcurveto`: curves that start and end both horizontal or both vertical. An
+     * odd argument first is the other coordinate of the start of the first curve.
+     */
+    private fun parallelCurves(horizontal: Boolean) {
+        requirePath(sp >= 4 && sp % 4 <= 1)
+        var i = sp % 4
+        var first = if (i == 1) stack[0] else 0.0
+        while (i < sp) {
+            if (horizontal) {
+                curve(stack[i], first, stack[i + 1], stack[i + 2], stack[i + 3], 0.0)
+            } else {
+                curve(first, stack[i], stack[i + 1], stack[i + 2], 0.0, stack[i + 3])
+            }
+            first = 0.0
+            i += 4
         }
     }
 
