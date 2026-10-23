@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
-@file:OptIn(InternalVtfxApi::class)
-
 package com.google.vtfx.core.graphics
 
-import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.Line
 import com.google.vtfx.core.ScreenBuffer
 import com.google.vtfx.core.Scrollback
@@ -34,7 +31,7 @@ internal class GraphicsLayer(
     private val scrollback: Scrollback?,
 ) {
     /** The images, oldest first. */
-    private val images = LinkedHashMap<Long, StoredImage>()
+    private val images = LinkedHashSet<StoredImage>()
     private val imagesById = HashMap<Long, StoredImage>()
 
     /** The live placements, anchored and virtual, oldest first. */
@@ -53,16 +50,12 @@ internal class GraphicsLayer(
     val hasVirtualPlacements: Boolean
         get() = virtualCount > 0
 
-    fun images(): Collection<StoredImage> = images.values
+    fun images(): Collection<StoredImage> = images
 
     fun imageById(id: Long): StoredImage? = imagesById[id]
 
     /** The newest image with [number], or null. */
-    fun newestImageByNumber(number: Long): StoredImage? {
-        var newest: StoredImage? = null
-        for (image in images.values) if (image.number == number) newest = image
-        return newest
-    }
+    fun newestImageByNumber(number: Long): StoredImage? = images.lastOrNull { it.number == number }
 
     /**
      * Adds [image], replacing an image with the same id together with its placements. The caller
@@ -70,17 +63,18 @@ internal class GraphicsLayer(
      */
     fun add(image: StoredImage) {
         if (image.id != 0L) imagesById[image.id]?.let { delete(it) }
-        images[image.serial] = image
+        images += image
         if (image.id != 0L) imagesById[image.id] = image
         graphics.onImageAdded(image)
     }
 
     /** Deletes [image] and its placements. */
     fun delete(image: StoredImage) {
-        if (images.remove(image.serial) == null) return
+        if (!images.remove(image)) return
         if (image.id != 0L && imagesById[image.id] === image) imagesById.remove(image.id)
-        for (placement in image.placements.toTypedArray()) forget(placement)
-        for (placement in image.virtualPlacements.toTypedArray()) forget(placement)
+        // forget changes neither list.
+        for (placement in image.placements) forget(placement)
+        for (placement in image.virtualPlacements) forget(placement)
         image.placements.clear()
         image.virtualPlacements.clear()
         graphics.onImageDeleted(image)
@@ -88,7 +82,7 @@ internal class GraphicsLayer(
 
     /** Deletes every image and placement. */
     fun clear() {
-        for (image in images.values.toTypedArray()) delete(image)
+        for (image in images.toTypedArray()) delete(image)
     }
 
     /**
