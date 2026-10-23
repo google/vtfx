@@ -1,0 +1,61 @@
+/*
+ * Copyright 2026 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// Runs the review reproductions without adding them to the regular test suite.
+// See ../2026-10-22-compose-sample.md for the command and expected failures.
+gradle.projectsEvaluated {
+    def p = gradle.rootProject.findProject(':vtfx-compose')
+    def sample = gradle.rootProject.findProject(':vtfx-sample')
+    if (p == null || sample == null) return
+    def sources = gradle.rootProject.file('docs/reviews/repro-2026-10-22-compose-sample')
+    def output = gradle.rootProject.layout.buildDirectory.dir('review-repros/2026-10-22-compose-sample').get().asFile
+    def original = p.tasks.named('testDebugUnitTest').get()
+    def kotlin = p.tasks.named('compileDebugUnitTestKotlin').get()
+    def sampleKotlin = sample.tasks.named('compileDebugKotlin').get()
+    def sampleFonts = gradle.rootProject.file('vtfx-font-gate/src/fuzz/resources')
+    def testFiles = [new File(sources, 'ComposeReproTest.kt'), new File(sources, 'SampleReproTest.kt')]
+    def compile = p.tasks.register('compileReviewRepro', JavaExec) {
+        dependsOn kotlin, sampleKotlin
+        classpath = p.configurations.getByName('kotlinCompilerClasspath')
+        mainClass.set('org.jetbrains.kotlin.cli.jvm.K2JVMCompiler')
+        inputs.files(testFiles)
+        inputs.files(kotlin.libraries, sampleKotlin.destinationDirectory)
+        outputs.dir(new File(output, 'classes'))
+        doFirst {
+            def cp = (kotlin.libraries + p.files(sampleKotlin.destinationDirectory)).asPath
+            def friends = (kotlin.friendPaths.files + sampleKotlin.destinationDirectory.get().asFile).join(',')
+            args = ['-no-stdlib', '-no-reflect', '-jvm-target', '17',
+                    '-classpath', cp,
+                    '-Xfriend-paths=' + friends,
+                    '-opt-in=com.google.vtfx.core.InternalVtfxApi',
+                    '-d', new File(output, 'classes').path] + testFiles.collect { it.path }
+            kotlin.pluginClasspath.files.each { args('-Xplugin=' + it.path) }
+            kotlin.compilerOptions.freeCompilerArgs.get().each { args(it) }
+        }
+    }
+    p.tasks.register('reviewRepro', Test) {
+        dependsOn compile
+        useJUnit()
+        testClassesDirs = p.files(new File(output, 'classes'))
+        classpath = p.files(new File(output, 'classes'), sampleKotlin.destinationDirectory, sampleFonts) + original.classpath
+        systemProperties original.systemProperties
+        jvmArgs original.jvmArgs
+        workingDir original.workingDir
+        reports.html.outputLocation.set(new File(output, 'report'))
+        reports.junitXml.outputLocation.set(new File(output, 'results'))
+        testLogging { events 'passed', 'failed'; exceptionFormat 'full'; showStandardStreams true }
+    }
+}
