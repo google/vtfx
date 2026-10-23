@@ -34,18 +34,7 @@ class ClassHierarchy(private val find: (String) -> ByteArray?) {
     private val infos = HashMap<String, ClassInfo>()
 
     /** Whether [name] is [other], or a class or interface that extends or implements it. */
-    fun isSubtype(name: String, other: String): Boolean {
-        val visited = mutableSetOf(name)
-        val pending = ArrayDeque(listOf(name))
-        while (pending.isNotEmpty()) {
-            val current = pending.removeFirst()
-            if (current == other) return true
-            for (supertype in directSupertypes(current)) {
-                if (visited.add(supertype)) pending.addLast(supertype)
-            }
-        }
-        return false
-    }
+    fun isSubtype(name: String, other: String): Boolean = other in supertypes(name)
 
     /**
      * The class that declares the field or method [name] with [descriptor] that a use through
@@ -54,20 +43,26 @@ class ClassHierarchy(private val find: (String) -> ByteArray?) {
      */
     fun declaringClass(owner: String, name: String, descriptor: String): String {
         val member = name + descriptor
-        val visited = mutableSetOf(owner)
-        val pending = ArrayDeque(listOf(owner))
+        return supertypes(owner).firstOrNull { member in info(it).members }
+            ?: error("no supertype of $owner, nor $owner itself, declares $member")
+    }
+
+    /**
+     * [start] and then its supertypes, breadth first, superclasses before interfaces. Reads the
+     * supertypes of a type only after yielding it, so a caller that stops there does not need its
+     * class file.
+     */
+    private fun supertypes(start: String): Sequence<String> = sequence {
+        val visited = mutableSetOf(start)
+        val pending = ArrayDeque(listOf(start))
         while (pending.isNotEmpty()) {
             val current = pending.removeFirst()
-            val info = info(current)
-            if (member in info.members) return current
-            for (supertype in info.supertypes) {
+            yield(current)
+            for (supertype in info(current).supertypes) {
                 if (visited.add(supertype)) pending.addLast(supertype)
             }
         }
-        error("no supertype of $owner, nor $owner itself, declares $member")
     }
-
-    private fun directSupertypes(name: String): List<String> = info(name).supertypes
 
     private fun info(name: String): ClassInfo =
         infos.getOrPut(name) {
