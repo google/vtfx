@@ -315,8 +315,6 @@ class RepositoryClassRulesTest {
         private fun naming(type: String) =
             ClassReferences(
                 "fixtures/Uses",
-                "java/lang/Object",
-                emptyList(),
                 setOf(type),
                 emptySet(),
                 emptySet(),
@@ -325,8 +323,6 @@ class RepositoryClassRulesTest {
         private fun using(owner: String, name: String, descriptor: String) =
             ClassReferences(
                 "fixtures/Uses",
-                "java/lang/Object",
-                emptyList(),
                 emptySet(),
                 setOf(MemberReference(owner, name, descriptor, MemberReference.Kind.METHOD)),
                 emptySet(),
@@ -335,8 +331,6 @@ class RepositoryClassRulesTest {
         private fun bootstrapping(owner: String, name: String, descriptor: String) =
             ClassReferences(
                 "fixtures/Uses",
-                "java/lang/Object",
-                emptyList(),
                 emptySet(),
                 emptySet(),
                 setOf(MemberReference(owner, name, descriptor, MemberReference.Kind.METHOD)),
@@ -345,8 +339,6 @@ class RepositoryClassRulesTest {
         private fun declaring(name: String) =
             ClassReferences(
                 name,
-                "java/lang/Object",
-                emptyList(),
                 emptySet(),
                 emptySet(),
                 emptySet(),

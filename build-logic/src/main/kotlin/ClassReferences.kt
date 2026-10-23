@@ -45,8 +45,6 @@ import org.objectweb.asm.signature.SignatureVisitor
  */
 class ClassReferences(
     val name: String,
-    val superName: String?,
-    val interfaces: List<String>,
     val types: Set<String>,
     val members: Set<MemberReference>,
     val bootstraps: Set<MemberReference>,
@@ -58,8 +56,6 @@ class ClassReferences(
             ClassReader(bytes).accept(collector, ClassReader.SKIP_DEBUG)
             return ClassReferences(
                 collector.name,
-                collector.superName,
-                collector.interfaces,
                 collector.types - collector.name,
                 collector.members,
                 collector.bootstraps,
@@ -91,8 +87,6 @@ private const val API = Opcodes.ASM9
 
 private class Collector : ClassVisitor(API) {
     lateinit var name: String
-    var superName: String? = null
-    var interfaces: List<String> = emptyList()
     val types = mutableSetOf<String>()
     val members = mutableSetOf<MemberReference>()
     val bootstraps = mutableSetOf<MemberReference>()
@@ -124,10 +118,8 @@ private class Collector : ClassVisitor(API) {
         interfaces: Array<out String>?,
     ) {
         this.name = name
-        this.superName = superName
-        this.interfaces = interfaces?.toList().orEmpty()
         superName?.let(types::add)
-        types.addAll(this.interfaces)
+        interfaces?.let { types.addAll(it) }
         addSignature(signature)
     }
 

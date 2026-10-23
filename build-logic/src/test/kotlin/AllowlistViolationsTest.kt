@@ -168,8 +168,6 @@ class AllowlistViolationsTest {
         val references =
             ClassReferences(
                 "fixtures/OwnView",
-                "android/view/View",
-                emptyList(),
                 emptySet(),
                 setOf(method("fixtures/OwnView", "getContext", "()Landroid/content/Context;")),
                 emptySet(),
@@ -211,8 +209,6 @@ class AllowlistViolationsTest {
     private fun naming(type: String) =
         ClassReferences(
             "fixtures/Uses",
-            "java/lang/Object",
-            emptyList(),
             setOf(type),
             emptySet(),
             emptySet(),
@@ -221,8 +217,6 @@ class AllowlistViolationsTest {
     private fun using(owner: String, name: String, descriptor: String) =
         ClassReferences(
             "fixtures/Uses",
-            "java/lang/Object",
-            emptyList(),
             setOf(owner),
             setOf(method(owner, name, descriptor)),
             emptySet(),
