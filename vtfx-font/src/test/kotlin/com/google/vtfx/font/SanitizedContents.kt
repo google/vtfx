@@ -24,7 +24,6 @@ class SanitizedContents(font: SanitizedFont) {
     private val bytes = font.toByteArray()
     private val face = Sfnt.face(bytes, 0)
     private val parts = FaceParts.read(face, FontLimits())
-    private val cmap = CmapReader(face.require(Tag.CMAP), parts.numGlyphs)
 
     /** The tags of the tables, in the order of the directory. */
     val tags: List<String> =
@@ -59,14 +58,14 @@ class SanitizedContents(font: SanitizedFont) {
 
     val characters: Map<Int, Int>
         get() {
-            val map = cmap.charMap()
+            val map = parts.charMap
             return map.codePoints.indices.associate { map.codePoints[it] to map.glyphs[it] }
         }
 
     /** For each selector, its default characters and its other sequences. */
     val variations: Map<Int, Pair<List<Int>, Map<Int, Int>>>
         get() =
-            cmap.variationSelectors().associate { selector ->
+            parts.variationSelectors.associate { selector ->
                 selector.selector to
                     Pair(
                         selector.defaults.toList(),
