@@ -38,8 +38,8 @@ internal class ImageBitmaps {
     private var frame = 0
 
     /** The bytes of the pixels of the bitmaps kept. */
-    var bytes = 0L
-        private set
+    val bytes: Long
+        get() = entries.values.sumOf { it.bytes }
 
     fun startFrame() {
         frame++
@@ -50,25 +50,22 @@ internal class ImageBitmaps {
         val entry =
             entries.getOrPut(image.key) {
                 Entry(
-                        Bitmap.createBitmap(
-                            image.pixels,
-                            image.width,
-                            image.height,
-                            Bitmap.Config.ARGB_8888,
-                        ),
-                        image.width.toLong() * image.height * BYTES_PER_PIXEL,
-                        frame,
-                    )
-                    .also { bytes += it.bytes }
+                    Bitmap.createBitmap(
+                        image.pixels,
+                        image.width,
+                        image.height,
+                        Bitmap.Config.ARGB_8888,
+                    ),
+                    image.width.toLong() * image.height * BYTES_PER_PIXEL,
+                    frame,
+                )
             }
         entry.frame = frame
         return entry.bitmap
     }
 
     fun endFrame() {
-        entries.values.removeIf { entry ->
-            (frame - entry.frame > KEEP_FRAMES).also { if (it) bytes -= entry.bytes }
-        }
+        entries.values.removeIf { frame - it.frame > KEEP_FRAMES }
         // The bitmaps of images that this frame did not draw, the least recently drawn first, go
         // beyond MAX_UNDRAWN_BYTES: the host can replace an image on every frame.
         val undrawn = entries.entries.filter { it.value.frame != frame }
@@ -76,7 +73,6 @@ internal class ImageBitmaps {
         if (undrawnBytes <= MAX_UNDRAWN_BYTES) return
         for ((key, entry) in undrawn.sortedBy { it.value.frame }) {
             entries.remove(key)
-            bytes -= entry.bytes
             undrawnBytes -= entry.bytes
             if (undrawnBytes <= MAX_UNDRAWN_BYTES) return
         }
