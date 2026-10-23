@@ -52,10 +52,10 @@ internal object BoxDrawing {
 
     // --- Lines ---
 
-    private const val NONE = 0
-    private const val LIGHT = 1
-    private const val HEAVY = 2
-    private const val DOUBLE = 3
+    private const val NONE = '.'
+    private const val LIGHT = 'l'
+    private const val HEAVY = 'h'
+    private const val DOUBLE = 'd'
 
     /**
      * The arms of U+2500 to U+257F: up, right, down, and left, each '.' (none), 'l' (light), 'h'
@@ -217,131 +217,80 @@ internal object BoxDrawing {
             drawSpecial(codePoint, topLeft, size, color, light, fill)
             return
         }
-        val (up, right, down, left) =
-            arms.map {
-                when (it) {
-                    'l' -> LIGHT
-                    'h' -> HEAVY
-                    'd' -> DOUBLE
-                    else -> NONE
-                }
-            }
+        val up = arms[0]
+        val right = arms[1]
+        val down = arms[2]
+        val left = arms[3]
         val gap = light * 2
         // Where a straight arm meets the center: past it by half the widest crossing arm, so that
         // corners join without a notch.
-        fun reach(first: Int, second: Int): Float =
-            if (first == DOUBLE || second == DOUBLE) gap + light / 2
-            else maxOf(thickness(first, light, heavy), thickness(second, light, heavy)) / 2
-        val horizontalReach = reach(up, down)
-        val verticalReach = reach(left, right)
-        fun single(style: Int) = if (style == LIGHT) light else heavy
+        fun reach(style: Char): Float =
+            when (style) {
+                LIGHT -> light / 2
+                HEAVY -> heavy / 2
+                DOUBLE -> gap + light / 2
+                else -> 0f
+            }
+        val horizontalReach = maxOf(reach(up), reach(down))
+        val verticalReach = maxOf(reach(left), reach(right))
+        fun single(style: Char) = if (style == LIGHT) light else heavy
         // A double arm is two lines. Each line ends at the inner line of a crossing double arm on
         // its side, at the outer line if only the other side has a double arm, or at the center.
-        fun doubleEnd(sameSide: Int, otherSide: Int): Float =
+        fun doubleEnd(sameSide: Char, otherSide: Char): Float =
             when {
                 sameSide == DOUBLE -> gap
                 otherSide == DOUBLE -> -gap
                 else -> -light / 2
             }
-        if (left != NONE) {
-            if (left == DOUBLE) {
+        fun drawHorizontalArm(style: Char, isRight: Boolean) {
+            if (style == NONE) return
+            if (style == DOUBLE) {
                 for ((offset, side, other) in
                     listOf(Triple(-gap, up, down), Triple(gap, down, up))) {
-                    val end = centerX - doubleEnd(side, other)
-                    fill.rect(
-                        this,
-                        color,
-                        Offset(topLeft.x, centerY + offset - light / 2),
-                        Size(end - topLeft.x, light),
-                    )
-                }
-            } else {
-                val t = single(left)
-                fill.rect(
-                    this,
-                    color,
-                    Offset(topLeft.x, centerY - t / 2),
-                    Size(centerX + horizontalReach - topLeft.x, t),
-                )
-            }
-        }
-        if (right != NONE) {
-            if (right == DOUBLE) {
-                for ((offset, side, other) in
-                    listOf(Triple(-gap, up, down), Triple(gap, down, up))) {
-                    val start = centerX + doubleEnd(side, other)
+                    val centerEnd = doubleEnd(side, other)
+                    val start = if (isRight) centerX + centerEnd else topLeft.x
+                    val end = if (isRight) topLeft.x + size.width else centerX - centerEnd
                     fill.rect(
                         this,
                         color,
                         Offset(start, centerY + offset - light / 2),
-                        Size(topLeft.x + size.width - start, light),
+                        Size(end - start, light),
                     )
                 }
             } else {
-                val t = single(right)
-                val start = centerX - horizontalReach
-                fill.rect(
-                    this,
-                    color,
-                    Offset(start, centerY - t / 2),
-                    Size(topLeft.x + size.width - start, t),
-                )
+                val t = single(style)
+                val start = if (isRight) centerX - horizontalReach else topLeft.x
+                val end = if (isRight) topLeft.x + size.width else centerX + horizontalReach
+                fill.rect(this, color, Offset(start, centerY - t / 2), Size(end - start, t))
             }
         }
-        if (up != NONE) {
-            if (up == DOUBLE) {
+        fun drawVerticalArm(style: Char, isDown: Boolean) {
+            if (style == NONE) return
+            if (style == DOUBLE) {
                 for ((offset, side, other) in
                     listOf(Triple(-gap, left, right), Triple(gap, right, left))) {
-                    val end = centerY - doubleEnd(side, other)
-                    fill.rect(
-                        this,
-                        color,
-                        Offset(centerX + offset - light / 2, topLeft.y),
-                        Size(light, end - topLeft.y),
-                    )
-                }
-            } else {
-                val t = single(up)
-                fill.rect(
-                    this,
-                    color,
-                    Offset(centerX - t / 2, topLeft.y),
-                    Size(t, centerY + verticalReach - topLeft.y),
-                )
-            }
-        }
-        if (down != NONE) {
-            if (down == DOUBLE) {
-                for ((offset, side, other) in
-                    listOf(Triple(-gap, left, right), Triple(gap, right, left))) {
-                    val start = centerY + doubleEnd(side, other)
+                    val centerEnd = doubleEnd(side, other)
+                    val start = if (isDown) centerY + centerEnd else topLeft.y
+                    val end = if (isDown) topLeft.y + size.height else centerY - centerEnd
                     fill.rect(
                         this,
                         color,
                         Offset(centerX + offset - light / 2, start),
-                        Size(light, topLeft.y + size.height - start),
+                        Size(light, end - start),
                     )
                 }
             } else {
-                val t = single(down)
-                val start = centerY - verticalReach
-                fill.rect(
-                    this,
-                    color,
-                    Offset(centerX - t / 2, start),
-                    Size(t, topLeft.y + size.height - start),
-                )
+                val t = single(style)
+                val start = if (isDown) centerY - verticalReach else topLeft.y
+                val end = if (isDown) topLeft.y + size.height else centerY + verticalReach
+                fill.rect(this, color, Offset(centerX - t / 2, start), Size(t, end - start))
             }
         }
+        drawHorizontalArm(left, isRight = false)
+        drawHorizontalArm(right, isRight = true)
+        drawVerticalArm(up, isDown = false)
+        drawVerticalArm(down, isDown = true)
     }
-
-    private fun thickness(style: Int, light: Float, heavy: Float): Float =
-        when (style) {
-            LIGHT -> light
-            HEAVY -> heavy
-            DOUBLE -> light * 5
-            else -> 0f
-        }
 
     /** Arcs (U+256D to U+2570) and diagonals (U+2571 to U+2573). */
     private fun DrawScope.drawSpecial(
