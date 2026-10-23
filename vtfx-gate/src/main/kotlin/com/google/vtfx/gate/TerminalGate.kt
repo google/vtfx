@@ -154,12 +154,7 @@ public class TerminalGate(
         val colon = url.indexOf(':')
         if (colon <= 0) return false
         val scheme = url.substring(0, colon)
-        if (
-            !scheme.first().isAsciiLetter() ||
-                !scheme.all { it.isAsciiLetter() || it.isAsciiDigit() || it in "+-." }
-        ) {
-            return false
-        }
+        if (!isUrlScheme(scheme)) return false
         val lowercaseScheme = scheme.lowercase()
         if (lowercaseScheme !in policy.urlSchemes) return false
         return lowercaseScheme !in SPECIAL_SCHEMES || !hasMisleadingAuthority(url, colon)
@@ -214,10 +209,6 @@ public class TerminalGate(
         }
         return false
     }
-
-    private fun Char.isAsciiLetter() = this in 'a'..'z' || this in 'A'..'Z'
-
-    private fun Char.isAsciiDigit() = this in '0'..'9'
 
     private companion object {
         const val MAX_URL_LENGTH = 8192

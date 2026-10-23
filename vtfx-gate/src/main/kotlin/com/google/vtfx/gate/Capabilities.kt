@@ -130,16 +130,10 @@ public class GatePolicy(
         require(maxClipboardWriteLength >= 0) { "maxClipboardWriteLength must not be negative" }
         require(maxClipboardReadLength >= 0) { "maxClipboardReadLength must not be negative" }
         // A scheme outside the grammar of URLs would match no URL, so every link would be refused.
-        for (scheme in this.urlSchemes) require(isScheme(scheme)) { "not a URL scheme: $scheme" }
+        for (scheme in this.urlSchemes) require(isUrlScheme(scheme)) { "not a URL scheme: $scheme" }
         // docs/decisions/0058.
         require("file" !in this.urlSchemes) { "file URLs cannot be opened in another app" }
     }
-
-    /** An ASCII letter followed by ASCII letters, digits, `+`, `-`, or `.` (RFC 3986). */
-    private fun isScheme(s: String): Boolean =
-        s.isNotEmpty() &&
-            s[0] in 'a'..'z' &&
-            s.all { it in 'a'..'z' || it in '0'..'9' || it in "+-." }
 
     public companion object {
         // Plain vals rather than consts, so that apps read the values of the vtfx they run with,
@@ -165,3 +159,14 @@ public class GatePolicy(
             Collections.unmodifiableSet(setOf("http", "https"))
     }
 }
+
+/**
+ * Returns whether [s] is a URL scheme: an ASCII letter followed by ASCII letters, digits, `+`, `-`,
+ * or `.` (RFC 3986), in either case.
+ */
+internal fun isUrlScheme(s: String): Boolean =
+    s.isNotEmpty() &&
+        s[0].isAsciiLetter() &&
+        s.all { it.isAsciiLetter() || it in '0'..'9' || it in "+-." }
+
+private fun Char.isAsciiLetter() = this in 'a'..'z' || this in 'A'..'Z'
