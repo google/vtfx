@@ -38,7 +38,7 @@ internal class VariationSelector(
  * Reads the Unicode mapping of a `cmap` table (format 12, or format 4 without one) and its
  * variation sequences (format 14).
  */
-internal class CmapReader(private val cmap: Reader, private val numGlyphs: Int) {
+internal class CmapReader(cmap: Reader, private val numGlyphs: Int) {
     private class Subtable(val platform: Int, val encoding: Int, val data: Reader) {
         val format: Int = data.u16(0)
     }
