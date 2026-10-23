@@ -653,51 +653,68 @@ internal class Emulator(
      * keeps off report reset, or permanently reset, as xterm does (docs/decisions/0009).
      */
     private fun reportMode(mode: Int, isDecPrivate: Boolean) {
-        val fixed = if (isDecPrivate) FIXED_DEC_MODES[mode] else FIXED_ANSI_MODES[mode]
-        if (fixed != null) {
-            reply(TerminalQuery.ModeStatus(mode, isDecPrivate, fixed))
-            return
-        }
-        val set: Boolean? =
+        val state =
             if (isDecPrivate) {
                 when (mode) {
-                    1 -> modes.applicationCursorKeys
-                    66 -> modes.applicationKeypad
-                    5 -> modes.reverseVideo
-                    6 -> originMode
-                    7 -> autowrap
-                    9 -> modes.mouseTracking == MouseTracking.X10
-                    12 -> modes.cursorBlinking
-                    25 -> modes.cursorVisible
+                    1 -> modeState(modes.applicationCursorKeys)
+                    66 -> modeState(modes.applicationKeypad)
+                    5 -> modeState(modes.reverseVideo)
+                    6 -> modeState(originMode)
+                    7 -> modeState(autowrap)
+                    9 -> modeState(modes.mouseTracking == MouseTracking.X10)
+                    12 -> modeState(modes.cursorBlinking)
+                    25 -> modeState(modes.cursorVisible)
                     47,
                     1047,
-                    1049 -> isAlternateScreen
-                    1000 -> modes.mouseTracking == MouseTracking.Normal
-                    1002 -> modes.mouseTracking == MouseTracking.ButtonEvent
-                    1003 -> modes.mouseTracking == MouseTracking.AnyEvent
-                    1004 -> modes.focusEvents
-                    1005 -> modes.mouseEncoding == MouseEncoding.Utf8
-                    1006 -> modes.mouseEncoding == MouseEncoding.Sgr
-                    1015 -> modes.mouseEncoding == MouseEncoding.Urxvt
-                    2004 -> modes.bracketedPaste
-                    2026 -> modes.synchronizedOutput
-                    else -> null
+                    1049 -> modeState(isAlternateScreen)
+                    1000 -> modeState(modes.mouseTracking == MouseTracking.Normal)
+                    1002 -> modeState(modes.mouseTracking == MouseTracking.ButtonEvent)
+                    1003 -> modeState(modes.mouseTracking == MouseTracking.AnyEvent)
+                    1004 -> modeState(modes.focusEvents)
+                    1005 -> modeState(modes.mouseEncoding == MouseEncoding.Utf8)
+                    1006 -> modeState(modes.mouseEncoding == MouseEncoding.Sgr)
+                    1015 -> modeState(modes.mouseEncoding == MouseEncoding.Urxvt)
+                    2004 -> modeState(modes.bracketedPaste)
+                    2026 -> modeState(modes.synchronizedOutput)
+                    // DEC modes that vtfx recognizes but never sets (docs/decisions/0009): DECCOLM,
+                    // DECSCLM, DECPFF, DECPEX, DECHEBM, DECNRCM, DECBKM, DECLRMM.
+                    3,
+                    4,
+                    18,
+                    19,
+                    35,
+                    42,
+                    67,
+                    69 -> ModeState.Reset
+                    60 -> ModeState.PermanentlyReset // DECHCCM
+                    else -> ModeState.NotRecognized
                 }
             } else {
                 when (mode) {
-                    4 -> insertMode
-                    20 -> modes.newLine
-                    else -> null
+                    4 -> modeState(insertMode)
+                    20 -> modeState(modes.newLine)
+                    // ANSI modes that vtfx recognizes but never sets, with their state as in xterm.
+                    1,
+                    5,
+                    7,
+                    10,
+                    11,
+                    13,
+                    14,
+                    15,
+                    16,
+                    17,
+                    18,
+                    19 -> ModeState.PermanentlyReset
+                    2 -> ModeState.Reset // KAM
+                    12 -> ModeState.Reset // SRM
+                    else -> ModeState.NotRecognized
                 }
-            }
-        val state =
-            when (set) {
-                null -> ModeState.NotRecognized
-                true -> ModeState.Set
-                false -> ModeState.Reset
             }
         reply(TerminalQuery.ModeStatus(mode, isDecPrivate, state))
     }
+
+    private fun modeState(set: Boolean): ModeState = if (set) ModeState.Set else ModeState.Reset
 
     private fun cursorUp(n: Int) {
         val limit = if (cursorY >= scrollTop) scrollTop else 0
@@ -1189,23 +1206,6 @@ internal class Emulator(
 
         /** The length of the window title, in UTF-16 units (docs/decisions/0063). */
         const val MAX_TITLE_LENGTH = 1024
-
-        /** ANSI modes that vtfx recognizes but never sets, and their DECRQM state, as in xterm. */
-        private val FIXED_ANSI_MODES: Map<Int, ModeState> = buildMap {
-            for (mode in listOf(1, 5, 7, 10, 11, 13, 14, 15, 16, 17, 18, 19)) put(
-                mode,
-                ModeState.PermanentlyReset,
-            )
-            put(2, ModeState.Reset) // KAM
-            put(12, ModeState.Reset) // SRM
-        }
-
-        /** DEC modes that vtfx recognizes but never sets (docs/decisions/0009). */
-        private val FIXED_DEC_MODES: Map<Int, ModeState> = buildMap {
-            // DECCOLM, DECSCLM, DECPFF, DECPEX, DECHEBM, DECNRCM, DECBKM, DECLRMM.
-            for (mode in listOf(3, 4, 18, 19, 35, 42, 67, 69)) put(mode, ModeState.Reset)
-            put(60, ModeState.PermanentlyReset) // DECHCCM
-        }
 
         private fun defaultTabStops(columns: Int) =
             BooleanArray(columns) { it % TAB_WIDTH == 0 && it > 0 }
