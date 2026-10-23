@@ -282,19 +282,12 @@ internal class Graphics(
     }
 
     private fun evict(from: List<GraphicsLayer>) {
-        var oldest: StoredImage? = null
-        var oldestUnplaced: StoredImage? = null
-        for (layer in from) {
-            for (image in layer.images()) {
-                if (oldest == null || image.serial < oldest.serial) oldest = image
-                if (
-                    !image.hasPlacements &&
-                        (oldestUnplaced == null || image.serial < oldestUnplaced.serial)
-                )
-                    oldestUnplaced = image
-            }
-        }
-        val victim = checkNotNull(oldestUnplaced ?: oldest)
+        // The oldest image without placements, or else the oldest of all.
+        val victim =
+            from
+                .asSequence()
+                .flatMap { it.images() }
+                .minWith(compareBy<StoredImage> { it.hasPlacements }.thenBy { it.serial })
         victim.layer.delete(victim)
     }
 
