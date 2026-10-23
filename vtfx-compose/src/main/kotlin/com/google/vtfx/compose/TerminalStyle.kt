@@ -238,8 +238,8 @@ public class TerminalStyle(
     public val fontSize: TextUnit = 14.sp,
     /**
      * The locale that selects the glyphs of Han characters, which differ between Japanese, Chinese,
-     * and Korean, or null for the system's locale. Set it to `LocaleList("ja")` to show Japanese
-     * glyphs on a device in another language.
+     * and Korean, or null or an empty list for the system's locale. Set it to `LocaleList("ja")` to
+     * show Japanese glyphs on a device in another language.
      */
     public val locale: LocaleList? = null,
     /**

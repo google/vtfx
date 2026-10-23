@@ -36,6 +36,8 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.ResourceFont
+import androidx.compose.ui.text.intl.LocaleList
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.vtfx.core.CursorShape
@@ -328,5 +330,48 @@ class TerminalStyleTest {
     @Test
     fun sanitizedFontWithoutFamiliesIsAnError() {
         assertThrows(IllegalArgumentException::class.java) { TerminalFont.Sanitized(emptyList()) }
+    }
+
+    private fun textLocales(locale: LocaleList?): android.os.LocaleList {
+        val typefaces =
+            TextTypefaces(
+                Typeface.MONOSPACE,
+                Typeface.MONOSPACE,
+                Typeface.MONOSPACE,
+                Typeface.MONOSPACE,
+            )
+        return TextPaints(TerminalStyle(locale = locale), Density(1f), typefaces)
+            .regular
+            .textLocales
+    }
+
+    @Test
+    fun localeSetsTheTextLocalesOfThePaints() {
+        assertEquals(
+            android.os.LocaleList.forLanguageTags("ja,zh-TW"),
+            textLocales(LocaleList("ja,zh-TW")),
+        )
+    }
+
+    @Test
+    fun emptyLocaleLeavesTheSystemsLocaleLikeNull() {
+        val system = textLocales(null)
+
+        assertEquals(system, textLocales(LocaleList.Empty))
+        assertEquals(system, textLocales(LocaleList(emptyList())))
+    }
+
+    @Test
+    fun terminalWithAnEmptyLocaleDraws() {
+        composeRule.setContent {
+            Terminal(
+                session,
+                Modifier.size(300.dp, 200.dp),
+                style = TerminalStyle(locale = LocaleList.Empty),
+            )
+        }
+        session.feed("漢字".toByteArray())
+
+        composeRule.waitForIdle()
     }
 }

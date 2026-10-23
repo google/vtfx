@@ -81,10 +81,13 @@ internal class TextPaints(
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         paint.typeface = typeface
         paint.textSize = with(density) { terminalStyle.fontSize.toPx() }
-        terminalStyle.locale?.let { locale ->
-            paint.textLocales =
-                LocaleList.forLanguageTags(locale.joinToString(",") { it.toLanguageTag() })
-        }
+        // An empty list names no locale, like null: Paint rejects an empty list of text locales.
+        terminalStyle.locale
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { locale ->
+                paint.textLocales =
+                    LocaleList.forLanguageTags(locale.joinToString(",") { it.toLanguageTag() })
+            }
         return paint
     }
 
