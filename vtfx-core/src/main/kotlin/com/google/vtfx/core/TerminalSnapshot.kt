@@ -160,7 +160,7 @@ internal constructor(
      * @suppress
      */
     @InternalVtfxApi public val firstLine: Long,
-    private val lines: List<LineSnapshot>,
+    internal val lines: List<LineSnapshot>,
     /**
      * The rows above the display that autowrap joins to its first line, at most [rows] of them,
      * from the top, for finding the links that the display cuts (docs/decisions/0019).

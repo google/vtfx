@@ -302,10 +302,7 @@ public class LinkFinder(private val patterns: List<LinkPattern>) {
         if (patterns.isNotEmpty()) {
             // The display, with the rows of the lines it cuts.
             val above = snapshot.linesAbove.size
-            val lines =
-                snapshot.linesAbove +
-                    List(snapshot.rows) { snapshot.line(it) } +
-                    snapshot.linesBelow
+            val lines = snapshot.linesAbove + snapshot.lines + snapshot.linesBelow
             var row = 0
             while (row < lines.size) {
                 val first = row
