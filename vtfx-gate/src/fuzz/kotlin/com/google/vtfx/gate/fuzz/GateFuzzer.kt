@@ -94,11 +94,14 @@ object GateFuzzer {
             )
         // Like TerminalSession, hands the gate the events of each write together.
         val events = mutableListOf<TerminalEvent>()
-        // The texts that the host asked to write to the clipboard, which a read after them may
-        // reply with if the policy allows writing them.
-        val requestedWrites = mutableSetOf<String>()
         val terminal = Terminal(columns, rows) { events += it }
         if (cellWidth != 0 && cellHeight != 0) terminal.setCellSize(cellWidth, cellHeight)
+        val allowed = buildList {
+            add(KnownReplies.pattern.pattern)
+            if (reportsColors) add(COLOR_REPLY)
+        }
+            .joinToString("|")
+            .toRegex()
         for (part in output.split(SPLIT)) {
             val write =
                 if (part.size >= 3 && (part[0] == RESIZE || part[0] == CELL_SIZE)) {
@@ -114,40 +117,25 @@ object GateFuzzer {
                     part
                 }
             terminal.write(write)
-            for (event in events) {
-                if (event is TerminalEvent.ClipboardWriteRequested) requestedWrites += event.text
-            }
+            val repliesBefore = replies.size
             gate.handle(events.toList())
+            val readable = readableTexts(events, policy)
+            for (reply in replies.subList(repliesBefore, replies.size)) {
+                val clipboardData =
+                    if (policy.allowClipboardRead) CLIPBOARD_REPLY.matchEntire(reply) else null
+                if (clipboardData == null) {
+                    check(allowed.matches(reply)) { "unexpected reply: ${reply.escaped()}" }
+                } else {
+                    val data = clipboardData.groupValues[1]
+                    val text = String(Base64.getDecoder().decode(data), Charsets.UTF_8)
+                    check(data.isEmpty() || text in readable) {
+                        "unexpected clipboard reply: ${reply.escaped()}"
+                    }
+                }
+            }
             events.clear()
         }
 
-        val allowed = buildList {
-            add(KnownReplies.pattern.pattern)
-            if (reportsColors) add(COLOR_REPLY)
-        }
-            .joinToString("|")
-            .toRegex()
-        // The texts that a reply to a clipboard read may carry: the clipboard's, or one that the
-        // host wrote and the policy allows writing.
-        val readable = buildSet {
-            add(CLIPBOARD_TEXT)
-            if (policy.allowClipboardWrite) {
-                addAll(requestedWrites.filter { it.length <= policy.maxClipboardWriteLength })
-            }
-        }
-        for (reply in replies) {
-            val clipboardData =
-                if (policy.allowClipboardRead) CLIPBOARD_REPLY.matchEntire(reply) else null
-            if (clipboardData == null) {
-                check(allowed.matches(reply)) { "unexpected reply: ${reply.escaped()}" }
-            } else {
-                val data = clipboardData.groupValues[1]
-                val text = String(Base64.getDecoder().decode(data), Charsets.UTF_8)
-                check(data.isEmpty() || text in readable) {
-                    "unexpected clipboard reply: ${reply.escaped()}"
-                }
-            }
-        }
         val replyBytes = replies.sumOf { it.length }
         check(replyBytes <= MAX_REPLY_BYTES_PER_INPUT_BYTE * output.size) {
             "$replyBytes reply bytes for ${output.size}"
@@ -161,6 +149,37 @@ object GateFuzzer {
 
         checkPaste(String(output, Charsets.UTF_8))
     }
+
+    /**
+     * Returns the texts that replies to the clipboard reads among [events], the events of one
+     * write, may carry: for each read, the text of the latest write before it that [policy] allows,
+     * or the clipboard's if there is none (docs/design/gate-policy.md section 4.1). Which writes
+     * are allowed is written out here rather than taken from the gate, so that the oracle does not
+     * depend on the code it checks.
+     */
+    private fun readableTexts(events: List<TerminalEvent>, policy: GatePolicy): Set<String> {
+        val texts = mutableSetOf<String>()
+        var written: String? = null
+        for (event in events) {
+            when (event) {
+                is TerminalEvent.ClipboardWriteRequested ->
+                    if (isAllowedWrite(event.selection, event.text, policy)) written = event.text
+                is TerminalEvent.ClipboardReadRequested -> texts += written ?: CLIPBOARD_TEXT
+                is TerminalEvent.ReplyRequested,
+                is TerminalEvent.TitleChanged,
+                TerminalEvent.Bell -> {}
+            }
+        }
+        return texts
+    }
+
+    private fun isAllowedWrite(selection: String, text: String, policy: GatePolicy): Boolean =
+        policy.allowClipboardWrite &&
+            SELECTION.matches(selection) &&
+            text.length <= policy.maxClipboardWriteLength &&
+            text.none {
+                (it < ' ' && it !in "\t\n\r") || it in '\u007f'..'\u009f' || it in BIDI_CONTROLS
+            }
 
     /** A paste cannot end the bracket early or carry controls (requirement 6.1). */
     private fun checkPaste(text: String) {
@@ -212,8 +231,14 @@ object GateFuzzer {
     private const val MAX_REPLY_BYTES_PER_INPUT_BYTE = 16
 
     // xterm's selection targets, written out here rather than taken from vtfx-core or the gate, so
-    // that the oracle does not depend on the code it checks. Reads after the first of a write are
-    // replied to as empty.
+    // that the oracle does not depend on the code it checks.
+    private val SELECTION = Regex("[cpqs0-7]{1,16}")
+
+    /** The characters with the Bidi_Control property of Unicode. */
+    private const val BIDI_CONTROLS =
+        "\u061c\u200e\u200f\u202a\u202b\u202c\u202d\u202e\u2066\u2067\u2068\u2069"
+
+    // The data is empty for the reads after the first of a write.
     private val CLIPBOARD_REPLY =
         Regex("""\u001b\]52;[cpqs0-7]{1,16};([A-Za-z0-9+/]*={0,2})\u001b\\""")
 
