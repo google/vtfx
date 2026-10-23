@@ -30,10 +30,12 @@ import com.google.vtfx.gate.MouseReport
 import com.google.vtfx.gate.OpenUrlResult
 import com.google.vtfx.gate.ReportedColors
 import java.io.ByteArrayOutputStream
+import java.util.Collections
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
@@ -1165,6 +1167,71 @@ class TerminalSessionTest {
         feeding.feed("\u0007\u001b]52;c;Zmlyc3Q=\u0007".toByteArray())
 
         assertEquals(listOf("first", "second"), writes)
+    }
+
+    @Test
+    fun theRestartOfTheInputByFeedIsToldWithoutTheOutputLock() {
+        // The output moves the cursor to another line, which resets the IME editing model and
+        // restarts the input. An observer that waits for a feed on another thread would otherwise
+        // deadlock.
+        val resetting = TerminalSession({})
+        var otherFinished = false
+        resetting.addObserver(
+            RestartCounter {
+                val other = Thread { resetting.feed("\u001b[6n".toByteArray()) }
+                other.start()
+                other.join(TIMEOUT_MILLIS)
+                otherFinished = !other.isAlive
+            }
+        )
+        resetting.edit { it.commitText("ls") }
+
+        resetting.feed("\r\n\u001b[5n".toByteArray())
+
+        assertTrue(otherFinished)
+    }
+
+    @Test
+    fun stickyModifiersToldByTheResetOfAFeedComeAfterItsReplies() {
+        // The typist's key clears the sticky modifiers, and waits in its restart of the input
+        // before telling the listener. The feed's reset then tells the listener of the change, on
+        // the feeding thread, and the listener sends text, which must follow the feed's replies.
+        val sent = Collections.synchronizedList(mutableListOf<String>())
+        val feeder = AtomicReference<Thread?>(null)
+        val inRestart = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        lateinit var typing: TerminalSession
+        typing =
+            TerminalSession(
+                { sent += String(it, Charsets.UTF_8) },
+                listener =
+                    object : TerminalSessionListener {
+                        override fun onStickyModifiersChanged(modifiers: KeyModifiers) {
+                            if (Thread.currentThread() === feeder.get()) typing.sendText("x")
+                        }
+                    },
+            )
+        typing.addObserver(
+            RestartCounter {
+                if (Thread.currentThread() !== feeder.get()) {
+                    inRestart.countDown()
+                    release.await(TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
+                }
+            }
+        )
+        typing.stickyModifiers = KeyModifiers.of(ctrl = true)
+        val feeding = Thread { typing.feed("\r\n\u001b[5n".toByteArray()) }
+        feeder.set(feeding)
+        val typist = Thread { typing.sendKey(KeyStroke.Character('c'.code)) }
+        typist.start()
+        assertTrue(inRestart.await(TIMEOUT_MILLIS, TimeUnit.MILLISECONDS))
+
+        feeding.start()
+        feeding.join(TIMEOUT_MILLIS)
+        release.countDown()
+        typist.join(TIMEOUT_MILLIS)
+
+        assertEquals(listOf("\u0003", "\u001b[0n", "x"), sent.toList())
     }
 
     @Test

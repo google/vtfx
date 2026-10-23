@@ -179,8 +179,11 @@ public class TerminalSession(
      * Serializes [feed] from the interpretation of the output to the end of the gate's handling of
      * its requests, so that the replies and the clipboard writes of each feed reach the app in the
      * order the output was interpreted, also from several threads, and before the listener, which
-     * may call the session, hears of the output. Taken before [inputLock] and [lock], and held
-     * while the app's code behind the gate runs; it guards no state. Fair, like [inputLock].
+     * may call the session, hears of the output. Taken before [lock], and held while the app's code
+     * behind the gate runs, but not while the session tells the observers or the listener; it
+     * guards no state. Fair, like [inputLock]. An exception from the app's code behind the gate
+     * propagates without the observers and the listener being told of the output (rule 4 of
+     * docs/design/session-and-threads.md section 1.3).
      */
     private val outputLock = ReentrantLock(/* fair= */ true)
 
@@ -487,9 +490,9 @@ public class TerminalSession(
         val scrolledLines: Long
         val scrollbackShrank: Boolean
         val rang: Boolean
+        val moved: Boolean
         outputLock.withLock {
             val requests: List<TerminalEvent>
-            val moved: Boolean
             lock.withLock {
                 val lineChangesBefore = terminal.lineChanges
                 val scrollbackBefore = terminal.scrollbackSize
@@ -516,13 +519,15 @@ public class TerminalSession(
                 moved = terminal.lineChanges != lineChangesBefore
                 if (moved) hostResetPending = true
             }
-            // Applies the reset, unless an input operation on another thread already did.
-            if (moved) input {}
             // Inside the output lock, so that the requests of each feed are handled in the order
             // the output was interpreted, and before the observers and the listener, which may
             // call the session, hear of the output.
             gate.handle(requests)
         }
+        // Applies the reset, unless an input operation on another thread already did. After the
+        // output lock, since an input operation tells the observers and the listener, which may
+        // call the session; any input operation applies the reset before its edit anyway.
+        if (moved) input {}
         for (observer in observers) observer.onOutput(
             scrolledLines,
             scrollbackShrank,
