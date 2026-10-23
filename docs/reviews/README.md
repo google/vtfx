@@ -149,3 +149,4 @@ Only open reports are listed.
 
 | Report | Target | State |
 |---|---|---|
+| [2026-10-22-gate.md](2026-10-22-gate.md) | `b649be2a7d94a8b56c2921c235bdcef9c606f018` | Open |
