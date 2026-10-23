@@ -77,11 +77,15 @@ public sealed interface com.google.vtfx.core.KeyStroke {
 }
 
 public final data class com.google.vtfx.core.KeyStroke.Character : com.google.vtfx.core.KeyStroke {
-    public constructor(codePoint: kotlin.Int, modifiers: com.google.vtfx.core.KeyModifiers = ...)
-    public final fun copy(codePoint: kotlin.Int = ..., modifiers: com.google.vtfx.core.KeyModifiers = ...): com.google.vtfx.core.KeyStroke.Character
+    public constructor(codePoint: kotlin.Int, modifiers: com.google.vtfx.core.KeyModifiers, unshiftedCodePoint: kotlin.Int, baseLayoutCodePoint: kotlin.Int?)
+    public final fun copy(codePoint: kotlin.Int = ..., modifiers: com.google.vtfx.core.KeyModifiers = ..., unshiftedCodePoint: kotlin.Int = ..., baseLayoutCodePoint: kotlin.Int? = ...): com.google.vtfx.core.KeyStroke.Character
     public final operator fun component1(): kotlin.Int
     public final operator fun component2(): com.google.vtfx.core.KeyModifiers
+    public final operator fun component3(): kotlin.Int
+    public final operator fun component4(): kotlin.Int?
+    public final val baseLayoutCodePoint: kotlin.Int?
     public final val codePoint: kotlin.Int
+    public final val unshiftedCodePoint: kotlin.Int
     public open fun hashCode(): kotlin.Int
     public open fun toString(): kotlin.String
     public open operator fun equals(other: kotlin.Any?): kotlin.Boolean

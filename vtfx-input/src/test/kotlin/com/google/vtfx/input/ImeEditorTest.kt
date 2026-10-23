@@ -308,9 +308,9 @@ class ImeEditorTest {
     fun characterKeysOfHtAndLineBreaksInABatchEditAreSentAtOnce() {
         editor.beginBatchEdit()
         editor.commitText("a")
-        editor.onKeyDown(KeyStroke.Character('\t'.code))
+        editor.onKeyDown(characterKey('\t'.code))
         editor.commitText("b")
-        editor.onKeyDown(KeyStroke.Character('\r'.code))
+        editor.onKeyDown(characterKey('\r'.code))
         assertEquals(listOf(text("a"), tab, text("b"), enter), sent)
         assertEquals("", editor.text)
         assertFalse(editor.endBatchEdit())
@@ -322,10 +322,10 @@ class ImeEditorTest {
         // With modifiers, the key encoding would drop them as control characters.
         val ctrl = KeyModifiers.of(ctrl = true)
         val alt = KeyModifiers.of(alt = true)
-        editor.onKeyDown(KeyStroke.Character('\t'.code, ctrl))
-        editor.onKeyDown(KeyStroke.Character('\n'.code, alt))
-        editor.onKeyDown(KeyStroke.Character('\r'.code))
-        editor.onKeyDown(KeyStroke.Character('\t'.code))
+        editor.onKeyDown(characterKey('\t'.code, ctrl))
+        editor.onKeyDown(characterKey('\n'.code, alt))
+        editor.onKeyDown(characterKey('\r'.code))
+        editor.onKeyDown(characterKey('\t'.code))
         assertEquals(
             listOf<HostInput>(
                 HostInput.Key(KeyStroke.Special(TerminalKey.Tab, ctrl)),
@@ -536,7 +536,7 @@ class ImeEditorTest {
         val commits =
             listOf<Pair<String, (ImeEditor) -> Unit>>(
                 "setComposingRegion(0, 0)" to { it.setComposingRegion(0, 0) },
-                "onKeyDown(q)" to { it.onKeyDown(KeyStroke.Character('q'.code)) },
+                "onKeyDown(q)" to { it.onKeyDown(characterKey('q'.code)) },
                 "onKeyDown(Left)" to { it.onKeyDown(KeyStroke.Special(TerminalKey.Left)) },
                 "closeConnection" to { it.closeConnection() },
                 "typeText" to { it.typeText("t") },
@@ -732,7 +732,7 @@ class ImeEditorTest {
     @Test
     fun characterKeyIsCommittedAfterTheComposingTextAndResets() {
         editor.setComposingText("か")
-        editor.onKeyDown(KeyStroke.Character('x'.code))
+        editor.onKeyDown(characterKey('x'.code))
         assertEquals(listOf<HostInput>(text("かx")), sent)
         // The IME still has the composing text, which the host received (docs/decisions/0054).
         assertEquals("", editor.text)
@@ -742,7 +742,7 @@ class ImeEditorTest {
     @Test
     fun otherKeysSendTheCompositionFirstAndReset() {
         val left = KeyStroke.Special(TerminalKey.Left)
-        val ctrlC = KeyStroke.Character('c'.code, KeyModifiers.of(ctrl = true))
+        val ctrlC = characterKey('c'.code, KeyModifiers.of(ctrl = true))
         editor.setComposingText("あ")
         editor.onKeyDown(left)
         editor.onKeyDown(ctrlC)
@@ -871,7 +871,7 @@ class ImeEditorTest {
     @Test
     fun aCharacterKeyWithoutComposingTextKeepsTheHistory() {
         editor.commitText("a")
-        editor.onKeyDown(KeyStroke.Character('b'.code))
+        editor.onKeyDown(characterKey('b'.code))
         assertEquals("ab", editor.text)
         assertEquals(0, restarts)
     }
@@ -947,3 +947,7 @@ class ImeEditorTest {
         assertEquals(listOf(delete(1), text("\ud83d\ude00")), sent)
     }
 }
+
+/** A character key with no place on a keyboard, as a key bar of an app sends. */
+private fun characterKey(codePoint: Int, modifiers: KeyModifiers = KeyModifiers.None) =
+    KeyStroke.Character(codePoint, modifiers, Character.toLowerCase(codePoint), null)

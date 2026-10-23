@@ -140,23 +140,49 @@ public sealed interface KeyStroke {
     ) : KeyStroke
 
     /**
-     * A key that produces a character. Shift is already applied to
-     * [codePoint][KeyStroke.Character.codePoint], so [modifiers][KeyStroke.Character.modifiers]
-     * should not include it unless the platform reports it separately.
+     * A key that produces a character. Shift and Caps Lock are already applied to
+     * [codePoint][KeyStroke.Character.codePoint]. [modifiers][KeyStroke.Character.modifiers]
+     * include Shift if it was held, which xterm's encoding ignores for characters.
+     *
+     * The kitty keyboard protocol identifies the key by
+     * [unshiftedCodePoint][KeyStroke.Character.unshiftedCodePoint], so that Ctrl+Shift+1 is the `1`
+     * key with Shift and Ctrl, and reports
+     * [baseLayoutCodePoint][KeyStroke.Character.baseLayoutCodePoint] for programs that match
+     * shortcuts by the place of the key. A key that has no place on a keyboard, such as a button
+     * that sends a character, has its character in lower case as the unshifted key and no key of
+     * the base layout.
      *
      * @property codePoint The Unicode code point of the character.
+     * @property unshiftedCodePoint The code point of the character that the key produces without
+     *   modifiers, in the current layout: `1` for `!` from Shift+1, and `a` for `A` from Caps Lock.
+     * @property baseLayoutCodePoint The code point of the key at the same place on a US PC-101
+     *   keyboard without modifiers, or null if the key has no such place or it is unknown.
      */
     public data class Character(
         val codePoint: Int,
-        override val modifiers: KeyModifiers = KeyModifiers.None,
+        override val modifiers: KeyModifiers,
+        val unshiftedCodePoint: Int,
+        val baseLayoutCodePoint: Int?,
     ) : KeyStroke {
         init {
             require(java.lang.Character.isValidCodePoint(codePoint)) {
                 "invalid code point: $codePoint"
             }
+            require(java.lang.Character.isValidCodePoint(unshiftedCodePoint)) {
+                "invalid unshifted code point: $unshiftedCodePoint"
+            }
+            require(
+                baseLayoutCodePoint == null ||
+                    java.lang.Character.isValidCodePoint(baseLayoutCodePoint)
+            ) {
+                "invalid code point of the base layout: $baseLayoutCodePoint"
+            }
         }
 
         override fun toString(): String =
-            "Character(${String(java.lang.Character.toChars(codePoint))}, $modifiers)"
+            "Character(${string(codePoint)}, $modifiers, unshifted=${string(unshiftedCodePoint)}" +
+                ", base=${baseLayoutCodePoint?.let(::string)})"
+
+        private fun string(codePoint: Int): String = String(java.lang.Character.toChars(codePoint))
     }
 }

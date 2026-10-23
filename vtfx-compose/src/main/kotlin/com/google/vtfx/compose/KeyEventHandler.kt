@@ -53,18 +53,38 @@ internal object KeyEventHandler {
         SPECIAL_KEYS[event.keyCode]?.let {
             return KeyStroke.Special(it, modifiers)
         }
-        // Shift is applied to the character; the other modifiers are sent separately.
+        // Shift is applied to the character; the other modifiers are sent separately. Shift is
+        // passed too, for the kitty keyboard protocol, which reports it (docs/decisions/0070).
         val metaState = event.metaState and NON_SHIFT_MODIFIERS.inv()
         val unicode = event.getUnicodeChar(metaState)
         if (unicode == 0 || unicode and KeyCharacterMap.COMBINING_ACCENT != 0) return null
+        // The key without modifiers may be a dead key, whose accent is the unshifted key, or
+        // produce nothing, leaving the character in lower case, as for a key with no place.
+        val unshifted = event.getUnicodeChar(0) and KeyCharacterMap.COMBINING_ACCENT_MASK
         return KeyStroke.Character(
             unicode,
-            KeyModifiers.of(alt = modifiers.alt, ctrl = modifiers.ctrl, meta = modifiers.meta),
+            modifiers,
+            if (unshifted != 0) unshifted else Character.toLowerCase(unicode),
+            BASE_LAYOUT_KEYS[event.scanCode]?.code,
         )
     }
 
     private const val NON_SHIFT_MODIFIERS =
         KeyEvent.META_CTRL_MASK or KeyEvent.META_ALT_MASK or KeyEvent.META_META_MASK
+
+    /**
+     * The keys of a US PC-101 keyboard without modifiers, by the Linux scan codes that Android
+     * reports for them. The key code would not do: the key character maps of some layouts map scan
+     * codes to other key codes (docs/decisions/0070).
+     */
+    private val BASE_LAYOUT_KEYS: Map<Int, Char> = buildMap {
+        "1234567890-=".forEachIndexed { i, c -> put(2 + i, c) }
+        "qwertyuiop[]".forEachIndexed { i, c -> put(16 + i, c) }
+        "asdfghjkl;'`".forEachIndexed { i, c -> put(30 + i, c) }
+        put(43, '\\')
+        "zxcvbnm,./".forEachIndexed { i, c -> put(44 + i, c) }
+        put(57, ' ')
+    }
 
     private val SPECIAL_KEYS =
         mapOf(

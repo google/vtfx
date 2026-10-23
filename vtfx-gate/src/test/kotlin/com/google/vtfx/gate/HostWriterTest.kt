@@ -58,7 +58,7 @@ class HostWriterTest {
 
     @Test
     fun characterKeyOfAControlSendsNothing() {
-        writer.sendKey(KeyStroke.Character(0x1B, KeyModifiers.of(alt = true)), terminalModes())
+        writer.sendKey(characterKey(0x1B, KeyModifiers.of(alt = true)), terminalModes())
         assertEquals(emptyList(), sent)
     }
 
@@ -77,7 +77,7 @@ class HostWriterTest {
             terminalModes(applicationCursorKeys = true),
         )
         writer.sendKey(KeyStroke.Special(TerminalKey.Enter), terminalModes(newLine = true))
-        writer.sendKey(KeyStroke.Character('c'.code, KeyModifiers.of(ctrl = true)), terminalModes())
+        writer.sendKey(characterKey('c'.code, KeyModifiers.of(ctrl = true)), terminalModes())
         assertEquals(listOf("\u001b[A", "\u001bOA", "\r\n", "\u0003"), sent)
     }
 
@@ -162,3 +162,7 @@ class HostWriterTest {
         assertEquals(false, writer.isWritingOnCurrentThread())
     }
 }
+
+/** A character key with no place on a keyboard, as a key bar of an app sends. */
+private fun characterKey(codePoint: Int, modifiers: KeyModifiers = KeyModifiers.None) =
+    KeyStroke.Character(codePoint, modifiers, Character.toLowerCase(codePoint), null)

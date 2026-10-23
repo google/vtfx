@@ -372,11 +372,18 @@ public class TerminalSession(
         val first = text.codePointAt(0)
         // HT, the only control that the editing model's text has (line breaks are keys or a
         // paste), is the Tab key, which the key encoding has with every modifier: it drops a
-        // control character with modifiers, which would send nothing.
+        // control character with modifiers, which would send nothing. Text has no key on a
+        // keyboard, so its unshifted key is the character in lower case (docs/decisions/0070).
         val stroke =
             withStickyModifiers(
                 if (first == '\t'.code) KeyStroke.Special(TerminalKey.Tab)
-                else KeyStroke.Character(first)
+                else
+                    KeyStroke.Character(
+                        first,
+                        KeyModifiers.None,
+                        Character.toLowerCase(first),
+                        null,
+                    )
             )
         outbox += { writer.sendKey(stroke, modes) }
         val rest = text.substring(Character.charCount(first))

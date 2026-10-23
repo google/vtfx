@@ -70,7 +70,7 @@ class KeyEncoderTest {
         val strokes =
             TerminalKey.entries.flatMap { key -> modifiers.map { KeyStroke.Special(key, it) } } +
                 codePoints.flatMap { codePoint ->
-                    modifiers.map { KeyStroke.Character(codePoint, it) }
+                    modifiers.map { KeyStroke.Character(codePoint, it, codePoint, null) }
                 }
         for (stroke in strokes) {
             for (mode in modes) {
@@ -102,8 +102,9 @@ class KeyEncoderTest {
         private fun special(key: TerminalKey, modifiers: KeyModifiers = KeyModifiers.None) =
             KeyStroke.Special(key, modifiers)
 
+        /** A character key with no place on a keyboard, as a key bar of an app sends. */
         private fun char(c: Char, modifiers: KeyModifiers = KeyModifiers.None) =
-            KeyStroke.Character(c.code, modifiers)
+            KeyStroke.Character(c.code, modifiers, Character.toLowerCase(c.code), null)
 
         private fun case(
             stroke: KeyStroke,

@@ -99,15 +99,18 @@ public abstract interface class com/google/vtfx/core/KeyStroke {
 }
 
 public final class com/google/vtfx/core/KeyStroke$Character : com/google/vtfx/core/KeyStroke {
-	public synthetic fun <init> (IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (IIILjava/lang/Integer;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()I
 	public final fun component2-wcG754k ()I
-	public final fun copy-LZWaOlk (II)Lcom/google/vtfx/core/KeyStroke$Character;
-	public static synthetic fun copy-LZWaOlk$default (Lcom/google/vtfx/core/KeyStroke$Character;IIILjava/lang/Object;)Lcom/google/vtfx/core/KeyStroke$Character;
+	public final fun component3 ()I
+	public final fun component4 ()Ljava/lang/Integer;
+	public final fun copy-gLOn3PI (IIILjava/lang/Integer;)Lcom/google/vtfx/core/KeyStroke$Character;
+	public static synthetic fun copy-gLOn3PI$default (Lcom/google/vtfx/core/KeyStroke$Character;IIILjava/lang/Integer;ILjava/lang/Object;)Lcom/google/vtfx/core/KeyStroke$Character;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBaseLayoutCodePoint ()Ljava/lang/Integer;
 	public final fun getCodePoint ()I
 	public fun getModifiers-wcG754k ()I
+	public final fun getUnshiftedCodePoint ()I
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }

@@ -19,6 +19,7 @@
 package com.google.vtfx.input
 
 import com.google.vtfx.core.InternalVtfxApi
+import com.google.vtfx.core.KeyModifiers
 import com.google.vtfx.core.KeyStroke
 import com.google.vtfx.core.TerminalKey
 
@@ -31,7 +32,7 @@ internal object HostileIme {
     val TEXTS = listOf("", "a", "ab ", "日本", "😀", "é", "x\ny", "\r\n", "\uD83D", "long text here")
     val KEYS =
         listOf(
-            KeyStroke.Character('q'.code),
+            KeyStroke.Character('q'.code, KeyModifiers.None, 'q'.code, 'q'.code),
             KeyStroke.Special(TerminalKey.Backspace),
             KeyStroke.Special(TerminalKey.Enter),
             KeyStroke.Special(TerminalKey.Left),

@@ -170,9 +170,22 @@ class ImeSpecTest {
         val shift = meta and META_SHIFT_ON != 0
         val name = keyCode.removePrefix("KEYCODE_")
         if (name.length == 1 && name[0] in 'A'..'Z') {
-            return KeyStroke.Character(if (shift) name[0].code else name[0].lowercaseChar().code)
+            val unshifted = name[0].lowercaseChar().code
+            return KeyStroke.Character(
+                if (shift) name[0].code else unshifted,
+                KeyModifiers.of(shift = shift),
+                unshifted,
+                unshifted,
+            )
         }
-        if (name.length == 1 && name[0] in '0'..'9') return KeyStroke.Character(name[0].code)
+        if (name.length == 1 && name[0] in '0'..'9') {
+            return KeyStroke.Character(
+                name[0].code,
+                KeyModifiers.of(shift = shift),
+                name[0].code,
+                name[0].code,
+            )
+        }
         val special =
             when (name) {
                 "ENTER",
@@ -195,10 +208,15 @@ class ImeSpecTest {
                 "COMMA" -> ','
                 "MINUS" -> '-'
                 "APOSTROPHE" -> '\''
-                "SLASH" -> if (shift) '?' else '/'
+                "SLASH" -> '/'
                 else -> throw AssertionError("unsupported key code $keyCode")
             }
-        return KeyStroke.Character(character.code)
+        return KeyStroke.Character(
+            if (shift && character == '/') '?'.code else character.code,
+            KeyModifiers.of(shift = shift),
+            character.code,
+            character.code,
+        )
     }
 
     private fun escape(bytes: ByteArray): String =

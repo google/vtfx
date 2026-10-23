@@ -16,6 +16,7 @@
 
 package com.google.vtfx.compose
 
+import android.view.KeyCharacterMap
 import android.view.KeyEvent
 import com.google.vtfx.core.KeyModifiers
 import com.google.vtfx.core.KeyStroke
@@ -30,8 +31,19 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [SDK])
 class KeyEventHandlerTest {
-    private fun key(keyCode: Int, metaState: Int = 0) =
-        KeyEventHandler.toKeyStroke(KeyEvent(0, 0, KeyEvent.ACTION_DOWN, keyCode, 0, metaState))
+    private fun key(keyCode: Int, metaState: Int = 0, scanCode: Int = 0) =
+        KeyEventHandler.toKeyStroke(
+            KeyEvent(
+                0,
+                0,
+                KeyEvent.ACTION_DOWN,
+                keyCode,
+                0,
+                metaState,
+                KeyCharacterMap.VIRTUAL_KEYBOARD,
+                scanCode,
+            )
+        )
 
     @Test
     fun specialKeys() {
@@ -47,18 +59,53 @@ class KeyEventHandlerTest {
 
     @Test
     fun charactersApplyShiftOnly() {
-        assertEquals(KeyStroke.Character('a'.code), key(KeyEvent.KEYCODE_A))
+        assertEquals(KeyStroke.Character('a'.code, none, 'a'.code, null), key(KeyEvent.KEYCODE_A))
         assertEquals(
-            KeyStroke.Character('A'.code),
-            key(KeyEvent.KEYCODE_A, KeyEvent.META_SHIFT_ON or KeyEvent.META_SHIFT_LEFT_ON),
+            KeyStroke.Character('A'.code, shift, 'a'.code, null),
+            key(KeyEvent.KEYCODE_A, SHIFT),
         )
         assertEquals(
-            KeyStroke.Character('c'.code, KeyModifiers.of(ctrl = true)),
-            key(KeyEvent.KEYCODE_C, KeyEvent.META_CTRL_ON or KeyEvent.META_CTRL_LEFT_ON),
+            KeyStroke.Character('c'.code, KeyModifiers.of(ctrl = true), 'c'.code, null),
+            key(KeyEvent.KEYCODE_C, CTRL),
         )
         assertEquals(
-            KeyStroke.Character('x'.code, KeyModifiers.of(alt = true)),
+            KeyStroke.Character('x'.code, KeyModifiers.of(alt = true), 'x'.code, null),
             key(KeyEvent.KEYCODE_X, KeyEvent.META_ALT_ON or KeyEvent.META_ALT_LEFT_ON),
+        )
+    }
+
+    @Test
+    fun charactersCarryTheKeyWithoutShift() {
+        assertEquals(
+            KeyStroke.Character(
+                '!'.code,
+                KeyModifiers.of(shift = true, ctrl = true),
+                '1'.code,
+                null,
+            ),
+            key(KeyEvent.KEYCODE_1, SHIFT or CTRL),
+        )
+    }
+
+    @Test
+    fun charactersCarryTheKeyOfTheBaseLayoutFromTheScanCode() {
+        // Linux scan codes: 16 is the place of Q, 2 of 1, and 43 of the backslash.
+        assertEquals(
+            KeyStroke.Character('a'.code, none, 'a'.code, 'q'.code),
+            key(KeyEvent.KEYCODE_A, scanCode = 16),
+        )
+        assertEquals(
+            KeyStroke.Character('!'.code, shift, '1'.code, '1'.code),
+            key(KeyEvent.KEYCODE_1, SHIFT, scanCode = 2),
+        )
+        assertEquals(
+            KeyStroke.Character('\\'.code, none, '\\'.code, '\\'.code),
+            key(KeyEvent.KEYCODE_BACKSLASH, scanCode = 43),
+        )
+        // A scan code that is not on a US PC-101 keyboard, such as that of the ISO key 102nd.
+        assertEquals(
+            KeyStroke.Character('a'.code, none, 'a'.code, null),
+            key(KeyEvent.KEYCODE_A, scanCode = 86),
         )
     }
 
@@ -66,5 +113,12 @@ class KeyEventHandlerTest {
     fun nonTerminalKeysAreNotHandled() {
         assertNull(key(KeyEvent.KEYCODE_BACK))
         assertNull(key(KeyEvent.KEYCODE_VOLUME_UP))
+    }
+
+    private companion object {
+        const val SHIFT = KeyEvent.META_SHIFT_ON or KeyEvent.META_SHIFT_LEFT_ON
+        const val CTRL = KeyEvent.META_CTRL_ON or KeyEvent.META_CTRL_LEFT_ON
+        val none = KeyModifiers.None
+        val shift = KeyModifiers.of(shift = true)
     }
 }

@@ -409,15 +409,15 @@ class TerminalSessionTest {
         session.stickyModifiers = KeyModifiers.of(shift = true)
         session.sendText("\t")
         session.stickyModifiers = KeyModifiers.of(shift = true)
-        session.sendKey(KeyStroke.Character('\t'.code))
+        session.sendKey(characterKey('\t'.code))
         assertEquals("\u001b[Z\u001b[Z", sent.toString())
     }
 
     @Test
     fun characterKeysOfHtAndLineBreaksWithModifiersAreTheTabAndEnterKeys() {
-        session.sendKey(KeyStroke.Character('\t'.code, KeyModifiers.of(alt = true)))
-        session.sendKey(KeyStroke.Character('\r'.code, KeyModifiers.of(alt = true)))
-        session.sendKey(KeyStroke.Character('\n'.code, KeyModifiers.of(ctrl = true)))
+        session.sendKey(characterKey('\t'.code, KeyModifiers.of(alt = true)))
+        session.sendKey(characterKey('\r'.code, KeyModifiers.of(alt = true)))
+        session.sendKey(characterKey('\n'.code, KeyModifiers.of(ctrl = true)))
         assertEquals("\u001b\t\u001b\r\r", sent.toString())
     }
 
@@ -695,7 +695,7 @@ class TerminalSessionTest {
     fun anAppKeyThatCommitsTheComposingTextRestartsTheIme() {
         // The IME would otherwise keep composing the text the host received, and send it again.
         session.edit { it.setComposingText("か") }
-        session.sendKey(KeyStroke.Character('x'.code))
+        session.sendKey(characterKey('x'.code))
         assertEquals("かx", sent.toString())
         assertEquals("", session.edit { it.text })
         assertEquals(1, restarts)
@@ -1222,7 +1222,7 @@ class TerminalSessionTest {
         typing.stickyModifiers = KeyModifiers.of(ctrl = true)
         val feeding = Thread { typing.feed("\r\n\u001b[5n".toByteArray()) }
         feeder.set(feeding)
-        val typist = Thread { typing.sendKey(KeyStroke.Character('c'.code)) }
+        val typist = Thread { typing.sendKey(characterKey('c'.code)) }
         typist.start()
         assertTrue(inRestart.await(TIMEOUT_MILLIS, TimeUnit.MILLISECONDS))
 
@@ -1423,3 +1423,7 @@ class TerminalSessionTest {
         const val TIMEOUT_MILLIS = 2000L
     }
 }
+
+/** A character key with no place on a keyboard, as a key bar of an app sends. */
+private fun characterKey(codePoint: Int, modifiers: KeyModifiers = KeyModifiers.None) =
+    KeyStroke.Character(codePoint, modifiers, Character.toLowerCase(codePoint), null)
