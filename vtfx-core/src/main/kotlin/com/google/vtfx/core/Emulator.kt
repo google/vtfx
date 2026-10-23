@@ -1128,7 +1128,7 @@ internal class Emulator(
         val screenStart = maxOf(0, result.rows.size - newRows)
         val screenRows = result.rows.subList(screenStart, result.rows.size).toMutableList()
         while (screenRows.size < newRows) screenRows += Line(newColumns)
-        scrollback.replaceAll(result.rows.subList(0, screenStart))
+        scrollback.replaceAll(result.rows.subList(0, screenStart), screenRows[0])
         mainScreen.replaceLines(screenRows, newColumns)
         val newCursorRow = (result.cursorRow - screenStart).coerceIn(0, newRows - 1)
         val newCursorColumn = result.cursorColumn.coerceIn(0, newColumns - 1)

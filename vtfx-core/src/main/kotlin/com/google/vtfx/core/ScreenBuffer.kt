@@ -115,15 +115,24 @@ internal class Scrollback(val capacity: Int) {
     /**
      * Replaces the lines with [newLines], oldest first, keeping the newest that fit. Their image
      * placements move here; the placements of the lines replaced must already have moved to
-     * [newLines] (reflow takes them along).
+     * [newLines] (reflow takes them along). The placements of the lines that do not fit move down
+     * to the first line kept, or to [nextLine], the line after [newLines] on the screen, if none is
+     * kept, unless none of their rows are left there (docs/decisions/0069).
      */
-    fun replaceAll(newLines: List<Line>) {
+    fun replaceAll(newLines: List<Line>, nextLine: Line) {
         generation++
         lines.clear()
         bytes = 0L
-        val kept = newLines.takeLast(capacity)
-        for (line in newLines.subList(0, newLines.size - kept.size)) line.killAnchors()
-        for (line in kept) add(line.compact(line.takeAnchors()), line.columns)
+        val dropped = newLines.size - minOf(newLines.size, capacity)
+        val target = newLines.getOrElse(dropped) { nextLine }
+        for (index in 0 until dropped) {
+            newLines[index].takeAnchors()?.forEach {
+                if (it.moveDown(dropped - index)) target.anchor(it, it.column)
+            }
+        }
+        for (line in newLines.subList(dropped, newLines.size)) {
+            add(line.compact(line.takeAnchors()), line.columns)
+        }
         // The serials are given once the budget has dropped what it drops.
         for ((index, line) in lines.withIndex()) {
             line.anchors?.forEach { it.moveToScrollback(firstSerial + index) }

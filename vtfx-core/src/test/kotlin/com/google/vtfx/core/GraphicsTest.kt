@@ -528,6 +528,34 @@ class GraphicsTest {
             snapshot().imagePlacements.single().let { Pair(it.row, it.column) }
 
         @Test
+        fun shrinkingWithoutAScrollbackKeepsPlacementsWithRowsLeft() {
+            val terminal =
+                terminal(columns = 10, rows = 5, limits = TerminalLimits(scrollbackLines = 0))
+            terminal.write("\u001b[2;1H")
+            terminal.place("i=1,c=1,r=3,C=1")
+            terminal.write("\u001b[5;1Hx")
+            // The two rows above go, and with them the image's top row.
+            terminal.resize(10, 3)
+            assertEquals(Pair(-1, 0), terminal.placed())
+            terminal.checkPlacements()
+            terminal.resize(10, 1)
+            assertEquals(0, terminal.graphicsLayer.placementCount)
+        }
+
+        @Test
+        fun shrinkingKeepsPlacementsWhoseRowsAreLeftInTheScrollback() {
+            val terminal =
+                terminal(columns = 10, rows = 5, limits = TerminalLimits(scrollbackLines = 1))
+            terminal.place("i=1,c=1,r=4,C=1")
+            terminal.write("\u001b[5;1Hx")
+            // Three rows leave the screen, of which the scrollback keeps the last.
+            terminal.resize(10, 2)
+            assertEquals(1, terminal.scrollbackSize)
+            assertEquals(Pair(-3, 0), terminal.placed())
+            terminal.checkPlacements()
+        }
+
+        @Test
         fun aLineWithOnlyAPlacementIsKeptByReflow() {
             val terminal = terminal(columns = 10, rows = 5)
             terminal.write("\u001b[4;5H")

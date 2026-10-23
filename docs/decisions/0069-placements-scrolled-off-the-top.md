@@ -10,7 +10,7 @@ A placement is anchored to the line of its top row ([0038](0038-kitty-graphics.m
 
 ## Decision
 
-- **When the line of a placement's top row scrolls off the top of the screen without going to the scrollback, or leaves the scrollback, the placement moves down to the line that takes that line's place** (the new top row, or the new oldest line of the scrollback) and remembers how many of its rows are above that line (`Placement.rowsAbove`). It goes once none of its rows are left. Its position, its size, and its source rectangle do not change: the rows above the top of the grid are cut when it is drawn, as for an image that starts in the scrollback. Section 9.5 of [emulation.md](../design/emulation.md) describes the result.
+- **When the line of a placement's top row scrolls off the top of the screen without going to the scrollback, or leaves the scrollback, also when a change of size moves lines off the screen, the placement moves down to the line that takes that line's place** (the new top row, or the new oldest line of the scrollback) and remembers how many of its rows are above that line (`Placement.rowsAbove`). It goes once none of its rows are left. Its position, its size, and its source rectangle do not change: the rows above the top of the grid are cut when it is drawn, as for an image that starts in the scrollback. Section 9.5 of [emulation.md](../design/emulation.md) describes the result.
 - **Lines deleted (DL) and lines scrolled off the top margin of a region below the top of the screen still take their placements.** Images are drawn from their anchor and not cut at the margins, so an image moved down to the region's new top row would be drawn over the rows above the region, which do not scroll, and would appear to move up over them on each scroll. Deleting lines does not scroll text off the screen.
 - **The memory estimate of a scrollback line does not count placements moved to it.** The limit on placements bounds them, as it bounds the placements in the scrollback.
 
@@ -22,4 +22,4 @@ A placement is anchored to the line of its top row ([0038](0038-kitty-graphics.m
 
 ## Impact of reversing
 
-Reversing brings back the deletion of an image as soon as its top row goes. It removes `Placement.rowsAbove` and its use in `GraphicsLayer.forEachAnchored`, the moving of anchors in `ScreenBuffer.scrollUp` and `Scrollback.add`, and `CompactLine.addAnchors`, and restores section 9.5 of emulation.md.
+Reversing brings back the deletion of an image as soon as its top row goes. It removes `Placement.rowsAbove` and its use in `GraphicsLayer.forEachAnchored`, the moving of anchors in `ScreenBuffer.scrollUp`, `Scrollback.add`, and `Scrollback.replaceAll`, and `CompactLine.addAnchors`, and restores section 9.5 of emulation.md.
