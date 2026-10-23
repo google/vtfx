@@ -64,7 +64,7 @@ The following queries are not answered (the model does not emit `ReplyRequested`
 
 ## 4. Clipboard
 
-The clipboard is reached through `ClipboardAccess`, which `vtfx-gate-android` implements and only `vtfx-gate` calls. Without a `ClipboardAccess`, every clipboard request is refused.
+The clipboard is reached through `ClipboardAccess`, which `vtfx-gate-android` implements and only `vtfx-gate` calls. Without a `ClipboardAccess`, every clipboard request is refused. `AndroidClipboard` in a context without the clipboard service (`Context.getSystemService` returns null) writes nothing and reads nothing, since `ClipboardAccess` must not throw.
 
 ### 4.1 OSC 52
 

@@ -59,6 +59,26 @@ class AndroidCapabilitiesTest {
     }
 
     @Test
+    fun clipboardWithoutTheServiceIgnoresWrites() {
+        val clipboard = AndroidClipboard(NoClipboardContext(application))
+
+        clipboard.write("copied")
+
+        assertNull(application.getSystemService(ClipboardManager::class.java).primaryClip)
+    }
+
+    @Test
+    fun clipboardWithoutTheServiceReadsNull() {
+        // The system clipboard has text, which a context without the service cannot reach.
+        AndroidClipboard(application).write("secret")
+        val clipboard = AndroidClipboard(NoClipboardContext(application))
+
+        val text = clipboard.read()
+
+        assertNull(text)
+    }
+
+    @Test
     fun urlsOpenOnlyBrowsableActivities() {
         AndroidUrlOpener(application).open("https://example.com/a")
         val intent = shadowOf(application).nextStartedActivity

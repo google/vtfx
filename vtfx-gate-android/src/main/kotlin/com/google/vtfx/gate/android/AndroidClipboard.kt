@@ -25,15 +25,23 @@ import com.google.vtfx.gate.ClipboardAccess
  * The system clipboard. vtfx-gate decides whether a request is allowed before calling this; this
  * class only performs it. Thread-safe.
  *
+ * On a device or in a context without the clipboard service, where `Context.getSystemService`
+ * returns null, writes do nothing and reads return null, since [ClipboardAccess] must not throw.
+ *
  * @param context A context to get the clipboard service from.
  */
 public class AndroidClipboard(context: Context) : ClipboardAccess {
-    private val clipboard = context.getSystemService(ClipboardManager::class.java)
+    // Typed explicitly: getSystemService is nullable, and a platform type would let a call on a
+    // missing service throw NullPointerException.
+    private val clipboard: ClipboardManager? =
+        context.getSystemService(ClipboardManager::class.java)
 
     /**
      * Replaces the clipboard with [text] as plain text, which the system's clipboard preview shows.
+     * Does nothing without the clipboard service.
      */
     override fun write(text: String) {
+        val clipboard = clipboard ?: return
         // Not marked sensitive: the clipboard preview shows the text, so that the user sees what
         // the host put there with OSC 52 (docs/decisions/0006).
         clipboard.setPrimaryClip(ClipData.newPlainText(LABEL, text))
@@ -41,9 +49,10 @@ public class AndroidClipboard(context: Context) : ClipboardAccess {
 
     /**
      * Returns the clipboard text. Android lets only the app in the foreground with focus read the
-     * clipboard, so this returns null otherwise.
+     * clipboard, so this returns null otherwise, as it does without the clipboard service.
      */
     override fun read(): String? {
+        val clipboard = clipboard ?: return null
         val clip = clipboard.primaryClip ?: return null
         if (clip.itemCount == 0) return null
         return clip.getItemAt(0).text?.toString()
