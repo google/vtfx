@@ -1,6 +1,6 @@
 # Encoding keys in the gate
 
-- Status: Approved (2026-10-13, approved by a human in the final review)
+- Status: Approved (2026-10-13, approved by a human in the final review); the limit of the bytes to what xterm encodes superseded by [0070](0070-kitty-keyboard-protocol.md)
 - Date: 2026-10-12 (revised 2026-10-13)
 - Related: 3.1–3.3 of [architecture.md](../design/architecture.md), section 2 of [gate-policy.md](../design/gate-policy.md), `config/boundaries.toml`, `HostWriter.sendKey`
 
