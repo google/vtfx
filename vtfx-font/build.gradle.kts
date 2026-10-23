@@ -29,6 +29,35 @@ dependencies {
     api(project(":vtfx-font-gate"))
 }
 
+// Real fonts under the SIL Open Font License, which ThirdPartyFontsTest sanitizes
+// (docs/decisions/0071): one of each kind of font file, TrueType, CID-keyed CFF, and a collection.
+// They are on no classpath, so that no artifact can contain them, and the test reads them as files.
+// gradle/verification-metadata.xml pins their checksums.
+val thirdPartyFonts: Configuration =
+    configurations.create("thirdPartyFonts") {
+        isCanBeConsumed = false
+        isTransitive = false
+    }
+
+dependencies {
+    thirdPartyFonts("googlefonts:morisawa-biz-ud-gothic:18934af56b9c003ca58c54bffbf226848cb11032") {
+        artifact {
+            name = "fonts/ttf/BIZUDGothic-Regular"
+            extension = "ttf"
+        }
+    }
+    thirdPartyFonts("notofonts:noto-cjk:523d033d6cb47f4a80c58a35753646f5c3608a78") {
+        artifact {
+            name = "Sans/SubsetOTF/JP/NotoSansJP-Regular"
+            extension = "otf"
+        }
+        artifact {
+            name = "Sans/OTC/NotoSansCJK-Regular"
+            extension = "ttc"
+        }
+    }
+}
+
 // CanonicalFixturesTest checks that this module writes the canonical fonts that vtfx-font-gate's
 // tests check the verifier with. It reads them as files: those tests cannot depend on this module
 // (config/boundaries.toml), and the files are inputs, so that changing one runs the test again.
@@ -45,5 +74,21 @@ tasks.named<Test>("test") {
     systemProperty(
         "vtfx.canonicalFixturesActual",
         layout.buildDirectory.dir("canonical-fixtures").get().asFile.absolutePath,
+    )
+    val fonts: FileCollection = thirdPartyFonts
+    inputs
+        .files(fonts)
+        .withPathSensitivity(PathSensitivity.NAME_ONLY)
+        .withPropertyName("thirdPartyFonts")
+    // The directories of the files, each named by its checksum, are known only once they are
+    // downloaded, so the test is given the path of each font when it runs, by the name of the file
+    // without the commit that Gradle adds to it.
+    jvmArgumentProviders.add(
+        CommandLineArgumentProvider {
+            fonts.files.map {
+                val name = it.name.replace(Regex("-[0-9a-f]{40}(?=\\.)"), "")
+                "-Dvtfx.thirdPartyFont.$name=${it.absolutePath}"
+            }
+        }
     )
 }
