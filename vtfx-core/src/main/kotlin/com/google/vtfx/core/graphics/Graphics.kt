@@ -410,25 +410,27 @@ internal class Graphics(
                 if (placementId == 0L || placement.id == placementId) layer.remove(placement)
             }
         }
-        when (what.lowercaseChar()) {
+        val kind = what.lowercaseChar()
+        when (kind) {
             'i' -> layer.imageById(command.imageId)?.let { removeAll(it, command.placementId) }
             'n' ->
                 layer.newestImageByNumber(command.imageNumber)?.let {
                     removeAll(it, command.placementId)
                 }
             'r' ->
-                for (image in layer.images().toTypedArray()) {
+                // removeAll deletes no image here: they all have ids.
+                for (image in layer.images()) {
                     if (image.id != 0L && image.id in command.x..command.y) removeAll(image, 0L)
                 }
             'f' -> return
             else -> {
                 val matches: (Placement, Int) -> Boolean =
-                    when (what.lowercaseChar()) {
+                    when (kind) {
                         'a' -> { _, _ ->
                             true
                         }
                         'c' -> { p, row ->
-                            p.covers(row, screen.cursorRow, screen.cursorColumn)
+                            p.covers(row, screen.cursorRow.toLong(), screen.cursorColumn.toLong())
                         }
                         'p' -> { p, row ->
                             p.covers(row, command.y - 1, command.x - 1)
@@ -437,10 +439,10 @@ internal class Graphics(
                             p.z == command.z && p.covers(row, command.y - 1, command.x - 1)
                         }
                         'x' -> { p, _ ->
-                            p.column <= command.x - 1 && command.x - 1 < p.column + p.columns
+                            command.x - 1 in p.column until p.column + p.columns
                         }
                         'y' -> { p, row ->
-                            row <= command.y - 1 && command.y - 1 < row + p.rows
+                            command.y - 1 in row until row + p.rows
                         }
                         'z' -> { p, _ ->
                             p.z == command.z
@@ -462,13 +464,7 @@ internal class Graphics(
     }
 
     private fun Placement.covers(row: Int, cellRow: Long, cellColumn: Long): Boolean =
-        cellRow >= row &&
-            cellRow < row + rows &&
-            cellColumn >= column &&
-            cellColumn < column + columns
-
-    private fun Placement.covers(row: Int, cellRow: Int, cellColumn: Int): Boolean =
-        covers(row, cellRow.toLong(), cellColumn.toLong())
+        cellRow in row until row + rows && cellColumn in column until column + columns
 
     /** Deletes the placements visible on [screen]'s screen, as clearing the screen does. */
     fun deleteVisible(layer: GraphicsLayer, rows: Int) {
