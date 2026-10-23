@@ -69,26 +69,7 @@ class CanonicalFixturesTest {
     /** Composite glyphs, variation sequences in cmap format 14, and an empty glyph. */
     @Test
     fun variationsFontIsSanitizedToItsFixture() {
-        val input =
-            TestTrueTypeFont(
-                    glyphs =
-                        listOf(
-                            TestGlyph.Simple(listOf(square(0, 0, 500))),
-                            TestGlyph.Simple(
-                                listOf(
-                                    listOf(P(0, 0), P(300, 700, on = false), P(600, 0)),
-                                    square(1000, 1000, 1),
-                                )
-                            ),
-                            TestGlyph.Composite(
-                                listOf(TestComponent(1, 0, 0), TestComponent(0, 10, 300))
-                            ),
-                            TestGlyph.Empty(),
-                        ),
-                    characters = mapOf(0x41 to 1, 0x42 to 2, 0x43 to 3, 0x845B to 1),
-                    variations = mapOf(0xE0100 to Pair(listOf(0x845B), mapOf(0x845B to 2))),
-                )
-                .build()
+        val input = variationsTestFont().build()
 
         val font = sanitized(input)
 
@@ -180,3 +161,25 @@ class CanonicalFixturesTest {
         assertIsFixture("fewer-points.ttf", font)
     }
 }
+
+/**
+ * A test font with composite glyphs, variation sequences in cmap format 14, and an empty glyph; the
+ * input of the fixture variations.ttf.
+ */
+internal fun variationsTestFont(): TestTrueTypeFont =
+    TestTrueTypeFont(
+        glyphs =
+            listOf(
+                TestGlyph.Simple(listOf(square(0, 0, 500))),
+                TestGlyph.Simple(
+                    listOf(
+                        listOf(P(0, 0), P(300, 700, on = false), P(600, 0)),
+                        square(1000, 1000, 1),
+                    )
+                ),
+                TestGlyph.Composite(listOf(TestComponent(1, 0, 0), TestComponent(0, 10, 300))),
+                TestGlyph.Empty(),
+            ),
+        characters = mapOf(0x41 to 1, 0x42 to 2, 0x43 to 3, 0x845B to 1),
+        variations = mapOf(0xE0100 to Pair(listOf(0x845B), mapOf(0x845B to 2))),
+    )

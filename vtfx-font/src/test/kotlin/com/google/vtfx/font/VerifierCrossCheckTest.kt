@@ -34,25 +34,7 @@ class VerifierCrossCheckTest {
     /** A canonical font with composite glyphs, variation sequences, and an empty glyph. */
     private val canonical: ByteArray =
         FontFile.sanitize(
-                TestTrueTypeFont(
-                        glyphs =
-                            listOf(
-                                TestGlyph.Simple(listOf(square(0, 0, 500))),
-                                TestGlyph.Simple(
-                                    listOf(
-                                        listOf(P(0, 0), P(300, 700, on = false), P(600, 0)),
-                                        square(1000, 1000, 1),
-                                    )
-                                ),
-                                TestGlyph.Composite(
-                                    listOf(TestComponent(1, 0, 0), TestComponent(0, 10, 300))
-                                ),
-                                TestGlyph.Empty(),
-                            ),
-                        characters = mapOf(0x41 to 1, 0x42 to 2, 0x43 to 3, 0x845B to 1),
-                        variations = mapOf(0xE0100 to Pair(listOf(0x845B), mapOf(0x845B to 2))),
-                    )
-                    .build(),
+                variationsTestFont().build(),
                 0,
                 limits,
             )
