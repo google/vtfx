@@ -164,10 +164,7 @@ private constructor(
         private set
 
     init {
-        for (text in texts) {
-            find(text, closing = true)
-            closedCount = kept.size
-        }
+        for (text in texts) find(text, closing = true)
     }
 
     /** The matches, oldest first, ordered by their first cell. */
@@ -228,7 +225,6 @@ private constructor(
             find(text, closing)
             if (closing) {
                 texts.addLast(text)
-                closedCount = kept.size
                 nextLine = text.lastLine + 1
             }
             row++
@@ -260,11 +256,12 @@ private constructor(
     /** Adds [match], of a line that goes into [texts] if [closing]. */
     private fun add(closing: Boolean, match: SearchMatch) {
         kept.addLast(match)
+        if (closing) closedCount++
         if (kept.size <= MAX_MATCHES) return
         val dropped = kept.removeFirst()
         // The oldest match is of a line in texts, or else of the line being searched.
-        if (closedCount > 0 || closing) {
-            if (closedCount > 0) closedCount--
+        if (closedCount > 0) {
+            closedCount--
             droppedClosedLine = maxOf(droppedClosedLine, dropped.firstLine)
         } else {
             droppedOpen = true
