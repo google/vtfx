@@ -75,9 +75,6 @@ public class TerminalColors(
         require(this.palette.size == ANSI_COLORS) { "palette must have $ANSI_COLORS colors" }
     }
 
-    private val indexed: List<Color> =
-        palette + List(INDEXED_COLORS - ANSI_COLORS) { xtermColor(it + ANSI_COLORS) }
-
     /** These colors as the replies to the host's color queries report them. */
     internal val reportedColors: ReportedColors = ReportedColors { target ->
         val color =
@@ -85,7 +82,7 @@ public class TerminalColors(
                 ColorTarget.Foreground -> foreground
                 ColorTarget.Background -> background
                 ColorTarget.Cursor -> cursor
-                is ColorTarget.Palette -> indexed[target.index]
+                is ColorTarget.Palette -> indexed(target.index)
             }
         color.toArgb() and 0xFFFFFF
     }
@@ -145,13 +142,21 @@ public class TerminalColors(
     internal fun resolve(color: TerminalColor, default: Color): Color =
         when {
             color.isDefault -> default
-            color.isIndexed -> indexed[color.index]
+            color.isIndexed -> indexed(color.index)
             else -> Color(0xFF000000.toInt() or color.rgb)
         }
+
+    /** Returns the color of [index] of the 256 colors: the palette, then xterm's colors. */
+    private fun indexed(index: Int): Color =
+        if (index < ANSI_COLORS) palette[index] else XTERM_COLORS[index - ANSI_COLORS]
 
     public companion object {
         private const val ANSI_COLORS = 16
         private const val INDEXED_COLORS = 256
+
+        /** xterm's colors 16 to 255, which do not depend on the palette. */
+        private val XTERM_COLORS: List<Color> =
+            List(INDEXED_COLORS - ANSI_COLORS) { xtermColor(it + ANSI_COLORS) }
 
         /**
          * Translucent blue, which shows on both dark and light backgrounds. Declared before [Dark]
