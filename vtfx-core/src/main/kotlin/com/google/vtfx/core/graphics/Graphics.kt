@@ -162,12 +162,7 @@ internal class Graphics(
 
     private fun finish(loading: Transmission, screen: Screen) {
         val command = loading.command
-        val decoded = decode(loading)
-        val image = decoded.first
-        if (image == null) {
-            respond(command, decoded.second)
-            return
-        }
+        val image = decode(loading) ?: return
         if (command.action == 'q') {
             respond(command, GraphicsStatus.Ok)
             return
@@ -197,14 +192,18 @@ internal class Graphics(
         }
     }
 
-    /** Returns the image, or null and why it could not be made. */
-    private fun decode(loading: Transmission): Pair<TerminalImage?, GraphicsStatus> {
+    /** Returns the image, or replies why it could not be made and returns null. */
+    private fun decode(loading: Transmission): TerminalImage? {
         val command = loading.command
-        if (command.medium != 'd') return Pair(null, GraphicsStatus.UnsupportedMedium)
-        if (loading.overflowed) return Pair(null, GraphicsStatus.TooLarge)
+        fun fail(status: GraphicsStatus): TerminalImage? {
+            respond(command, status)
+            return null
+        }
+        if (command.medium != 'd') return fail(GraphicsStatus.UnsupportedMedium)
+        if (loading.overflowed) return fail(GraphicsStatus.TooLarge)
         val format = command.format
         if (format != 24L && format != 32L && format != 100L) {
-            return Pair(null, GraphicsStatus.InvalidCommand)
+            return fail(GraphicsStatus.InvalidCommand)
         }
         val maxPixels = minOf(maxBytes, MAX_BYTES_PER_IMAGE) / 4
         var data = loading.data
@@ -212,19 +211,19 @@ internal class Graphics(
         if (format != 100L) {
             val width = command.width
             val height = command.height
-            if (width == 0L || height == 0L) return Pair(null, GraphicsStatus.InvalidCommand)
+            if (width == 0L || height == 0L) return fail(GraphicsStatus.InvalidCommand)
             if (width > MAX_SIDE || height > MAX_SIDE || width * height > maxPixels) {
-                return Pair(null, GraphicsStatus.TooLarge)
+                return fail(GraphicsStatus.TooLarge)
             }
             val bytesPerPixel = if (format == 24L) 3 else 4
             val expected = (width * height * bytesPerPixel).toInt()
             if (command.compression == 'z') {
                 data =
                     Zlib.inflate(data, 0, size, expected)
-                        ?: return Pair(null, GraphicsStatus.InflateFailed)
+                        ?: return fail(GraphicsStatus.InflateFailed)
                 size = data.size
             }
-            if (size < expected) return Pair(null, GraphicsStatus.InsufficientData)
+            if (size < expected) return fail(GraphicsStatus.InsufficientData)
             val pixels = IntArray((width * height).toInt())
             var offset = 0
             for (i in pixels.indices) {
@@ -235,7 +234,7 @@ internal class Graphics(
                 pixels[i] = (a shl 24) or (r shl 16) or (g shl 8) or b
                 offset += bytesPerPixel
             }
-            return Pair(newImage(width.toInt(), height.toInt(), pixels), GraphicsStatus.Ok)
+            return newImage(width.toInt(), height.toInt(), pixels)
         }
         if (command.compression == 'z') {
             val limit =
@@ -243,21 +242,18 @@ internal class Graphics(
                 else loading.limit.toLong()
             data =
                 Zlib.inflate(data, 0, size, limit.toInt())
-                    ?: return Pair(null, GraphicsStatus.InflateFailed)
+                    ?: return fail(GraphicsStatus.InflateFailed)
             size = data.size
         }
-        val header = PngDecoder.readSize(data, 0, size) ?: return Pair(null, GraphicsStatus.BadPng)
+        val header = PngDecoder.readSize(data, 0, size) ?: return fail(GraphicsStatus.BadPng)
         if (header.width > MAX_SIDE || header.height > MAX_SIDE) {
-            return Pair(null, GraphicsStatus.TooLarge)
+            return fail(GraphicsStatus.TooLarge)
         }
         return when (val result = PngDecoder.decode(data, 0, size, maxPixels)) {
             is PngDecoder.Result.Decoded ->
-                Pair(
-                    newImage(result.image.width, result.image.height, result.image.pixels),
-                    GraphicsStatus.Ok,
-                )
-            PngDecoder.Result.TooLarge -> Pair(null, GraphicsStatus.TooLarge)
-            PngDecoder.Result.Malformed -> Pair(null, GraphicsStatus.BadPng)
+                newImage(result.image.width, result.image.height, result.image.pixels)
+            PngDecoder.Result.TooLarge -> fail(GraphicsStatus.TooLarge)
+            PngDecoder.Result.Malformed -> fail(GraphicsStatus.BadPng)
         }
     }
 
