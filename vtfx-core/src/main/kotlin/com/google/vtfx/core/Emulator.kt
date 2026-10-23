@@ -137,9 +137,6 @@ internal class Emulator(
             override val rows: Int
                 get() = this@Emulator.rows
 
-            override val columns: Int
-                get() = this@Emulator.columns
-
             override fun line(row: Int): Line = screen[row]
 
             override fun moveCursorAfterImage(columns: Int, rows: Int) =

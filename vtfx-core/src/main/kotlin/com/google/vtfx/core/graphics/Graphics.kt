@@ -40,7 +40,6 @@ internal class Graphics(
         val cursorColumn: Int
         val cursorRow: Int
         val rows: Int
-        val columns: Int
 
         fun line(row: Int): Line
 
@@ -111,7 +110,7 @@ internal class Graphics(
         val loading = transmission
         if (
             loading != null &&
-                (command.action == GraphicsCommand.NONE || command.action == loading.action)
+                (command.action == GraphicsCommand.NONE || command.action == loading.command.action)
         ) {
             continueTransmission(loading, command, data, screen)
             return
@@ -488,9 +487,6 @@ internal class Graphics(
         /** The most bytes kept; beyond it, the transmission fails. */
         val limit: Int,
     ) {
-        val action: Char
-            get() = command.action
-
         var data = ByteArray(minOf(limit, INITIAL_CAPACITY))
             private set
 
