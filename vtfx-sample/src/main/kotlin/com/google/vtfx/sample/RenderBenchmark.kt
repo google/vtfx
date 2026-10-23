@@ -66,8 +66,7 @@ class RenderBenchmark(private val activity: Activity, private val session: Termi
                     scenario = "scroll"
                     updates = 0
                     session.feed("\u001b[2J\u001b[H".toByteArray())
-                    activity.window.addOnFrameMetricsAvailableListener(listener, handler)
-                    handler.postDelayed(::update, WARM_UP_MILLIS)
+                    start()
                 }
                 "scroll" -> handler.postDelayed(::flood, WARM_UP_MILLIS)
             }
