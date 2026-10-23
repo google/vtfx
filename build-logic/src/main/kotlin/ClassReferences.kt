@@ -123,20 +123,15 @@ private class Collector : ClassVisitor(API) {
         addSignature(signature)
     }
 
-    override fun visitAnnotation(descriptor: String, visible: Boolean): AnnotationVisitor {
-        addDescriptor(descriptor)
-        return annotations
-    }
+    override fun visitAnnotation(descriptor: String, visible: Boolean): AnnotationVisitor =
+        annotation(descriptor)
 
     override fun visitTypeAnnotation(
         typeRef: Int,
         typePath: TypePath?,
         descriptor: String,
         visible: Boolean,
-    ): AnnotationVisitor {
-        addDescriptor(descriptor)
-        return annotations
-    }
+    ): AnnotationVisitor = annotation(descriptor)
 
     override fun visitRecordComponent(
         name: String,
@@ -146,20 +141,15 @@ private class Collector : ClassVisitor(API) {
         addDescriptor(descriptor)
         addSignature(signature)
         return object : RecordComponentVisitor(API) {
-            override fun visitAnnotation(descriptor: String, visible: Boolean): AnnotationVisitor {
-                addDescriptor(descriptor)
-                return annotations
-            }
+            override fun visitAnnotation(descriptor: String, visible: Boolean): AnnotationVisitor =
+                annotation(descriptor)
 
             override fun visitTypeAnnotation(
                 typeRef: Int,
                 typePath: TypePath?,
                 descriptor: String,
                 visible: Boolean,
-            ): AnnotationVisitor {
-                addDescriptor(descriptor)
-                return annotations
-            }
+            ): AnnotationVisitor = annotation(descriptor)
         }
     }
 
@@ -173,20 +163,15 @@ private class Collector : ClassVisitor(API) {
         addDescriptor(descriptor)
         addSignature(signature)
         return object : FieldVisitor(API) {
-            override fun visitAnnotation(descriptor: String, visible: Boolean): AnnotationVisitor {
-                addDescriptor(descriptor)
-                return annotations
-            }
+            override fun visitAnnotation(descriptor: String, visible: Boolean): AnnotationVisitor =
+                annotation(descriptor)
 
             override fun visitTypeAnnotation(
                 typeRef: Int,
                 typePath: TypePath?,
                 descriptor: String,
                 visible: Boolean,
-            ): AnnotationVisitor {
-                addDescriptor(descriptor)
-                return annotations
-            }
+            ): AnnotationVisitor = annotation(descriptor)
         }
     }
 
@@ -206,29 +191,21 @@ private class Collector : ClassVisitor(API) {
     private inner class Code : MethodVisitor(API) {
         override fun visitAnnotationDefault(): AnnotationVisitor = annotations
 
-        override fun visitAnnotation(descriptor: String, visible: Boolean): AnnotationVisitor {
-            addDescriptor(descriptor)
-            return annotations
-        }
+        override fun visitAnnotation(descriptor: String, visible: Boolean): AnnotationVisitor =
+            annotation(descriptor)
 
         override fun visitTypeAnnotation(
             typeRef: Int,
             typePath: TypePath?,
             descriptor: String,
             visible: Boolean,
-        ): AnnotationVisitor {
-            addDescriptor(descriptor)
-            return annotations
-        }
+        ): AnnotationVisitor = annotation(descriptor)
 
         override fun visitParameterAnnotation(
             parameter: Int,
             descriptor: String,
             visible: Boolean,
-        ): AnnotationVisitor {
-            addDescriptor(descriptor)
-            return annotations
-        }
+        ): AnnotationVisitor = annotation(descriptor)
 
         override fun visitTypeInsn(opcode: Int, type: String) {
             addInternalName(type)
@@ -276,20 +253,20 @@ private class Collector : ClassVisitor(API) {
             typePath: TypePath?,
             descriptor: String,
             visible: Boolean,
-        ): AnnotationVisitor {
-            addDescriptor(descriptor)
-            return annotations
-        }
+        ): AnnotationVisitor = annotation(descriptor)
 
         override fun visitTryCatchAnnotation(
             typeRef: Int,
             typePath: TypePath?,
             descriptor: String,
             visible: Boolean,
-        ): AnnotationVisitor {
-            addDescriptor(descriptor)
-            return annotations
-        }
+        ): AnnotationVisitor = annotation(descriptor)
+    }
+
+    /** Adds the type of an annotation, and returns the visitor of its values. */
+    private fun annotation(descriptor: String): AnnotationVisitor {
+        addDescriptor(descriptor)
+        return annotations
     }
 
     private fun addMember(
