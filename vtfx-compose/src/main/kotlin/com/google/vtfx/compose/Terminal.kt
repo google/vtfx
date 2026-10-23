@@ -412,9 +412,12 @@ internal fun Terminal(
             }
         }
         // Over the grid, without handling touches, so that a tap reaches the grid.
-        RowSemantics(gridRows, metrics, Modifier.matchParentSize().padding(style.padding)) { row ->
-            TerminalRowSemanticsElement(displayText, row)
-        }
+        RowSemantics(
+            gridRows,
+            metrics,
+            displayText,
+            Modifier.matchParentSize().padding(style.padding),
+        )
     }
 }
 
@@ -430,11 +433,11 @@ internal fun Terminal(
 private fun RowSemantics(
     rows: Int,
     metrics: CellMetrics,
+    displayText: DisplayText,
     modifier: Modifier,
-    element: (Int) -> Modifier,
 ) {
     Layout(
-        content = { repeat(rows) { row -> Box(element(row)) } },
+        content = { repeat(rows) { row -> Box(TerminalRowSemanticsElement(displayText, row)) } },
         modifier = modifier,
     ) { measurables, constraints ->
         // Rows do not overlap, although the cell height may be fractional.
