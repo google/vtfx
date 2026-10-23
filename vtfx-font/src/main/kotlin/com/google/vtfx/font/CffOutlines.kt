@@ -74,15 +74,11 @@ private class QuadraticPen(private val maxPoints: Int, tolerance: Double) : Cubi
 
     override fun moveTo(x: Double, y: Double) {
         closeContour()
-        point(x, y, on = true)
-        this.x = x
-        this.y = y
+        endAt(x, y)
     }
 
     override fun lineTo(x: Double, y: Double) {
-        point(x, y, on = true)
-        this.x = x
-        this.y = y
+        endAt(x, y)
     }
 
     override fun curveTo(x1: Double, y1: Double, x2: Double, y2: Double, x: Double, y: Double) {
@@ -94,9 +90,7 @@ private class QuadraticPen(private val maxPoints: Int, tolerance: Double) : Cubi
         checkCoordinate(y)
         val count = curves.approximate(this.x, this.y, x1, y1, x2, y2, x, y)
         for (i in 0 until count) point(curves.points[2 * i], curves.points[2 * i + 1], on = false)
-        point(x, y, on = true)
-        this.x = x
-        this.y = y
+        endAt(x, y)
     }
 
     /** The outline of the glyph drawn since the last call. */
@@ -104,6 +98,13 @@ private class QuadraticPen(private val maxPoints: Int, tolerance: Double) : Cubi
         closeContour()
         emitted = 0
         return builder.build()
+    }
+
+    /** Ends a segment at the point ([x], [y]) on the curve, where the next one starts. */
+    private fun endAt(x: Double, y: Double) {
+        point(x, y, on = true)
+        this.x = x
+        this.y = y
     }
 
     private fun point(x: Double, y: Double, on: Boolean) {
