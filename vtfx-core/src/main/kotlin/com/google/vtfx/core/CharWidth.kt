@@ -16,6 +16,8 @@
 
 package com.google.vtfx.core
 
+import com.google.vtfx.core.graphics.Placeholders
+
 // The tables (UnicodeWidthTables) are generated from the Unicode Character Database in
 // third_party/unicode by scripts/generate_unicode_tables.py. The policy is in
 // docs/decisions/0011.
@@ -45,14 +47,11 @@ public object CharWidth {
             ZERO -> 0
             WIDE -> 2
             AMBIGUOUS ->
-                if (ambiguousWidth == AmbiguousWidth.Wide && codePoint != IMAGE_PLACEHOLDER) 2
+                if (ambiguousWidth == AmbiguousWidth.Wide && codePoint != Placeholders.CODE_POINT) 2
                 else 1
             else -> 1
         }
     }
-
-    /** The placeholder of an image of the kitty graphics protocol (docs/decisions/0038). */
-    private const val IMAGE_PLACEHOLDER = 0x10EEEE
 
     private const val NARROW = 0
     private const val ZERO = 1
