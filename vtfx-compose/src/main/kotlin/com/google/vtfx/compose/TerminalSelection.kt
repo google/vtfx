@@ -63,11 +63,6 @@ internal data class TerminalSelection(
     val end: Cell
         get() = maxOf(anchor, focus)
 
-    fun contains(column: Int, row: Int): Boolean {
-        val cell = Cell(column, row)
-        return cell >= start && cell <= end
-    }
-
     /**
      * Returns the selected text of [snapshot]. Lines are separated by "\n" unless the line was
      * wrapped by autowrap, and trailing blanks of each line are dropped. Wide characters are
