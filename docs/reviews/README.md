@@ -154,3 +154,4 @@ Only open reports are listed.
 | [2026-10-22-core.md](2026-10-22-core.md) | `b649be2a7d94a8b56c2921c235bdcef9c606f018` | Open |
 | [2026-10-22-session-input.md](2026-10-22-session-input.md) | `b649be2a7d94a8b56c2921c235bdcef9c606f018` | Open |
 | [2026-10-22-compose-sample.md](2026-10-22-compose-sample.md) | `b649be2a7d94a8b56c2921c235bdcef9c606f018` | Open |
+| [2026-10-22-build-cross.md](2026-10-22-build-cross.md) | `b649be2a7d94a8b56c2921c235bdcef9c606f018` | Open |
