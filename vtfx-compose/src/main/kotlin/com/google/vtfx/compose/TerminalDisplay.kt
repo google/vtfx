@@ -120,8 +120,7 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
         val next = (scrollOffset + lines).coerceIn(0, limit)
         if (next == scrollOffset) return false
         scrollOffset = next
-        changeCount++
-        selection = null
+        onDisplayChanged()
         return true
     }
 
@@ -314,6 +313,11 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
     fun notifyEditorChanged() {
         editorVersion++
         scrollOffset = 0
+        onDisplayChanged()
+    }
+
+    /** Counts a change of the display in [changeCount], and drops the selection. */
+    private fun onDisplayChanged() {
         changeCount++
         selection = null
     }
@@ -420,8 +424,7 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
             runOnMain {
                 invalidationPending.set(false)
                 version++
-                changeCount++
-                selection = null
+                onDisplayChanged()
                 updateSearch()
                 inputHost?.onScreenChanged()
             }
