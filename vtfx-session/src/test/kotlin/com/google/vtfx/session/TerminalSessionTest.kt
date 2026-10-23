@@ -1056,12 +1056,14 @@ class TerminalSessionTest {
                 clipboard = clipboard,
             )
         val thread = Thread {
-            session.feed("\u001b[c\u001b]52;c;eA==\u0007\u001b]52;c;?\u0007".toByteArray())
+            // The read comes first, since a read after a write is answered with the written text
+            // without reading the clipboard.
+            session.feed("\u001b[c\u001b]52;c;?\u0007\u001b]52;c;eA==\u0007".toByteArray())
         }
         thread.start()
         thread.join()
         assertEquals(
-            listOf("host write", "clipboard write", "clipboard read", "host write"),
+            listOf("host write", "clipboard read", "host write", "clipboard write"),
             unblocked,
         )
     }

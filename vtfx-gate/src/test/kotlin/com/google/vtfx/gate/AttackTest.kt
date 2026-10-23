@@ -300,6 +300,107 @@ class AttackTest {
             assertEquals(2, clipboard.reads)
         }
 
+        // Only the last allowed write is performed, but a read between writes must not see the
+        // clipboard from before them, which another app may have put there.
+        @Test
+        fun readBetweenWritesIsAnsweredWithTheWriteBeforeIt() {
+            clipboard.text = "secret"
+            val gate = gate(GatePolicy(allowClipboardWrite = true, allowClipboardRead = true))
+
+            host(
+                gate,
+                "\u001b]52;c;${base64("first")}\u0007" +
+                    "\u001b]52;c;?\u0007" +
+                    "\u001b]52;c;${base64("second")}\u0007",
+            )
+
+            assertEquals(listOf("\u001b]52;c;${base64("first")}\u001b\\"), sent)
+            assertEquals(listOf("second"), clipboard.writes)
+            assertEquals(0, clipboard.reads)
+        }
+
+        @Test
+        fun readIsAnsweredWithTheLatestAllowedWriteBeforeIt() {
+            clipboard.text = "secret"
+            val gate =
+                gate(
+                    GatePolicy(
+                        allowClipboardWrite = true,
+                        allowClipboardRead = true,
+                        maxClipboardWriteLength = 5,
+                    )
+                )
+
+            // The second write is too long, and the third has a control: both are refused.
+            host(
+                gate,
+                "\u001b]52;c;${base64("first")}\u0007" +
+                    "\u001b]52;c;${base64("second")}\u0007" +
+                    "\u001b]52;c;${base64("a\u0000")}\u0007" +
+                    "\u001b]52;c;?\u0007",
+            )
+
+            assertEquals(listOf("\u001b]52;c;${base64("first")}\u001b\\"), sent)
+            assertEquals(listOf("first"), clipboard.writes)
+        }
+
+        @Test
+        fun readBeforeAnyWriteIsAnsweredFromTheClipboard() {
+            clipboard.text = "before"
+            val gate = gate(GatePolicy(allowClipboardWrite = true, allowClipboardRead = true))
+
+            host(gate, "\u001b]52;c;?\u0007\u001b]52;c;${base64("after")}\u0007")
+
+            assertEquals(listOf("\u001b]52;c;${base64("before")}\u001b\\"), sent)
+            assertEquals(listOf("after"), clipboard.writes)
+        }
+
+        @Test
+        fun readAfterADeniedWriteIsAnsweredFromTheClipboard() {
+            clipboard.text = "before"
+            val gate = gate(GatePolicy(allowClipboardRead = true))
+
+            host(gate, "\u001b]52;c;${base64("denied")}\u0007\u001b]52;c;?\u0007")
+
+            assertEquals(listOf("\u001b]52;c;${base64("before")}\u001b\\"), sent)
+            assertEquals(emptyList(), clipboard.writes)
+        }
+
+        @Test
+        fun writeLongerThanTheReadLimitIsRepliedAsEmpty() {
+            val gate =
+                gate(
+                    GatePolicy(
+                        allowClipboardWrite = true,
+                        allowClipboardRead = true,
+                        maxClipboardReadLength = 5,
+                    )
+                )
+
+            host(gate, "\u001b]52;c;${base64("123456")}\u0007\u001b]52;c;?\u0007")
+
+            assertEquals(listOf("\u001b]52;c;\u001b\\"), sent)
+            assertEquals(listOf("123456"), clipboard.writes)
+        }
+
+        @Test
+        fun onlyTheFirstReadAfterAWriteCarriesIt() {
+            val gate = gate(GatePolicy(allowClipboardWrite = true, allowClipboardRead = true))
+
+            host(
+                gate,
+                "\u001b]52;c;${base64("first")}\u0007" +
+                    "\u001b]52;c;?\u0007" +
+                    "\u001b]52;c;${base64("second")}\u0007" +
+                    "\u001b]52;c;?\u0007",
+            )
+
+            assertEquals(
+                listOf("\u001b]52;c;${base64("first")}\u001b\\", "\u001b]52;c;\u001b\\"),
+                sent,
+            )
+        }
+
         @Test
         fun clipboardLongerThanTheReadLimitIsRepliedAsEmpty() {
             clipboard.text = "123456"

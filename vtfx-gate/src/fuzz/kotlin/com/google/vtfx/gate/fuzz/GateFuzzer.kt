@@ -94,6 +94,9 @@ object GateFuzzer {
             )
         // Like TerminalSession, hands the gate the events of each write together.
         val events = mutableListOf<TerminalEvent>()
+        // The texts that the host asked to write to the clipboard, which a read after them may
+        // reply with if the policy allows writing them.
+        val requestedWrites = mutableSetOf<String>()
         val terminal = Terminal(columns, rows) { events += it }
         if (cellWidth != 0 && cellHeight != 0) terminal.setCellSize(cellWidth, cellHeight)
         for (part in output.split(SPLIT)) {
@@ -111,6 +114,9 @@ object GateFuzzer {
                     part
                 }
             terminal.write(write)
+            for (event in events) {
+                if (event is TerminalEvent.ClipboardWriteRequested) requestedWrites += event.text
+            }
             gate.handle(events.toList())
             events.clear()
         }
@@ -118,12 +124,29 @@ object GateFuzzer {
         val allowed = buildList {
             add(KnownReplies.pattern.pattern)
             if (reportsColors) add(COLOR_REPLY)
-            if (policy.allowClipboardRead) add(clipboardReply())
         }
             .joinToString("|")
             .toRegex()
-        for (reply in replies) check(allowed.matches(reply)) {
-            "unexpected reply: ${reply.escaped()}"
+        // The texts that a reply to a clipboard read may carry: the clipboard's, or one that the
+        // host wrote and the policy allows writing.
+        val readable = buildSet {
+            add(CLIPBOARD_TEXT)
+            if (policy.allowClipboardWrite) {
+                addAll(requestedWrites.filter { it.length <= policy.maxClipboardWriteLength })
+            }
+        }
+        for (reply in replies) {
+            val clipboardData =
+                if (policy.allowClipboardRead) CLIPBOARD_REPLY.matchEntire(reply) else null
+            if (clipboardData == null) {
+                check(allowed.matches(reply)) { "unexpected reply: ${reply.escaped()}" }
+            } else {
+                val data = clipboardData.groupValues[1]
+                val text = String(Base64.getDecoder().decode(data), Charsets.UTF_8)
+                check(data.isEmpty() || text in readable) {
+                    "unexpected clipboard reply: ${reply.escaped()}"
+                }
+            }
         }
         val replyBytes = replies.sumOf { it.length }
         check(replyBytes <= MAX_REPLY_BYTES_PER_INPUT_BYTE * output.size) {
@@ -154,14 +177,6 @@ object GateFuzzer {
         check(body.all { it == '\r' || it == '\t' || (it >= ' ' && it !in '\u007f'..'\u009f') }) {
             "control in paste: ${body.escaped()}"
         }
-    }
-
-    private fun clipboardReply(): String {
-        val data = Base64.getEncoder().encodeToString(CLIPBOARD_TEXT.toByteArray(Charsets.UTF_8))
-        // xterm's selection targets, written out here rather than taken from vtfx-core or the
-        // gate, so that the oracle does not depend on the code it checks.
-        // Reads after the first of a write are replied to as empty.
-        return """\u001b\]52;[cpqs0-7]{1,16};(?:${Regex.escape(data)})?\u001b\\"""
     }
 
     private fun ByteArray.uint16At(index: Int): Int =
@@ -195,6 +210,12 @@ object GateFuzzer {
 
     /** The longest reply is to a short query for a styled cell (DECRQSS SGR). */
     private const val MAX_REPLY_BYTES_PER_INPUT_BYTE = 16
+
+    // xterm's selection targets, written out here rather than taken from vtfx-core or the gate, so
+    // that the oracle does not depend on the code it checks. Reads after the first of a write are
+    // replied to as empty.
+    private val CLIPBOARD_REPLY =
+        Regex("""\u001b\]52;[cpqs0-7]{1,16};([A-Za-z0-9+/]*={0,2})\u001b\\""")
 
     private const val COLOR_REPLY = """\u001b\](?:1[0-2]|4;\d{1,3});rgb:1212/abab/3434\u001b\\"""
     private const val PASTE_START = "\u001b[200~"

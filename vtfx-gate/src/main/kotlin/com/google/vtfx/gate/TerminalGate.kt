@@ -43,20 +43,27 @@ public class TerminalGate(
      * replies to queries and decides on clipboard requests. Events without external effects (title,
      * bell) are ignored. Of the clipboard writes, only the last that is allowed is performed, so
      * that the host cannot make the system clipboard change, and show its preview, many times at
-     * once (docs/decisions/0059).
+     * once (docs/decisions/0059). A read after an allowed write is answered with the text of the
+     * latest allowed write before it, as if each write had been performed, rather than with the
+     * clipboard from before the events.
      */
     public fun handle(events: List<TerminalEvent>) {
         val lastWrite = events.indexOfLast {
             it is TerminalEvent.ClipboardWriteRequested && mayWriteClipboard(it.selection, it.text)
         }
+        // The text of the latest allowed write so far, which the clipboard will hold.
+        var written: String? = null
         var clipboardRead = false
         for ((index, event) in events.withIndex()) {
             when (event) {
                 is TerminalEvent.ReplyRequested -> writer.sendReply(event.query, colors)
                 is TerminalEvent.ClipboardWriteRequested ->
-                    if (index == lastWrite) clipboard?.write(event.text)
+                    if (index <= lastWrite && mayWriteClipboard(event.selection, event.text)) {
+                        written = event.text
+                        if (index == lastWrite) clipboard?.write(event.text)
+                    }
                 is TerminalEvent.ClipboardReadRequested ->
-                    if (readClipboard(event.selection, fromClipboard = !clipboardRead)) {
+                    if (readClipboard(event.selection, withText = !clipboardRead, written)) {
                         clipboardRead = true
                     }
                 is TerminalEvent.TitleChanged,
@@ -86,17 +93,19 @@ public class TerminalGate(
 
     /**
      * Replies with OSC 52, built by [Replies], and returns whether it replied. The reply carries
-     * the clipboard only if [fromClipboard], the first read of a write of host output, and the text
-     * is no longer than [GatePolicy.maxClipboardReadLength]; otherwise it is empty, so that what
-     * the gate sends stays proportional to the host's output (docs/decisions/0059).
+     * text only if [withText], for the first read of a write of host output, and the text is no
+     * longer than [GatePolicy.maxClipboardReadLength]; otherwise it is empty, so that what the gate
+     * sends stays proportional to the host's output (docs/decisions/0059). The text is [written],
+     * that of an allowed write before the read in the same write of host output, if there is one,
+     * and otherwise the clipboard's.
      */
-    private fun readClipboard(selection: String, fromClipboard: Boolean): Boolean {
+    private fun readClipboard(selection: String, withText: Boolean, written: String?): Boolean {
         val clipboard = clipboard ?: return false
         if (!policy.allowClipboardRead) return false
         val parsed = ClipboardSelection.parse(selection) ?: return false
         val text =
-            if (fromClipboard) {
-                clipboard.read()?.takeIf { it.length <= policy.maxClipboardReadLength }
+            if (withText) {
+                (written ?: clipboard.read())?.takeIf { it.length <= policy.maxClipboardReadLength }
             } else {
                 null
             }
