@@ -16,8 +16,6 @@
 
 package com.google.vtfx.gate
 
-import java.io.ByteArrayOutputStream
-
 /**
  * Converts text for the host (docs/design/ime-contract.md section 4.2).
  *
@@ -32,33 +30,33 @@ import java.io.ByteArrayOutputStream
  */
 internal object OutboundText {
     fun encode(text: String): ByteArray {
-        val out = ByteArrayOutputStream(text.length)
+        val out = StringBuilder(text.length)
         var i = 0
         while (i < text.length) {
             val c = text[i]
             when {
                 c == '\r' -> {
-                    out.write(CR)
+                    out.append('\r')
                     if (i + 1 < text.length && text[i + 1] == '\n') i++
                 }
-                c == '\n' -> out.write(CR)
-                c == '\t' -> out.write(HT)
+                c == '\n' -> out.append('\r')
+                c == '\t' -> out.append('\t')
                 c < ' ' || c in '\u007f'..'\u009f' -> {}
                 Character.isHighSurrogate(c) &&
                     i + 1 < text.length &&
                     Character.isLowSurrogate(text[i + 1]) -> {
-                    out.write(text.substring(i, i + 2).toByteArray(Charsets.UTF_8))
+                    out.append(c).append(text[i + 1])
                     i++
                 }
-                Character.isSurrogate(c) -> out.write(REPLACEMENT)
-                else -> out.write(c.toString().toByteArray(Charsets.UTF_8))
+                Character.isSurrogate(c) -> out.append(REPLACEMENT)
+                else -> out.append(c)
             }
             i++
         }
-        return out.toByteArray()
+        // Every unpaired surrogate was replaced, so the text is well-formed UTF-16, and encoding
+        // it whole gives the same bytes as encoding each character on its own.
+        return out.toString().toByteArray(Charsets.UTF_8)
     }
 
-    private const val CR = 0x0D
-    private const val HT = 0x09
-    private val REPLACEMENT = "�".toByteArray(Charsets.UTF_8)
+    private const val REPLACEMENT = '\uFFFD'
 }
