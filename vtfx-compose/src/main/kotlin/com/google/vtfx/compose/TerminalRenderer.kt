@@ -446,18 +446,14 @@ internal class TerminalRenderer(
                 column++
                 continue
             }
-            if (
-                text.length <= 2 &&
-                    text.codePointCount(0, text.length) == 1 &&
-                    BoxDrawing.isDrawn(text.codePointAt(0))
-            ) {
+            if (text.length == 1 && BoxDrawing.isDrawn(text[0].code)) {
                 val color = foreground(cellStyle, defaultForeground, defaultBackground)
                 // Over both cells of a wide one: these are East Asian Ambiguous, two cells wide
                 // when the session takes them so.
                 val width = line.widthAt(column)
                 with(BoxDrawing) {
                     drawBox(
-                        text.codePointAt(0),
+                        text[0].code,
                         Offset(column * metrics.width, row * metrics.height),
                         Size(width * metrics.width, metrics.height),
                         color,
