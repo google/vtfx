@@ -157,7 +157,7 @@ public class TerminalGate(
         if (!isUrlScheme(scheme)) return false
         val lowercaseScheme = scheme.lowercase()
         if (lowercaseScheme !in policy.urlSchemes) return false
-        return lowercaseScheme !in SPECIAL_SCHEMES || !hasMisleadingAuthority(url, colon)
+        return lowercaseScheme !in SPECIAL_SCHEMES || hasPlainAuthority(url, colon)
     }
 
     private fun isHidingCharacter(c: Char): Boolean =
@@ -185,29 +185,38 @@ public class TerminalGate(
     }
 
     /**
-     * Returns whether the authority of the [url] with a special scheme (http, https, ftp, ws, wss)
-     * whose scheme ends at [colon] has userinfo, a backslash, a `%`, or a character that is not
-     * ASCII. Userinfo lets the shown URL begin with another host
+     * Returns whether the [url] with a special scheme (http, https, ftp, ws, wss) whose scheme ends
+     * at [colon] has `//` right after the scheme, followed by an authority with a host that is not
+     * empty and with no userinfo, backslash, `%`, or character that is not ASCII.
+     *
+     * Browsers (the WHATWG URL Standard) skip any `/` and `\` after the scheme and take the host
+     * from what follows, while `android.net.Uri` and RFC 3986 parse `https:/evil.example` and
+     * `https:///evil.example` with no host and `https:\\evil.example` as opaque, so they disagree
+     * on the host unless the scheme is followed by exactly `//`. Browsers fail on an empty host
+     * (`https://`, `https://:80`). Userinfo lets the shown URL begin with another host
      * (`https://good.example@evil.example`), and a long one can push the real host out of view.
      * Browsers treat `\` in the authority as `/` but other parsers do not, so they disagree on the
-     * host of `https://evil.example\@good.example`. Characters that are not ASCII let the host look
-     * like another one: letters of other scripts (`https://apple.com` with U+0430 CYRILLIC SMALL
-     * LETTER A for the `a`), and characters that look like `.` or `/` but are mapped to `.` or stay
-     * in the host (U+FF0E FULLWIDTH FULL STOP, U+2215 DIVISION SLASH). Browsers percent-decode the
-     * host, so `%` does the same in ASCII (`https://good.example%2Eevil.example`, or `%D0%B0` for
-     * U+0430). A host in punycode (`xn--`) is ASCII and shows where it goes. As browsers do (the
-     * WHATWG URL Standard), the authority starts after any `/` and `\` that follow the scheme, with
-     * or without `//`, and ends at the first `/`, `?`, or `#`. Refusing `\` instead of ending the
-     * authority there also refuses an `@` after it, whichever way it is parsed.
+     * host of `https://evil.example\@good.example` and `https://\evil.example`. Characters that are
+     * not ASCII let the host look like another one: letters of other scripts (`https://apple.com`
+     * with U+0430 CYRILLIC SMALL LETTER A for the `a`), and characters that look like `.` or `/`
+     * but are mapped to `.` or stay in the host (U+FF0E FULLWIDTH FULL STOP, U+2215 DIVISION
+     * SLASH). Browsers percent-decode the host, so `%` does the same in ASCII
+     * (`https://good.example%2Eevil.example`, or `%D0%B0` for U+0430). A host in punycode (`xn--`)
+     * is ASCII and shows where it goes. The authority ends at the first `/`, `?`, or `#`. Refusing
+     * `\` instead of ending the authority there also refuses an `@` after it, whichever way it is
+     * parsed.
      */
-    private fun hasMisleadingAuthority(url: String, colon: Int): Boolean {
-        var i = colon + 1
-        while (i < url.length && (url[i] == '/' || url[i] == '\\')) i++
-        while (i < url.length && url[i] !in "/?#") {
-            if (url[i] == '@' || url[i] == '\\' || url[i] == '%' || url[i] > '\u007f') return true
-            i++
+    private fun hasPlainAuthority(url: String, colon: Int): Boolean {
+        if (!url.startsWith("//", colon + 1)) return false
+        val start = colon + 3
+        var end = start
+        while (end < url.length && url[end] !in "/?#") {
+            val c = url[end]
+            if (c == '@' || c == '\\' || c == '%' || c > '\u007f') return false
+            end++
         }
-        return false
+        // Without userinfo, the host is the authority before any port.
+        return end > start && url[start] != ':'
     }
 
     private companion object {
@@ -218,9 +227,10 @@ public class TerminalGate(
             "\u061c\u200e\u200f\u202a\u202b\u202c\u202d\u202e\u2066\u2067\u2068\u2069"
 
         /**
-         * The schemes in which [isAllowedUrl] refuses userinfo and characters that are not ASCII in
-         * the authority: the special schemes of the WHATWG URL Standard, whose authority browsers
-         * parse the same way, except `file`, which [GatePolicy] refuses.
+         * The schemes in which [isAllowedUrl] requires `//` and a host, and refuses userinfo and
+         * characters that are not ASCII in the authority: the special schemes of the WHATWG URL
+         * Standard, whose authority browsers parse the same way, except `file`, which [GatePolicy]
+         * refuses.
          */
         val SPECIAL_SCHEMES = setOf("http", "https", "ftp", "ws", "wss")
     }

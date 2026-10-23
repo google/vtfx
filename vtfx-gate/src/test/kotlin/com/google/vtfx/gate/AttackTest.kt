@@ -455,6 +455,61 @@ class AttackTest {
             }
         }
 
+        // Browsers skip any `/` and `\` after the scheme and go to evil.example, while
+        // android.net.Uri finds no host, or the host \evil.example.
+        @Test
+        fun specialSchemeWithoutExactlyTwoSlashesIsRejected() {
+            val gate = gate(GatePolicy(urlSchemes = setOf("https", "ws")))
+            for (url in
+                listOf(
+                    "https:evil.example",
+                    "https:/evil.example",
+                    "https:///evil.example",
+                    "HTTPS:///evil.example",
+                    "https:\\\\evil.example",
+                    "https:/\\evil.example",
+                    "https:\\/evil.example",
+                    "https://\\evil.example",
+                    "ws:evil.example",
+                )) {
+                assertFalse(gate.isAllowedUrl(url), url)
+            }
+        }
+
+        // Browsers fail to parse a special URL with an empty host.
+        @Test
+        fun specialSchemeWithAnEmptyHostIsRejected() {
+            val gate = gate()
+            for (url in
+                listOf(
+                    "https://",
+                    "HTTPS://",
+                    "https:///path",
+                    "https://?q",
+                    "https://#f",
+                    "https://:80",
+                    "https://:80/path",
+                )) {
+                assertFalse(gate.isAllowedUrl(url), url)
+            }
+        }
+
+        @Test
+        fun specialSchemeWithTwoSlashesAndAHostIsAllowed() {
+            val gate = gate()
+            for (url in
+                listOf(
+                    "https://a",
+                    "https://example.com:80",
+                    "https://example.com?q",
+                    "https://example.com#f",
+                    "https://[::1]:8080/",
+                    "https://127.0.0.1/",
+                )) {
+                assertTrue(gate.isAllowedUrl(url), url)
+            }
+        }
+
         @Test
         fun atSignsOutsideTheAuthorityAreAllowed() {
             val gate = gate()
