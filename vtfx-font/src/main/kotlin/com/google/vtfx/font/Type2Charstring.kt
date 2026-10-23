@@ -18,16 +18,6 @@ package com.google.vtfx.font
 
 import kotlin.math.abs
 
-/** Receives the path that a charstring draws, in absolute coordinates. */
-internal interface CubicPen {
-    /** Starts a contour, ending the one before. */
-    fun moveTo(x: Double, y: Double)
-
-    fun lineTo(x: Double, y: Double)
-
-    fun curveTo(x1: Double, y1: Double, x2: Double, y2: Double, x: Double, y: Double)
-}
-
 /**
  * Runs the Type 2 charstring of one glyph (Adobe Technical Note #5177), drawing it into [pen].
  *
@@ -44,7 +34,7 @@ internal interface CubicPen {
 internal class Type2Charstring(
     private val globalSubrs: CffIndex,
     private val localSubrs: CffIndex?,
-    private val pen: CubicPen,
+    private val pen: QuadraticPen,
     private val tokens: WorkBudget,
 ) {
     private val stack = DoubleArray(MAX_STACK)

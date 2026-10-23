@@ -49,15 +49,16 @@ internal class CffOutlines(
 }
 
 /**
- * Collects the contours of a charstring as quadratic ones, each reversed with its start point kept
- * first (as fontTools' reverse pen does), with coordinates rounded to integers.
+ * Receives the path that a charstring draws, in absolute coordinates, and collects its contours as
+ * quadratic ones, each reversed with its start point kept first (as fontTools' reverse pen does),
+ * with coordinates rounded to integers.
  *
  * Closing a contour drops its last point if it is on the curve where the contour starts, since
  * TrueType closes contours by itself; a contour of one point, which draws nothing, is dropped.
  *
  * [build] starts the next glyph, keeping the arrays. Not thread-safe.
  */
-private class QuadraticPen(private val maxPoints: Int, tolerance: Double) : CubicPen {
+internal class QuadraticPen(private val maxPoints: Int, tolerance: Double) {
     private val builder = OutlineBuilder(maxPoints)
     private val curves = CubicToQuadratic(tolerance)
     private var xs = IntArray(16)
@@ -72,16 +73,17 @@ private class QuadraticPen(private val maxPoints: Int, tolerance: Double) : Cubi
     private var x = 0.0
     private var y = 0.0
 
-    override fun moveTo(x: Double, y: Double) {
+    /** Starts a contour, ending the one before. */
+    fun moveTo(x: Double, y: Double) {
         closeContour()
         endAt(x, y)
     }
 
-    override fun lineTo(x: Double, y: Double) {
+    fun lineTo(x: Double, y: Double) {
         endAt(x, y)
     }
 
-    override fun curveTo(x1: Double, y1: Double, x2: Double, y2: Double, x: Double, y: Double) {
+    fun curveTo(x1: Double, y1: Double, x2: Double, y2: Double, x: Double, y: Double) {
         checkCoordinate(x1)
         checkCoordinate(y1)
         checkCoordinate(x2)
