@@ -47,8 +47,8 @@ internal class GridGeometry(
 internal class CursorAnchorReporter(
     private val view: View,
     private val session: TerminalSession,
-    /** Returns the grid and the terminal cursor (column, row), or null if not laid out. */
-    private val geometry: () -> Pair<GridGeometry, Pair<Int, Int>>?,
+    /** Returns the size of the cells of [view], or null if not laid out. */
+    private val metrics: () -> CellMetrics?,
 ) {
     private val inputMethodManager = view.context.getSystemService(InputMethodManager::class.java)
     private var monitoring = false
@@ -69,7 +69,16 @@ internal class CursorAnchorReporter(
     }
 
     private fun build(): CursorAnchorInfo? {
-        val (grid, cursor) = geometry() ?: return null
+        val cellMetrics = metrics() ?: return null
+        val grid =
+            GridGeometry(
+                0f,
+                0f,
+                cellMetrics,
+                (view.width / cellMetrics.width).toInt(),
+                (view.height / cellMetrics.height).toInt(),
+            )
+        val cursor = session.cursorPosition()
         // Character bounds are in view coordinates; the matrix maps them to the screen.
         val location = IntArray(2)
         view.getLocationOnScreen(location)

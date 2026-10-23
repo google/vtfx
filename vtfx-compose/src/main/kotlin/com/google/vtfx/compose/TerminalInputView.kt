@@ -110,21 +110,7 @@ internal class TerminalInputView(context: Context) : View(context), InputHost {
         val session = display.session
         val directInput = session.directInput
         session.edit { TerminalInputConnection.configure(outAttrs, it, directInput) }
-        val anchor =
-            CursorAnchorReporter(this, session) {
-                metrics?.let {
-                    Pair(
-                        GridGeometry(
-                            0f,
-                            0f,
-                            it,
-                            (width / it.width).toInt(),
-                            (height / it.height).toInt(),
-                        ),
-                        session.cursorPosition(),
-                    )
-                }
-            }
+        val anchor = CursorAnchorReporter(this, session) { metrics }
         reporter = anchor
         display.inputHost = this
         return TerminalInputConnection(
