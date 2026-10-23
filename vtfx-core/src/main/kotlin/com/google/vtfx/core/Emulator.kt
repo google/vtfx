@@ -465,8 +465,10 @@ internal class Emulator(
                 screen[cursorY].insertBlanks(cursorX, n, style.erased())
             }
             'A' -> cursorUp(n)
-            'B' -> cursorDown(n)
-            'C' -> moveTo(cursorX + n, cursorY)
+            'B',
+            'e' -> cursorDown(n)
+            'C',
+            'a' -> moveTo(cursorX + n, cursorY)
             'D' -> moveTo(cursorX - n, cursorY)
             'E' -> {
                 cursorDown(n)
@@ -497,13 +499,11 @@ internal class Emulator(
                 screen[cursorY].erase(cursorX, cursorX + n, style.erased())
             }
             'Z' -> backwardTab(n)
-            'a' -> moveTo(cursorX + n, cursorY)
             // Repeating more than a screenful only scrolls, so the count is bounded to keep a few
             // bytes from costing unbounded work (docs/decisions/0002).
             'b' -> if (lastPrinted >= 0) repeatLastPrinted(minOf(n, columns * rows))
             'c' -> if (params[0] == 0) reply(TerminalQuery.PrimaryDeviceAttributes)
             'd' -> cursorPosition(n, cursorX + 1)
-            'e' -> cursorDown(n)
             'g' ->
                 when (params[0]) {
                     0 -> tabStops[cursorX] = false
