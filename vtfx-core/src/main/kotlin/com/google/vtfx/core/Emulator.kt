@@ -218,7 +218,15 @@ internal class Emulator(
             if (codePoint == Placeholders.CODE_POINT) rendition.underlineColor.bits
             else rendition.cellUnderlineColor
         line.set(cursorX, codePoint, width, style, activeLink, underlineColor)
-        val next = cursorX + width
+        advanceCursor(width)
+    }
+
+    /**
+     * Moves the cursor past [cells] just written, stopping at the last column, where the next
+     * character wraps first if autowrap is on.
+     */
+    private fun advanceCursor(cells: Int) {
+        val next = cursorX + cells
         if (next >= columns) {
             cursorX = columns - 1
             pendingWrap = autowrap
@@ -272,13 +280,7 @@ internal class Emulator(
             return false
         if (line.isWideHead(column) || line.linkAt(column) != activeLink) return false
         line.makeWide(column, codePoint)
-        val next = cursorX + 1
-        if (next >= columns) {
-            cursorX = columns - 1
-            pendingWrap = autowrap
-        } else {
-            cursorX = next
-        }
+        advanceCursor(1)
         return true
     }
 
