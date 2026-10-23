@@ -41,7 +41,6 @@ import androidx.compose.ui.test.rightClick
 import androidx.compose.ui.test.tripleClick
 import androidx.compose.ui.unit.dp
 import com.google.vtfx.core.KeyModifiers
-import com.google.vtfx.gate.ClipboardAccess
 import com.google.vtfx.session.TerminalSession
 import com.google.vtfx.testing.hyperlink
 import org.junit.Assert.assertEquals
@@ -64,15 +63,10 @@ class TerminalMouseTest {
     @get:Rule val composeRule = createComposeRule()
 
     private val sent = StringBuilder()
-    private val copied = mutableListOf<String>()
-    private val clipboard =
-        object : ClipboardAccess {
-            override fun write(text: String) {
-                copied += text
-            }
+    private val clipboard = RecordingClipboard()
+    private val copied
+        get() = clipboard.copied
 
-            override fun read(): String? = null
-        }
     private val session =
         TerminalSession({ sent.append(String(it, Charsets.UTF_8)) }, clipboard = clipboard)
     private val display = TerminalDisplay(session)

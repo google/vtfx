@@ -21,7 +21,6 @@ package com.google.vtfx.compose
 import android.os.Looper
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.TerminalLimits
-import com.google.vtfx.gate.ClipboardAccess
 import com.google.vtfx.session.TerminalSession
 import com.google.vtfx.session.TerminalSessionListener
 import java.time.Duration
@@ -55,15 +54,7 @@ class TerminalDisplayTest {
 
     @Test
     fun copyingASelectionOfTheDisplayIsCutLikeAllTheText() {
-        val copied = mutableListOf<String>()
-        val clipboard =
-            object : ClipboardAccess {
-                override fun write(text: String) {
-                    copied += text
-                }
-
-                override fun read(): String? = null
-            }
+        val clipboard = RecordingClipboard()
         val session = TerminalSession({}, columns = 300, rows = 100, clipboard = clipboard)
         // Each cell holds 32 UTF-16 units, as many as a cell takes: 9,600 characters a row.
         val cluster = "a" + "\u0301".repeat(31)
@@ -73,7 +64,7 @@ class TerminalDisplayTest {
 
         display.copySelection()
 
-        val text = copied.single()
+        val text = clipboard.copied.single()
         assertTrue("${text.length}", text.length <= MAX_COPIED_LENGTH)
         // Autowrap joined the rows into one line, longer than what is copied: its end.
         assertEquals(cluster.repeat(300 * 100).takeLast(MAX_COPIED_LENGTH), text)

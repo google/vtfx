@@ -62,15 +62,10 @@ class TerminalGesturesTest {
     @get:Rule val composeRule = createComposeRule()
 
     private val sent = StringBuilder()
-    private val copied = mutableListOf<String>()
-    private val clipboard =
-        object : com.google.vtfx.gate.ClipboardAccess {
-            override fun write(text: String) {
-                copied += text
-            }
+    private val clipboard = RecordingClipboard()
+    private val copied
+        get() = clipboard.copied
 
-            override fun read(): String? = null
-        }
     private val session =
         TerminalSession(
             { sent.append(String(it, Charsets.UTF_8)) },

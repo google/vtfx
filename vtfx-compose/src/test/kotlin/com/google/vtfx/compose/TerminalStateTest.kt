@@ -30,7 +30,6 @@ import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
-import com.google.vtfx.gate.ClipboardAccess
 import com.google.vtfx.session.TerminalSession
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -50,15 +49,10 @@ import org.robolectric.annotation.GraphicsMode
 class TerminalStateTest {
     @get:Rule val composeRule = createComposeRule()
 
-    private val copied = mutableListOf<String>()
-    private val clipboard =
-        object : ClipboardAccess {
-            override fun write(text: String) {
-                copied += text
-            }
+    private val clipboard = RecordingClipboard()
+    private val copied
+        get() = clipboard.copied
 
-            override fun read(): String? = null
-        }
     private val session = TerminalSession({}, clipboard = clipboard)
     private val display = TerminalDisplay(session)
     private val state = TerminalState()
