@@ -1,6 +1,6 @@
 # The benchmark runs in a release build that the shell can profile
 
-- Status: Provisional
+- Status: Approved (2026-10-23, approved by a human in a review of the review queue)
 - Date: 2026-10-23
 - Related: Requirement 6.2, [0014](0014-performance.md), [0053](0053-sample-test-extras-debug-only.md) (superseded), [0066](0066-flood-benchmark.md), sections 1 and 5 of [device-checks.md](../device-checks.md), `LaunchOptions` and `MainActivity` in `vtfx-sample`, `scripts/benchmark.py`
 

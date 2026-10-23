@@ -1,6 +1,6 @@
 # A line feed after a paste in the same batch edit is pasted too
 
-- Status: Provisional (decided by a human after a check on the emulator, 2026-10-22)
+- Status: Approved (2026-10-23, approved by a human in a review of the review queue; decided by a human after a check on the emulator, 2026-10-22)
 - Date: 2026-10-22
 - Related: Requirement 6.1, sections 4.2 and 11 of [ime-contract.md](../design/ime-contract.md), [0050](0050-ime-text-of-several-lines-is-a-paste.md), `ImeEditor.commitText`
 

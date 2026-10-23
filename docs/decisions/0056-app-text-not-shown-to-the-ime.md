@@ -1,6 +1,6 @@
 # Text from the app is not shown to the IME
 
-- Status: Provisional
+- Status: Approved (2026-10-23, approved by a human in a review of the review queue)
 - Date: 2026-10-22
 - Related: Requirement 6.1, sections 1, 11, and 13 of [ime-contract.md](../design/ime-contract.md), [0004](0004-ime-editor-details.md), [0050](0050-ime-text-of-several-lines-is-a-paste.md), `TerminalSession.sendText`, `ImeEditor.typeText`
 

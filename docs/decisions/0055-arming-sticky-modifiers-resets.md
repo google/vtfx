@@ -1,6 +1,6 @@
 # Arming sticky modifiers resets the input history
 
-- Status: Provisional
+- Status: Approved (2026-10-23, approved by a human in a review of the review queue)
 - Date: 2026-10-22
 - Related: Requirement 5.4, section 8 of [compose-input.md](../design/compose-input.md), section 6.3 of [ime-contract.md](../design/ime-contract.md), [0033](0033-sticky-modifiers-and-composing-text.md), [0054](0054-resets-during-batch-edits.md), `TerminalSession.stickyModifiers`, `ImeEditor.sendPendingInput`
 

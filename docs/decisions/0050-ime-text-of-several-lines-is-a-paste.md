@@ -1,6 +1,6 @@
 # Text of several lines that the IME commits is a paste
 
-- Status: Provisional (the rule was decided by a human after a security review, 2026-10-22)
+- Status: Approved (2026-10-23, approved by a human in a review of the review queue; the rule decided by a human after a security review, 2026-10-22)
 - Date: 2026-10-22
 - Related: Requirement 6.1, sections 4.2, 6.1, and 11 of [ime-contract.md](../design/ime-contract.md), section 2 of [gate-policy.md](../design/gate-policy.md), [0004](0004-ime-editor-details.md), [0019](0019-extensibility.md), `ImeEditor.commitText`, `ImeEditor.replaceText`, `ImeEditor.typeText`
 

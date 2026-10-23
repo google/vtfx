@@ -1,6 +1,6 @@
 # A rendering benchmark of output without a break
 
-- Status: Provisional
+- Status: Approved (2026-10-23, approved by a human in a review of the review queue)
 - Date: 2026-10-22
 - Related: Requirement 6.2, [0014](0014-performance.md), [0067](0067-profileable-benchmark-build.md), [0065](0065-fair-state-lock.md), section 5 of [device-checks.md](../device-checks.md), `RenderBenchmark` in `vtfx-sample`, `scripts/benchmark.py`
 

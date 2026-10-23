@@ -1,6 +1,6 @@
 # Features of alacritty_terminal that vtfx lacks
 
-- Status: Provisional (which features to support was chosen by a human)
+- Status: Approved (2026-10-23, approved by a human in a review of the review queue; which features to support was chosen by a human)
 - Date: 2026-10-23
 - Related: Requirements 4 and 5.4, section 4 of [emulation.md](../design/emulation.md), sections 2 to 4 of [compose-input.md](../design/compose-input.md), [0005](0005-key-bytes-through-gate.md), [0009](0009-emulation-scope.md), [0012](0012-touch-and-selection.md), [0019](0019-extensibility.md), [0031](0031-desktop-pointer-and-terminal-state.md), [0047](0047-search.md)
 

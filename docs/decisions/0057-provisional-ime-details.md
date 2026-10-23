@@ -1,6 +1,6 @@
 # Details of IME input left open by a security review
 
-- Status: Provisional
+- Status: Approved (2026-10-23, approved by a human in a review of the review queue)
 - Date: 2026-10-22
 - Related: Sections 4.2, 5.1, and 6.3 of [ime-contract.md](../design/ime-contract.md), section 8 of [compose-input.md](../design/compose-input.md), [0004](0004-ime-editor-details.md), [0033](0033-sticky-modifiers-and-composing-text.md), [0055](0055-arming-sticky-modifiers-resets.md), `ImeEditor`, `TerminalSession`
 

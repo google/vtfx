@@ -1,6 +1,6 @@
 # A budget for the bitmaps that a display keeps
 
-- Status: Provisional
+- Status: Approved (2026-10-23, approved by a human in a review of the review queue)
 - Date: 2026-10-22
 - Related: Requirement 6.1, sections 9.3, 9.6, 10.1, and 10.2 of [emulation.md](../design/emulation.md), [0002](0002-resource-limits.md), [0014](0014-performance.md), [0038](0038-kitty-graphics.md), `ImageBitmaps` in `vtfx-compose`
 

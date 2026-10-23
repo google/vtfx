@@ -1,6 +1,6 @@
 # Bounding the search's work per redraw
 
-- Status: Provisional
+- Status: Approved (2026-10-23, approved by a human in a review of the review queue)
 - Date: 2026-10-22
 - Related: Section 13 of [compose-input.md](../design/compose-input.md), [0047](0047-search.md), [0014](0014-performance.md), `readSearchLines` in `vtfx-compose`, `SearchIndex` and `Terminal.searchLines` in `vtfx-core`
 

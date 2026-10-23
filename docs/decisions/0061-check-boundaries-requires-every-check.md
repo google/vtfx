@@ -1,6 +1,6 @@
 # checkBoundaries requires every check to have run
 
-- Status: Provisional
+- Status: Approved (2026-10-23, approved by a human in a review of the review queue)
 - Date: 2026-10-22
 - Related: Requirement 6.1, [0044](0044-boundaries-in-gradle-and-classes.md), sections 1 and 7 of [boundaries.md](../design/boundaries.md)
 

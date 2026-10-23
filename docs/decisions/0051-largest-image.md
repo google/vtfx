@@ -1,6 +1,6 @@
 # A limit on the size of one image
 
-- Status: Provisional
+- Status: Approved (2026-10-23, approved by a human in a review of the review queue)
 - Date: 2026-10-22
 - Related: Requirements 6.1 and 6.5, sections 9.4 and 10.2 of [emulation.md](../design/emulation.md), [0002](0002-resource-limits.md), [0038](0038-kitty-graphics.md) (which this supplements), `Graphics.MAX_BYTES_PER_IMAGE`, `ImageBitmaps` in `vtfx-compose`
 

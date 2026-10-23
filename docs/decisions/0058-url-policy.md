@@ -1,6 +1,6 @@
 # The URL schemes of GatePolicy
 
-- Status: Provisional
+- Status: Approved (2026-10-23, approved by a human in a review of the review queue)
 - Date: 2026-10-22
 - Related: Requirement 6.1 (opening unintended URLs), sections 5.2 and 6 of [gate-policy.md](../design/gate-policy.md), [0006](0006-gate-defaults.md), [0043](0043-url-open-results.md), `GatePolicy`, `AndroidUrlOpener`
 

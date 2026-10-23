@@ -1,6 +1,6 @@
 # The length and the characters of the window title
 
-- Status: Provisional
+- Status: Approved (2026-10-23, approved by a human in a review of the review queue)
 - Date: 2026-10-22
 - Related: Requirement 6.5, sections 5 and 10.2 of [emulation.md](../design/emulation.md), [0002](0002-resource-limits.md), [0009](0009-emulation-scope.md), `Emulator.setTitle`, `TerminalSessionListener.onTitleChanged`, `TerminalSession.title`
 

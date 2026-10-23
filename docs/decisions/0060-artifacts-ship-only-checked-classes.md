@@ -1,6 +1,6 @@
 # Library artifacts ship only the checked classes and no rules for R8
 
-- Status: Provisional
+- Status: Approved (2026-10-23, approved by a human in a review of the review queue)
 - Date: 2026-10-22
 - Related: Requirement 6.1, [0041](0041-security-review-by-module.md), [0044](0044-boundaries-in-gradle-and-classes.md), sections 4.1 and 6 of [boundaries.md](../design/boundaries.md)
 

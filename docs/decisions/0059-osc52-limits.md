@@ -1,6 +1,6 @@
 # Limits on OSC 52
 
-- Status: Provisional
+- Status: Approved (2026-10-23, approved by a human in a review of the review queue)
 - Date: 2026-10-22
 - Related: Requirement 6.1 (resource exhaustion, unauthorized reading of the clipboard), section 4.1 of [gate-policy.md](../design/gate-policy.md), [0006](0006-gate-defaults.md), [0037](0037-api-shape-before-1.0.md), [0044](0044-boundaries-in-gradle-and-classes.md), `TerminalGate`, `GatePolicy`
 

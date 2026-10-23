@@ -1,6 +1,6 @@
 # Concealed text is not copied or exposed to accessibility
 
-- Status: Provisional (the policy decided by a human on 2026-10-22; the blanks in place of the text chosen by an agent)
+- Status: Approved (2026-10-23, approved by a human in a review of the review queue; the policy decided by a human on 2026-10-22, the blanks in place of the text chosen by an agent)
 - Date: 2026-10-22
 - Related: Requirements 6.1 and 6.3, sections 4, 6.1, and 11 of [compose-input.md](../design/compose-input.md), [0015](0015-accessibility.md), [0019](0019-extensibility.md), [0047](0047-search.md), `visibleTextAt` in `TerminalSelection.kt`
 

@@ -1,6 +1,6 @@
 # Resets during batch edits, and commits that the IME did not make
 
-- Status: Provisional
+- Status: Approved (2026-10-23, approved by a human in a review of the review queue)
 - Date: 2026-10-22
 - Related: Sections 5, 6.3, 6.4, and 11 of [ime-contract.md](../design/ime-contract.md), [0004](0004-ime-editor-details.md), [0026](0026-session-module.md), [0033](0033-sticky-modifiers-and-composing-text.md), `ImeEditor.requestReset`, `ImeEditor.onKeyDown`
 
