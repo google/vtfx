@@ -186,7 +186,10 @@ internal object Replies {
         when (style.underline) {
             UnderlineStyle.None -> {}
             UnderlineStyle.Single -> add("4")
-            else -> add("4:${style.underline.ordinal}")
+            UnderlineStyle.Double,
+            UnderlineStyle.Curly,
+            UnderlineStyle.Dotted,
+            UnderlineStyle.Dashed -> add("4:${style.underline.ordinal}")
         }
         if (style.isBlinking) add("5")
         if (style.isInverse) add("7")
