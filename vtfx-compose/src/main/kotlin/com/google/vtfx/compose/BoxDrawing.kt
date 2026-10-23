@@ -331,41 +331,23 @@ internal object BoxDrawing {
                     style = stroke,
                 )
                 // The straight parts from the arc to the cell edges.
-                if (dx > 0)
-                    fill.rect(this, color, Offset(cx + r, cy - light / 2), Size(w / 2 - r, light))
-                if (dx < 0)
-                    fill.rect(
-                        this,
-                        color,
-                        Offset(topLeft.x, cy - light / 2),
-                        Size(w / 2 - r, light),
-                    )
-                if (dy > 0)
-                    fill.rect(this, color, Offset(cx - light / 2, cy + r), Size(light, h / 2 - r))
-                if (dy < 0)
-                    fill.rect(
-                        this,
-                        color,
-                        Offset(cx - light / 2, topLeft.y),
-                        Size(light, h / 2 - r),
-                    )
+                val x = if (dx > 0) cx + r else topLeft.x
+                fill.rect(this, color, Offset(x, cy - light / 2), Size(w / 2 - r, light))
+                val y = if (dy > 0) cy + r else topLeft.y
+                fill.rect(this, color, Offset(cx - light / 2, y), Size(light, h / 2 - r))
             }
-            0x2571 ->
-                drawLine(
-                    color,
-                    Offset(topLeft.x + w, topLeft.y),
-                    Offset(topLeft.x, topLeft.y + h),
-                    light,
-                )
-            0x2572 -> drawLine(color, topLeft, Offset(topLeft.x + w, topLeft.y + h), light)
             else -> {
-                drawLine(
-                    color,
-                    Offset(topLeft.x + w, topLeft.y),
-                    Offset(topLeft.x, topLeft.y + h),
-                    light,
-                )
-                drawLine(color, topLeft, Offset(topLeft.x + w, topLeft.y + h), light)
+                if (codePoint != 0x2572) {
+                    drawLine(
+                        color,
+                        Offset(topLeft.x + w, topLeft.y),
+                        Offset(topLeft.x, topLeft.y + h),
+                        light,
+                    )
+                }
+                if (codePoint != 0x2571) {
+                    drawLine(color, topLeft, Offset(topLeft.x + w, topLeft.y + h), light)
+                }
             }
         }
     }
