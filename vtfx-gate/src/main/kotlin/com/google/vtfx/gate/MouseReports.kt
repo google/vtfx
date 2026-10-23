@@ -99,7 +99,8 @@ internal object MouseReports {
             if (report.alt) code += 8
             if (report.ctrl) code += 16
         }
-        val (x, y) = report.column to report.row
+        val x = report.column
+        val y = report.row
         val text =
             when (encoding) {
                 MouseEncoding.Sgr ->
@@ -108,19 +109,20 @@ internal object MouseReports {
                 MouseEncoding.Default -> {
                     // One byte per value: positions beyond 223 cannot be reported.
                     if (x > MAX_DEFAULT_POSITION || y > MAX_DEFAULT_POSITION) return null
-                    return byteArrayOf(0x1B, '['.code.toByte(), 'M'.code.toByte()) +
-                        byteArrayOf(
-                            legacyButton(code, report).toByte(),
-                            (x + 32).toByte(),
-                            (y + 32).toByte(),
-                        )
+                    return byteArrayOf(
+                        0x1B,
+                        '['.code.toByte(),
+                        'M'.code.toByte(),
+                        legacyButton(code, report).toByte(),
+                        (x + 32).toByte(),
+                        (y + 32).toByte(),
+                    )
                 }
                 MouseEncoding.Utf8 -> {
                     if (x > MAX_UTF8_POSITION || y > MAX_UTF8_POSITION) return null
-                    "\u001b[M" +
-                        String(Character.toChars(legacyButton(code, report))) +
-                        String(Character.toChars(x + 32)) +
-                        String(Character.toChars(y + 32))
+                    // Every value is below 2048, so it is one char, outside the surrogates.
+                    val button = legacyButton(code, report).toChar()
+                    "\u001b[M$button${(x + 32).toChar()}${(y + 32).toChar()}"
                 }
             }
         return text.toByteArray(Charsets.UTF_8)
@@ -133,7 +135,7 @@ internal object MouseReports {
                 report.action == MouseAction.Release &&
                     report.button.ordinal <= MouseButton.Right.ordinal
             ) {
-                (code and 3.inv()) or 3
+                code or 3
             } else {
                 code
             }
