@@ -23,9 +23,6 @@ fuzzTarget { className.set("com.google.vtfx.input.fuzz.ImeFuzzer") }
 
 dependencies {
     implementation(project(":vtfx-core"))
-}
-
-dependencies {
     testImplementation(testFixtures(project(":vtfx-core")))
 }
 
