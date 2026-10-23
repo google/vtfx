@@ -42,8 +42,9 @@ internal object CanonicalWriter {
             loca[glyphId] = glyf.size
             val outline = parts.outlines.outline(glyphId)
             if (!outline.isEmpty) {
-                writeGlyph(outline, glyf)
-                glyphs.add(glyphId, outline)
+                val box = boundingBox(outline)
+                writeGlyph(outline, box, glyf)
+                glyphs.add(glyphId, outline, box, parts.advances[glyphId])
             }
         }
         loca[numGlyphs] = glyf.size
@@ -67,33 +68,33 @@ internal object CanonicalWriter {
 
     /** What the tables other than `glyf` need to know of the outlines. */
     private class GlyphStats(numGlyphs: Int) {
-        val nonEmpty = BooleanArray(numGlyphs)
+        /** The left side bearing of each glyph: its xMin, or 0 if it is empty. */
         val xMin = IntArray(numGlyphs)
-        val xMax = IntArray(numGlyphs)
         var fontXMin = 0
         var fontYMin = 0
         var fontXMax = 0
         var fontYMax = 0
+        var minRight = 0
         var maxPoints = 0
         var maxContours = 0
         private var any = false
 
-        fun add(glyphId: Int, outline: Outline) {
-            val box = boundingBox(outline)
-            nonEmpty[glyphId] = true
+        fun add(glyphId: Int, outline: Outline, box: IntArray, advance: Int) {
+            val right = advance - box[2]
             xMin[glyphId] = box[0]
-            xMax[glyphId] = box[2]
             if (!any) {
                 fontXMin = box[0]
                 fontYMin = box[1]
                 fontXMax = box[2]
                 fontYMax = box[3]
+                minRight = right
                 any = true
             } else {
                 fontXMin = minOf(fontXMin, box[0])
                 fontYMin = minOf(fontYMin, box[1])
                 fontXMax = maxOf(fontXMax, box[2])
                 fontYMax = maxOf(fontYMax, box[3])
+                minRight = minOf(minRight, right)
             }
             maxPoints = maxOf(maxPoints, outline.pointCount)
             maxContours = maxOf(maxContours, outline.endPoints.size)
@@ -112,7 +113,7 @@ internal object CanonicalWriter {
         return box
     }
 
-    private fun writeGlyph(outline: Outline, out: Sink) {
+    private fun writeGlyph(outline: Outline, box: IntArray, out: Sink) {
         for (i in 0 until outline.pointCount) {
             if (
                 outline.xs[i] !in MIN_COORDINATE..MAX_COORDINATE ||
@@ -122,7 +123,6 @@ internal object CanonicalWriter {
             }
         }
         val start = out.size
-        val box = boundingBox(outline)
         out.u16(outline.endPoints.size)
         box.forEach { out.u16(it) }
         outline.endPoints.forEach { out.u16(it) }
@@ -364,37 +364,18 @@ internal object CanonicalWriter {
             .u16(0) // glyphDataFormat
 
     private fun hhea(parts: FaceParts, glyphs: GlyphStats): Sink {
-        var minLeft = 0
-        var minRight = 0
-        var maxExtent = 0
-        var any = false
-        for (glyphId in 0 until parts.numGlyphs) {
-            if (!glyphs.nonEmpty[glyphId]) continue
-            val left = glyphs.xMin[glyphId]
-            val right = parts.advances[glyphId] - glyphs.xMax[glyphId]
-            val extent = glyphs.xMax[glyphId]
-            if (!any) {
-                minLeft = left
-                minRight = right
-                maxExtent = extent
-                any = true
-            } else {
-                minLeft = minOf(minLeft, left)
-                minRight = minOf(minRight, right)
-                maxExtent = maxOf(maxExtent, extent)
-            }
-        }
         // Advances reach 65535 and coordinates -16384, so the right side bearings may not fit.
-        if (minRight > Short.MAX_VALUE) unsupported("right side bearings out of range")
+        if (glyphs.minRight > Short.MAX_VALUE) unsupported("right side bearings out of range")
         return Sink(Int.MAX_VALUE)
             .u32(0x00010000) // version
             .u16(parts.ascender)
             .u16(parts.descender)
             .u16(parts.lineGap)
             .u16(parts.advances.max())
-            .u16(minLeft)
-            .u16(minRight)
-            .u16(maxExtent)
+            // The left side bearing and the extent of a glyph are its xMin and xMax.
+            .u16(glyphs.fontXMin)
+            .u16(glyphs.minRight)
+            .u16(glyphs.fontXMax)
             .u16(1) // caretSlopeRise
             .u16(0) // caretSlopeRun
             .u16(0) // caretOffset
@@ -408,7 +389,7 @@ internal object CanonicalWriter {
         val out = Sink(Int.MAX_VALUE)
         for (glyphId in 0 until parts.numGlyphs) {
             out.u16(parts.advances[glyphId])
-            out.u16(if (glyphs.nonEmpty[glyphId]) glyphs.xMin[glyphId] else 0)
+            out.u16(glyphs.xMin[glyphId])
         }
         return out
     }
