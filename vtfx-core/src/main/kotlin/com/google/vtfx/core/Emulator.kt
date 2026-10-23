@@ -1144,9 +1144,15 @@ internal class Emulator(
                     y = newCursorRow,
                     pendingWrap = result.pendingWrap,
                 )
+            // The cursor on the alternate screen, which is not reflowed, is clamped. Unlike moveTo,
+            // this does not count as going to another line.
+            cursorX = cursorX.coerceIn(0, newColumns - 1)
+            cursorY = cursorY.coerceIn(0, newRows - 1)
+            pendingWrap = false
         } else {
             cursorX = newCursorColumn
             cursorY = newCursorRow
+            pendingWrap = result.pendingWrap
         }
         alternateScreen.resize(newColumns, newRows)
         val oldColumns = columns
@@ -1158,11 +1164,6 @@ internal class Emulator(
             }
         scrollTop = 0
         scrollBottom = newRows - 1
-        // The cursor on the alternate screen, which is not reflowed, is clamped. Unlike moveTo,
-        // this does not count as going to another line.
-        cursorX = cursorX.coerceIn(0, newColumns - 1)
-        cursorY = cursorY.coerceIn(0, newRows - 1)
-        pendingWrap = mainCursor == null && result.pendingWrap
     }
 
     companion object {
