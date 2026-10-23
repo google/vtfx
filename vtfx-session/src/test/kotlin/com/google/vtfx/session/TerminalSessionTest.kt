@@ -390,6 +390,36 @@ class TerminalSessionTest {
     }
 
     @Test
+    fun stickyModifiersApplyToACommittedHtAsTheTabKey() {
+        // The key encoding drops HT as a character with modifiers.
+        session.stickyModifiers = KeyModifiers.of(shift = true)
+        session.edit { it.commitText("\t") }
+        session.stickyModifiers = KeyModifiers.of(alt = true)
+        session.edit { it.commitText("\tabc") }
+        session.stickyModifiers = KeyModifiers.of(ctrl = true)
+        session.edit { it.commitText("\t") }
+        assertEquals("\u001b[Z\u001b\tabc\t", sent.toString())
+        assertEquals(KeyModifiers.None, session.stickyModifiers)
+    }
+
+    @Test
+    fun stickyModifiersApplyToATypedHtAsTheTabKey() {
+        session.stickyModifiers = KeyModifiers.of(shift = true)
+        session.sendText("\t")
+        session.stickyModifiers = KeyModifiers.of(shift = true)
+        session.sendKey(KeyStroke.Character('\t'.code))
+        assertEquals("\u001b[Z\u001b[Z", sent.toString())
+    }
+
+    @Test
+    fun characterKeysOfHtAndLineBreaksWithModifiersAreTheTabAndEnterKeys() {
+        session.sendKey(KeyStroke.Character('\t'.code, KeyModifiers.of(alt = true)))
+        session.sendKey(KeyStroke.Character('\r'.code, KeyModifiers.of(alt = true)))
+        session.sendKey(KeyStroke.Character('\n'.code, KeyModifiers.of(ctrl = true)))
+        assertEquals("\u001b\t\u001b\r\r", sent.toString())
+    }
+
+    @Test
     fun backspaceWithStickyModifiersResetsTheInputHistory() {
         session.sendText("foo bar")
         session.stickyModifiers = KeyModifiers.of(alt = true)

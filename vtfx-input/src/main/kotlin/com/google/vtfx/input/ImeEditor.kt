@@ -353,27 +353,30 @@ public class ImeEditor(
      * passed: they have no effect.
      *
      * A character without Ctrl, Alt, or Meta is committed like [commitText]. Other keys first
-     * finish and send the composing text, so that the host receives them in the order typed.
+     * finish and send the composing text, so that the host receives them in the order typed. A
+     * character key of HT or a line break is the Tab or Enter key, which the key encoding has with
+     * every modifier: it drops a control character with modifiers, which would send nothing.
      */
     public fun onKeyDown(stroke: KeyStroke) {
+        val key = asKey(stroke)
         val hadComposingText = composing.isNotEmpty()
         commitComposingText()
         changedSinceRestart = true
         if (
-            stroke is KeyStroke.Character &&
-                !stroke.modifiers.ctrl &&
-                !stroke.modifiers.alt &&
-                !stroke.modifiers.meta
+            key is KeyStroke.Character &&
+                !key.modifiers.ctrl &&
+                !key.modifiers.alt &&
+                !key.modifiers.meta
         ) {
-            history += withoutDroppedControls(String(Character.toChars(stroke.codePoint)))
+            history += withoutDroppedControls(String(Character.toChars(key.codePoint)))
             endOperation()
             // The IME still has the composing text, which the host received (docs/decisions/0054).
             if (hadComposingText) requestReset()
             return
         }
         flush()
-        listener.send(HostInput.Key(stroke))
-        if (stroke == KeyStroke.Special(TerminalKey.Backspace)) {
+        listener.send(HostInput.Key(key))
+        if (key == KeyStroke.Special(TerminalKey.Backspace)) {
             // The DEL deletes the last character of the history at the host too.
             if (history.isNotEmpty()) {
                 history = history.substring(0, history.offsetByCodePoints(history.length, -1))
@@ -573,6 +576,22 @@ public class ImeEditor(
          */
         private fun isPaste(text: String): Boolean =
             text != "\n" && text.any { it == '\n' || it == '\r' }
+
+        /**
+         * Returns the Tab or Enter key for a character key of HT or a line break, with its
+         * modifiers.
+         */
+        private fun asKey(stroke: KeyStroke): KeyStroke =
+            when (stroke) {
+                is KeyStroke.Special -> stroke
+                is KeyStroke.Character ->
+                    when (stroke.codePoint) {
+                        '\t'.code -> KeyStroke.Special(TerminalKey.Tab, stroke.modifiers)
+                        '\n'.code,
+                        '\r'.code -> KeyStroke.Special(TerminalKey.Enter, stroke.modifiers)
+                        else -> stroke
+                    }
+            }
 
         private fun splitsSurrogatePair(text: String, index: Int): Boolean =
             index in 1 until text.length &&

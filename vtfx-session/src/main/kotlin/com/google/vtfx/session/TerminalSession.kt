@@ -28,6 +28,7 @@ import com.google.vtfx.core.ProtocolLimits
 import com.google.vtfx.core.SearchLines
 import com.google.vtfx.core.Terminal
 import com.google.vtfx.core.TerminalEvent
+import com.google.vtfx.core.TerminalKey
 import com.google.vtfx.core.TerminalLimits
 import com.google.vtfx.core.TerminalModes
 import com.google.vtfx.core.TerminalSnapshot
@@ -356,7 +357,14 @@ public class TerminalSession(
     /** Sends the first character of [text] with [stickyModifiers], and the rest as text. */
     private fun sendTextWithModifiers(text: String, modes: TerminalModes) {
         val first = text.codePointAt(0)
-        val stroke = withStickyModifiers(KeyStroke.Character(first))
+        // HT, the only control that the editing model's text has (line breaks are keys or a
+        // paste), is the Tab key, which the key encoding has with every modifier: it drops a
+        // control character with modifiers, which would send nothing.
+        val stroke =
+            withStickyModifiers(
+                if (first == '\t'.code) KeyStroke.Special(TerminalKey.Tab)
+                else KeyStroke.Character(first)
+            )
         outbox += { writer.sendKey(stroke, modes) }
         val rest = text.substring(Character.charCount(first))
         if (rest.isNotEmpty()) outbox += { writer.sendText(rest) }

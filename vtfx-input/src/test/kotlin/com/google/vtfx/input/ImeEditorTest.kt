@@ -45,6 +45,8 @@ class ImeEditorTest {
 
     private val enter = HostInput.Key(KeyStroke.Special(TerminalKey.Enter))
 
+    private val tab = HostInput.Key(KeyStroke.Special(TerminalKey.Tab))
+
     private fun text(s: String) = HostInput.Text(s)
 
     private fun delete(n: Int) = HostInput.Delete(n)
@@ -309,10 +311,30 @@ class ImeEditorTest {
         editor.onKeyDown(KeyStroke.Character('\t'.code))
         editor.commitText("b")
         editor.onKeyDown(KeyStroke.Character('\r'.code))
-        assertEquals(listOf(text("a\t"), text("b"), enter), sent)
+        assertEquals(listOf(text("a"), tab, text("b"), enter), sent)
         assertEquals("", editor.text)
         assertFalse(editor.endBatchEdit())
         assertEquals(1, restarts)
+    }
+
+    @Test
+    fun characterKeysOfHtAndLineBreaksAreTheTabAndEnterKeys() {
+        // With modifiers, the key encoding would drop them as control characters.
+        val ctrl = KeyModifiers.of(ctrl = true)
+        val alt = KeyModifiers.of(alt = true)
+        editor.onKeyDown(KeyStroke.Character('\t'.code, ctrl))
+        editor.onKeyDown(KeyStroke.Character('\n'.code, alt))
+        editor.onKeyDown(KeyStroke.Character('\r'.code))
+        editor.onKeyDown(KeyStroke.Character('\t'.code))
+        assertEquals(
+            listOf<HostInput>(
+                HostInput.Key(KeyStroke.Special(TerminalKey.Tab, ctrl)),
+                HostInput.Key(KeyStroke.Special(TerminalKey.Enter, alt)),
+                enter,
+                tab,
+            ),
+            sent,
+        )
     }
 
     @Test
