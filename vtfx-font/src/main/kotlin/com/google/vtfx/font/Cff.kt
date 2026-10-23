@@ -31,24 +31,22 @@ internal class CffIndex(table: Reader, at: Int) {
     /** The offset in the table of the first byte after the INDEX. */
     val end: Int
 
-    private val offsets: Reader?
+    private val offsets: Reader
     private val offSize: Int
-    private val data: Reader?
-    private val dataLength: Int
+    private val data: Reader
 
     init {
         if (count == 0) {
             end = at + 2
-            offsets = null
+            offsets = table.sub(at + 2, 0)
             offSize = 0
-            data = null
-            dataLength = 0
+            data = offsets
         } else {
             offSize = table.u8(at + 2)
             if (offSize !in 1..4) malformed("INDEX offset size $offSize")
             offsets = table.sub(at + 3, (count + 1) * offSize)
             if (offset(0) != 1) malformed("INDEX not starting at offset 1")
-            dataLength = offset(count) - 1
+            val dataLength = offset(count) - 1
             // Offsets count from the byte before the data.
             val dataStart = at + 3 + (count + 1) * offSize
             data = table.sub(dataStart, dataLength)
@@ -61,19 +59,19 @@ internal class CffIndex(table: Reader, at: Int) {
         check(index in 0 until count) { "item $index of $count" }
         val start = offset(index)
         val next = offset(index + 1)
-        if (start < 1 || next < start || next - 1 > dataLength)
+        if (start < 1 || next < start || next - 1 > data.length)
             malformed("INDEX offsets not in order")
-        return data!!.sub(start - 1, next - start)
+        return data.sub(start - 1, next - start)
     }
 
     private fun offset(index: Int): Int {
         val at = index * offSize
         val value =
             when (offSize) {
-                1 -> offsets!!.u8(at).toLong()
-                2 -> offsets!!.u16(at).toLong()
-                3 -> offsets!!.u24(at).toLong()
-                else -> offsets!!.u32(at)
+                1 -> offsets.u8(at).toLong()
+                2 -> offsets.u16(at).toLong()
+                3 -> offsets.u24(at).toLong()
+                else -> offsets.u32(at)
             }
         if (value > Int.MAX_VALUE) malformed("INDEX offset $value out of range")
         return value.toInt()
