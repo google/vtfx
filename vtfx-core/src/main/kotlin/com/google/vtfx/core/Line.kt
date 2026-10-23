@@ -180,12 +180,10 @@ internal class Line(columns: Int, style: CellStyle = CellStyle.Default) {
      * character or the cluster would be longer than [MAX_CLUSTER_LENGTH].
      */
     fun combine(column: Int, codePoint: Int): Boolean {
-        val code = codes[column]
-        if (code == BLANK || code == WIDE_TAIL) return false
-        val array = clusters ?: arrayOfNulls<String>(codes.size).also { clusters = it }
-        val current = array[column] ?: String(Character.toChars(code))
+        val current = textAt(column) ?: return false
         // A supplementary code point takes two UTF-16 units.
         if (current.length + Character.charCount(codePoint) > MAX_CLUSTER_LENGTH) return false
+        val array = clusters ?: arrayOfNulls<String>(codes.size).also { clusters = it }
         array[column] = current + String(Character.toChars(codePoint))
         return true
     }
