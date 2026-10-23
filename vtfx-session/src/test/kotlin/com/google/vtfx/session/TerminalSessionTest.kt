@@ -1069,6 +1069,105 @@ class TerminalSessionTest {
     }
 
     @Test
+    fun repliesOfAFeedAreSentBeforeTheListenerFeedsMore() {
+        val replies = mutableListOf<String>()
+        lateinit var feeding: TerminalSession
+        feeding =
+            TerminalSession(
+                { replies += String(it, Charsets.UTF_8) },
+                listener =
+                    object : TerminalSessionListener {
+                        override fun onBell() {
+                            feeding.feed("\u001b[6n".toByteArray())
+                        }
+                    },
+            )
+
+        feeding.feed("\u0007\u001b[5n".toByteArray())
+
+        assertEquals(listOf("\u001b[0n", "\u001b[1;1R"), replies)
+    }
+
+    @Test
+    fun repliesOfAFeedAreSentBeforeTheInputThatTheListenerSends() {
+        val sent = mutableListOf<String>()
+        lateinit var typing: TerminalSession
+        typing =
+            TerminalSession(
+                { sent += String(it, Charsets.UTF_8) },
+                listener =
+                    object : TerminalSessionListener {
+                        override fun onTitleChanged(title: String) {
+                            typing.sendText("x")
+                        }
+                    },
+            )
+
+        typing.feed("\u001b]2;t\u0007\u001b[5n".toByteArray())
+
+        assertEquals(listOf("\u001b[0n", "x"), sent)
+    }
+
+    @Test
+    fun repliesOfFeedsOnSeveralThreadsAreSentInTheOrderOfTheOutput() {
+        // The first feed rings the bell, and its listener waits for a feed on another thread.
+        val replies = mutableListOf<String>()
+        lateinit var feeding: TerminalSession
+        feeding =
+            TerminalSession(
+                { synchronized(replies) { replies += String(it, Charsets.UTF_8) } },
+                listener =
+                    object : TerminalSessionListener {
+                        override fun onBell() {
+                            val other = Thread { feeding.feed("\u001b[6n".toByteArray()) }
+                            other.start()
+                            other.join(TIMEOUT_MILLIS)
+                        }
+                    },
+            )
+
+        feeding.feed("\u0007\u001b[5n".toByteArray())
+
+        assertEquals(listOf("\u001b[0n", "\u001b[1;1R"), replies)
+    }
+
+    @Test
+    fun clipboardWritesOfFeedsOnSeveralThreadsAreMadeInTheOrderOfTheOutput() {
+        val writes = mutableListOf<String>()
+        val clipboard =
+            object : ClipboardAccess {
+                override fun write(text: String) {
+                    synchronized(writes) { writes += text }
+                }
+
+                override fun read(): String? = null
+            }
+        lateinit var feeding: TerminalSession
+        feeding =
+            TerminalSession(
+                {},
+                policy = GatePolicy(allowClipboardWrite = true),
+                clipboard = clipboard,
+                listener =
+                    object : TerminalSessionListener {
+                        override fun onBell() {
+                            // "second"
+                            val other = Thread {
+                                feeding.feed("\u001b]52;c;c2Vjb25k\u0007".toByteArray())
+                            }
+                            other.start()
+                            other.join(TIMEOUT_MILLIS)
+                        }
+                    },
+            )
+
+        // "first"
+        feeding.feed("\u0007\u001b]52;c;Zmlyc3Q=\u0007".toByteArray())
+
+        assertEquals(listOf("first", "second"), writes)
+    }
+
+    @Test
     fun feedingFromTheHostConnectionFails() {
         // It would re-enter the session, and it fails even when the output asks for no reply, so
         // that the mistake does not depend on what the host sends (docs/decisions/0024).

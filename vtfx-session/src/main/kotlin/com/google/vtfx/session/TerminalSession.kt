@@ -117,9 +117,10 @@ public interface TerminalSessionListener {
  *
  * Thread-safe: every method may be called from any thread, and the calls are serialized. The
  * session calls the app's code on the thread of the call that caused it, during that call: the
- * listener and the code behind `clipboard` and `urlOpener` without the session's locks held, and
- * `connection` holding only a lock that keeps the user's input in the order typed. Replies to the
- * host's queries are sent on the thread that calls [feed].
+ * listener and the code behind `urlOpener` and the user's copy and paste without the session's
+ * locks held; `connection`, and `clipboard` for the host's OSC 52, holding only locks that keep the
+ * user's input in the order typed and the effects of the host's output in its order. Replies to the
+ * host's queries are sent on the thread that calls [feed], before the listener hears of the output.
  *
  * @param connection The connection to the host, which receives the user's input and the replies to
  *   the host's queries. See [HostConnection] for its contract.
@@ -173,6 +174,15 @@ public class TerminalSession(
      * latest first.
      */
     private val inputLock = ReentrantLock(/* fair= */ true)
+
+    /**
+     * Serializes [feed] from the interpretation of the output to the end of the gate's handling of
+     * its requests, so that the replies and the clipboard writes of each feed reach the app in the
+     * order the output was interpreted, also from several threads, and before the listener, which
+     * may call the session, hears of the output. Taken before [inputLock] and [lock], and held
+     * while the app's code behind the gate runs; it guards no state. Fair, like [inputLock].
+     */
+    private val outputLock = ReentrantLock(/* fair= */ true)
 
     /**
      * The width of East Asian Ambiguous characters, which a display needs to draw the composing
@@ -477,36 +487,42 @@ public class TerminalSession(
         val scrolledLines: Long
         val scrollbackShrank: Boolean
         val rang: Boolean
-        val requests: List<TerminalEvent>
-        val moved: Boolean
-        lock.withLock {
-            val lineChangesBefore = terminal.lineChanges
-            val scrollbackBefore = terminal.scrollbackSize
-            val pushesBefore = terminal.scrollbackPushes
-            terminal.write(bytes, offset, length)
-            scrolledLines = terminal.scrollbackPushes - pushesBefore
-            scrollbackShrank = terminal.scrollbackSize < scrollbackBefore
-            synchronizing = terminal.modes.synchronizedOutput
-            rang = bellRung
-            titleSet?.let {
-                titleState = it
-                titleNotifier.record(it)
+        outputLock.withLock {
+            val requests: List<TerminalEvent>
+            val moved: Boolean
+            lock.withLock {
+                val lineChangesBefore = terminal.lineChanges
+                val scrollbackBefore = terminal.scrollbackSize
+                val pushesBefore = terminal.scrollbackPushes
+                terminal.write(bytes, offset, length)
+                scrolledLines = terminal.scrollbackPushes - pushesBefore
+                scrollbackShrank = terminal.scrollbackSize < scrollbackBefore
+                synchronizing = terminal.modes.synchronizedOutput
+                rang = bellRung
+                titleSet?.let {
+                    titleState = it
+                    titleNotifier.record(it)
+                }
+                bellRung = false
+                titleSet = null
+                // Empty, without allocating, if there are none.
+                requests = gateRequests.toList()
+                gateRequests.clear()
+                // Following the echo of long input over autowrapped rows is not a move to another
+                // line, while switching the screen or a reset is (docs/design/ime-contract.md
+                // section 5.1). Counting them during the write also catches a switch there and
+                // back. The reset is marked here, with the lock held, so that an input operation
+                // that runs before this feed takes the input lock applies it before its edit.
+                moved = terminal.lineChanges != lineChangesBefore
+                if (moved) hostResetPending = true
             }
-            bellRung = false
-            titleSet = null
-            // Empty, without allocating, if there are none.
-            requests = gateRequests.toList()
-            gateRequests.clear()
-            // Following the echo of long input over autowrapped rows is not a move to another
-            // line, while switching the screen or a reset is (docs/design/ime-contract.md
-            // section 5.1). Counting them during the write also catches a switch there and
-            // back. The reset is marked here, with the lock held, so that an input operation
-            // that runs before this feed takes the input lock applies it before its edit.
-            moved = terminal.lineChanges != lineChangesBefore
-            if (moved) hostResetPending = true
+            // Applies the reset, unless an input operation on another thread already did.
+            if (moved) input {}
+            // Inside the output lock, so that the requests of each feed are handled in the order
+            // the output was interpreted, and before the observers and the listener, which may
+            // call the session, hear of the output.
+            gate.handle(requests)
         }
-        // Applies the reset, unless an input operation on another thread already did.
-        if (moved) input {}
         for (observer in observers) observer.onOutput(
             scrolledLines,
             scrollbackShrank,
@@ -514,8 +530,6 @@ public class TerminalSession(
         )
         if (rang) listener.onBell()
         titleNotifier.tell()
-        // Last, so that an exception from the app's code leaves the session up to date.
-        gate.handle(requests)
     }
 
     /**
