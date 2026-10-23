@@ -20,7 +20,6 @@ package com.google.vtfx.core.graphics
 
 import com.google.vtfx.core.GraphicsStatus
 import com.google.vtfx.core.InternalVtfxApi
-import com.google.vtfx.core.Line
 import com.google.vtfx.core.ProtocolLimits
 import com.google.vtfx.core.TerminalImage
 import com.google.vtfx.core.TerminalLimits
@@ -40,8 +39,6 @@ internal class Graphics(
         val cursorColumn: Int
         val cursorRow: Int
         val rows: Int
-
-        fun line(row: Int): Line
 
         /** Moves the cursor after a placement of [columns] by [rows] cells, as kitty does. */
         fun moveCursorAfterImage(columns: Int, rows: Int)
@@ -382,13 +379,10 @@ internal class Graphics(
                 virtual = command.virtual == 1L,
                 serial = nextSerial++,
             )
-        val layer = screen.layer
-        if (placement.virtual) {
-            layer.add(placement, null, 0)
-            return GraphicsStatus.Ok
+        screen.layer.add(placement, screen.cursorRow, screen.cursorColumn)
+        if (!placement.virtual && command.cursorPolicy != 1L) {
+            screen.moveCursorAfterImage(columns, rows)
         }
-        layer.add(placement, screen.line(screen.cursorRow), screen.cursorColumn)
-        if (command.cursorPolicy != 1L) screen.moveCursorAfterImage(columns, rows)
         return GraphicsStatus.Ok
     }
 

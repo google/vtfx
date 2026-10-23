@@ -86,11 +86,11 @@ internal class GraphicsLayer(
     }
 
     /**
-     * Adds [placement] of its image, anchored at [column] of [line] unless it is virtual, replacing
-     * the placement of the same image with the same nonzero id. The oldest placement goes beyond
-     * the limit.
+     * Adds [placement] of its image, anchored at [row] and [column] of the screen unless it is
+     * virtual, replacing the placement of the same image with the same nonzero id. The oldest
+     * placement goes beyond the limit.
      */
-    fun add(placement: Placement, line: Line?, column: Int) {
+    fun add(placement: Placement, row: Int, column: Int) {
         val image = checkNotNull(placement.image)
         if (placement.id != 0L) {
             val list = if (placement.virtual) image.virtualPlacements else image.placements
@@ -101,7 +101,7 @@ internal class GraphicsLayer(
             virtualCount++
         } else {
             image.placements += placement
-            checkNotNull(line).anchor(placement, column)
+            screen[row].anchor(placement, column)
         }
         placements += placement
         while (placements.size > Graphics.MAX_PLACEMENTS) remove(placements.first())
