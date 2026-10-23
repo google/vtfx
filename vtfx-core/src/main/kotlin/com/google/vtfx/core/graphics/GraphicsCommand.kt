@@ -26,8 +26,9 @@ import com.google.vtfx.core.ProtocolLimits
  * its payload starts in the string (docs/decisions/0038).
  *
  * Keys that are absent keep the protocol's defaults. Values that the protocol defines as unsigned
- * 32-bit integers are kept as [Long]s from 0 to 4294967295; the signed ones ([z], [cellOffsetH],
- * [cellOffsetV]) as [Int]s.
+ * 32-bit integers are kept as [Long]s from 0 to 4294967295; the signed one ([z]) as an [Int]. Keys
+ * that vtfx parses and ignores (`O`, `P`, `Q`, `H`, `V`, `N`) are checked like the others but not
+ * kept.
  */
 internal class GraphicsCommand {
     /** The action (`a`), or 0 if absent, which means transmit. */
@@ -49,18 +50,16 @@ internal class GraphicsCommand {
     var width: Long = 0
     var height: Long = 0
 
-    /** The size of the data (`S`), and its offset in a file (`O`). */
+    /** The size of the data (`S`). */
     var size: Long = 0
-    var offset: Long = 0
 
     /** The image id (`i`), number (`I`), and placement id (`p`). */
     var imageId: Long = 0
     var imageNumber: Long = 0
     var placementId: Long = 0
 
-    /** Whether more chunks follow (`m`), and whether the key was given. */
+    /** Whether more chunks follow (`m`). */
     var more: Long = 0
-    var hasMore: Boolean = false
 
     /** What to delete (`d`). */
     var delete: Char = 'a'
@@ -87,13 +86,6 @@ internal class GraphicsCommand {
 
     /** The z-index (`z`). */
     var z: Int = 0
-
-    /** Relative placements (`P`, `Q`, `H`, `V`) and usage hints (`N`), parsed and ignored. */
-    var parentImage: Long = 0
-    var parentPlacement: Long = 0
-    var cellOffsetH: Int = 0
-    var cellOffsetV: Int = 0
-    var hints: Long = 0
 
     /** Where the payload starts in the string, or its length if there is none. */
     var payloadStart: Int = 0
@@ -131,8 +123,9 @@ internal class GraphicsCommand {
             'o' -> compression = flag(data, from, to, "z") ?: return false
             'd' -> delete = flag(data, from, to, "aAiIcCfFnNpPqQrRxXyYzZ") ?: return false
             'z' -> z = signed(data, from, to) ?: return false
-            'H' -> cellOffsetH = signed(data, from, to) ?: return false
-            'V' -> cellOffsetV = signed(data, from, to) ?: return false
+            // The offsets of relative placements, parsed and ignored.
+            'H',
+            'V' -> if (signed(data, from, to) == null) return false
             else -> {
                 val value = unsigned(data, from, to) ?: return false
                 when (key) {
@@ -141,14 +134,10 @@ internal class GraphicsCommand {
                     's' -> width = value
                     'v' -> height = value
                     'S' -> size = value
-                    'O' -> offset = value
                     'i' -> imageId = value
                     'I' -> imageNumber = value
                     'p' -> placementId = value
-                    'm' -> {
-                        more = value
-                        hasMore = true
-                    }
+                    'm' -> more = value
                     'x' -> x = value
                     'y' -> y = value
                     'w' -> w = value
@@ -159,9 +148,12 @@ internal class GraphicsCommand {
                     'r' -> rows = value
                     'C' -> cursorPolicy = value
                     'U' -> virtual = value
-                    'P' -> parentImage = value
-                    'Q' -> parentPlacement = value
-                    'N' -> hints = value
+                    // The offset in a file, relative placements, and usage hints, parsed and
+                    // ignored.
+                    'O',
+                    'P',
+                    'Q',
+                    'N' -> {}
                     else -> return false
                 }
             }
