@@ -101,9 +101,11 @@ class RepliesAndMouseTest {
 
         @Test
         fun keyboardFlags() {
-            writer.sendReply(TerminalQuery.KeyboardFlags(disambiguateEscapeCodes = true))
-            writer.sendReply(TerminalQuery.KeyboardFlags(disambiguateEscapeCodes = false))
-            assertEquals(listOf("\\e[?1u", "\\e[?0u"), sent)
+            writer.sendReply(TerminalQuery.KeyboardFlags(true, reportAlternateKeys = false))
+            writer.sendReply(TerminalQuery.KeyboardFlags(false, reportAlternateKeys = false))
+            writer.sendReply(TerminalQuery.KeyboardFlags(true, reportAlternateKeys = true))
+            writer.sendReply(TerminalQuery.KeyboardFlags(false, reportAlternateKeys = true))
+            assertEquals(listOf("\\e[?1u", "\\e[?0u", "\\e[?5u", "\\e[?4u"), sent)
         }
 
         @Test

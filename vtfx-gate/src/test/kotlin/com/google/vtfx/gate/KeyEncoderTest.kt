@@ -61,19 +61,28 @@ class KeyEncoderTest {
                 )
             }
         val modes =
-            (0 until 16).map {
+            (0 until 32).map {
                 terminalModes(
                     applicationCursorKeys = it and 1 != 0,
                     applicationKeypad = it and 2 != 0,
                     newLine = it and 4 != 0,
                     disambiguateEscapeCodes = it and 8 != 0,
+                    reportAlternateKeys = it and 16 != 0,
                 )
             }
         val codePoints = (0..0x3FF) + listOf(0x3042, 0xD800, 0xDFFF, 0xFFFD, 0x1F600, 0x10FFFF)
+        // Unshifted keys and keys of the base layout that differ from the character.
+        val others = listOf(0, 0x1B, 0x41, 0x61, 0x9B, 0xD800, 0xDC00, 0x1F600, 0x10FFFF)
         val strokes =
             TerminalKey.entries.flatMap { key -> modifiers.map { KeyStroke.Special(key, it) } } +
                 codePoints.flatMap { codePoint ->
                     modifiers.map { KeyStroke.Character(codePoint, it, codePoint, null) }
+                } +
+                others.flatMap { codePoint ->
+                    others.flatMap { other ->
+                        modifiers.map { KeyStroke.Character(codePoint, it, other, codePoint) } +
+                            modifiers.map { KeyStroke.Character(codePoint, it, other, other) }
+                    }
                 }
         for (stroke in strokes) {
             for (mode in modes) {
@@ -89,12 +98,13 @@ class KeyEncoderTest {
 
     private companion object {
         /**
-         * A bound on the length of a key. The longest, such as ESC [ 1 1 1 4 1 1 1 ; 1 6 u for
-         * U+10FFFF with every modifier in the kitty keyboard protocol, are 13 bytes.
+         * A bound on the length of a key. The longest, such as ESC [ 1 1 1 4 1 1 1 : 1 1 1 4 1 1 1
+         * : 1 1 1 4 1 1 1 ; 1 6 u for U+10FFFF with every modifier and both alternate keys in the
+         * kitty keyboard protocol, are 29 bytes.
          */
-        private const val MAX_KEY_LENGTH = 16
+        private const val MAX_KEY_LENGTH = 29
         private val KEY_SHAPE =
-            Regex("(?:\u001b?(?:\u001b\\[[0-9;]*[A-Za-z~]|\u001bO[A-Za-z]|\r\n|(?s:.)))?")
+            Regex("(?:\u001b?(?:\u001b\\[[0-9;:]*[A-Za-z~]|\u001bO[A-Za-z]|\r\n|(?s:.)))?")
 
         private val normal = terminalModes()
         private val application = terminalModes(applicationCursorKeys = true)
@@ -108,6 +118,9 @@ class KeyEncoderTest {
                 disambiguateEscapeCodes = true,
             )
         private val kittyNewLine = terminalModes(newLine = true, disambiguateEscapeCodes = true)
+        private val alternateKeys =
+            terminalModes(disambiguateEscapeCodes = true, reportAlternateKeys = true)
+        private val onlyAlternateKeys = terminalModes(reportAlternateKeys = true)
         private val shift = KeyModifiers.of(shift = true)
         private val ctrl = KeyModifiers.of(ctrl = true)
         private val alt = KeyModifiers.of(alt = true)
@@ -125,6 +138,10 @@ class KeyEncoderTest {
         /** A character key whose key without modifiers is [unshifted]. */
         private fun key(c: Char, unshifted: Char, modifiers: KeyModifiers) =
             KeyStroke.Character(c.code, modifiers, unshifted.code, null)
+
+        /** A character key with the key [base] at its place on a US keyboard. */
+        private fun key(c: Char, unshifted: Char, base: Char, modifiers: KeyModifiers) =
+            KeyStroke.Character(c.code, modifiers, unshifted.code, base.code)
 
         private fun case(
             stroke: KeyStroke,
@@ -278,6 +295,33 @@ class KeyEncoderTest {
                 kitty(special(TerminalKey.KeypadBegin), "\\e[57427u"),
                 kitty(special(TerminalKey.KeypadEnter), "\\e[57414u"),
                 kitty(special(TerminalKey.KeypadEnter, shift), "\\e[57414;2u"),
+            ) + alternateKeyCases()
+        }
+
+        /** Flag 4 of the kitty keyboard protocol, report alternate keys (docs/decisions/0070). */
+        private fun alternateKeyCases(): List<Case> {
+            fun alternate(stroke: KeyStroke, expected: String) =
+                case(stroke, expected, alternateKeys, "kitty alternate keys")
+            return listOf(
+                // The shifted key, only with Shift and when it differs.
+                alternate(key('!', '1', '1', ctrlShift), "\\e[49:33;6u"),
+                alternate(key('A', 'a', 'a', ctrlShift), "\\e[97:65;6u"),
+                alternate(key('C', 'c', 'c', ctrl), "\\e[99;5u"),
+                alternate(key('1', '1', '1', ctrlShift), "\\e[49;6u"),
+                // The key of the base layout, only when it is known and differs.
+                alternate(key('с', 'с', 'c', ctrl), "\\e[1089::99;5u"),
+                alternate(key('С', 'с', 'c', ctrlShift), "\\e[1089:1057:99;6u"),
+                alternate(key('a', 'a', 'q', alt), "\\e[97::113;3u"),
+                alternate(key('c', 'c', ctrl), "\\e[99;5u"),
+                // Unpaired surrogates are U+FFFD.
+                alternate(key('\ud800', 'a', '\udc00', ctrlShift), "\\e[97:65533:65533;6u"),
+                // Keys that are not sent as CSI u do not change.
+                alternate(key('A', 'a', 'q', shift), "A"),
+                alternate(special(TerminalKey.Escape, ctrlShift), "\\e[27;6u"),
+                alternate(special(TerminalKey.Keypad1, ctrl), "\\e[57400;5u"),
+                // Without flag 1, the legacy encoding has no CSI u.
+                case(key('!', '1', '1', ctrlShift), "!", onlyAlternateKeys, "alternate keys alone"),
+                case(key('c', 'c', 'c', ctrl), "\u0003", onlyAlternateKeys, "alternate keys alone"),
             )
         }
     }

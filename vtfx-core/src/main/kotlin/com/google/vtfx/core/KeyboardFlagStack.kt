@@ -58,8 +58,11 @@ internal class KeyboardFlagStack private constructor(private val entries: List<I
         /** Flag 1: disambiguate escape codes. */
         const val DISAMBIGUATE_ESCAPE_CODES = 1
 
+        /** Flag 4: report alternate keys. */
+        const val REPORT_ALTERNATE_KEYS = 4
+
         /** The flags that vtfx supports. The others are dropped when they are set. */
-        const val SUPPORTED_FLAGS = DISAMBIGUATE_ESCAPE_CODES
+        const val SUPPORTED_FLAGS = DISAMBIGUATE_ESCAPE_CODES or REPORT_ALTERNATE_KEYS
 
         /** A stack without entries. */
         val Empty = KeyboardFlagStack(emptyList())

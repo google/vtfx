@@ -740,12 +740,14 @@ internal class Emulator(
         val flags = (if (isAlternateScreen) alternateKeyboardFlags else mainKeyboardFlags).flags
         modes =
             modes.copy(
-                disambiguateEscapeCodes = flags and KeyboardFlagStack.DISAMBIGUATE_ESCAPE_CODES != 0
+                disambiguateEscapeCodes =
+                    flags and KeyboardFlagStack.DISAMBIGUATE_ESCAPE_CODES != 0,
+                reportAlternateKeys = flags and KeyboardFlagStack.REPORT_ALTERNATE_KEYS != 0,
             )
     }
 
     private fun reportKeyboardFlags() {
-        reply(TerminalQuery.KeyboardFlags(modes.disambiguateEscapeCodes))
+        reply(TerminalQuery.KeyboardFlags(modes.disambiguateEscapeCodes, modes.reportAlternateKeys))
     }
 
     private fun cursorUp(n: Int) {

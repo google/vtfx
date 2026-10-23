@@ -27,8 +27,9 @@ import com.google.vtfx.core.TerminalModes
 /**
  * Encodes key strokes into the bytes that xterm sends for them (xterm ctlseqs, "PC-Style Function
  * Keys"), or, when the host set flag 1 of the kitty keyboard protocol, into the forms of that
- * protocol (docs/decisions/0070). The only inputs are the key, the modifiers, and the terminal
- * modes: no text from the host can reach the output.
+ * protocol, with the alternate keys of flag 4 if the host set it too (docs/decisions/0070). The
+ * only inputs are the key, the modifiers, and the terminal modes: no text from the host can reach
+ * the output.
  */
 internal object KeyEncoder {
     private const val ESC = 0x1B
@@ -39,7 +40,7 @@ internal object KeyEncoder {
         if (modes.disambiguateEscapeCodes) {
             when (stroke) {
                 is KeyStroke.Special -> disambiguateSpecial(stroke.key, stroke.modifiers, modes)
-                is KeyStroke.Character -> disambiguateCharacter(stroke)
+                is KeyStroke.Character -> disambiguateCharacter(stroke, modes)
             }
         } else {
             when (stroke) {
@@ -267,15 +268,31 @@ internal object KeyEncoder {
     /**
      * Encodes a character key as kitty does with flag 1. Without Ctrl, Alt, or Meta, the character
      * is text, as in the legacy encoding. Otherwise it is `CSI code ; modifiers u`, where the code
-     * is the unshifted key, and Shift is reported if [KeyStroke.Character.modifiers] have it. A
-     * character key of a control sends nothing, as in the legacy encoding, and an unpaired
-     * surrogate is U+FFFD.
+     * is the unshifted key, and Shift is reported if [KeyStroke.Character.modifiers] have it. With
+     * flag 4, report alternate keys, the code is followed by the shifted key, the character, if
+     * Shift is held and it differs from the code, and by the key of the base layout, if it is known
+     * and differs from the code: `CSI code : shifted : base ; modifiers u`, with the shifted key
+     * left empty if only the base key is given. A character key of a control sends nothing, as in
+     * the legacy encoding, and an unpaired surrogate is U+FFFD.
      */
-    private fun disambiguateCharacter(stroke: KeyStroke.Character): ByteArray {
+    private fun disambiguateCharacter(
+        stroke: KeyStroke.Character,
+        modes: TerminalModes,
+    ): ByteArray {
         val m = stroke.modifiers
         if (!m.ctrl && !m.alt && !m.meta) return encodeCharacter(stroke.codePoint, m)
         if (isControl(stroke.codePoint)) return ByteArray(0)
-        return csiU(withoutSurrogate(stroke.unshiftedCodePoint), m)
+        val code = withoutSurrogate(stroke.unshiftedCodePoint)
+        if (!modes.reportAlternateKeys) return csiU(code, m)
+        val shifted = withoutSurrogate(stroke.codePoint).takeIf { m.shift && it != code }
+        val base = stroke.baseLayoutCodePoint?.let(::withoutSurrogate)?.takeIf { it != code }
+        val key =
+            when {
+                base != null -> "$code:${shifted ?: ""}:$base"
+                shifted != null -> "$code:$shifted"
+                else -> "$code"
+            }
+        return csi("$key;${m.xtermParameter}u")
     }
 
     /** `CSI code u`, or `CSI code ; modifiers u` with modifiers. */

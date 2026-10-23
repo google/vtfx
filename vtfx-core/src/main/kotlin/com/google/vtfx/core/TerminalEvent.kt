@@ -120,10 +120,13 @@ public sealed interface TerminalQuery {
 
     /**
      * The flags of the kitty keyboard protocol (CSI ? u), of which vtfx supports only
-     * [disambiguateEscapeCodes] (docs/decisions/0070).
+     * [disambiguateEscapeCodes] (flag 1) and [reportAlternateKeys] (flag 4) (docs/decisions/0070).
      */
     @InternalVtfxApi
-    public data class KeyboardFlags(val disambiguateEscapeCodes: Boolean) : TerminalQuery
+    public data class KeyboardFlags(
+        val disambiguateEscapeCodes: Boolean,
+        val reportAlternateKeys: Boolean,
+    ) : TerminalQuery
 
     /** XTVERSION (CSI > q): the name and version of the terminal. */
     @InternalVtfxApi public data object TerminalVersion : TerminalQuery

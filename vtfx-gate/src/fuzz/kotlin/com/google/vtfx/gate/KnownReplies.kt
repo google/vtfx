@@ -34,7 +34,7 @@ internal object KnownReplies {
                     """\u001bP1\${'$'}r[1-6] q\u001b\\""",
                     """\u001bP0\${'$'}r\u001b\\""",
                     """\u001bP>\|vtfx\(0\.1\)\u001b\\""",
-                    """\u001b\[\?[01]u""",
+                    """\u001b\[\?[0145]u""",
                     """\u001b\[8;\d{1,4};\d{1,4}t""",
                     // Pixel sizes, only once a display gave the size of a cell.
                     """\u001b\[[46];\d{1,7};\d{1,7}t""",

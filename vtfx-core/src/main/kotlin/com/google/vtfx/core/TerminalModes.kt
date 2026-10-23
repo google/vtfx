@@ -109,6 +109,13 @@ internal constructor(
      * @suppress
      */
     @InternalVtfxApi public val disambiguateEscapeCodes: Boolean = false,
+    /**
+     * Flag 4 of the kitty keyboard protocol: keys sent as `CSI u` report their shifted key and the
+     * key of the base layout too (docs/decisions/0070).
+     *
+     * @suppress
+     */
+    @InternalVtfxApi public val reportAlternateKeys: Boolean = false,
 ) {
     /** Returns these modes with the given ones replaced. */
     internal fun copy(
@@ -125,6 +132,7 @@ internal constructor(
         mouseTracking: MouseTracking = this.mouseTracking,
         mouseEncoding: MouseEncoding = this.mouseEncoding,
         disambiguateEscapeCodes: Boolean = this.disambiguateEscapeCodes,
+        reportAlternateKeys: Boolean = this.reportAlternateKeys,
     ): TerminalModes =
         TerminalModes(
             applicationCursorKeys,
@@ -140,6 +148,7 @@ internal constructor(
             mouseTracking,
             mouseEncoding,
             disambiguateEscapeCodes,
+            reportAlternateKeys,
         )
 
     override fun equals(other: Any?): Boolean =
@@ -156,7 +165,8 @@ internal constructor(
             other.synchronizedOutput == synchronizedOutput &&
             other.mouseTracking == mouseTracking &&
             other.mouseEncoding == mouseEncoding &&
-            other.disambiguateEscapeCodes == disambiguateEscapeCodes
+            other.disambiguateEscapeCodes == disambiguateEscapeCodes &&
+            other.reportAlternateKeys == reportAlternateKeys
 
     override fun hashCode(): Int {
         var hash = 0
@@ -173,6 +183,7 @@ internal constructor(
         hash = 31 * hash + mouseTracking.hashCode()
         hash = 31 * hash + mouseEncoding.hashCode()
         hash = 31 * hash + disambiguateEscapeCodes.hashCode()
+        hash = 31 * hash + reportAlternateKeys.hashCode()
         return hash
     }
 
@@ -190,6 +201,7 @@ internal constructor(
             "synchronizedOutput=$synchronizedOutput, " +
             "mouseTracking=$mouseTracking, " +
             "mouseEncoding=$mouseEncoding, " +
-            "disambiguateEscapeCodes=$disambiguateEscapeCodes" +
+            "disambiguateEscapeCodes=$disambiguateEscapeCodes, " +
+            "reportAlternateKeys=$reportAlternateKeys" +
             ")"
 }

@@ -17,7 +17,7 @@ The defaults and the reasons for them are in [decisions/0006](../decisions/0006-
 
 | Method | What it sends |
 |---|---|
-| `sendKey(stroke, modes)` | The bytes xterm sends for the key and modifiers under the terminal modes (application cursor keys and so on), or, while the host set flag 1 of the kitty keyboard protocol, the forms of that protocol (section 2.2), encoded by `KeyEncoder` inside the gate. Its inputs are only the key, the modifiers, and the modes, which are enums, booleans, and the code points of a character key, so no text from the host can reach the output ([decisions/0005](../decisions/0005-key-bytes-through-gate.md), [decisions/0070](../decisions/0070-kitty-keyboard-protocol.md)). Only Ctrl makes a control from a character: a character key whose code point is itself a control (C0, DEL, or C1) sends nothing, and an unpaired surrogate is sent as U+FFFD, as in text (section 2.1). |
+| `sendKey(stroke, modes)` | The bytes xterm sends for the key and modifiers under the terminal modes (application cursor keys and so on), or, while the host set flag 1 of the kitty keyboard protocol, the forms of that protocol, with flag 4 if set (section 2.2), encoded by `KeyEncoder` inside the gate. Its inputs are only the key, the modifiers, and the modes, which are enums, booleans, and the code points of a character key, so no text from the host can reach the output ([decisions/0005](../decisions/0005-key-bytes-through-gate.md), [decisions/0070](../decisions/0070-kitty-keyboard-protocol.md)). Only Ctrl makes a control from a character: a character key whose code point is itself a control (C0, DEL, or C1) sends nothing, and an unpaired surrogate is sent as U+FFFD, as in text (section 2.1). |
 | `sendText(text)` | Text that the user typed or the IME committed on one line, converted as in section 2.1. |
 | `sendDeletes(count)` | `count` DELs, which erase text already sent in IME editing. A count outside 1 to 65536 is a programming error. |
 | `sendPaste(text, bracketed)` | Pasted text, converted as in section 2.1, and wrapped in `ESC [ 200 ~` and `ESC [ 201 ~` when `bracketed`. Text of several lines that the IME commits, such as a clipboard suggestion, is a paste too (section 4.2 of [ime-contract.md](ime-contract.md), [decisions/0050](../decisions/0050-ime-text-of-several-lines-is-a-paste.md)). |
@@ -39,6 +39,8 @@ The same conversion is done whether or not the host enabled bracketed paste mode
 ### 2.2 Keys in the kitty keyboard protocol
 
 While the host set flag 1 of the kitty keyboard protocol, disambiguate escape codes (section 3 of [emulation.md](emulation.md)), `KeyEncoder` encodes keys as kitty does with that flag ([decisions/0070](../decisions/0070-kitty-keyboard-protocol.md)). `m` below is the modifier parameter, 1 + 1 for Shift, 2 for Alt, 4 for Ctrl, and 8 for Meta (the protocol's Super), the same as in xterm's sequences; `;m` is left out without modifiers.
+
+With flag 4 too, report alternate keys, a character key sent as `CSI u` reports its alternate keys after the code: `CSI code : shifted : base ; m u`. The shifted key is the character that the key produced, given only when Shift is held and it differs from the code; the base key is `KeyStroke.Character.baseLayoutCodePoint`, the key at the same place on a US PC-101 keyboard, given only when it is known and differs from the code, and when it is given without a shifted key, the shifted key is left empty (`CSI code :: base ; m u`). Ctrl+Shift+1 on a US layout is `CSI 49 : 33 ; 6 u`, and Ctrl+С on a Russian layout `CSI 1089 :: 99 ; 5 u`. Flag 4 changes no other key, and without flag 1 it changes nothing.
 
 | Key | Without modifiers | With modifiers |
 |---|---|---|
@@ -64,7 +66,7 @@ The code of a character key is `KeyStroke.Character.unshiftedCodePoint`, the cha
 | DA1 (`CSI c`, DECID) | `CSI ? 62 ; 22 c` (VT220, ANSI color) |
 | DA2 (`CSI > c`) | `CSI > 0 ; 10 ; 1 c` (as Windows Terminal reports) |
 | XTVERSION (`CSI > q`) | `DCS > | vtfx(0.1) ST` |
-| The flags of the kitty keyboard protocol (`CSI ? u`) | `CSI ? 1 u` or `CSI ? 0 u`, whether flag 1, the only one supported, is set ([decisions/0070](../decisions/0070-kitty-keyboard-protocol.md)) |
+| The flags of the kitty keyboard protocol (`CSI ? u`) | `CSI ? flags u`, with the flags set of those supported, 1 and 4 ([decisions/0070](../decisions/0070-kitty-keyboard-protocol.md)) |
 | DSR 5 | `CSI 0 n` |
 | DSR 6, DECXCPR | `CSI row ; column R`, `CSI ? row ; column R` |
 | DECRQM | `CSI mode ; state $ y`, with `?` for DEC private modes |

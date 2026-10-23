@@ -335,6 +335,22 @@ class TerminalSessionTest {
     }
 
     @Test
+    fun keysReportTheirAlternateKeysWhenTheHostAsks() {
+        val ctrlShiftEs =
+            KeyStroke.Character(
+                'С'.code,
+                KeyModifiers.of(ctrl = true, shift = true),
+                'с'.code,
+                'c'.code,
+            )
+        feed("\u001b[>5u")
+        session.sendKey(ctrlShiftEs)
+        feed("\u001b[=1u")
+        session.sendKey(ctrlShiftEs)
+        assertEquals("\u001b[1089:1057:99;6u\u001b[1089;6u", sent.toString())
+    }
+
+    @Test
     fun enterSendsCrLfInNewlineMode() {
         feed("\u001b[20h")
         session.sendText("\n")

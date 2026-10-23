@@ -67,9 +67,9 @@ public class HostWriter(private val connection: HostConnection) {
 
     /**
      * Sends [stroke] as xterm encodes it under [modes], for example with SS3 for the cursor keys in
-     * application cursor mode (docs/decisions/0005), or as flag 1 of the kitty keyboard protocol
-     * encodes it if [modes] have it (docs/decisions/0070). A character key of a control character
-     * sends nothing.
+     * application cursor mode (docs/decisions/0005), or as flags 1 and 4 of the kitty keyboard
+     * protocol encode it if [modes] have them (docs/decisions/0070). A character key of a control
+     * character sends nothing.
      *
      * @suppress
      */

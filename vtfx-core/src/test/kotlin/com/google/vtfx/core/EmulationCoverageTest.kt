@@ -250,13 +250,18 @@ class EmulationCoverageTest {
         }
 
         @Test
-        fun onlyTheSupportedFlagIsKeptAndReported() {
+        fun onlyTheSupportedFlagsAreKeptAndReported() {
             val t = terminal()
             t.write("\u001b[>31u\u001b[?u")
-            assertEquals(listOf<TerminalQuery>(TerminalQuery.KeyboardFlags(true)), replies())
-            // Flags 2, 4, 8, and 16 are not supported, so alone they set nothing.
-            t.write("\u001b[>30u")
+            assertEquals(listOf<TerminalQuery>(TerminalQuery.KeyboardFlags(true, true)), replies())
+            assertTrue(t.modes.reportAlternateKeys)
+            // Flags 2, 8, and 16 are not supported, so alone they set nothing.
+            t.write("\u001b[>26u")
             assertFalse(t.flags())
+            assertFalse(t.modes.reportAlternateKeys)
+            events.clear()
+            t.write("\u001b[=4u\u001b[?u")
+            assertEquals(listOf<TerminalQuery>(TerminalQuery.KeyboardFlags(false, true)), replies())
         }
 
         @Test
