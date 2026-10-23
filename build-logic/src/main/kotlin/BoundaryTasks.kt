@@ -46,6 +46,7 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
+import org.objectweb.asm.ClassReader
 
 /** The name under which [BoundaryChecks] is registered. */
 const val BOUNDARY_CHECKS_SERVICE = "vtfxBoundaryChecks"
@@ -177,25 +178,11 @@ abstract class CheckClassReferencesTask : BoundaryCheckTask() {
     override fun check() {
         val directories = classDirectories.files + variantDirectories.get().map { it.asFile }
         val jars = variantJars.get().map { it.asFile }
-        val classFiles =
-            directories.flatMap { directory ->
-                directory
-                    .walk()
-                    .filter { it.isFile && it.extension == "class" }
-                    .map { it.readBytes() }
-            } +
-                jars.flatMap { jar ->
-                    ZipFile(jar).use { zip ->
-                        zip.entries()
-                            .asSequence()
-                            .filter {
-                                it.name.endsWith(".class") && !it.name.startsWith("META-INF/")
-                            }
-                            .map { entry -> zip.getInputStream(entry).use { it.readBytes() } }
-                            .toList()
-                    }
-                }
-        val classes = classFiles.map { ClassReferences.read(it) }.sortedBy { it.name }
+        val classes =
+            checkedClassFiles(directories.toList(), jars)
+                .values
+                .map { ClassReferences.read(it) }
+                .sortedBy { it.name }
         val boundaries = Boundaries.parse(this.boundaries.get().asFile.readText())
         val projectClasses = projectClasspath.files.flatMap(::classNames).toSet()
         val violations =
@@ -237,26 +224,67 @@ abstract class CheckLibraryArtifactTask : BoundaryCheckTask() {
     override fun check() {
         val directories = classDirectories.files + variantDirectories.get().map { it.asFile }
         val checkedClasses =
-            directories.flatMap { directory ->
-                directory
-                    .walk()
-                    .filter { it.isFile && it.extension == "class" }
-                    .map { it.relativeTo(directory).invariantSeparatorsPath to it.readBytes() }
-            } +
-                variantJars.get().flatMap { jar ->
-                    ZipFile(jar.asFile).use { zip ->
-                        zip.entries()
-                            .asSequence()
-                            .filter { !it.isDirectory && it.name.endsWith(".class") }
-                            .map { entry ->
-                                entry.name to zip.getInputStream(entry).use { it.readBytes() }
-                            }
-                            .toList()
-                    }
-                }
+            checkedClassFiles(directories.toList(), variantJars.get().map { it.asFile })
         val file = artifact.get().asFile
-        failOn(LibraryArtifacts.violations(file.name, file.readBytes(), checkedClasses.toMap()))
+        failOn(LibraryArtifacts.violations(file.name, file.readBytes(), checkedClasses))
     }
+}
+
+/**
+ * The class files that [CheckClassReferencesTask] reads and that [CheckLibraryArtifactTask] lets a
+ * library's artifact ship (docs/design/boundaries.md sections 4.1 and 6), by their paths: those in
+ * [directories] and in [jars], but those under `META-INF/`. Both tasks take them from here, so that
+ * they agree on which classes were checked. Fails if two of them have the same path, since the
+ * check of classes would see one of them and the artifact could ship the other, or if one is not at
+ * the path of the class it holds, since the check finds classes by their paths.
+ */
+fun checkedClassFiles(directories: List<File>, jars: List<File>): Map<String, ByteArray> {
+    class ClassFile(val input: File, val path: String, val bytes: ByteArray)
+    val classFiles =
+        directories.flatMap { directory ->
+            directory
+                .walk()
+                .filter { it.isFile && it.extension == "class" }
+                .map {
+                    ClassFile(
+                        directory,
+                        it.relativeTo(directory).invariantSeparatorsPath,
+                        it.readBytes(),
+                    )
+                }
+                .toList()
+        } +
+            jars.flatMap { jar ->
+                ZipFile(jar).use { zip ->
+                    zip.entries()
+                        .asSequence()
+                        .filter { !it.isDirectory && it.name.endsWith(".class") }
+                        .map { entry ->
+                            ClassFile(
+                                jar,
+                                entry.name,
+                                zip.getInputStream(entry).use { it.readBytes() },
+                            )
+                        }
+                        .toList()
+                }
+            }
+    val checked = classFiles.filter { !it.path.startsWith("META-INF/") }
+    val violations =
+        checked
+            .groupBy { it.path }
+            .filterValues { it.size > 1 }
+            .map { (path, copies) ->
+                "$path is in more than one of ${copies.map { it.input }}, so the check of " +
+                    "classes and the artifact could each take another"
+            } +
+            checked.mapNotNull { classFile ->
+                val name = ClassReader(classFile.bytes).className
+                if (classFile.path == "$name.class") null
+                else "${classFile.path} in ${classFile.input} holds the class $name"
+            }
+    failOn(violations)
+    return checked.associate { it.path to it.bytes }
 }
 
 /** The internal names of the classes in [file], a directory or a jar. */
