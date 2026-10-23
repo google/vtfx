@@ -354,38 +354,25 @@ public class LinkFinder(private val patterns: List<LinkPattern>) {
      */
     private fun match(text: String): List<TextMatch> {
         // The matches of the patterns so far, ordered and without overlaps. A pattern finds its
-        // matches in order without overlaps, so one pass over the kept ones checks them all, and
-        // the work is linear in the number of matches.
+        // matches in order without overlaps, so one pass over the kept ones checks and merges them
+        // all, and the work is linear in the number of matches.
         var kept = emptyList<TextMatch>()
         for (pattern in patterns) {
-            val added = mutableListOf<TextMatch>()
+            val merged = ArrayList<TextMatch>(kept.size)
             var next = 0
             var previousEnd = 0
             pattern.find(text) { start, end, url ->
                 check(start >= previousEnd) { "matches out of order" }
                 previousEnd = end
                 // The kept matches before next end at or before start.
-                while (next < kept.size && kept[next].end <= start) next++
+                while (next < kept.size && kept[next].end <= start) merged += kept[next++]
                 if (next == kept.size || end <= kept[next].start)
-                    added += TextMatch(start, end, url, pattern)
+                    merged += TextMatch(start, end, url, pattern)
             }
-            if (added.isNotEmpty()) kept = merge(kept, added)
+            merged.addAll(kept.subList(next, kept.size))
+            kept = merged
         }
         return kept
-    }
-
-    /** Merges two lists ordered by start into one. */
-    private fun merge(first: List<TextMatch>, second: List<TextMatch>): List<TextMatch> {
-        val merged = ArrayList<TextMatch>(first.size + second.size)
-        var i = 0
-        var j = 0
-        while (i < first.size || j < second.size) {
-            merged +=
-                if (j == second.size || (i < first.size && first[i].start < second[j].start))
-                    first[i++]
-                else second[j++]
-        }
-        return merged
     }
 
     /**
