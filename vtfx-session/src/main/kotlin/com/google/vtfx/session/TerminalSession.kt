@@ -465,12 +465,13 @@ public class TerminalSession(
         check(!isEditingOnCurrentThread()) {
             "an input operation must not call back into the session"
         }
-        var synchronizing = false
-        var scrolledLines = 0L
-        var scrollbackShrank = false
-        var rang = false
-        var requests: List<TerminalEvent> = emptyList()
-        val moved = lock.withLock {
+        val synchronizing: Boolean
+        val scrolledLines: Long
+        val scrollbackShrank: Boolean
+        val rang: Boolean
+        val requests: List<TerminalEvent>
+        val moved: Boolean
+        lock.withLock {
             val lineChangesBefore = terminal.lineChanges
             val scrollbackBefore = terminal.scrollbackSize
             val pushesBefore = terminal.scrollbackPushes
@@ -485,18 +486,16 @@ public class TerminalSession(
             }
             bellRung = false
             titleSet = null
-            if (gateRequests.isNotEmpty()) {
-                requests = gateRequests.toList()
-                gateRequests.clear()
-            }
+            // Empty, without allocating, if there are none.
+            requests = gateRequests.toList()
+            gateRequests.clear()
             // Following the echo of long input over autowrapped rows is not a move to another
             // line, while switching the screen or a reset is (docs/design/ime-contract.md
             // section 5.1). Counting them during the write also catches a switch there and
             // back. The reset is marked here, with the lock held, so that an input operation
             // that runs before this feed takes the input lock applies it before its edit.
-            val moved = terminal.lineChanges != lineChangesBefore
+            moved = terminal.lineChanges != lineChangesBefore
             if (moved) hostResetPending = true
-            moved
         }
         // Applies the reset, unless an input operation on another thread already did.
         if (moved) input {}
@@ -578,31 +577,31 @@ public class TerminalSession(
         require((cellWidth == 0) == (cellHeight == 0)) {
             "cell size must have both sides or neither: ${cellWidth}x$cellHeight"
         }
-        val (report, changed) =
-            lock.withLock {
-                val changed = terminal.columns != columns || terminal.rows != rows
-                if (changed) terminal.resize(columns, rows)
-                val cellChanged =
-                    cellWidth != 0 && (cellWidth != this.cellWidth || cellHeight != this.cellHeight)
-                if (cellChanged) {
-                    terminal.setCellSize(cellWidth, cellHeight)
-                    this.cellWidth = cellWidth
-                    this.cellHeight = cellHeight
-                }
-                val report = changed || cellChanged || !resized
-                resized = true
-                if (report) {
-                    sizeNotifier.record(
-                        ReportedSize(
-                            columns,
-                            rows,
-                            columns * this.cellWidth,
-                            rows * this.cellHeight,
-                        )
-                    )
-                }
-                Pair(report, changed)
+        val report: Boolean
+        val changed: Boolean
+        lock.withLock {
+            changed = terminal.columns != columns || terminal.rows != rows
+            if (changed) terminal.resize(columns, rows)
+            val cellChanged =
+                cellWidth != 0 && (cellWidth != this.cellWidth || cellHeight != this.cellHeight)
+            if (cellChanged) {
+                terminal.setCellSize(cellWidth, cellHeight)
+                this.cellWidth = cellWidth
+                this.cellHeight = cellHeight
             }
+            report = changed || cellChanged || !resized
+            resized = true
+            if (report) {
+                sizeNotifier.record(
+                    ReportedSize(
+                        columns,
+                        rows,
+                        columns * this.cellWidth,
+                        rows * this.cellHeight,
+                    )
+                )
+            }
+        }
         if (report) sizeNotifier.tell()
         if (changed) for (observer in observers) observer.onScreenChanged()
     }
