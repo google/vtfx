@@ -800,7 +800,9 @@ public class TerminalSession(
         when (event) {
             is TerminalEvent.TitleChanged -> titleSet = event.title
             TerminalEvent.Bell -> bellRung = true
-            else -> gateRequests += event
+            is TerminalEvent.ReplyRequested,
+            is TerminalEvent.ClipboardWriteRequested,
+            is TerminalEvent.ClipboardReadRequested -> gateRequests += event
         }
     }
 
