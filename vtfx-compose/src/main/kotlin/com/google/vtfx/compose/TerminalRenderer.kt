@@ -866,9 +866,18 @@ internal class TerminalRenderer(
  * again if it lost its display list, as `View` does.
  */
 internal class LineCache(private val metrics: CellMetrics, private val density: Density) {
-    private class Entry(val line: LineSnapshot, val node: RenderNode, var frame: Int)
+    /** A line, equal to the lines of the same content. Its hash is computed once. */
+    private class Key(val line: LineSnapshot) {
+        private val hash = line.contentHashCode()
 
-    private val entries = HashMap<Int, MutableList<Entry>>()
+        override fun equals(other: Any?): Boolean = other is Key && line.contentEquals(other.line)
+
+        override fun hashCode(): Int = hash
+    }
+
+    private class Entry(val node: RenderNode, var frame: Int)
+
+    private val entries = HashMap<Key, Entry>()
     private val unusedNodes = ArrayDeque<RenderNode>()
     private val recorder = CanvasDrawScope()
     private var frame = 0
@@ -886,18 +895,15 @@ internal class LineCache(private val metrics: CellMetrics, private val density: 
     }
 
     fun nodeFor(line: LineSnapshot, draw: DrawScope.() -> Unit): RenderNode {
-        val hash = line.contentHashCode()
-        val bucket = entries.getOrPut(hash) { mutableListOf() }
-        bucket
-            .firstOrNull { it.line.contentEquals(line) }
-            ?.let {
-                it.frame = frame
-                if (!it.node.hasDisplayList()) record(it.node, draw)
-                return it.node
-            }
+        val key = Key(line)
+        entries[key]?.let {
+            it.frame = frame
+            if (!it.node.hasDisplayList()) record(it.node, draw)
+            return it.node
+        }
         val node = unusedNodes.removeLastOrNull() ?: RenderNode("vtfx-line")
         record(node, draw)
-        bucket += Entry(line, node, frame)
+        entries[key] = Entry(node, frame)
         return node
     }
 
@@ -918,13 +924,8 @@ internal class LineCache(private val metrics: CellMetrics, private val density: 
     }
 
     fun endFrame() {
-        val iterator = entries.values.iterator()
-        while (iterator.hasNext()) {
-            val bucket = iterator.next()
-            bucket.removeAll { entry ->
-                (entry.frame < frame - 1).also { if (it) release(entry.node) }
-            }
-            if (bucket.isEmpty()) iterator.remove()
+        entries.values.removeIf { entry ->
+            (entry.frame < frame - 1).also { if (it) release(entry.node) }
         }
     }
 
@@ -935,7 +936,7 @@ internal class LineCache(private val metrics: CellMetrics, private val density: 
     }
 
     private fun clear() {
-        entries.values.forEach { bucket -> bucket.forEach { release(it.node) } }
+        entries.values.forEach { release(it.node) }
         entries.clear()
     }
 
