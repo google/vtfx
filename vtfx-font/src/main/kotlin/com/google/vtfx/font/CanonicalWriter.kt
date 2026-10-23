@@ -30,6 +30,13 @@ internal object CanonicalWriter {
     const val MIN_COORDINATE = -16384
     const val MAX_COORDINATE = 16383
 
+    /**
+     * The most points of all the glyphs of a face together (fonts.md section 9). Neither the size
+     * of the canonical font nor the limits of one glyph bound them: repeat flags give 128 equal
+     * points a byte, and every glyph can reach the most points through one component glyph.
+     */
+    const val MAX_FACE_POINTS = 1L shl 25
+
     private const val REGULAR = "Regular"
 
     fun write(parts: FaceParts, limits: FontLimits): ByteArray {
@@ -37,11 +44,13 @@ internal object CanonicalWriter {
         val glyf = Sink(limits.maxOutputBytes)
         val loca = IntArray(numGlyphs + 1)
         val glyphs = GlyphStats(numGlyphs)
+        val points = WorkBudget(MAX_FACE_POINTS, "points")
         for (glyphId in 0 until numGlyphs) {
             if (Thread.interrupted()) throw InterruptedException()
             loca[glyphId] = glyf.size
             val outline = parts.outlines.outline(glyphId)
             if (!outline.isEmpty) {
+                points.spend(outline.pointCount)
                 val box = boundingBox(outline)
                 writeGlyph(outline, box, glyf)
                 glyphs.add(glyphId, outline, box, parts.advances[glyphId])

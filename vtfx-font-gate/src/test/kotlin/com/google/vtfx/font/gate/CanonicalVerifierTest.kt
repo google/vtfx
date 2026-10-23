@@ -247,6 +247,24 @@ class CanonicalVerifierTest {
         assertEquals(Kind.Malformed, verifyFailure(font))
     }
 
+    @Test
+    fun pointsOfAllGlyphsAsManyAsTheLimitPass() {
+        // 22 points of variations.ttf, and 2^25 - 22 more.
+        val font = withGlyphsAtTheOrigin(List(2047) { 16384 } + (16384 - 22))
+
+        val loaded = SanitizedFont.fromCanonical(font, limits)
+
+        assertContentEquals(font, loaded.toByteArray())
+    }
+
+    @Test
+    fun pointsOfAllGlyphsBeyondTheLimitAreMalformed() {
+        // Each glyph within the limit of one glyph, and the glyphs together one point beyond 2^25.
+        val font = withGlyphsAtTheOrigin(List(2047) { 16384 } + (16384 - 21))
+
+        assertEquals(Kind.Malformed, verifyFailure(font))
+    }
+
     /**
      * Every byte of the header, the directory, and the tables with no number left free (hhea, loca,
      * maxp, name) is fixed or computed from other parts of the font: a change of any one of them,
@@ -348,6 +366,68 @@ class CanonicalVerifierTest {
             write(variations, cmap + format12, tableLength(variations, "cmap") - format12)
         }
         return withTables(variations, mapOf("cmap" to bytes.toByteArray()))
+    }
+
+    /**
+     * [variations] with glyphs of [points] points each after its own, each a contour of points on
+     * the curve at (0, 0) with the advance of the other glyphs. They change nothing else that the
+     * verifier computes, since the bounding box of the font has (0, 0) and every advance is the
+     * same; and they take two bytes for each 256 points, as repeated flags.
+     */
+    private fun withGlyphsAtTheOrigin(points: List<Int>): ByteArray {
+        val maxp = tableOffset(variations, "maxp")
+        val hhea = tableOffset(variations, "hhea")
+        val loca = tableOffset(variations, "loca")
+        val hmtx = tableOffset(variations, "hmtx")
+        val ownGlyphs = u32At(variations, maxp + 4).toInt() ushr 16
+        val numGlyphs = ownGlyphs + points.size
+        val glyf = ByteArrayOutputStream()
+        glyf.write(variations, tableOffset(variations, "glyf"), tableLength(variations, "glyf"))
+        val newLoca = ByteArrayOutputStream()
+        val locaOut = DataOutputStream(newLoca)
+        newLoca.write(variations, loca, 4 * ownGlyphs)
+        val newHmtx = ByteArrayOutputStream()
+        val hmtxOut = DataOutputStream(newHmtx)
+        newHmtx.write(variations, hmtx, tableLength(variations, "hmtx"))
+        val advance = u32At(variations, hmtx).toInt() ushr 16
+        for (count in points) {
+            locaOut.writeInt(glyf.size())
+            val glyph = DataOutputStream(glyf)
+            glyph.writeShort(1)
+            repeat(4) { glyph.writeShort(0) }
+            glyph.writeShort(count - 1)
+            glyph.writeShort(0)
+            var left = count
+            while (left > 0) {
+                val run = minOf(left, 256)
+                if (run >= 3) {
+                    glyph.writeByte(0x39)
+                    glyph.writeByte(run - 1)
+                } else {
+                    repeat(run) { glyph.writeByte(0x31) }
+                }
+                left -= run
+            }
+            while (glyf.size() % 4 != 0) glyph.writeByte(0)
+            hmtxOut.writeShort(advance)
+            hmtxOut.writeShort(0)
+        }
+        locaOut.writeInt(glyf.size())
+        val newMaxp = variations.copyOfRange(maxp, maxp + tableLength(variations, "maxp"))
+        putU16(newMaxp, 4, numGlyphs)
+        putU16(newMaxp, 6, maxOf(u32At(newMaxp, 6).toInt() ushr 16, points.max()))
+        val newHhea = variations.copyOfRange(hhea, hhea + tableLength(variations, "hhea"))
+        putU16(newHhea, 34, numGlyphs)
+        return withTables(
+            variations,
+            mapOf(
+                "glyf" to glyf.toByteArray(),
+                "loca" to newLoca.toByteArray(),
+                "hmtx" to newHmtx.toByteArray(),
+                "maxp" to newMaxp,
+                "hhea" to newHhea,
+            ),
+        )
     }
 
     private fun putU24(out: DataOutputStream, value: Int) {

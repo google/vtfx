@@ -76,6 +76,12 @@ private const val MAX_ITALIC_ANGLE = 60 shl 16
  */
 private const val MAX_VARIATION_SEQUENCES = 1 shl 20
 
+/**
+ * The most points of all the glyphs together, as vtfx-font's writer allows (fonts.md section 9):
+ * repeat flags give 128 equal points a byte, so the size of the font does not bound them.
+ */
+private const val MAX_FACE_POINTS = 1 shl 25
+
 private fun malformed(message: String): Nothing =
     throw InvalidFontException(InvalidFontException.Kind.Malformed, message)
 
@@ -105,6 +111,12 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
     private var yMax = 0
     private var maxPoints = 0
     private var maxContours = 0
+
+    /**
+     * The points of the glyphs checked so far. It cannot overflow: it fails as soon as it passes
+     * [MAX_FACE_POINTS], by at most the points of one glyph.
+     */
+    private var facePoints = 0
 
     // The points of the glyph being checked, in arrays that every glyph reuses, grown to the
     // largest: a CJK font has tens of thousands of glyphs, and Android's runtime does not remove
@@ -304,6 +316,9 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
         }
         val points = lastEnd + 1
         expect(points <= limits.maxGlyphPoints) { "glyph $glyph points" }
+        // Before the points are read, so that their work is bounded.
+        facePoints += points
+        expect(facePoints <= MAX_FACE_POINTS) { "more than $MAX_FACE_POINTS points" }
         var at = start + 10 + contours * 2
         expect(u16(at) == 0) { "glyph $glyph instructions" }
         at += 2

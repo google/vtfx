@@ -208,6 +208,11 @@ class SanitizedFontTest {
     }
 
     @Test
+    fun pointsOfAllGlyphsAreLimitedForTheWholeFace() {
+        assertEquals(Kind.TooComplex, failure(fontOfGlyphsAtTheOrigin(glyphs = 2049)))
+    }
+
+    @Test
     fun componentPlacedByPointsIsUnsupported() {
         val font =
             TestTrueTypeFont(

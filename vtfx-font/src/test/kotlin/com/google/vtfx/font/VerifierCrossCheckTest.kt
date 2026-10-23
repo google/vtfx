@@ -124,4 +124,20 @@ class VerifierCrossCheckTest {
 
         assertContentEquals(sanitized, loaded.toByteArray())
     }
+
+    /**
+     * The verifier allows as many points of all the glyphs together as sanitizing does: it accepts
+     * the font of the most that sanitizing writes.
+     */
+    @Test
+    fun verifierAcceptsAsManyPointsAsSanitizingWrites() {
+        // 2048 glyphs of 16384 points: 2^25.
+        val sanitized =
+            FontFile.sanitize(fontOfGlyphsAtTheOrigin(glyphs = 2048).build(), 0, limits)
+                .toByteArray()
+
+        val loaded = SanitizedFont.fromCanonical(sanitized, limits)
+
+        assertContentEquals(sanitized, loaded.toByteArray())
+    }
 }

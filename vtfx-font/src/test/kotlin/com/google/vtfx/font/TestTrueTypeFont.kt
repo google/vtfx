@@ -58,6 +58,24 @@ fun square(x: Int, y: Int, size: Int): List<P> =
     listOf(P(x, y), P(x, y + size), P(x + size, y + size), P(x + size, y))
 
 /**
+ * A font of many points in few bytes: glyph 1 has 16384 points at (0, 0), the most that one glyph
+ * has by default, which the canonical form writes as repeated flags of two bytes for each 256, and
+ * each of the [glyphs] - 1 glyphs after it has them again through one component; so its glyphs have
+ * [glyphs] times 16384 points together.
+ */
+fun fontOfGlyphsAtTheOrigin(glyphs: Int): TestTrueTypeFont =
+    TestTrueTypeFont(
+        glyphs =
+            List(glyphs + 1) {
+                when (it) {
+                    0 -> TestGlyph.Empty()
+                    1 -> TestGlyph.Simple(listOf(List(16384) { P(0, 0) }))
+                    else -> TestGlyph.Composite(listOf(TestComponent(1, 0, 0)))
+                }
+            }
+    )
+
+/**
  * Builds TrueType fonts for tests, with the tables a real font has. Each property can be changed to
  * make the font of a test.
  */

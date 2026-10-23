@@ -525,6 +525,18 @@ class SanitizedCffFontTest {
     }
 
     @Test
+    fun pointsOfAllGlyphsAreLimitedForTheWholeFace() {
+        // The subroutine draws 24 lines to (0, 0), and each glyph calls it 682 times: 16368
+        // points, within the limit of one glyph, and about 35,000 operators and operands, so that
+        // 2100 glyphs run fewer than the 2^27 of a face but have more than 2^25 points.
+        val glyph = "0 0 rmoveto" + " -107 callgsubr".repeat(682) + " endchar"
+        val font = TestCffFont(glyphs = List(2100) { if (it == 0) "endchar" else glyph })
+        font.globalSubrs = listOf("0 0 ".repeat(24) + "rlineto return")
+
+        assertEquals(Kind.TooComplex, failure(font))
+    }
+
+    @Test
     fun pathBeforeMovetoIsMalformed() {
         assertEquals(Kind.Malformed, failure(glyph("300 0 rlineto endchar")))
     }

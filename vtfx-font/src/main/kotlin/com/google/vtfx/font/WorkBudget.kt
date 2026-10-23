@@ -29,6 +29,12 @@ internal class WorkBudget(private val limit: Long, private val what: String) {
 
     /** Takes one step, failing as too complex when the face has taken all of them. */
     fun spend() {
-        if (--left < 0) tooComplex("face of more than $limit $what")
+        spend(1)
+    }
+
+    /** Takes [steps] steps, failing as too complex when the face has taken all of them. */
+    fun spend(steps: Int) {
+        left -= steps
+        if (left < 0) tooComplex("face of more than $limit $what")
     }
 }
