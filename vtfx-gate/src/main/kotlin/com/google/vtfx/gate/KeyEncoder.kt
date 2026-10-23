@@ -39,11 +39,10 @@ internal object KeyEncoder {
 
     private fun encodeSpecial(
         key: TerminalKey,
-        modifiers: KeyModifiers,
+        m: KeyModifiers,
         modes: TerminalModes,
-    ): ByteArray {
-        val m = modifiers
-        return when (key) {
+    ): ByteArray =
+        when (key) {
             TerminalKey.Escape -> withAlt(byteArrayOf(ESC.toByte()), m)
             TerminalKey.Tab -> if (m.shift) csi("Z") else withAlt(byteArrayOf(0x09), m)
             TerminalKey.Enter ->
@@ -72,43 +71,39 @@ internal object KeyEncoder {
             TerminalKey.F10 -> tilde(21, m)
             TerminalKey.F11 -> tilde(23, m)
             TerminalKey.F12 -> tilde(24, m)
-            else -> keypad(key, m, modes)
+            TerminalKey.Keypad0 -> keypad('0', 'p', m, modes)
+            TerminalKey.Keypad1 -> keypad('1', 'q', m, modes)
+            TerminalKey.Keypad2 -> keypad('2', 'r', m, modes)
+            TerminalKey.Keypad3 -> keypad('3', 's', m, modes)
+            TerminalKey.Keypad4 -> keypad('4', 't', m, modes)
+            TerminalKey.Keypad5 -> keypad('5', 'u', m, modes)
+            TerminalKey.Keypad6 -> keypad('6', 'v', m, modes)
+            TerminalKey.Keypad7 -> keypad('7', 'w', m, modes)
+            TerminalKey.Keypad8 -> keypad('8', 'x', m, modes)
+            TerminalKey.Keypad9 -> keypad('9', 'y', m, modes)
+            TerminalKey.KeypadDecimal -> keypad('.', 'n', m, modes)
+            TerminalKey.KeypadPlus -> keypad('+', 'k', m, modes)
+            TerminalKey.KeypadMinus -> keypad('-', 'm', m, modes)
+            TerminalKey.KeypadMultiply -> keypad('*', 'j', m, modes)
+            TerminalKey.KeypadDivide -> keypad('/', 'o', m, modes)
+            TerminalKey.KeypadEquals -> keypad('=', 'X', m, modes)
+            // Enter follows LNM in numeric mode.
+            TerminalKey.KeypadEnter ->
+                if (modes.applicationKeypad) ss3OrModified('M', m)
+                else encodeSpecial(TerminalKey.Enter, m, modes)
         }
-    }
 
     /**
-     * Keypad keys send their character, or with DECKPAM (application keypad), SS3 and a letter, as
-     * xterm does with NumLock off. Enter follows LNM in numeric mode.
+     * Keypad keys send their [character], or with DECKPAM (application keypad), SS3 and the letter
+     * [final], as xterm does with NumLock off.
      */
-    private fun keypad(key: TerminalKey, m: KeyModifiers, modes: TerminalModes): ByteArray {
-        val (character, final) = KEYPAD[key] ?: error("not a keypad key: $key")
-        if (modes.applicationKeypad)
-            return if (m.isEmpty) ss3(final) else csi("1;${m.xtermParameter}$final")
-        if (key == TerminalKey.KeypadEnter) return encodeSpecial(TerminalKey.Enter, m, modes)
-        return encodeCharacter(character.code, m)
-    }
-
-    /** The character in numeric mode and the final byte in application mode of each keypad key. */
-    private val KEYPAD: Map<TerminalKey, Pair<Char, Char>> =
-        mapOf(
-            TerminalKey.Keypad0 to ('0' to 'p'),
-            TerminalKey.Keypad1 to ('1' to 'q'),
-            TerminalKey.Keypad2 to ('2' to 'r'),
-            TerminalKey.Keypad3 to ('3' to 's'),
-            TerminalKey.Keypad4 to ('4' to 't'),
-            TerminalKey.Keypad5 to ('5' to 'u'),
-            TerminalKey.Keypad6 to ('6' to 'v'),
-            TerminalKey.Keypad7 to ('7' to 'w'),
-            TerminalKey.Keypad8 to ('8' to 'x'),
-            TerminalKey.Keypad9 to ('9' to 'y'),
-            TerminalKey.KeypadDecimal to ('.' to 'n'),
-            TerminalKey.KeypadPlus to ('+' to 'k'),
-            TerminalKey.KeypadMinus to ('-' to 'm'),
-            TerminalKey.KeypadMultiply to ('*' to 'j'),
-            TerminalKey.KeypadDivide to ('/' to 'o'),
-            TerminalKey.KeypadEquals to ('=' to 'X'),
-            TerminalKey.KeypadEnter to ('\r' to 'M'),
-        )
+    private fun keypad(
+        character: Char,
+        final: Char,
+        m: KeyModifiers,
+        modes: TerminalModes,
+    ): ByteArray =
+        if (modes.applicationKeypad) ss3OrModified(final, m) else encodeCharacter(character.code, m)
 
     /** Cursor keys and Home/End: SS3 in application cursor mode, CSI 1;m with modifiers. */
     private fun cursorKey(final: Char, m: KeyModifiers, modes: TerminalModes): ByteArray =
