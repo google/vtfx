@@ -121,21 +121,10 @@ internal class Scrollback(private val capacity: Int) {
         bytes = 0L
         val kept = newLines.takeLast(capacity)
         for (line in newLines.subList(0, newLines.size - kept.size)) line.killAnchors()
+        for (line in kept) add(line.compact(line.takeAnchors()), line.columns)
         // The serials are given once the budget has dropped what it drops.
-        val anchored = ArrayList<Pair<Array<Placement>, Int>>()
-        var count = 0
-        for (line in kept) {
-            val anchors = line.takeAnchors()
-            add(line.compact(anchors), line.columns)
-            count++
-            if (anchors != null) anchored += Pair(anchors, count)
-        }
-        for ((anchors, number) in anchored) {
-            // The line was the number-th added, so its index is number - 1 - (count - size).
-            val index = number - 1 - (count - lines.size)
-            for (placement in anchors) {
-                if (index >= 0) placement.moveToScrollback(firstSerial + index)
-            }
+        for ((index, line) in lines.withIndex()) {
+            line.anchors?.forEach { it.moveToScrollback(firstSerial + index) }
         }
     }
 
