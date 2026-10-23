@@ -292,13 +292,13 @@ public class LinkFinder(private val patterns: List<LinkPattern>) {
 
     private class TextMatch(val start: Int, val end: Int, val url: String, val pattern: LinkPattern)
 
-    /** The links of each [Rows], with rows counted from the first of them. */
+    /** The links of each [Rows] in the last call, with rows counted from the first of them. */
     private var previous = HashMap<Rows, List<FoundLink>>()
-    private var current = HashMap<Rows, List<FoundLink>>()
 
     /** Returns the links on [snapshot], ordered by their first cell. */
     public fun find(snapshot: TerminalSnapshot): List<FoundLink> {
         val links = mutableListOf<FoundLink>()
+        val current = HashMap<Rows, List<FoundLink>>()
         if (patterns.isNotEmpty()) {
             // The display, with the rows of the lines it cuts.
             val above = snapshot.linesAbove.size
@@ -313,8 +313,7 @@ public class LinkFinder(private val patterns: List<LinkPattern>) {
                         isCutAbove = first == 0 && snapshot.isCutAbove,
                         isCutBelow = row == lines.lastIndex && snapshot.isCutBelow,
                     )
-                val found = current[rows] ?: previous[rows] ?: findInRows(rows)
-                current[rows] = found
+                val found = current.getOrPut(rows) { previous[rows] ?: findInRows(rows) }
                 for (link in found) {
                     val spans =
                         link.spans.mapNotNull { span ->
@@ -330,7 +329,6 @@ public class LinkFinder(private val patterns: List<LinkPattern>) {
             }
         }
         previous = current
-        current = HashMap()
         return links
     }
 
