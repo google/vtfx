@@ -1,6 +1,6 @@
 # Fonts chosen by users, sanitized in Kotlin
 
-- Status: Approved (2026-10-20, approved by a human in a review of the review queue); the module layout, the package, and the API names of items 3, 8, and 9 superseded by [0041](0041-security-review-by-module.md)
+- Status: Approved (2026-10-20, approved by a human in a review of the review queue); the module layout, the package, and the API names of items 3, 8, and 9 superseded by [0041](0041-security-review-by-module.md); the licenses of test fonts in item 10 superseded by [0071](0071-ofl-fonts-as-test-data.md)
 - Date: 2026-10-19
 - Related: Requirements 6.1 and 6.5, [fonts.md](../design/fonts.md), [0020](0020-fonts.md) (extends its "Future extension"), [0002](0002-resource-limits.md), [0016](0016-public-api.md), [0037](0037-api-shape-before-1.0.md), [0038](0038-kitty-graphics.md) (PNG decoded in Kotlin), `vtfx-font`, `TerminalFont` in `vtfx-compose`
 
