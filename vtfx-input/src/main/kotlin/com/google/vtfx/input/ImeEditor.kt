@@ -173,7 +173,6 @@ public class ImeEditor(
         commitComposingText()
         flush()
         history += withoutDroppedControls(text)
-        flush()
         // Not an edit that the IME saw: the reset restarts it only if it saw one before.
         requestReset()
     }
