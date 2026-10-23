@@ -26,9 +26,6 @@ internal interface CubicPen {
     fun lineTo(x: Double, y: Double)
 
     fun curveTo(x1: Double, y1: Double, x2: Double, y2: Double, x: Double, y: Double)
-
-    /** Ends the last contour; the glyph is complete. */
-    fun endGlyph()
 }
 
 /**
@@ -177,7 +174,6 @@ internal class Type2Charstring(
                     val first = firstArgument(hasWidth = sp == 1 || sp == 5)
                     if (sp - first == 4) unsupported("accented character (seac)")
                     if (sp != first) malformed("endchar with ${sp - first} arguments")
-                    pen.endGlyph()
                     return true
                 }
                 ESCAPE -> escaped(code.u8(at++))

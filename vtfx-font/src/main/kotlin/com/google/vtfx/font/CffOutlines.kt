@@ -99,10 +99,6 @@ private class QuadraticPen(private val maxPoints: Int, tolerance: Double) : Cubi
         this.y = y
     }
 
-    override fun endGlyph() {
-        closeContour()
-    }
-
     /** The outline of the glyph drawn since the last call. */
     fun build(): Outline {
         closeContour()
