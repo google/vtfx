@@ -19,6 +19,7 @@ import kotlin.metadata.KmClass
 import kotlin.metadata.KmClassifier
 import kotlin.metadata.KmConstructor
 import kotlin.metadata.KmFunction
+import kotlin.metadata.KmPackage
 import kotlin.metadata.KmProperty
 import kotlin.metadata.KmType
 import kotlin.metadata.KmTypeAlias
@@ -226,20 +227,9 @@ object KotlinSignatures {
         fun section(parsed: Parsed): Pair<String, String>? =
             when (val metadata = parsed.metadata) {
                 is KotlinClassMetadata.Class -> classSection(parsed, metadata.kmClass)
-                is KotlinClassMetadata.FileFacade ->
-                    facadeSection(
-                        parsed,
-                        metadata.kmPackage.functions,
-                        metadata.kmPackage.properties,
-                        metadata.kmPackage.typeAliases,
-                    )
+                is KotlinClassMetadata.FileFacade -> facadeSection(parsed, metadata.kmPackage)
                 is KotlinClassMetadata.MultiFileClassPart ->
-                    facadeSection(
-                        parsed,
-                        metadata.kmPackage.functions,
-                        metadata.kmPackage.properties,
-                        metadata.kmPackage.typeAliases,
-                    )
+                    facadeSection(parsed, metadata.kmPackage)
                 else -> null
             }
 
@@ -323,17 +313,12 @@ object KotlinSignatures {
             return name to render(header, members)
         }
 
-        private fun facadeSection(
-            parsed: Parsed,
-            functions: List<KmFunction>,
-            properties: List<KmProperty>,
-            typeAliases: List<KmTypeAlias>,
-        ): Pair<String, String>? {
+        private fun facadeSection(parsed: Parsed, pkg: KmPackage): Pair<String, String>? {
             val name = parsed.internalName.replace('/', '.')
             val members = ArrayList<String>()
-            properties.forEach { property(parsed, name, it, emptyMap())?.let(members::add) }
-            functions.forEach { function(parsed, it, emptyMap())?.let(members::add) }
-            typeAliases.forEach { typeAlias(it)?.let(members::add) }
+            pkg.properties.forEach { property(parsed, name, it, emptyMap())?.let(members::add) }
+            pkg.functions.forEach { function(parsed, it, emptyMap())?.let(members::add) }
+            pkg.typeAliases.forEach { typeAlias(it)?.let(members::add) }
             if (members.isEmpty()) return null
             members.sort()
             return name to render("file $name", members)
