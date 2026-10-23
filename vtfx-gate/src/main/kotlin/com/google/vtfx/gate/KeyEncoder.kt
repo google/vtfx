@@ -87,6 +87,18 @@ internal object KeyEncoder {
             TerminalKey.KeypadMultiply -> keypad('*', 'j', m, modes)
             TerminalKey.KeypadDivide -> keypad('/', 'o', m, modes)
             TerminalKey.KeypadEquals -> keypad('=', 'X', m, modes)
+            // The encoding ignores NumLock: the keys with it off are the digits at their places.
+            TerminalKey.KeypadInsert -> keypad('0', 'p', m, modes)
+            TerminalKey.KeypadEnd -> keypad('1', 'q', m, modes)
+            TerminalKey.KeypadDown -> keypad('2', 'r', m, modes)
+            TerminalKey.KeypadPageDown -> keypad('3', 's', m, modes)
+            TerminalKey.KeypadLeft -> keypad('4', 't', m, modes)
+            TerminalKey.KeypadBegin -> keypad('5', 'u', m, modes)
+            TerminalKey.KeypadRight -> keypad('6', 'v', m, modes)
+            TerminalKey.KeypadHome -> keypad('7', 'w', m, modes)
+            TerminalKey.KeypadUp -> keypad('8', 'x', m, modes)
+            TerminalKey.KeypadPageUp -> keypad('9', 'y', m, modes)
+            TerminalKey.KeypadDelete -> keypad('.', 'n', m, modes)
             // Enter follows LNM in numeric mode.
             TerminalKey.KeypadEnter ->
                 if (modes.applicationKeypad) ss3OrModified('M', m)

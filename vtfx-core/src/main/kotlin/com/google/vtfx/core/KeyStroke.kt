@@ -63,6 +63,25 @@ public enum class TerminalKey {
     KeypadDivide,
     KeypadEquals,
     KeypadEnter,
+
+    /**
+     * Keys of the numeric keypad with NumLock off, which the digits and the decimal point become:
+     * Insert for 0, End for 1, Down for 2, Page Down for 3, Left for 4, Begin for 5, Right for 6,
+     * Home for 7, Up for 8, Page Up for 9, and Delete for the decimal point. The kitty keyboard
+     * protocol tells them from the digits; xterm's encoding sends them as the digits at their
+     * places.
+     */
+    KeypadInsert,
+    KeypadEnd,
+    KeypadDown,
+    KeypadPageDown,
+    KeypadLeft,
+    KeypadBegin,
+    KeypadRight,
+    KeypadHome,
+    KeypadUp,
+    KeypadPageUp,
+    KeypadDelete,
 }
 
 /** The modifier keys held with a key. */

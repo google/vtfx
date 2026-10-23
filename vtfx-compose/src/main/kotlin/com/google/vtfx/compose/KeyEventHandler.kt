@@ -50,6 +50,11 @@ internal object KeyEventHandler {
                 ctrl = event.isCtrlPressed,
                 meta = event.isMetaPressed,
             )
+        if (!event.isNumLockOn) {
+            KEYPAD_KEYS_WITHOUT_NUM_LOCK[event.keyCode]?.let {
+                return KeyStroke.Special(it, modifiers)
+            }
+        }
         SPECIAL_KEYS[event.keyCode]?.let {
             return KeyStroke.Special(it, modifiers)
         }
@@ -85,6 +90,22 @@ internal object KeyEventHandler {
         "zxcvbnm,./".forEachIndexed { i, c -> put(44 + i, c) }
         put(57, ' ')
     }
+
+    /** The digits and the decimal point of the keypad with NumLock off (docs/decisions/0070). */
+    private val KEYPAD_KEYS_WITHOUT_NUM_LOCK =
+        mapOf(
+            KeyEvent.KEYCODE_NUMPAD_0 to TerminalKey.KeypadInsert,
+            KeyEvent.KEYCODE_NUMPAD_1 to TerminalKey.KeypadEnd,
+            KeyEvent.KEYCODE_NUMPAD_2 to TerminalKey.KeypadDown,
+            KeyEvent.KEYCODE_NUMPAD_3 to TerminalKey.KeypadPageDown,
+            KeyEvent.KEYCODE_NUMPAD_4 to TerminalKey.KeypadLeft,
+            KeyEvent.KEYCODE_NUMPAD_5 to TerminalKey.KeypadBegin,
+            KeyEvent.KEYCODE_NUMPAD_6 to TerminalKey.KeypadRight,
+            KeyEvent.KEYCODE_NUMPAD_7 to TerminalKey.KeypadHome,
+            KeyEvent.KEYCODE_NUMPAD_8 to TerminalKey.KeypadUp,
+            KeyEvent.KEYCODE_NUMPAD_9 to TerminalKey.KeypadPageUp,
+            KeyEvent.KEYCODE_NUMPAD_DOT to TerminalKey.KeypadDelete,
+        )
 
     private val SPECIAL_KEYS =
         mapOf(

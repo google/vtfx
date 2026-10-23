@@ -174,6 +174,11 @@ class KeyEncoderTest {
                 case(special(TerminalKey.Keypad5), "\\eOu", keypad, "DECKPAM"),
                 case(special(TerminalKey.KeypadEnter), "\\eOM", keypad, "DECKPAM"),
                 case(special(TerminalKey.KeypadMultiply, shift), "\\e[1;2j", keypad, "DECKPAM"),
+                // The keypad's keys with NumLock off are the digits at their places.
+                case(special(TerminalKey.KeypadLeft), "4"),
+                case(special(TerminalKey.KeypadDelete), "."),
+                case(special(TerminalKey.KeypadBegin), "\\eOu", keypad, "DECKPAM"),
+                case(special(TerminalKey.KeypadInsert, ctrl), "\\e[1;5p", keypad, "DECKPAM"),
             )
     }
 

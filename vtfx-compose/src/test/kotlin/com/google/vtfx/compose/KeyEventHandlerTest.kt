@@ -58,6 +58,18 @@ class KeyEventHandlerTest {
     }
 
     @Test
+    fun keypadDigitsWithoutNumLockAreTheNavigationKeys() {
+        assertEquals(
+            KeyStroke.Special(TerminalKey.Keypad4),
+            key(KeyEvent.KEYCODE_NUMPAD_4, KeyEvent.META_NUM_LOCK_ON),
+        )
+        assertEquals(KeyStroke.Special(TerminalKey.KeypadLeft), key(KeyEvent.KEYCODE_NUMPAD_4))
+        assertEquals(KeyStroke.Special(TerminalKey.KeypadDelete), key(KeyEvent.KEYCODE_NUMPAD_DOT))
+        // The operators and Enter do not change with NumLock.
+        assertEquals(KeyStroke.Special(TerminalKey.KeypadPlus), key(KeyEvent.KEYCODE_NUMPAD_ADD))
+    }
+
+    @Test
     fun charactersApplyShiftOnly() {
         assertEquals(KeyStroke.Character('a'.code, none, 'a'.code, null), key(KeyEvent.KEYCODE_A))
         assertEquals(

@@ -190,6 +190,17 @@ public enum class com.google.vtfx.core.TerminalKey : kotlin.Enum<com.google.vtfx
     entry KeypadDivide
     entry KeypadEquals
     entry KeypadEnter
+    entry KeypadInsert
+    entry KeypadEnd
+    entry KeypadDown
+    entry KeypadPageDown
+    entry KeypadLeft
+    entry KeypadBegin
+    entry KeypadRight
+    entry KeypadHome
+    entry KeypadUp
+    entry KeypadPageUp
+    entry KeypadDelete
 }
 
 public final class com.google.vtfx.core.TerminalLimits {
