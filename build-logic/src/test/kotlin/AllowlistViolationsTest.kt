@@ -48,32 +48,58 @@ class AllowlistViolationsTest {
         )
 
     /**
-     * Object and Class, Context and a subclass of it, a view, and the project's own subclass of the
-     * view; any other class stands for one that extends Object.
+     * Object and Class, Context and a subclass of it, a view, the project's own subclass of the
+     * view, and the project's interface ViewTunnel, which declares a method of the view, with a
+     * subclass of the view and one of the own subclass that implement it with the view's method;
+     * any other class stands for one that extends Object.
      */
     private val classFiles =
         mapOf(
-            "java/lang/Object" to classFile("java/lang/Object", null, "hashCode()I"),
+            "java/lang/Object" to classFile("java/lang/Object", null, emptyList(), "hashCode()I"),
             "java/lang/Class" to
-                classFile("java/lang/Class", "java/lang/Object", "getName()Ljava/lang/String;"),
+                classFile(
+                    "java/lang/Class",
+                    "java/lang/Object",
+                    emptyList(),
+                    "getName()Ljava/lang/String;",
+                ),
             "android/content/Context" to
                 classFile(
                     "android/content/Context",
                     "java/lang/Object",
+                    emptyList(),
                     "getSystemService(Ljava/lang/Class;)Ljava/lang/Object;",
                     "getPackageName()Ljava/lang/String;",
                 ),
-            "android/app/Activity" to classFile("android/app/Activity", "android/content/Context"),
+            "android/app/Activity" to
+                classFile("android/app/Activity", "android/content/Context", emptyList()),
             "android/view/View" to
                 classFile(
                     "android/view/View",
                     "java/lang/Object",
+                    emptyList(),
                     "getContext()Landroid/content/Context;",
+                    "setKeepScreenOn(Z)V",
                 ),
-            "fixtures/OwnView" to classFile("fixtures/OwnView", "android/view/View"),
+            "fixtures/OwnView" to classFile("fixtures/OwnView", "android/view/View", emptyList()),
+            "fixtures/ViewTunnel" to interfaceFile("fixtures/ViewTunnel", "setKeepScreenOn(Z)V"),
+            "fixtures/TunnelView" to
+                classFile(
+                    "fixtures/TunnelView",
+                    "android/view/View",
+                    listOf("fixtures/ViewTunnel"),
+                ),
+            "fixtures/DeeperTunnelView" to
+                classFile(
+                    "fixtures/DeeperTunnelView",
+                    "fixtures/OwnView",
+                    listOf("fixtures/ViewTunnel"),
+                ),
         )
 
-    private val hierarchy = ClassHierarchy { classFiles[it] ?: classFile(it, "java/lang/Object") }
+    private val hierarchy = ClassHierarchy {
+        classFiles[it] ?: classFile(it, "java/lang/Object", emptyList())
+    }
 
     @Test
     fun allowlistViolations_classNotListed_reportsIt() {
@@ -186,6 +212,64 @@ class AllowlistViolationsTest {
     }
 
     @Test
+    fun allowlistViolations_methodInheritedToImplementOwnInterface_reportsDeclaringClass() {
+        // A call through the interface reaches the view's method, though nothing names it.
+        val classes =
+            listOf(
+                ClassReferences("fixtures/TunnelView", emptySet(), emptySet(), emptySet()),
+                ClassReferences(
+                    "fixtures/Uses",
+                    setOf("fixtures/ViewTunnel"),
+                    setOf(method("fixtures/ViewTunnel", "setKeepScreenOn", "(Z)V")),
+                    emptySet(),
+                ),
+            )
+
+        val violations =
+            boundaries.allowlistViolations(
+                "vtfx-core",
+                classes,
+                setOf("fixtures/ViewTunnel"),
+                hierarchy,
+            )
+
+        assertEquals(
+            listOf(
+                "fixtures/TunnelView uses android/view/View.setKeepScreenOn(Z)V, which the " +
+                    "allowlist of vtfx-core does not allow"
+            ),
+            violations,
+        )
+    }
+
+    @Test
+    fun allowlistViolations_memberOfDeeperSuperclassAndOfOwnInterface_reportsSuperclass() {
+        val references =
+            ClassReferences(
+                "fixtures/Uses",
+                setOf("fixtures/DeeperTunnelView"),
+                setOf(method("fixtures/DeeperTunnelView", "setKeepScreenOn", "(Z)V")),
+                emptySet(),
+            )
+
+        val violations =
+            boundaries.allowlistViolations(
+                "vtfx-core",
+                listOf(references),
+                setOf("fixtures/DeeperTunnelView", "fixtures/OwnView", "fixtures/ViewTunnel"),
+                hierarchy,
+            )
+
+        assertEquals(
+            listOf(
+                "fixtures/Uses uses android/view/View.setKeepScreenOn(Z)V, which the allowlist " +
+                    "of vtfx-core does not allow"
+            ),
+            violations,
+        )
+    }
+
+    @Test
     fun allowlistViolations_classOfDependency_none() {
         val violations =
             boundaries.allowlistViolations(
@@ -226,12 +310,35 @@ class AllowlistViolationsTest {
         MemberReference(owner, name, descriptor, MemberReference.Kind.METHOD)
 
     /**
-     * A class file of [name], extending [superName], that declares the [methods] (name and
-     * descriptor).
+     * A class file of [name], extending [superName] and implementing [interfaces], that declares
+     * the [methods] (name and descriptor).
      */
-    private fun classFile(name: String, superName: String?, vararg methods: String): ByteArray {
+    private fun classFile(
+        name: String,
+        superName: String?,
+        interfaces: List<String>,
+        vararg methods: String,
+    ): ByteArray = writeClass(Opcodes.ACC_PUBLIC, name, superName, interfaces, methods)
+
+    /** An interface [name] that declares the [methods] (name and descriptor). */
+    private fun interfaceFile(name: String, vararg methods: String): ByteArray =
+        writeClass(
+            Opcodes.ACC_PUBLIC or Opcodes.ACC_INTERFACE or Opcodes.ACC_ABSTRACT,
+            name,
+            "java/lang/Object",
+            emptyList(),
+            methods,
+        )
+
+    private fun writeClass(
+        access: Int,
+        name: String,
+        superName: String?,
+        interfaces: List<String>,
+        methods: Array<out String>,
+    ): ByteArray {
         val writer = ClassWriter(0)
-        writer.visit(Opcodes.V17, Opcodes.ACC_PUBLIC, name, null, superName, null)
+        writer.visit(Opcodes.V17, access, name, null, superName, interfaces.toTypedArray())
         for (method in methods) {
             val descriptor = method.substring(method.indexOf('('))
             writer

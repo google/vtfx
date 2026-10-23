@@ -72,7 +72,9 @@ From each class file, the check reads with ASM, skipping debug information:
 
 The rules that apply "through any subtype", and the members a class inherits, need the supertypes of the classes referred to. They are read from the class files of the module's classes, of what it is compiled against, and, for the Android modules, of the boot class path (`android.jar`), and then from the platform that runs the build. A class that none of these has fails the check, instead of being taken to have no supertypes; so does a member that neither its owner nor any supertype of the owner declares.
 
-The class that declares a member used through some owner is the owner itself or the nearest of its supertypes that declares the member, superclasses before interfaces.
+The class that declares a member used through some owner is the one the JVM resolves the use to (JVMS 5.4.3.2 to 5.4.3.4): for a method, the owner itself or the nearest of its superclasses that declares it, and only then the nearest of the interfaces of all of them; for a field, the owner itself, then each of its interfaces with their superinterfaces, then its superclass, looked up in the same way.
+
+A class also uses, through the superclass that declares it, each method that it inherits from a superclass to implement a method of an interface that it implements and its superclass does not. A call through the interface reaches that method, though neither the class nor the call names it there; the rules of sections 4.4, 4.5, and 5.1 then apply to it as to any member used. Interfaces that the superclass implements already open up nothing new, and a project's superclass that adds the interface is checked for the methods itself.
 
 ### 4.4 Restricted members
 
@@ -133,7 +135,7 @@ A type outside the project is allowed if `classes` or `packages` allow it, if `t
 
 A member outside the project is allowed if `classes` or `packages` allow its owner, if an entry of `members` matches it, or if `classes` or `packages` allow the class that declares it (section 4.3), so that the members of `Object` may be used through any class.
 
-A member used through a class of the project that the class inherits from a class outside the project counts as a use of the member through the class that declares it, which an allowlist must then allow. A module's own subclass of a platform class therefore does not open up the platform class's members.
+A member used through a class of the project that the class inherits from a class outside the project counts as a use of the member through the class that declares it, which an allowlist must then allow. A module's own subclass of a platform class therefore does not open up the platform class's members, neither when they are used through the subclass nor through an interface of the project that the subclass implements with them (section 4.3).
 
 ### 5.2 The baseline
 

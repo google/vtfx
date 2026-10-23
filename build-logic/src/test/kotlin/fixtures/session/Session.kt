@@ -19,6 +19,7 @@ package fixtures.session
 import fixtures.gate.BufferedConnection
 import fixtures.gate.Gate
 import fixtures.gate.HostConnection
+import fixtures.gate.Vibrator
 
 /** Only names the connection as a type, and hands it over to the gate. */
 class HandsOver(connection: HostConnection) {
@@ -47,4 +48,20 @@ class ReferencesWrite(private val connection: HostConnection) {
 
 class CallsWriteInLambda(private val connection: HostConnection) {
     fun sender(): Runnable = Runnable { connection.write(byteArrayOf(1)) }
+}
+
+/**
+ * Calls vibrate through an interface of its own, which a subclass of the vibrator implements with
+ * the method it inherits from the vibrator.
+ */
+class VibratesThroughOwnInterface {
+    interface Vibrates {
+        fun vibrate()
+    }
+
+    class InheritsVibrate : Vibrator(), Vibrates
+
+    fun send(vibrates: Vibrates) {
+        vibrates.vibrate()
+    }
 }

@@ -32,3 +32,8 @@ class Gate(private val connection: HostConnection) {
         connection.write(byteArrayOf(1))
     }
 }
+
+/** A class that any module may extend, with a method that only the gate may call. */
+open class Vibrator {
+    fun vibrate() {}
+}

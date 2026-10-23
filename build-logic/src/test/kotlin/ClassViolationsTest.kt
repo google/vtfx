@@ -44,6 +44,11 @@ class ClassViolationsTest {
             classes = ["fixtures/gate/HostConnection"]
             reason = "Only the gate may use the connection."
             allowed_modules = ["vtfx-gate"]
+
+            [[restricted_classes]]
+            members = ["fixtures/gate/Vibrator.vibrate"]
+            reason = "Only the gate may vibrate."
+            allowed_modules = ["vtfx-gate"]
             """
         )
 
@@ -120,6 +125,20 @@ class ClassViolationsTest {
                 "fixtures/gate/HostConnection.write([B)V: Only the gate may use the connection."
             ),
             violations.map { it.substringAfter(" uses ") },
+        )
+    }
+
+    @Test
+    fun classViolations_methodInheritedToImplementOwnInterface_reportsIt() {
+        // A call through the interface reaches the vibrator's method, though nothing names it.
+        val violations = violations("vtfx-session", "fixtures/session/VibratesThroughOwnInterface")
+
+        assertEquals(
+            listOf(
+                "fixtures/session/VibratesThroughOwnInterface\$InheritsVibrate uses " +
+                    "fixtures/gate/Vibrator.vibrate()V: Only the gate may vibrate."
+            ),
+            violations,
         )
     }
 

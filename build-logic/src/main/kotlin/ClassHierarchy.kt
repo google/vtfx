@@ -29,7 +29,19 @@ import org.objectweb.asm.Opcodes
  * has no supertypes.
  */
 class ClassHierarchy(private val find: (String) -> ByteArray?) {
-    private class ClassInfo(val supertypes: List<String>, val members: Set<String>)
+    /**
+     * @property superclass null for `Object` only; `Object` for an interface.
+     * @property members the fields and methods declared, as name and descriptor.
+     * @property instanceMethods the methods declared that a class may implement or inherit: neither
+     *   static nor private, nor constructors.
+     */
+    private class ClassInfo(
+        val isInterface: Boolean,
+        val superclass: String?,
+        val interfaces: List<String>,
+        val members: Set<String>,
+        val instanceMethods: List<Pair<String, String>>,
+    )
 
     private val infos = HashMap<String, ClassInfo>()
 
@@ -38,13 +50,43 @@ class ClassHierarchy(private val find: (String) -> ByteArray?) {
 
     /**
      * The class that declares the field or method [name] with [descriptor] that a use through
-     * [owner] reaches: [owner] itself or the nearest of its supertypes, superclasses before
-     * interfaces. Fails if none declares it.
+     * [owner] reaches, as the JVM resolves it (JVMS 5.4.3.2, 5.4.3.3, 5.4.3.4): for a method,
+     * [owner] itself or the nearest of its superclasses, and then the nearest of its
+     * superinterfaces; for a field, [owner] itself, then its superinterfaces, then its superclass,
+     * looked up in the same way. Fails if none declares it.
      */
     fun declaringClass(owner: String, name: String, descriptor: String): String {
         val member = name + descriptor
-        return supertypes(owner).firstOrNull { member in info(it).members }
+        val candidates =
+            if (descriptor.startsWith("(")) methodLookup(owner)
+            else fieldLookup(owner, mutableSetOf())
+        return candidates.firstOrNull { member in info(it).members }
             ?: error("no supertype of $owner, nor $owner itself, declares $member")
+    }
+
+    /**
+     * The methods that the class [name] inherits from its superclasses to implement the methods of
+     * the interfaces that it implements and its superclass does not, each as a use through the
+     * superclass that declares it. A call through such an interface reaches the method, though no
+     * class names it there (docs/design/boundaries.md section 4.3). None for an interface or
+     * `Object`.
+     */
+    fun inheritedImplementations(name: String): List<MemberReference> {
+        val info = info(name)
+        if (info.isInterface) return emptyList()
+        val superclass = info.superclass ?: return emptyList()
+        val inherited = supertypes(superclass).toSet()
+        return supertypes(name)
+            .filter { it != name && it !in inherited }
+            .flatMap { info(it).instanceMethods }
+            .distinct()
+            .filter { (method, descriptor) -> method + descriptor !in info.members }
+            .mapNotNull { (method, descriptor) ->
+                superclasses(superclass)
+                    .firstOrNull { method + descriptor in info(it).members }
+                    ?.let { MemberReference(it, method, descriptor, MemberReference.Kind.METHOD) }
+            }
+            .toList()
     }
 
     /**
@@ -58,17 +100,64 @@ class ClassHierarchy(private val find: (String) -> ByteArray?) {
         while (pending.isNotEmpty()) {
             val current = pending.removeFirst()
             yield(current)
-            for (supertype in info(current).supertypes) {
+            val info = info(current)
+            for (supertype in listOfNotNull(info.superclass) + info.interfaces) {
                 if (visited.add(supertype)) pending.addLast(supertype)
             }
         }
     }
 
+    /** [start] and then its superclasses, nearest first. */
+    private fun superclasses(start: String): Sequence<String> =
+        generateSequence(start) { info(it).superclass }
+
+    /**
+     * The types in which a method is looked up: [start] and its superclasses, nearest first, and
+     * then the interfaces of all of them with their superinterfaces, breadth first.
+     */
+    private fun methodLookup(start: String): Sequence<String> = sequence {
+        val classes = mutableListOf<String>()
+        for (current in superclasses(start)) {
+            yield(current)
+            classes += current
+        }
+        val visited = mutableSetOf<String>()
+        val pending = ArrayDeque<String>()
+        for (current in classes) {
+            for (supertype in info(current).interfaces) {
+                if (visited.add(supertype)) pending.addLast(supertype)
+            }
+        }
+        while (pending.isNotEmpty()) {
+            val current = pending.removeFirst()
+            yield(current)
+            for (supertype in info(current).interfaces) {
+                if (visited.add(supertype)) pending.addLast(supertype)
+            }
+        }
+    }
+
+    /**
+     * The types in which a field is looked up: [start], then each of its interfaces in turn, looked
+     * up in the same way, then its superclass. Skips the types in [visited].
+     */
+    private fun fieldLookup(start: String, visited: MutableSet<String>): Sequence<String> =
+        sequence {
+            if (!visited.add(start)) return@sequence
+            yield(start)
+            val info = info(start)
+            for (supertype in info.interfaces) yieldAll(fieldLookup(supertype, visited))
+            info.superclass?.let { yieldAll(fieldLookup(it, visited)) }
+        }
+
     private fun info(name: String): ClassInfo =
         infos.getOrPut(name) {
             val bytes = checkNotNull(find(name)) { "class $name is not on the class path" }
             val members = mutableSetOf<String>()
-            var supertypes = emptyList<String>()
+            val instanceMethods = mutableListOf<Pair<String, String>>()
+            var isInterface = false
+            var superclass: String? = null
+            var directInterfaces = emptyList<String>()
             ClassReader(bytes)
                 .accept(
                     object : ClassVisitor(Opcodes.ASM9) {
@@ -80,7 +169,9 @@ class ClassHierarchy(private val find: (String) -> ByteArray?) {
                             superName: String?,
                             interfaces: Array<out String>?,
                         ) {
-                            supertypes = listOfNotNull(superName) + interfaces.orEmpty()
+                            isInterface = access and Opcodes.ACC_INTERFACE != 0
+                            superclass = superName
+                            directInterfaces = interfaces.orEmpty().toList()
                         }
 
                         override fun visitField(
@@ -102,12 +193,18 @@ class ClassHierarchy(private val find: (String) -> ByteArray?) {
                             exceptions: Array<out String>?,
                         ): MethodVisitor? {
                             members += name + descriptor
+                            if (
+                                access and (Opcodes.ACC_STATIC or Opcodes.ACC_PRIVATE) == 0 &&
+                                    !name.startsWith("<")
+                            ) {
+                                instanceMethods += name to descriptor
+                            }
                             return null
                         }
                     },
                     ClassReader.SKIP_CODE or ClassReader.SKIP_DEBUG or ClassReader.SKIP_FRAMES,
                 )
-            ClassInfo(supertypes, members)
+            ClassInfo(isInterface, superclass, directInterfaces, members, instanceMethods)
         }
 }
 

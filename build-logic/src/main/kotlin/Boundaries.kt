@@ -203,7 +203,7 @@ private constructor(
         val packages = reservedPackages.filter { module !in it.modules }
         return classes.flatMap { references ->
             val name = references.name
-            val members = references.members.sortedBy { it.toString() }
+            val members = usedMembers(references, hierarchy).sortedBy { it.toString() }
             packages
                 .filter { name.startsWith("${it.packageName}/") }
                 .map {
@@ -259,7 +259,7 @@ private constructor(
                 .filter { it !in internal && !allowlist.allowsType(it, hierarchy) }
                 .sorted()
                 .map { "$name refers to $it, which the allowlist of $module does not allow" } +
-                references.members
+                usedMembers(references, hierarchy)
                     .mapNotNull { externalMember(it, internal, hierarchy) }
                     .filter { !allowsMember(it, allowlist, hierarchy) }
                     .distinct()
@@ -270,6 +270,17 @@ private constructor(
 
     private fun module(name: String): Module =
         requireNotNull(modules[name]) { "module '$name' is not declared in config/boundaries.toml" }
+
+    /**
+     * The members that the class of [references] uses: those it names, and those it inherits to
+     * implement an interface ([ClassHierarchy.inheritedImplementations]), which a call through the
+     * interface reaches without naming them.
+     */
+    private fun usedMembers(
+        references: ClassReferences,
+        hierarchy: ClassHierarchy,
+    ): Set<MemberReference> =
+        references.members + hierarchy.inheritedImplementations(references.name)
 
     /**
      * Whether [allowlist] allows [member], a member outside the project: by its owner, by a member
