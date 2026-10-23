@@ -283,23 +283,22 @@ public class Terminal(
      * rows from its top.
      */
     private fun imagePlacements(offset: Int): List<ImagePlacement> {
-        val shown = ArrayList<Placement>()
-        val rowsOf = HashMap<Placement, Int>()
+        // Each placement with its row from the top of the snapshot.
+        val shown = ArrayList<Pair<Placement, Int>>()
         emulator.layer.forEachAnchored { placement, row ->
             val top = row + offset
-            if (top < emulator.rows && top + placement.rows > 0) {
-                shown += placement
-                rowsOf[placement] = top
-            }
+            if (top < emulator.rows && top + placement.rows > 0) shown += Pair(placement, top)
         }
         if (shown.isEmpty()) return emptyList()
         shown.sortWith(
-            compareBy<Placement> { it.z }.thenBy { it.image?.id ?: 0L }.thenBy { it.serial }
+            compareBy<Pair<Placement, Int>> { it.first.z }
+                .thenBy { it.first.image?.id ?: 0L }
+                .thenBy { it.first.serial }
         )
-        return shown.map { placement ->
+        return shown.map { (placement, top) ->
             ImagePlacement(
                 image = checkNotNull(placement.image).image,
-                row = rowsOf.getValue(placement),
+                row = top,
                 column = placement.column,
                 left = placement.left,
                 top = placement.top,
