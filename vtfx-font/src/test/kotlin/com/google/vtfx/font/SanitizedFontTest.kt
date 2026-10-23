@@ -339,6 +339,22 @@ class SanitizedFontTest {
     }
 
     @Test
+    fun variationSequencesOfAllSelectorsBeyondTheLimitAreTooComplex() {
+        // 2^19 default sequences, and 2^19 - 1 default and 2 non-default ones: 2^20 + 1.
+        val font =
+            TestTrueTypeFont(
+                variations =
+                    mapOf(
+                        0xFE00 to Pair((0x10000 until 0x90000).toList(), emptyMap()),
+                        0xFE01 to
+                            Pair((0x90001 until 0x110000).toList(), mapOf(0x41 to 1, 0x42 to 1)),
+                    )
+            )
+
+        assertEquals(Kind.TooComplex, failure(font))
+    }
+
+    @Test
     fun hheaMetricsAreKept() {
         val font = TestTrueTypeFont(ascender = 900, descender = -250, lineGap = 100)
 

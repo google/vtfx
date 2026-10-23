@@ -102,4 +102,26 @@ class VerifierCrossCheckTest {
 
         assertContentEquals(canonical, again)
     }
+
+    /**
+     * The verifier allows as many variation sequences of all selectors together as sanitizing does:
+     * it accepts the font of the most that sanitizing writes.
+     */
+    @Test
+    fun verifierAcceptsAsManyVariationSequencesAsSanitizingWrites() {
+        // 2^19 default sequences, and 2^19 - 1 default and 1 non-default one: 2^20.
+        val font =
+            TestTrueTypeFont(
+                variations =
+                    mapOf(
+                        0xFE00 to Pair((0x10000 until 0x90000).toList(), emptyMap()),
+                        0xFE01 to Pair((0x90001 until 0x110000).toList(), mapOf(0x41 to 1)),
+                    )
+            )
+        val sanitized = FontFile.sanitize(font.build(), 0, limits).toByteArray()
+
+        val loaded = SanitizedFont.fromCanonical(sanitized, limits)
+
+        assertContentEquals(sanitized, loaded.toByteArray())
+    }
 }

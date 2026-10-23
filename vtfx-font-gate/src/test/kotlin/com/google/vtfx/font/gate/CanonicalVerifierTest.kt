@@ -19,6 +19,8 @@ package com.google.vtfx.font.gate
 import com.google.testing.junit.testparameterinjector.TestParameter
 import com.google.testing.junit.testparameterinjector.TestParameterInjector
 import com.google.vtfx.font.gate.InvalidFontException.Kind
+import java.io.ByteArrayOutputStream
+import java.io.DataOutputStream
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -202,6 +204,49 @@ class CanonicalVerifierTest {
         assertEquals(Kind.Malformed, verifyFailure(withChecksums(font)))
     }
 
+    @Test
+    fun variationSequencesOfAllSelectorsAsManyAsTheLimitPass() {
+        // 2^19 default sequences, and 2^19 - 256 default and 256 non-default ones: 2^20.
+        val font =
+            withVariationSequences(
+                Selector(0xFE00, defaultRanges = 0 until 2048),
+                Selector(0xFE01, defaultRanges = 2048 until 4095, nonDefaults = 0x41 until 0x141),
+            )
+
+        val loaded = SanitizedFont.fromCanonical(font, limits)
+
+        assertContentEquals(font, loaded.toByteArray())
+    }
+
+    @Test
+    fun defaultVariationSequencesOfOneSelectorBeyondTheLimitAreMalformed() {
+        val font = withVariationSequences(Selector(0xFE00, defaultRanges = 0 until 4097))
+
+        assertEquals(Kind.Malformed, verifyFailure(font))
+    }
+
+    @Test
+    fun nonDefaultVariationSequenceBeyondTheLimitIsMalformed() {
+        val font =
+            withVariationSequences(
+                Selector(0xFE00, defaultRanges = 0 until 4096, nonDefaults = 0x41..0x41)
+            )
+
+        assertEquals(Kind.Malformed, verifyFailure(font))
+    }
+
+    @Test
+    fun variationSequencesOfSeveralSelectorsBeyondTheLimitAreMalformed() {
+        val font =
+            withVariationSequences(
+                Selector(0xFE00, defaultRanges = 0 until 2048),
+                Selector(0xFE01, defaultRanges = 2048 until 4096),
+                Selector(0xFE02, nonDefaults = 0x41..0x41),
+            )
+
+        assertEquals(Kind.Malformed, verifyFailure(font))
+    }
+
     /**
      * Every byte of the header, the directory, and the tables with no number left free (hhea, loca,
      * maxp, name) is fixed or computed from other parts of the font: a change of any one of them,
@@ -238,5 +283,99 @@ class CanonicalVerifierTest {
         }
 
         assertEquals(emptyList(), accepted)
+    }
+
+    /**
+     * The variation sequences of a selector of format 14: the default ones of the ranges of 256
+     * code points from U+E000 numbered by [defaultRanges], and non-default ones of [nonDefaults] to
+     * glyph 1.
+     */
+    private class Selector(
+        val selector: Int,
+        val defaultRanges: IntRange = IntRange.EMPTY,
+        val nonDefaults: IntRange = IntRange.EMPTY,
+    )
+
+    /** [variations] with a format 14 subtable of [selectors] instead of its own. */
+    private fun withVariationSequences(vararg selectors: Selector): ByteArray {
+        val recordBytes = ByteArrayOutputStream()
+        val records = DataOutputStream(recordBytes)
+        val tables = ByteArrayOutputStream()
+        val tablesOut = DataOutputStream(tables)
+        val recordsEnd = 10 + 11 * selectors.size
+        for (s in selectors) {
+            putU24(records, s.selector)
+            if (s.defaultRanges.isEmpty()) {
+                records.writeInt(0)
+            } else {
+                records.writeInt(recordsEnd + tables.size())
+                tablesOut.writeInt(s.defaultRanges.count())
+                for (r in s.defaultRanges) {
+                    putU24(tablesOut, 0xE000 + r * 256)
+                    tablesOut.writeByte(255)
+                }
+            }
+            if (s.nonDefaults.isEmpty()) {
+                records.writeInt(0)
+            } else {
+                records.writeInt(recordsEnd + tables.size())
+                tablesOut.writeInt(s.nonDefaults.count())
+                for (c in s.nonDefaults) {
+                    putU24(tablesOut, c)
+                    tablesOut.writeShort(1)
+                }
+            }
+        }
+        val format14Length = recordsEnd + tables.size()
+        val cmap = tableOffset(variations, "cmap")
+        val format12 = u32At(variations, cmap + 16).toInt()
+        val bytes = ByteArrayOutputStream()
+        DataOutputStream(bytes).run {
+            // The records (0, 5) and (3, 10), as variations.ttf has them, then format 14.
+            writeShort(0)
+            writeShort(2)
+            writeShort(0)
+            writeShort(5)
+            writeInt(20)
+            writeShort(3)
+            writeShort(10)
+            writeInt(20 + format14Length)
+            writeShort(14)
+            writeInt(format14Length)
+            writeInt(selectors.size)
+            write(recordBytes.toByteArray())
+            write(tables.toByteArray())
+            write(variations, cmap + format12, tableLength(variations, "cmap") - format12)
+        }
+        return withTables(variations, mapOf("cmap" to bytes.toByteArray()))
+    }
+
+    private fun putU24(out: DataOutputStream, value: Int) {
+        out.writeByte(value ushr 16)
+        out.writeShort(value)
+    }
+
+    /**
+     * [font] with the tables of [tables] instead of its own, laid out again in the order of the
+     * canonical form, with its checksums made right again.
+     */
+    private fun withTables(font: ByteArray, tables: Map<String, ByteArray>): ByteArray {
+        val contents = TABLE_TAGS.map { tag ->
+            tables[tag]
+                ?: font.copyOfRange(
+                    tableOffset(font, tag),
+                    tableOffset(font, tag) + tableLength(font, tag),
+                )
+        }
+        val out = ByteArray(DIRECTORY_END + contents.sumOf { (it.size + 3) and 3.inv() })
+        font.copyInto(out, 0, 0, DIRECTORY_END)
+        var offset = DIRECTORY_END
+        for ((i, table) in contents.withIndex()) {
+            putU32(out, 12 + i * 16 + 8, offset)
+            putU32(out, 12 + i * 16 + 12, table.size)
+            table.copyInto(out, offset)
+            offset += (table.size + 3) and 3.inv()
+        }
+        return withChecksums(out)
     }
 }

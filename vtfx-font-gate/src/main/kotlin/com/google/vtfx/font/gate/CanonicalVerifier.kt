@@ -70,6 +70,12 @@ private const val MAX_COORDINATE = 16383
 private const val MAX_CODE_POINT = 0x10FFFF
 private const val MAX_ITALIC_ANGLE = 60 shl 16
 
+/**
+ * The most variation sequences of all selectors together, as vtfx-font's reader of `cmap` allows
+ * (fonts.md section 9), so that every canonical font that this accepts sanitizes to itself.
+ */
+private const val MAX_VARIATION_SEQUENCES = 1 shl 20
+
 private fun malformed(message: String): Nothing =
     throw InvalidFontException(InvalidFontException.Kind.Malformed, message)
 
@@ -112,6 +118,7 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
     private var firstCodePoint = 0
     private var lastCodePoint = 0
     private var widthClass = WidthClass.Proportional
+    private var variationSequences = 0
 
     fun run(): Verified {
         checkDirectory()
@@ -609,6 +616,7 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
             expect(last < 0xD800 || first > 0xDFFF) { "default range with surrogates" }
             expect(first > previousEnd) { "default ranges not in order" }
             expect(first != previousEnd + 1 || previousFull) { "default ranges not merged" }
+            countVariationSequences(count + 1)
             previousEnd = last
             previousFull = count == 255
         }
@@ -625,9 +633,22 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
             val glyph = u16(start + 4 + m * 5 + 3)
             expect(c > previous && c <= MAX_CODE_POINT && c !in 0xD800..0xDFFF) { "sequence base" }
             expect(glyph in 1 until numGlyphs) { "sequence glyph" }
+            countVariationSequences(1)
             previous = c
         }
         return 4 + 5 * mappings
+    }
+
+    /**
+     * Counts [count] more variation sequences of the selectors checked so far, at most
+     * [MAX_VARIATION_SEQUENCES] together. The sum cannot overflow: it fails as soon as it passes
+     * the limit, by at most the 256 sequences of one range.
+     */
+    private fun countVariationSequences(count: Int) {
+        variationSequences += count
+        expect(variationSequences <= MAX_VARIATION_SEQUENCES) {
+            "more than $MAX_VARIATION_SEQUENCES variation sequences"
+        }
     }
 
     private fun isVariationSelector(c: Int): Boolean =
