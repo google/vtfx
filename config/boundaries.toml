@@ -212,7 +212,7 @@ allowed_dependencies = ["vtfx-core"]
 check_classes = true
 
 [modules.vtfx-gate.allowed_references]
-classes = ["java/io/ByteArrayOutputStream", "java/util/Base64", "java/util/Base64$Encoder"]
+classes = ["java/util/Base64", "java/util/Base64$Encoder"]
 packages = []
 types = ["java/nio/charset/Charset"]
 members = ["java/util/Locale.ROOT"]
