@@ -72,7 +72,7 @@ internal class Emulator(
         private set
 
     /** The rendition that SGR set: the style and the underline color of printed characters. */
-    private val rendition = Rendition()
+    private var rendition = Rendition.Default
     private val style: CellStyle
         get() = rendition.style
 
@@ -514,7 +514,7 @@ internal class Emulator(
                 }
             'h' -> for (i in 0 until params.size) setAnsiMode(params[i], true)
             'l' -> for (i in 0 until params.size) setAnsiMode(params[i], false)
-            'm' -> Sgr.apply(rendition, params)
+            'm' -> rendition = Sgr.apply(rendition, params)
             'n' ->
                 when (params[0]) {
                     5 ->
@@ -902,11 +902,10 @@ internal class Emulator(
 
     // --- Saving the cursor ---
 
-    private class SavedCursor(
+    private data class SavedCursor(
         val x: Int = 0,
         val y: Int = 0,
-        val style: CellStyle = CellStyle.Default,
-        val underlineColor: TerminalColor = TerminalColor.Default,
+        val rendition: Rendition = Rendition.Default,
         val pendingWrap: Boolean = false,
         val originMode: Boolean = false,
         val charsets: CharsetState = CharsetState(),
@@ -914,16 +913,7 @@ internal class Emulator(
 
     /** DECSC. Each screen has its own saved cursor, as in xterm. */
     private fun saveCursor() {
-        val saved =
-            SavedCursor(
-                cursorX,
-                cursorY,
-                style,
-                rendition.underlineColor,
-                pendingWrap,
-                originMode,
-                charsets,
-            )
+        val saved = SavedCursor(cursorX, cursorY, rendition, pendingWrap, originMode, charsets)
         if (isAlternateScreen) alternateSavedCursor = saved else mainSavedCursor = saved
     }
 
@@ -937,8 +927,7 @@ internal class Emulator(
             saved.x,
             if (saved.originMode) saved.y.coerceIn(scrollTop, scrollBottom) else saved.y,
         )
-        rendition.style = saved.style
-        rendition.underlineColor = saved.underlineColor
+        rendition = saved.rendition
         originMode = saved.originMode
         charsets = saved.charsets
         // A pending wrap holds only at the last column, which a resize since DECSC may have moved.
@@ -1074,7 +1063,7 @@ internal class Emulator(
         insertMode = false
         originMode = false
         autowrap = true
-        rendition.reset()
+        rendition = Rendition.Default
         scrollTop = 0
         scrollBottom = rows - 1
         modes =
@@ -1143,14 +1132,10 @@ internal class Emulator(
         val newCursorColumn = result.cursorColumn.coerceIn(0, newColumns - 1)
         if (mainCursor != null) {
             mainSavedCursor =
-                SavedCursor(
-                    newCursorColumn,
-                    newCursorRow,
-                    mainCursor.style,
-                    mainCursor.underlineColor,
-                    result.pendingWrap,
-                    mainCursor.originMode,
-                    mainCursor.charsets,
+                mainCursor.copy(
+                    x = newCursorColumn,
+                    y = newCursorRow,
+                    pendingWrap = result.pendingWrap,
                 )
         } else {
             cursorX = newCursorColumn

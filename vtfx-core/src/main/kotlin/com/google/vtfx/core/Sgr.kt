@@ -23,10 +23,7 @@ import com.google.vtfx.core.parser.Params
  * no room for it, and is written to the cells' side storage only while the style underlines
  * (docs/decisions/0030).
  */
-internal class Rendition {
-    var style: CellStyle = CellStyle.Default
-    var underlineColor: TerminalColor = TerminalColor.Default
-
+internal data class Rendition(val style: CellStyle, val underlineColor: TerminalColor) {
     /**
      * The underline color written to cells, as [TerminalColor.bits]: 0 (the default) unless the
      * style underlines, so that a color left set after the underline ends takes no memory.
@@ -34,9 +31,8 @@ internal class Rendition {
     val cellUnderlineColor: Int
         get() = if (style.underline == UnderlineStyle.None) 0 else underlineColor.bits
 
-    fun reset() {
-        style = CellStyle.Default
-        underlineColor = TerminalColor.Default
+    companion object {
+        val Default = Rendition(CellStyle.Default, TerminalColor.Default)
     }
 }
 
@@ -48,11 +44,9 @@ internal class Rendition {
  * and the underline (58). Unknown parameters are ignored.
  */
 internal object Sgr {
-    fun apply(rendition: Rendition, params: Params) {
-        if (params.size == 0) {
-            rendition.reset()
-            return
-        }
+    /** Returns the rendition that [params] make of [rendition]. */
+    fun apply(rendition: Rendition, params: Params): Rendition {
+        if (params.size == 0) return Rendition.Default
         var result = rendition.style
         var underlineColor = rendition.underlineColor
         var i = 0
@@ -113,8 +107,7 @@ internal object Sgr {
             }
             i += 1 + subCount
         }
-        rendition.style = result
-        rendition.underlineColor = underlineColor
+        return Rendition(result, underlineColor)
     }
 
     private fun underlineStyle(value: Int): UnderlineStyle =
