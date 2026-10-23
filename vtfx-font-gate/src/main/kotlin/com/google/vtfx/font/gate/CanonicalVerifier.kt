@@ -463,24 +463,19 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
         expect(lineGap in 0..unitsPerEm) { "lineGap" }
         expect(lengths[HMTX] == 4 * numGlyphs) { "hmtx length" }
         advances = IntArray(numGlyphs) { u16(offsets[HMTX] + it * 4) }
-        var minLeft = 0
         var minRight = 0
-        var maxExtent = 0
         var any = false
         for (glyph in 0 until numGlyphs) {
             if (!nonEmpty[glyph]) continue
-            val left = glyphXMin[glyph]
             val right = advances[glyph] - glyphXMax[glyph]
-            val extent = glyphXMax[glyph]
-            minLeft = if (any) minOf(minLeft, left) else left
             minRight = if (any) minOf(minRight, right) else right
-            maxExtent = if (any) maxOf(maxExtent, extent) else extent
             any = true
         }
         field(HHEA, 10, advances.max(), "advanceWidthMax")
-        expect(s16(hhea + 12) == minLeft) { "minLeftSideBearing" }
+        // The left side bearing and the extent of a glyph are its xMin and xMax (checkGlyf).
+        expect(s16(hhea + 12) == xMin) { "minLeftSideBearing" }
         expect(s16(hhea + 14) == minRight) { "minRightSideBearing" }
-        expect(s16(hhea + 16) == maxExtent) { "xMaxExtent" }
+        expect(s16(hhea + 16) == xMax) { "xMaxExtent" }
         field(HHEA, 18, 1, "caretSlopeRise")
         for (at in 20 until 34 step 2) field(HHEA, at, 0, "hhea field $at")
         field(HHEA, 34, numGlyphs, "numberOfHMetrics")
@@ -490,8 +485,8 @@ private class FontCheck(private val font: ByteArray, private val limits: FontLim
         for (glyph in 0 until numGlyphs) {
             expect(advances[glyph] <= 4 * unitsPerEm) { "advance of glyph $glyph" }
             val leftSideBearing = s16(offsets[HMTX] + glyph * 4 + 2)
-            val expected = if (nonEmpty[glyph]) glyphXMin[glyph] else 0
-            expect(leftSideBearing == expected) { "left side bearing of glyph $glyph" }
+            // glyphXMin stays 0 for an empty glyph, which has a left side bearing of 0.
+            expect(leftSideBearing == glyphXMin[glyph]) { "left side bearing of glyph $glyph" }
         }
     }
 
