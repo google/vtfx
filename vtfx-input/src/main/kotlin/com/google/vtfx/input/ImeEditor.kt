@@ -170,9 +170,7 @@ public class ImeEditor(
      * password (docs/decisions/0056).
      */
     public fun typeText(text: String) {
-        selectionFrom = -1
-        history += composing
-        composing = ""
+        commitComposingText()
         flush()
         history += withoutDroppedControls(text)
         flush()
@@ -182,9 +180,7 @@ public class ImeEditor(
 
     /** Commits the composing text, which is sent to the host. */
     public fun finishComposingText(): Boolean {
-        selectionFrom = -1
-        history += composing
-        composing = ""
+        commitComposingText()
         endOperation()
         return true
     }
@@ -348,7 +344,8 @@ public class ImeEditor(
      * finish and send the composing text, so that the host receives them in the order typed.
      */
     public fun onKeyDown(stroke: KeyStroke) {
-        selectionFrom = -1
+        val hadComposingText = composing.isNotEmpty()
+        commitComposingText()
         changedSinceRestart = true
         if (
             stroke is KeyStroke.Character &&
@@ -356,18 +353,12 @@ public class ImeEditor(
                 !stroke.modifiers.alt &&
                 !stroke.modifiers.meta
         ) {
-            val hadComposingText = composing.isNotEmpty()
-            history +=
-                composing + withoutDroppedControls(String(Character.toChars(stroke.codePoint)))
-            composing = ""
+            history += withoutDroppedControls(String(Character.toChars(stroke.codePoint)))
             endOperation()
             // The IME still has the composing text, which the host received (docs/decisions/0054).
             if (hadComposingText) requestReset()
             return
         }
-        val hadComposingText = composing.isNotEmpty()
-        history += composing
-        composing = ""
         flush()
         listener.send(HostInput.Key(stroke))
         if (stroke == KeyStroke.Special(TerminalKey.Backspace)) {
@@ -388,9 +379,7 @@ public class ImeEditor(
      * the order made. Resets afterwards, since the host's line no longer matches the history.
      */
     public fun paste(text: String) {
-        selectionFrom = -1
-        history += composing
-        composing = ""
+        commitComposingText()
         sendPaste(text)
     }
 
@@ -419,9 +408,7 @@ public class ImeEditor(
      * if it saw an edit since the last restart (docs/decisions/0055).
      */
     public fun sendPendingInput() {
-        selectionFrom = -1
-        history += composing
-        composing = ""
+        commitComposingText()
         requestReset()
     }
 
@@ -454,12 +441,18 @@ public class ImeEditor(
             // Otherwise an IME that does not end its batch, or that moves its composing text into
             // the history bit by bit with setComposingRegion, could make the buffer grow without
             // bound (invariant 5).
-            history += composing
-            composing = ""
+            commitComposingText()
             flush()
         } else if (batchDepth == 0) {
             flush()
         }
+    }
+
+    /** Moves the composing text into the input history, and collapses the selection. */
+    private fun commitComposingText() {
+        selectionFrom = -1
+        history += composing
+        composing = ""
     }
 
     private fun isHistoryOverLimit(): Boolean =
