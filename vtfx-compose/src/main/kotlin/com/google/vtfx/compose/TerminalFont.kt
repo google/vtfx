@@ -22,6 +22,7 @@ import android.graphics.Typeface
 import androidx.annotation.FontRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.remember
 import androidx.compose.ui.text.font.DeviceFontFamilyName
 import androidx.compose.ui.text.font.Font
@@ -117,6 +118,48 @@ public sealed interface TerminalFont {
             /** The most families that [Sanitized] takes. */
             public val MAX_FAMILIES: Int = 64
         }
+    }
+}
+
+/** The typefaces of a font family for each combination of bold and italic. */
+internal data class TextTypefaces(
+    val regular: Typeface,
+    val bold: Typeface,
+    val italic: Typeface,
+    val boldItalic: Typeface,
+) {
+    companion object {
+        /**
+         * Returns the typefaces that [fontFamily] resolves to now. A font that loads
+         * asynchronously, such as a downloadable font, is a fallback until it has loaded; use
+         * [rememberTextTypefaces] to follow it.
+         */
+        fun resolve(fontFamily: FontFamily, resolver: FontFamily.Resolver): TextTypefaces =
+            resolveStates(fontFamily, resolver).current()
+
+        private fun resolveStates(
+            fontFamily: FontFamily,
+            resolver: FontFamily.Resolver,
+        ): List<State<Any>> = STYLES.map { (weight, style) ->
+            resolver.resolve(fontFamily, weight, style)
+        }
+
+        private fun List<State<Any>>.current(): TextTypefaces {
+            val typefaces = map { it.value as Typeface }
+            return TextTypefaces(typefaces[0], typefaces[1], typefaces[2], typefaces[3])
+        }
+
+        /**
+         * Returns the typefaces of [fontFamily], read in the composition, so that it recomposes
+         * when a font that loads asynchronously has loaded. Without that, the terminal keeps
+         * drawing with the typeface resolved before the font loaded.
+         */
+        @Composable
+        fun rememberTextTypefaces(
+            fontFamily: FontFamily,
+            resolver: FontFamily.Resolver,
+        ): TextTypefaces =
+            remember(fontFamily, resolver) { resolveStates(fontFamily, resolver) }.current()
     }
 }
 

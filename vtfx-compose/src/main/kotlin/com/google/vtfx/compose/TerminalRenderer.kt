@@ -22,9 +22,6 @@ import android.graphics.Paint
 import android.graphics.RenderNode
 import android.graphics.Typeface
 import android.os.LocaleList
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
-import androidx.compose.runtime.remember
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Canvas
@@ -38,9 +35,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.isUnspecified
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import com.google.vtfx.core.AmbiguousWidth
@@ -70,54 +64,6 @@ internal class CellMetrics(val width: Float, val height: Float, val baseline: Fl
 
         /** Measuring several characters averages out the rounding of one. */
         private const val SAMPLE_LENGTH = 16
-    }
-}
-
-/** The typefaces of a font family for each combination of bold and italic. */
-internal data class TextTypefaces(
-    val regular: Typeface,
-    val bold: Typeface,
-    val italic: Typeface,
-    val boldItalic: Typeface,
-) {
-    companion object {
-        /**
-         * Returns the typefaces that [fontFamily] resolves to now. A font that loads
-         * asynchronously, such as a downloadable font, is a fallback until it has loaded; use
-         * [rememberTextTypefaces] to follow it.
-         */
-        fun resolve(fontFamily: FontFamily, resolver: FontFamily.Resolver): TextTypefaces =
-            resolveStates(fontFamily, resolver).current()
-
-        fun resolveStates(fontFamily: FontFamily, resolver: FontFamily.Resolver): List<State<Any>> =
-            STYLES.map { (weight, style) ->
-                resolver.resolve(fontFamily, weight, style)
-            }
-
-        private fun List<State<Any>>.current(): TextTypefaces {
-            val typefaces = map { it.value as Typeface }
-            return TextTypefaces(typefaces[0], typefaces[1], typefaces[2], typefaces[3])
-        }
-
-        private val STYLES =
-            listOf(
-                FontWeight.Normal to FontStyle.Normal,
-                FontWeight.Bold to FontStyle.Normal,
-                FontWeight.Normal to FontStyle.Italic,
-                FontWeight.Bold to FontStyle.Italic,
-            )
-
-        /**
-         * Returns the typefaces of [fontFamily], read in the composition, so that it recomposes
-         * when a font that loads asynchronously has loaded. Without that, the terminal keeps
-         * drawing with the typeface resolved before the font loaded.
-         */
-        @Composable
-        fun rememberTextTypefaces(
-            fontFamily: FontFamily,
-            resolver: FontFamily.Resolver,
-        ): TextTypefaces =
-            remember(fontFamily, resolver) { resolveStates(fontFamily, resolver) }.current()
     }
 }
 
