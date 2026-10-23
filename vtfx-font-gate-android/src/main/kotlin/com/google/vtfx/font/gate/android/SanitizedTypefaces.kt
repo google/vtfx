@@ -61,23 +61,14 @@ private fun platformFamily(family: SanitizedFamily): FontFamily {
         FontFamily.Builder(
             platformFont(family.regular, FontStyle.FONT_WEIGHT_NORMAL, FontStyle.FONT_SLANT_UPRIGHT)
         )
-    val bold = family.bold
-    if (bold != null) {
-        builder.addFont(
-            platformFont(bold, FontStyle.FONT_WEIGHT_BOLD, FontStyle.FONT_SLANT_UPRIGHT)
-        )
+    family.bold?.let {
+        builder.addFont(platformFont(it, FontStyle.FONT_WEIGHT_BOLD, FontStyle.FONT_SLANT_UPRIGHT))
     }
-    val italic = family.italic
-    if (italic != null) {
-        builder.addFont(
-            platformFont(italic, FontStyle.FONT_WEIGHT_NORMAL, FontStyle.FONT_SLANT_ITALIC)
-        )
+    family.italic?.let {
+        builder.addFont(platformFont(it, FontStyle.FONT_WEIGHT_NORMAL, FontStyle.FONT_SLANT_ITALIC))
     }
-    val boldItalic = family.boldItalic
-    if (boldItalic != null) {
-        builder.addFont(
-            platformFont(boldItalic, FontStyle.FONT_WEIGHT_BOLD, FontStyle.FONT_SLANT_ITALIC)
-        )
+    family.boldItalic?.let {
+        builder.addFont(platformFont(it, FontStyle.FONT_WEIGHT_BOLD, FontStyle.FONT_SLANT_ITALIC))
     }
     return builder.build()
 }
