@@ -47,16 +47,12 @@ GIT_ENV = {
 
 class ReportProtectedChangesTest(unittest.TestCase):
     def setUp(self):
-        self._tmp = tempfile.TemporaryDirectory()
-        self.root = pathlib.Path(self._tmp.name)
+        self.root = pathlib.Path(self.enterContext(tempfile.TemporaryDirectory()))
         self.git("init", "--quiet", "--initial-branch=main")
         self.write("config/protected-paths.toml", CONFIG)
         self.write("gate/Gate.kt", "class Gate\n")
         self.write("core/Core.kt", "class Core\n")
         self.commit("Initial commit")
-
-    def tearDown(self):
-        self._tmp.cleanup()
 
     def git(self, *args):
         return subprocess.run(

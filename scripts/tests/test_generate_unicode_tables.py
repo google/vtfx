@@ -185,8 +185,7 @@ EXPECTED_TABLES = textwrap.dedent("""\
 
 class GenerateUnicodeTablesTest(unittest.TestCase):
     def setUp(self):
-        self._tmp = tempfile.TemporaryDirectory()
-        self.root = pathlib.Path(self._tmp.name)
+        self.root = pathlib.Path(self.enterContext(tempfile.TemporaryDirectory()))
         self.ucd = self.root / "ucd"
         self.output = self.root / "out" / "UnicodeWidthTables.kt"
         self.ignorables_output = self.root / "out" / "UnicodeDefaultIgnorables.kt"
@@ -197,9 +196,6 @@ class GenerateUnicodeTablesTest(unittest.TestCase):
         self.write("ucd/extracted/DerivedCombiningClass.txt", DERIVED_COMBINING_CLASS)
         self.write("ucd/extracted/DerivedDecompositionType.txt", DERIVED_DECOMPOSITION_TYPE)
         self.write("ucd/DerivedAge.txt", DERIVED_AGE)
-
-    def tearDown(self):
-        self._tmp.cleanup()
 
     def write(self, path, content):
         file = self.root / path

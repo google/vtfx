@@ -29,11 +29,7 @@ SCRIPT = pathlib.Path(__file__).resolve().parents[1] / "check_api_reference.py"
 
 class CheckApiReferenceTest(unittest.TestCase):
     def setUp(self):
-        self._tmp = tempfile.TemporaryDirectory()
-        self.root = pathlib.Path(self._tmp.name)
-
-    def tearDown(self):
-        self._tmp.cleanup()
+        self.root = pathlib.Path(self.enterContext(tempfile.TemporaryDirectory()))
 
     def write(self, path, content):
         file = self.root / path

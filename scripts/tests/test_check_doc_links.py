@@ -29,14 +29,10 @@ SCRIPT = pathlib.Path(__file__).resolve().parents[1] / "check_doc_links.py"
 
 class CheckDocLinksTest(unittest.TestCase):
     def setUp(self):
-        self._tmp = tempfile.TemporaryDirectory()
-        self.root = pathlib.Path(self._tmp.name)
+        self.root = pathlib.Path(self.enterContext(tempfile.TemporaryDirectory()))
         subprocess.run(["git", "init", "-q"], cwd=self.root, check=True)
         self.write("docs/design/testing.md", "# Test strategy\n")
         self.write("docs/decisions/0001-parser.md", "# Parser\n\n- Status: Approved\n")
-
-    def tearDown(self):
-        self._tmp.cleanup()
 
     def write(self, path, content):
         file = self.root / path
