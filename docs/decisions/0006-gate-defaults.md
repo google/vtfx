@@ -1,6 +1,6 @@
 # Defaults of the gate's replies and policies
 
-- Status: Approved (2026-10-13, approved by a human in the final review; on 2026-10-20 a human changed the default of OSC 52 writes to denied and approved the gate's own check of the selection)
+- Status: Approved (2026-10-13, approved by a human in the final review; on 2026-10-20 a human changed the default of OSC 52 writes to denied and approved the gate's own check of the selection); in item 7, checking the authority of `http` and `https` URLs only superseded by [0058](0058-url-policy.md), which checks `ftp`, `ws`, and `wss` too
 - Date: 2026-10-12
 - Related: Requirements 6.1 and 6.5 (safe defaults), 3.3 of [architecture.md](../design/architecture.md), [gate-policy.md](../design/gate-policy.md), [0039](0039-minsdk-29.md), `vtfx-gate`
 
@@ -21,7 +21,7 @@ The resulting rules are described in [gate-policy.md](../design/gate-policy.md).
 7. **URLs whose displayed form may differ from where they go are not opened**: those with whitespace, control characters, format characters, surrogates, or other default-ignorable code points, and `http` and `https` URLs with userinfo, a `\`, or a character that is not ASCII in the authority. The list of default-ignorable code points is generated from the UCD files in the repository rather than taken from the runtime, so that it does not depend on the runtime's Unicode version. Refusing every character that is not ASCII in the authority, rather than only confusable ones, keeps the check independent of a confusables table and of the runtime's Unicode version; a user who needs an internationalized domain can open its punycode form. Section 5.2 of gate-policy.md.
 8. **Pastes**: all control characters (C0, DEL, C1) other than HT and newlines are removed, and newlines become CR, even when not in bracketed paste mode. Since no ESC remains, the content cannot include the end of bracketed paste to escape. Section 2.1 of gate-policy.md.
 
-The refusal of default-ignorable code points and of userinfo and `\` in item 7 was decided by a human after a security review; the list of default-ignorable code points is generated from the UCD file at a human's request. The refusal of characters that are not ASCII in the authority was decided by the agent after this decision was approved, and waits for the security review of `vtfx-gate`.
+The refusal of default-ignorable code points and of userinfo and `\` in item 7 was decided by a human after a security review; the list of default-ignorable code points is generated from the UCD file at a human's request. The refusal of characters that are not ASCII in the authority was decided by the agent after this decision was approved, and was approved in the security review of `vtfx-gate`.
 
 ## Alternatives considered
 

@@ -1,6 +1,6 @@
 # Details of the IME editing model
 
-- Status: Approved (2026-10-13, approved by a human in the final review)
+- Status: Approved (2026-10-13, approved by a human in the final review); the row of a committed newline superseded by [0050](0050-ime-text-of-several-lines-is-a-paste.md), with which committed text with a line break other than a line feed alone is a paste
 - Date: 2026-10-12
 - Related: [ime-contract.md](../design/ime-contract.md), requirement 5.3, `ImeEditor` in `vtfx-input`
 
@@ -30,4 +30,4 @@ The resulting behavior is described in section 11 of [ime-contract.md](../design
 
 ## Impact of reversing
 
-Change the corresponding methods of `ImeEditor`, the tests in `ImeEditorTest`, and section 11 of ime-contract.md. No trace in spec/ime goes through these branches.
+Change the corresponding methods of `ImeEditor`, the tests in `ImeEditorTest`, and section 11 of ime-contract.md. Most traces in spec/ime go through the branch of key ups, and two of the Korean traces through that of a committed newline.

@@ -127,7 +127,7 @@ Hardware keys go to the focused terminal. `TerminalInputView` passes the keys th
 
 ## 8. Extra key bar and sticky modifiers
 
-- The library has no key bar UI (requirement 5.4). The app builds one with `TerminalSession.sendKey`, `sendText`, `paste`, and `stickyModifiers` (section 5 of [usage.md](../usage.md)); the sample app has a key bar with Esc, Tab, Ctrl, Alt, and the arrows ([decisions/0012](../decisions/0012-touch-and-selection.md)).
+- The library has no key bar UI (requirement 5.4). The app builds one with `TerminalSession.sendKey`, `sendText`, `paste`, and `stickyModifiers` (section 5 of [usage.md](../usage.md)); the sample app has a key bar with Esc, Tab, Ctrl, Alt, the arrows, Direct, and Find ([decisions/0012](../decisions/0012-touch-and-selection.md)).
 - `stickyModifiers` apply to the next key, or to the first character of the next text that the IME editing model sends, and are then cleared. An HT, as that first character or as a character key, takes them as the Tab key (Shift+Tab is CSI Z), and a character key of a line break as the Enter key: the key encoding drops a control character with modifiers. `TerminalSessionListener.onStickyModifiersChanged` reports each change, including the clearing. When the modifiers change a key or a character, the host no longer gets what the IME's input history predicts, so the input history is reset after the edit (section 5.1 of [ime-contract.md](ime-contract.md)).
 - Arming sticky modifiers (setting modifiers that are not empty and differ from the current ones) first commits the composing text and sends it, with the edits not sent yet, without the new modifiers, as a key would before itself. The input history is then reset, so that the IME, which may still have the composing text, restarts, and can no longer correct the text typed before arming, which would be sent again with the modifiers. The modifiers then apply only to what is typed after arming, composing text included. Clearing them sends nothing ([decisions/0033](../decisions/0033-sticky-modifiers-and-composing-text.md), [decisions/0055](../decisions/0055-arming-sticky-modifiers-resets.md)).
   - The pending input is sent even during a batch edit of the IME, as a paste is, since the app's call is not part of the IME's edit; the input history is emptied at once, and only the restart of the IME waits for the end of the batch (section 5.2 of [ime-contract.md](ime-contract.md)).
@@ -178,7 +178,7 @@ The following are verified only with Robolectric and the emulator, and are liste
 
 - `onPreImeKeyEvent` with a real physical keyboard and Gboard, in English and in Japanese.
 - The mouse and touchpads on a Chromebook, Samsung DeX, or a tablet with a mouse.
-- Copying all the text with a full scrollback through the system clipboard.
+- How long copying all the text with a full scrollback freezes the UI (that it reaches the system clipboard was also checked on a real device).
 - Reading and operating the rows with TalkBack.
 - The time that searching takes on the main thread (section 13).
 

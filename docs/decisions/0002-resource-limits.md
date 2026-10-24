@@ -1,6 +1,6 @@
 # Resource limits
 
-- Status: Approved (2026-10-13, approved by a human in the final review. On 2026-10-14, a human added the memory budget of the scrollback after a security review)
+- Status: Approved (2026-10-13, approved by a human in the final review. On 2026-10-14, a human added the memory budget of the scrollback after a security review); the premise that one saved title can be as long as the string limit superseded by [0063](0063-window-title-limits.md), which limits a title to 1024 UTF-16 units
 - Date: 2026-10-12
 - Related: Requirement 6.1 (handling resource exhaustion) and section 8 (the acceptable range and limits for resource exhaustion), section 10 of [emulation.md](../design/emulation.md), `TerminalLimits`, `Params`, `Line`
 

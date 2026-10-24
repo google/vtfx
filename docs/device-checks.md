@@ -16,7 +16,7 @@ Connect the device to the development machine over USB and enable USB debugging.
 adb -s SERIAL install -r vtfx-sample/build/outputs/apk/debug/vtfx-sample-debug.apk
 ```
 
-The sample app is a terminal connected to a fake host (a small shell that echoes input). `help` lists the commands. The extra key bar (Esc, Tab, Ctrl, Alt, arrows, Direct) is shown only while the software keyboard is shown.
+The sample app is a terminal connected to a fake host (a small shell that echoes input). `help` lists the commands. The extra key bar (Esc, Tab, Ctrl, Alt, arrows, Direct, Find) is shown only while the software keyboard is shown.
 
 The extras that can be passed at startup are as follows. The activity is exported and any app could pass them, so only a debuggable build takes `logHostInput`, and only a debuggable build or the benchmark build (section 5) takes `benchmark` ([decisions/0067](decisions/0067-profileable-benchmark-build.md)).
 
@@ -183,7 +183,7 @@ What to tell us: the device, the Android version, the mouse or touchpad, and eac
 
 ## 8. Images
 
-Section 9 of [emulation.md](design/emulation.md). Images of the kitty graphics protocol were checked only on the JVM, with recordings of real programs and screenshot tests. The sample app has no SSH, so it can only replay recordings; checking real programs needs an app that embeds vtfx and connects over SSH to a host with `kitten icat`, timg, and yazi.
+Section 9 of [emulation.md](design/emulation.md). Images of the kitty graphics protocol were checked on the JVM, with recordings of real programs and screenshot tests, and drawn on the emulator by the rendering e2e (section 8 of [testing.md](design/testing.md)), whose `DeviceLimitsTest` also drew the largest image on a Pixel XL (Android 10). Real programs were not run on a device. The sample app has no SSH, so it can only replay recordings; checking real programs needs an app that embeds vtfx and connects over SSH to a host with `kitten icat`, timg, and yazi.
 
 | # | Action | Expected |
 |---|---|---|
@@ -192,8 +192,9 @@ Section 9 of [emulation.md](design/emulation.md). Images of the kitty graphics p
 | 8.3 | Print lines until the image scrolls off, then scroll back through the scrollback | The image moves with the text and comes back with it |
 | 8.4 | Show an image the size of the screen, then make it scroll (print lines below it) | The frame time stays near that of text (section 5) |
 | 8.5 | Show a few large images, and read the memory with `adb -s SERIAL shell dumpsys meminfo PACKAGE` | Note the memory: the display keeps bitmaps besides the decoded pixels, which `TerminalLimits.maxImageBytes` bounds |
+| 8.6 | Run `scripts/e2e_render.py --serial SERIAL`, whose `DeviceLimitsTest` draws an image of 64 MiB (4096 × 4096 pixels), the largest one image may be, with `maxImageBytes` of 256 MiB | `theLargestImageIsDrawn` and `anImageLargerThanAndroidDrawsIsNotDrawn` pass in `build/reports/e2e-render.md`. If one fails, note its message and the device's largest texture size |
 
-What to tell us: the device, the Android version, the programs, and each row's result, with the meminfo output of 8.5.
+What to tell us: the device, the Android version, the programs, and each row's result, with the meminfo output of 8.5 and the report of 8.6.
 
 ## 9. The input history on switching IMEs
 

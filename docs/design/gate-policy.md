@@ -130,7 +130,7 @@ There is no path that opens a URL from host output alone (OSC 8 and so on). `Ter
    - The authority starts after the `//` and ends at the first `/`, `?`, or `#`. The path, query, and fragment are not checked for these characters (`https://medium.com/@user` and `https://example.com/日本語` are allowed).
    - Other schemes are not checked for them (`mailto:a@b` stays openable when the app allows `mailto`).
 
-The refusal of characters that are not ASCII and of `%` in the authority was added by agents after the human approval of [decisions/0006](../decisions/0006-gate-defaults.md), and waits for the security review of `vtfx-gate` (the item "Changes to protected paths" in [review-queue.md](../review-queue.md)).
+The refusal of characters that are not ASCII and of `%` in the authority was added by agents after the human approval of [decisions/0006](../decisions/0006-gate-defaults.md), and was approved in the security reviews of `vtfx-gate`.
 
 ### 5.3 Results
 

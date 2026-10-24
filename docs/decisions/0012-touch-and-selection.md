@@ -1,6 +1,6 @@
 # Touch interaction, selection, extra key bar
 
-- Status: Approved (2026-10-13, approved by a human in the final review); the copy path (copying through the session's `ClipboardAccess`) superseded by [0042](0042-user-clipboard-through-gate.md)
+- Status: Approved (2026-10-13, approved by a human in the final review); the copy path (copying through the session's `ClipboardAccess`) superseded by [0042](0042-user-clipboard-through-gate.md), and reporting taps and swipes to the host while the display shows the scrollback by [0031](0031-desktop-pointer-and-terminal-state.md)
 - Date: 2026-10-12
 - Related: Requirement 5.4, sections 2, 4, 7.1, 8, and 9 of [compose-input.md](../design/compose-input.md), [0031](0031-desktop-pointer-and-terminal-state.md) (the mouse), `TerminalGestures`, `TerminalSelection`, `TerminalSession.stickyModifiers`
 

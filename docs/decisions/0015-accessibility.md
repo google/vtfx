@@ -1,6 +1,6 @@
 # Accessibility (TalkBack)
 
-- Status: Approved (2026-10-13, approved by a human in the final review. Rows are marked as sensitive data)
+- Status: Approved (2026-10-13, approved by a human in the final review. Rows are marked as sensitive data); on API 29 to 33, that only accessibility tools see the rows superseded by [0039](0039-minsdk-29.md)
 - Date: 2026-10-12
 - Related: Requirement 6.3, section 11 of [compose-input.md](../design/compose-input.md), 2.7 of [research/xterm-js-ime.md](../research/xterm-js-ime.md), [0039](0039-minsdk-29.md), `Terminal.kt` (`RowSemantics`, `TerminalRowSemanticsNode`), `TerminalInputView`
 

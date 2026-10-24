@@ -1,6 +1,6 @@
 # Scope of the public API and the compatibility policy
 
-- Status: Approved (2026-10-13, approved by a human in the final review); the opt-in through compiler settings superseded by [0029](0029-import-without-gradle.md), and the public constructor of `HostWriter` by [0027](0027-session-takes-connection.md)
+- Status: Approved (2026-10-13, approved by a human in the final review); the opt-in through compiler settings superseded by [0029](0029-import-without-gradle.md), and the public constructor of `HostWriter` by [0027](0027-session-takes-connection.md); the source links of the reference always pointing at the tag `v<version>` superseded by [0074](0074-api-reference-of-the-default-branch.md), which lets `vtfx.sourceRef` set them
 - Date: 2026-10-12
 - Related: Requirement 6.5 (public API) and section 8 (the compatibility policy of the public API, and when to start guaranteeing stability), [0007](0007-compose-session.md), [0036](0036-adding-parameters.md), [0037](0037-api-shape-before-1.0.md), [0043](0043-url-open-results.md)
 

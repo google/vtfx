@@ -149,7 +149,7 @@ Keys arriving from the IME through `sendKeyEvent` and physical keys the IME did 
 |---|---|
 | Any key up | Ignored: keys act on down ([decisions/0004](../decisions/0004-ime-editor-details.md)). |
 | `KEYCODE_DEL` | Sends DEL. If the input history is not empty, erases its last code point. If it committed composing text, resets (5.1). |
-| `KEYCODE_ENTER`, `KEYCODE_NUMPAD_ENTER` | Sends CR and resets. While the host set flag 1 of the kitty keyboard protocol, Keypad Enter is sent as `CSI 57414 u` (section 2.2 of [gate-policy.md](gate-policy.md)). |
+| `KEYCODE_ENTER`, `KEYCODE_NUMPAD_ENTER` | Sends CR, or CR LF with LNM, and resets. With the application keypad, Keypad Enter is sent as SS3 M (section 7.1 of [compose-input.md](compose-input.md)), and while the host set flag 1 of the kitty keyboard protocol, as `CSI 57414 u` (section 2.2 of [gate-policy.md](gate-policy.md)). |
 | A key that produces HT, LF, or CR, also from the app's `sendKey` | The Tab or Enter key, with its modifiers, as below: the key encoding drops a control character with modifiers. |
 | Keys that produce a character (`getUnicodeChar` is not 0, and the only modifier is Shift) | Commits the composing text, if any, and adds the character after it, like `commitText` of the character. If there was composing text, resets (5.1). |
 | Anything else | Sends it with `vtfx-gate`'s key encoding and resets. |
@@ -187,7 +187,7 @@ IME calls arrive on the UI thread. `vtfx-compose` operates the editing model of 
 ## 9. Verification
 
 - Replay the `ic` events of traces recorded with `tools/ime-probe` into the editing model of `vtfx-input` in order.
-- The expected sent content is kept, separately from the traces, as a table owned by humans. The policy of the recording tool differs in part from this document (it resets on BS and so on), so the `send` events recorded in traces are not used as expected values.
+- The expected sent content is kept, separately from the traces, as a table owned by humans. The recording tool does not send exactly what this document does (it sends a committed `\n` as is, where this document sends CR), so the `send` events recorded in traces are not used as expected values.
 - The replay tests are gates. The emulator e2e with a real IME is for reports (requirement 7.2).
 - The IME is not trusted, so the invariants and what the host receives are checked against sequences of calls with arbitrary arguments (`HostileImeTest` and the fuzzing `ImeFuzzer`; section 12 of [testing.md](testing.md)).
 
@@ -197,7 +197,7 @@ IME calls arrive on the UI thread. `vtfx-compose` operates the editing model of 
 |---|---|
 | Limit of the input history | 1024 code points (`ImeEditor.DEFAULT_MAX_HISTORY_LENGTH`, an argument of `ImeEditor`; [decisions/0004](../decisions/0004-ime-editor-details.md)). |
 | IMEs other than Gboard | The behavior of Samsung Keyboard, SwiftKey, and Simeji. Their place in the matrix of target IMEs is in section 13. IMEs that hold English words as composing text are handled by direct input (section 3). |
-| Autocorrect of misspellings, and undoing it | Not observed even on a real device (`teh` is not corrected). |
+| Autocorrect of misspellings, and undoing it | Observed only on API 29, with Gboard 18.4 on a real device (`helo` corrected to `hello`, and back by choosing the suggestion), where the bytes sent were correct ([research/ime-gboard-api29.md](../research/ime-gboard-api29.md)). No trace has it: `teh` is not corrected in the recordings. |
 | Handwriting input, voice input | Unverified. Handwriting gestures are not accepted (6.4, section 13). |
 
 ## 11. Details of the editing model

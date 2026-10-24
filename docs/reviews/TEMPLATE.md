@@ -18,11 +18,11 @@ The meaning of the states and how to update them are in 3.3 of [README.md](READM
 
 ## Running the reproduction tests
 
-The reproduction tests are in [repro-YYYY-MM-DD/](repro-YYYY-MM-DD/). Run them from the root of the repository.
+The reproduction tests are in [repro-YYYY-MM-DD-<name>/](repro-YYYY-MM-DD-<name>/). Run them from the root of the repository.
 
 ```sh
 ./gradlew --console=plain --no-configuration-cache \
-  -I docs/reviews/repro-YYYY-MM-DD/review.init.gradle \
+  -I docs/reviews/repro-YYYY-MM-DD-<name>/review.init.gradle \
   :<module>:reviewRepro
 ```
 

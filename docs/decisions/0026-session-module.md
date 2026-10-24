@@ -1,6 +1,6 @@
 # Move TerminalSession to a JVM module
 
-- Status: Approved (2026-10-15, approved by a human in a review of the review queue, including the details decided during implementation. The approach was decided in a discussion with a human on 2026-10-14, and the agent decided the details)
+- Status: Approved (2026-10-15, approved by a human in a review of the review queue, including the details decided during implementation. The approach was decided in a discussion with a human on 2026-10-14, and the agent decided the details); in item 3, the two locks superseded by [0077](0077-output-lock.md), which adds an output lock that serializes feeds
 - Date: 2026-10-14
 - Related: Section 2 of [session-and-threads.md](../design/session-and-threads.md) (the resulting design), 3.6 of [architecture.md](../design/architecture.md), [0025](0025-session-scope.md) (the decision replaced), [0007](0007-compose-session.md) (owning the session), [0021](0021-thread-checks.md) (checking the calling thread), [0024](0024-thread-conventions.md) (thread conventions), requirements 3, 4.1, and 4.2
 
