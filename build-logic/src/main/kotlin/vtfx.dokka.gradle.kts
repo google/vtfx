@@ -28,11 +28,16 @@ dokka {
         // The descriptions of the module and its packages.
         includes.from("Module.md")
         // Links each declaration to its source in the published repository, at the tag of the
-        // version (docs/decisions/0018).
+        // version (docs/decisions/0018), or at the commit that -Pvtfx.sourceRef names, which the
+        // reference of the default branch is built from (docs/decisions/0074).
         sourceLink {
+            // Read outside the lambda, which the configuration cache stores without the project.
+            val sourceDirectory = "${project.name}/src/main/kotlin"
             localDirectory.set(layout.projectDirectory.dir("src/main/kotlin"))
             remoteUrl(
-                "https://github.com/google/vtfx/blob/v$version/${project.name}/src/main/kotlin"
+                providers.gradleProperty("vtfx.sourceRef").orElse("v$version").map {
+                    "https://github.com/google/vtfx/blob/$it/$sourceDirectory"
+                }
             )
             remoteLineSuffix.set("#L")
         }

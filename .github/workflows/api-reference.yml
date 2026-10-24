@@ -12,22 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Publishes the HTML API reference of a release to GitHub Pages (docs/decisions/0073).
+# Publishes the HTML API reference of the default branch to GitHub Pages (docs/decisions/0074).
 
 name: api-reference
 
 on:
   push:
-    tags: ["v*"]
-  # Publishes the reference of a tag again, or of a tag pushed before this workflow existed. Run it
-  # from the default branch: the github-pages environment allows deployments from it and from the
-  # tags v*, and from no other branch.
+    branches: [main]
   workflow_dispatch:
-    inputs:
-      tag:
-        description: "The release tag to publish, such as v0.1.0"
-        required: true
-        type: string
 
 permissions:
   contents: read
@@ -40,31 +32,17 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-24.04
-    env:
-      TAG: ${{ inputs.tag || github.ref_name }}
     steps:
-      # The reference is built from the tag, whose sources its source links point at, not from the
-      # commit of the workflow.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: refs/tags/${{ env.TAG }}
 
       - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
           java-version: "21"
 
-      # The source links point at the tag of the version in gradle.properties (vtfx.dokka).
-      - name: Check the version
-        run: |
-          version="$(sed -n 's/^version=//p' gradle.properties)"
-          if [ "$TAG" != "v$version" ]; then
-            echo "::error::$TAG is not the tag of version $version in gradle.properties."
-            exit 1
-          fi
-
+      # The source links point at the commit that the reference is built from (vtfx.dokka).
       - name: Generate the API reference
-        run: ./gradlew --console=plain :dokkaGenerate
+        run: ./gradlew --console=plain "-Pvtfx.sourceRef=$GITHUB_SHA" :dokkaGenerate
 
       - name: Check the links of the API reference
         run: python3 -I scripts/check_api_reference.py build/dokka/html
