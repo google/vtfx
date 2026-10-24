@@ -37,7 +37,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.unit.LayoutDirection
 import com.google.vtfx.core.InternalVtfxApi
-import com.google.vtfx.core.KeyStroke
 import com.google.vtfx.core.TerminalKey
 import com.google.vtfx.core.TerminalSnapshot
 import com.google.vtfx.gate.MouseAction
@@ -393,9 +392,7 @@ private class MouseHandler(
             }
             session.isAlternateScreen() ->
                 repeat(count * WHEEL_LINES) {
-                    session.sendScrollKey(
-                        KeyStroke.Special(if (notches > 0) TerminalKey.Up else TerminalKey.Down)
-                    )
+                    session.sendScrollKey(if (notches > 0) TerminalKey.Up else TerminalKey.Down)
                 }
             else -> {
                 display.scrollBy(notches * WHEEL_LINES)

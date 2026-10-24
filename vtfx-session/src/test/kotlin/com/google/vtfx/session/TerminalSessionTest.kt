@@ -476,7 +476,7 @@ class TerminalSessionTest {
     @Test
     fun scrollKeysLeaveTheStickyModifiersArmed() {
         session.stickyModifiers = KeyModifiers.of(ctrl = true)
-        session.sendScrollKey(KeyStroke.Special(TerminalKey.Up))
+        session.sendScrollKey(TerminalKey.Up)
         assertEquals("\u001b[A", sent.toString())
         assertEquals(KeyModifiers.of(ctrl = true), session.stickyModifiers)
         session.sendKey(KeyStroke.Special(TerminalKey.Left))
@@ -487,7 +487,7 @@ class TerminalSessionTest {
     fun aScrollKeyCommitsTextComposedAfterTheStickyModifiersWithThem() {
         session.stickyModifiers = KeyModifiers.of(ctrl = true)
         session.edit { it.setComposingText("c") }
-        session.sendScrollKey(KeyStroke.Special(TerminalKey.Up))
+        session.sendScrollKey(TerminalKey.Up)
         // The text was typed after arming, so it takes the modifiers; the scroll does not.
         assertEquals("\u0003\u001b[A", sent.toString())
     }

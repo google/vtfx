@@ -30,7 +30,6 @@ import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.input.pointer.pointerInput
 import com.google.vtfx.core.InternalVtfxApi
-import com.google.vtfx.core.KeyStroke
 import com.google.vtfx.core.MouseTracking
 import com.google.vtfx.core.TerminalKey
 import com.google.vtfx.core.TerminalSnapshot
@@ -214,9 +213,7 @@ private fun scroll(display: TerminalDisplay, lines: Int, cell: Pair<Int, Int>, r
             }
         session.isAlternateScreen() ->
             repeat(abs(lines)) {
-                session.sendScrollKey(
-                    KeyStroke.Special(if (lines > 0) TerminalKey.Up else TerminalKey.Down)
-                )
+                session.sendScrollKey(if (lines > 0) TerminalKey.Up else TerminalKey.Down)
             }
         else -> display.scrollBy(lines)
     }

@@ -698,16 +698,17 @@ public class TerminalSession(
     /**
      * Sends a key that a scroll gesture makes, such as an arrow key on the alternate screen, as
      * [sendKey] does, but without [stickyModifiers], which are for the keys the user types: they
-     * stay armed.
+     * stay armed. It takes a [TerminalKey], without modifiers, rather than a [KeyStroke], so that a
+     * display can send no text with it (docs/decisions/0075).
      *
      * @suppress
      */
     @InternalVtfxApi
-    public fun sendScrollKey(stroke: KeyStroke) {
+    public fun sendScrollKey(key: TerminalKey) {
         input { editor ->
             keepStickyModifiers = true
             try {
-                editor.onKeyDown(stroke)
+                editor.onKeyDown(KeyStroke.Special(key))
             } finally {
                 keepStickyModifiers = false
             }
