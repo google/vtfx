@@ -21,6 +21,7 @@ The design documents in this directory:
 1. **Gather security capabilities in one place.** Untrusted input may flow anywhere. However, only small modules subject to review can perform operations that affect the outside (sending to the host, the clipboard, opening URLs). Other modules do not even hold the references needed to perform them.
 2. **Separate the logic from Android.** The terminal emulation and the IME editing model are pure Kotlin/JVM code that does not depend on Android. This makes deterministic tests, fuzzing, and replaying recorded IME traces fast and possible without an emulator.
 3. **Represent side effects as values.** The terminal model does not itself perform replies to the host or writes to the clipboard; it outputs typed values that represent "what was requested". The modules subject to review decide whether and how to perform them.
+4. **The modules under review check rather than trust.** The code outside them can be wrong. Each gate checks what it receives, so that a mistake in the parser, the font readers, or the editing model shows the wrong thing or is refused, instead of reaching the host, the clipboard, or native code ([gate-policy.md](gate-policy.md), section 2 of [fonts.md](fonts.md)). What the gates cannot check from the values, such as whether the user asked for an action, is the caller's contract, kept by types, KDoc, and tests ([decisions/0075](../decisions/0075-adversaries-are-inputs.md)).
 
 ## 2. Module structure
 
@@ -52,20 +53,20 @@ The design documents in this directory:
 
 Dependencies are allowed only in the direction of the arrows. `vtfx-core` does not depend on other vtfx modules. The font modules are not in the figure: `vtfx-font-gate` depends on no other vtfx module, and `vtfx-font` and `vtfx-font-gate-android` depend on it (`vtfx-font-gate-android` also on `vtfx-core`, at compile time only, for `InternalVtfxApi`). Besides the arrows in the figure, `vtfx-compose` also depends on `vtfx-core`, `vtfx-input`, `vtfx-gate`, `vtfx-gate-android`, `vtfx-font`, `vtfx-font-gate`, and `vtfx-font-gate-android` to use their types.
 
-Security review covers whole modules, never single files, and the modules under review are named with `gate` ([decisions/0041](../decisions/0041-security-review-by-module.md)).
+Every module is reviewed. Security review, the closer review of the paths in `config/protected-paths.toml`, covers whole modules, never single files, and the modules under it are named with `gate` ([decisions/0041](../decisions/0041-security-review-by-module.md), [decisions/0076](../decisions/0076-security-review-is-focused.md)).
 
-| Module | Kind | Responsibility (one sentence) | Review |
+| Module | Kind | Responsibility (one sentence) | Security review |
 |---|---|---|---|
-| `vtfx-core` | JVM | Interprets the host's output bytes and updates the terminal state (screen, scrollback, modes, cursor). | Not needed |
-| `vtfx-input` | JVM | Converts the user's key input and IME editing operations into values of input to send to the host. | Not needed |
-| `vtfx-gate` | JVM | Is solely responsible for assembling the bytes sent to the host and for allowing or denying requests with external effects. | **Needed** |
-| `vtfx-gate-android` | Android | Performs the operations `vtfx-gate` allowed with Android APIs (clipboard, Intent). | **Needed** |
-| `vtfx-session` | JVM | Ties together the terminal, the IME editing model, and requests to the host, and provides a terminal session without a UI. | Not needed |
-| `vtfx-compose` | Android | Displays the session as a Compose UI and receives input. | Not needed |
-| `vtfx-font` | JVM | Reads fonts that users choose and writes them again in one canonical form (section 2 of [fonts.md](fonts.md)). | Not needed |
-| `vtfx-font-gate` | JVM | Checks that bytes are a font in the canonical form, which is all that reaches the platform's native font code, and holds them as `SanitizedFont` (section 2 of [fonts.md](fonts.md)). | **Needed** |
-| `vtfx-font-gate-android` | Android | Makes typefaces from `SanitizedFont`s, the only code that hands font data to the platform (section 2 of [fonts.md](fonts.md)). | **Needed** |
-| `vtfx-sample` | Android app | A sample app with a fake host, for manual checks and the emulator e2e. It depends only on `vtfx-compose` and uses only the public API, as a third-party app would, so its classes are not checked ([decisions/0044](../decisions/0044-boundaries-in-gradle-and-classes.md)). | Not needed |
+| `vtfx-core` | JVM | Interprets the host's output bytes and updates the terminal state (screen, scrollback, modes, cursor). | No |
+| `vtfx-input` | JVM | Converts the user's key input and IME editing operations into values of input to send to the host. | No |
+| `vtfx-gate` | JVM | Is solely responsible for assembling the bytes sent to the host and for allowing or denying requests with external effects. | **Yes** |
+| `vtfx-gate-android` | Android | Performs the operations `vtfx-gate` allowed with Android APIs (clipboard, Intent). | **Yes** |
+| `vtfx-session` | JVM | Ties together the terminal, the IME editing model, and requests to the host, and provides a terminal session without a UI. | No |
+| `vtfx-compose` | Android | Displays the session as a Compose UI and receives input. | No |
+| `vtfx-font` | JVM | Reads fonts that users choose and writes them again in one canonical form (section 2 of [fonts.md](fonts.md)). | No |
+| `vtfx-font-gate` | JVM | Checks that bytes are a font in the canonical form, which is all that reaches the platform's native font code, and holds them as `SanitizedFont` (section 2 of [fonts.md](fonts.md)). | **Yes** |
+| `vtfx-font-gate-android` | Android | Makes typefaces from `SanitizedFont`s, the only code that hands font data to the platform (section 2 of [fonts.md](fonts.md)). | **Yes** |
+| `vtfx-sample` | Android app | A sample app with a fake host, for manual checks and the emulator e2e. It depends only on `vtfx-compose` and uses only the public API, as a third-party app would, so its classes are not checked ([decisions/0044](../decisions/0044-boundaries-in-gradle-and-classes.md)). | No |
 
 This table is the canonical list of modules. The modules are those of `settings.gradle.kts`, and `config/boundaries.toml` lists the same modules with the dependencies each may have.
 

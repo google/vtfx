@@ -18,13 +18,13 @@ Files, URIs, `Typeface`, custom `AndroidFont`, and downloadable fonts are not ac
 
 ## 2. Modules
 
-The work is split so that only the code that decides what reaches native code is under security review ([decisions/0041](../decisions/0041-security-review-by-module.md)):
+The work is split so that only the code that decides what reaches native code is under security review, and a mistake in the rest cannot let unverified bytes reach native code ([decisions/0041](../decisions/0041-security-review-by-module.md)):
 
-| Module | Kind | Package | Contents | Review |
+| Module | Kind | Package | Contents | Security review |
 |---|---|---|---|---|
-| `vtfx-font-gate` | JVM, no dependencies | `com.google.vtfx.font.gate` | `CanonicalVerifier`, and the public types `SanitizedFont`, `SanitizedFamily`, `InvalidFontException`, `FontLimits`, `WidthClass` | Needed |
-| `vtfx-font` | JVM, depends on `vtfx-font-gate` (`api`) | `com.google.vtfx.font` | The readers of font files, the Type 2 charstring interpreter, the curve approximation, the writer of the canonical form, and the public `FontFile`, `FaceInfo`, `OutlineFormat` | Not needed |
-| `vtfx-font-gate-android` | Android, depends on `vtfx-font-gate` (and `vtfx-core` at compile time only, for `InternalVtfxApi`) | `com.google.vtfx.font.gate.android` | `SanitizedTypefaces`, the only code that hands font data to the platform (section 8) | Needed |
+| `vtfx-font-gate` | JVM, no dependencies | `com.google.vtfx.font.gate` | `CanonicalVerifier`, and the public types `SanitizedFont`, `SanitizedFamily`, `InvalidFontException`, `FontLimits`, `WidthClass` | Yes |
+| `vtfx-font` | JVM, depends on `vtfx-font-gate` (`api`) | `com.google.vtfx.font` | The readers of font files, the Type 2 charstring interpreter, the curve approximation, the writer of the canonical form, and the public `FontFile`, `FaceInfo`, `OutlineFormat` | No |
+| `vtfx-font-gate-android` | Android, depends on `vtfx-font-gate` (and `vtfx-core` at compile time only, for `InternalVtfxApi`) | `com.google.vtfx.font.gate.android` | `SanitizedTypefaces`, the only code that hands font data to the platform (section 8) | Yes |
 
 - `config/protected-paths.toml` lists `vtfx-font-gate/**` and `vtfx-font-gate-android/**` under security review.
 - `config/boundaries.toml` reserves the package `com.google.vtfx.font.gate` and its subpackages for the two gate modules (`reserved_packages`), so that no other module can declare a class of the same name as a reviewed one and replace it on the class path.
