@@ -18,7 +18,7 @@ The defaults and the reasons for them are in [decisions/0006](../decisions/0006-
 | Method | What it sends |
 |---|---|
 | `sendKey(stroke, modes)` | The bytes xterm sends for the key and modifiers under the terminal modes (application cursor keys and so on), or, while the host set flag 1 of the kitty keyboard protocol, the forms of that protocol, with flag 4 if set (section 2.2), encoded by `KeyEncoder` inside the gate. Its inputs are only the key, the modifiers, and the modes, which are enums, booleans, and the code points of a character key, so no text from the host can reach the output ([decisions/0005](../decisions/0005-key-bytes-through-gate.md), [decisions/0070](../decisions/0070-kitty-keyboard-protocol.md)). Only Ctrl makes a control from a character: a character key whose code point is itself a control (C0, DEL, or C1) sends nothing, and an unpaired surrogate is sent as U+FFFD, as in text (section 2.1). |
-| `sendText(text)` | Text that the user typed or the IME committed on one line, converted as in section 2.1. |
+| `sendText(text)` | Text that the user typed or the IME committed on one line, converted as in section 2.1. Text with a line break (CR or LF) is a programming error (`IllegalArgumentException`): Enter (`sendKey`) and pastes (`sendPaste`) are the only ways to end a line, so that a caller that takes pasted text for typed text fails, rather than run its lines one by one despite bracketed paste mode ([decisions/0075](../decisions/0075-adversaries-are-inputs.md)). |
 | `sendDeletes(count)` | `count` DELs, which erase text already sent in IME editing. A count outside 1 to 65536 is a programming error. |
 | `sendPaste(text, bracketed)` | Pasted text, converted as in section 2.1, and wrapped in `ESC [ 200 ~` and `ESC [ 201 ~` when `bracketed`. Text of several lines that the IME commits, such as a clipboard suggestion, is a paste too (section 4.2 of [ime-contract.md](ime-contract.md), [decisions/0050](../decisions/0050-ime-text-of-several-lines-is-a-paste.md)). |
 | `sendReply(query, colors)` | The reply to a query (section 3). |
@@ -30,7 +30,7 @@ The defaults and the reasons for them are in [decisions/0006](../decisions/0006-
 
 `OutboundText` converts text and pastes the same way:
 
-- Line breaks (CR LF, CR, LF) become CR, and HT is kept.
+- Line breaks (CR LF, CR, LF) become CR, and HT is kept. Only pastes have line breaks, since `sendText` refuses them.
 - Every other control character (C0, DEL, and C1) is removed. Since no ESC or C1 CSI (U+009B) remains, pasted content cannot end a bracketed paste (`ESC [ 201 ~`) early, or form any other control sequence.
 - Unpaired surrogates become U+FFFD.
 

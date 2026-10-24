@@ -33,8 +33,16 @@ class HostWriterTest {
     private val writer = HostWriter { sent += String(it, Charsets.UTF_8) }
 
     @Test
-    fun textConvertsLineBreaksToCr() {
-        writer.sendText("a\nb\r\nc\rd")
+    fun textRefusesLineBreaks() {
+        for (text in listOf("a\nb", "a\r\nb", "a\rb", "\n", "\r")) {
+            assertFailsWith<IllegalArgumentException> { writer.sendText(text) }
+        }
+        assertEquals(emptyList(), sent)
+    }
+
+    @Test
+    fun pasteConvertsLineBreaksToCr() {
+        writer.sendPaste("a\nb\r\nc\rd", bracketed = false)
         assertEquals(listOf("a\rb\rc\rd"), sent)
     }
 

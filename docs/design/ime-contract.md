@@ -58,7 +58,7 @@ When sending committed text, `sendText` in `vtfx-gate` performs the following co
 
 | Character | What is sent |
 |---|---|
-| `\n`, `\r\n`, `\r` | CR (0x0d). Reset after sending (5.1). |
+| `\n`, `\r\n`, `\r` | Never sent as text: a line feed alone that the IME commits is Enter, sent at once, and committed text with another line break is a paste (below). Reset after Enter (5.1). `sendText` refuses a line break as a programming error ([decisions/0075](../decisions/0075-adversaries-are-inputs.md)), so that a mistake in deciding what is a paste fails, rather than run the lines one by one. |
 | `\t` | As is. Reset after sending, as for the Tab key (5.1). |
 | Other C0 control characters, DEL, C1 control characters | Not sent. |
 | Anything else | Sent as UTF-8. |

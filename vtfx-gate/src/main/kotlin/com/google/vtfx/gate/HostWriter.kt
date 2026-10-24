@@ -43,13 +43,20 @@ public class HostWriter(private val connection: HostConnection) {
     @Volatile private var writingThread: Thread? = null
 
     /**
-     * Sends text that the user typed or the IME committed. Line breaks become CR, and other control
-     * characters are dropped (docs/design/ime-contract.md section 4.2).
+     * Sends text that the user typed or the IME committed on one line. HT is kept, and other
+     * control characters are dropped (docs/design/gate-policy.md section 2.1).
      *
+     * @throws IllegalArgumentException if [text] has a line break (CR or LF). Enter, with
+     *   [sendKey], and a paste, with [sendPaste], are the only ways to end a line, so that a caller
+     *   that takes pasted text for typed text fails rather than run its lines one by one despite
+     *   bracketed paste mode (docs/decisions/0075).
      * @suppress
      */
     @InternalVtfxApi
     public fun sendText(text: String) {
+        require(text.none { it == '\n' || it == '\r' }) {
+            "text has a line break: send Enter with sendKey, or a paste with sendPaste"
+        }
         val bytes = OutboundText.encode(text)
         if (bytes.isNotEmpty()) write(bytes)
     }

@@ -113,7 +113,7 @@ Only this module can create bytes to send to the host. What it sends, how it rep
 
 - **`HostWriter`**: The sole holder of the host connection (`HostConnection`) that the app passes. It limits what can be sent to a method per kind. `TerminalSession` creates it right away from the connection it receives. The whole class is `@InternalVtfxApi` ([decisions/0016](../decisions/0016-public-api.md), [decisions/0027](../decisions/0027-session-takes-connection.md)).
   - `sendKey(stroke, modes)`: A key. Encodes the key and modifiers into the same bytes as xterm according to the terminal modes (application cursor keys and so on). The input is only the user's key operation and modes that are enums or booleans, and there is no path by which an arbitrary string sent by the host can get mixed in ([decisions/0005](../decisions/0005-key-bytes-through-gate.md)).
-  - `sendText(text)`: Text committed by the IME and the like. Decides the handling of control characters (turning `\n` into CR and so on) in one place.
+  - `sendText(text)`: Text committed by the IME and the like, on one line. Decides the handling of control characters in one place, and refuses line breaks, which only Enter and pastes send.
   - `sendDeletes(count)`: DELs that erase already-sent text in IME editing. The count has a limit (65536).
   - `sendPaste(text, bracketed)`: A paste. Removes control characters so that the end sequence of bracketed paste cannot be formed, and then brackets it (requirement 6.1, "Escaping from bracketed paste").
   - `sendReply(query, colors)`: The reply to `ReplyRequested`. The reply string is built, for the corresponding query, only from constants and numbers from the terminal state. Strings sent by the host are not included in replies.
