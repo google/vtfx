@@ -106,7 +106,7 @@ class TerminalInputViewTest {
 
     @Test
     fun theSessionIsFocusedOnlyWithBothTheViewAndTheWindowFocused() {
-        focusAndType(first)
+        val unused = focusAndType(first)
         view.dispatchWindowFocusChanged(false)
         assertTrue(other.requestFocus())
         assertEquals("\u001b[O", first.take())
@@ -139,20 +139,22 @@ class TerminalInputViewTest {
 
     @Test
     fun detachingReportsFocusOut() {
-        focusAndType(first)
+        val unused = focusAndType(first)
         activity.get().setContentView(View(activity.get()))
         assertEquals("\u001b[O", first.take())
     }
 
     /** Selects text on [host]'s display, as a drag would. */
-    private fun select(host: Host): TerminalSelection =
-        TerminalSelection(Cell(0, 0), Cell(2, 0)).also { host.display.selection = it }
+    private fun select(host: Host) {
+        host.display.selection = TerminalSelection(Cell(0, 0), Cell(2, 0))
+    }
 
     @Test
     fun modifierKeysAloneKeepTheSelection() {
         first.display.attach()
         val input = focusAndType(first)
-        val selection = select(first)
+        select(first)
+        val selection = first.display.selection
         // Ctrl+Shift, as before the C of Ctrl+Shift+C: from the IME, which passes modifier keys on
         // with sendKeyEvent, and from a hardware keyboard.
         val ctrl = KeyEvent.META_CTRL_ON or KeyEvent.META_CTRL_LEFT_ON

@@ -43,7 +43,9 @@ class ImageBitmapsTest {
     private fun drawFrame(session: TerminalSession) {
         val snapshot = session.snapshot()
         bitmaps.startFrame()
-        for (placement in snapshot.imagePlacements) bitmaps.bitmapOf(placement.image)
+        for (placement in snapshot.imagePlacements) {
+            val unused = bitmaps.bitmapOf(placement.image)
+        }
         bitmaps.endFrame()
     }
 

@@ -39,6 +39,9 @@ kotlin {
     explicitApi()
     compilerOptions {
         allWarningsAsErrors.set(true)
+        // Results must be used, as the CheckReturnValue checks of other build systems require
+        // (docs/decisions/0072). Only a check: the sources compile without it.
+        freeCompilerArgs.add("-Xreturn-value-checker=full")
     }
 }
 

@@ -64,8 +64,11 @@ class ComposingLayoutTest {
         val plain = "x".repeat(10_000_000)
         val start = System.nanoTime()
         repeat(100) {
-            layout(combining, columns = 80, rows = 24)
-            layout(plain, columns = 80, rows = 24)
+            val unused =
+                listOf(
+                    layout(combining, columns = 80, rows = 24),
+                    layout(plain, columns = 80, rows = 24),
+                )
         }
         val millis = (System.nanoTime() - start) / 1_000_000
         // Each layout looks at no more than 80 * 24 * 32 characters; generously below the cost of

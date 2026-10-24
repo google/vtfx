@@ -360,7 +360,7 @@ class SearchTest {
             assertCompletesWithin(Duration.ofSeconds(60)) {
                 val threads = ManagementFactory.getThreadMXBean()
                 val start = threads.currentThreadCpuTime
-                search(terminal, query)
+                val unused = search(terminal, query)
                 threads.currentThreadCpuTime - start
             }
 

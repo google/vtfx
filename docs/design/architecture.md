@@ -206,6 +206,7 @@ The tests of each module are listed below. Where the oracles live, the gate rule
 - The package name and Maven groupId are `com.google.vtfx`.
 - CI is GitHub Actions. However, workflows only call the check script, which can also run locally, so that nothing depends on CI.
 - The public API uses Kotlin's explicit API mode to make the public surface explicit.
+- Every module is compiled with Kotlin's unused return value checker, so that builds that check the use of results, as CheckReturnValue does, take the sources as they are ([decisions/0072](../decisions/0072-results-are-used.md)).
 - Compatibility of the public API is checked by `check` by comparing ABI dumps and dumps of the Kotlin signatures (each module's `api/`) (requirement 6.5, [decisions/0016](../decisions/0016-public-api.md)).
 - minSdk is 29 (Android 10), weighed per feature (requirement 6.4, [decisions/0039](../decisions/0039-minsdk-29.md)). 29 is the first API level with `RenderNode`, which the line cache uses, and with foreground-only clipboard reads. On API 29 to 33, IMEs correct text without `replaceText`, the sensitive mark on the rows has no effect, and the clipboard has no copy preview; the decision accepts these gaps. The two IME calls newer than 29 are guarded in `TerminalInputConnection` (sections 3 and 6 of [ime-contract.md](ime-contract.md)).
 

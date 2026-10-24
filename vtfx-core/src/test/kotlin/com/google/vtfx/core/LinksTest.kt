@@ -149,7 +149,7 @@ class LinksTest {
         assertFailsWith<IllegalArgumentException> { LinkPattern(regex, "https://x/{a}") }
         assertFailsWith<IllegalArgumentException> { LinkPattern(regex, "https://x/{1") }
         assertFailsWith<IllegalArgumentException> { LinkPattern(regex, "https://x/}") }
-        LinkPattern(regex, "https://x/{0}/{1}")
+        val unused = LinkPattern(regex, "https://x/{0}/{1}")
     }
 
     @Test

@@ -329,7 +329,9 @@ class TerminalStyleTest {
 
     @Test
     fun sanitizedFontWithoutFamiliesIsAnError() {
-        assertThrows(IllegalArgumentException::class.java) { TerminalFont.Sanitized(emptyList()) }
+        assertThrows(IllegalArgumentException::class.java) {
+            val unused = TerminalFont.Sanitized(emptyList())
+        }
     }
 
     private fun textLocales(locale: LocaleList?): android.os.LocaleList {

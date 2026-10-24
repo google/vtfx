@@ -87,22 +87,35 @@ class ImeSpecTest {
             @Suppress("UNCHECKED_CAST") val args = event["args"] as Map<String, Any?>
             fun int(name: String) = (args[name] as Long).toInt()
             fun string(name: String) = args[name] as String
+            // The spec is what the host receives; the traces do not record what the calls returned.
             when (val call = event["call"]) {
                 "beginBatchEdit" -> editor.beginBatchEdit()
-                "endBatchEdit" -> editor.endBatchEdit()
+                "endBatchEdit" -> {
+                    val unused = editor.endBatchEdit()
+                }
                 "setComposingText" -> editor.setComposingText(string("text"))
                 "commitText" -> editor.commitText(string("text"))
                 "finishComposingText" -> editor.finishComposingText()
-                "setComposingRegion" -> editor.setComposingRegion(int("start"), int("end"))
-                "deleteSurroundingText" ->
-                    editor.deleteSurroundingText(int("beforeLength"), int("afterLength"))
-                "deleteSurroundingTextInCodePoints" ->
-                    editor.deleteSurroundingTextInCodePoints(
-                        int("beforeLength"),
-                        int("afterLength"),
-                    )
-                "replaceText" -> editor.replaceText(int("start"), int("end"), string("text"))
-                "setSelection" -> editor.setSelection(int("start"), int("end"))
+                "setComposingRegion" -> {
+                    val unused = editor.setComposingRegion(int("start"), int("end"))
+                }
+                "deleteSurroundingText" -> {
+                    val unused =
+                        editor.deleteSurroundingText(int("beforeLength"), int("afterLength"))
+                }
+                "deleteSurroundingTextInCodePoints" -> {
+                    val unused =
+                        editor.deleteSurroundingTextInCodePoints(
+                            int("beforeLength"),
+                            int("afterLength"),
+                        )
+                }
+                "replaceText" -> {
+                    val unused = editor.replaceText(int("start"), int("end"), string("text"))
+                }
+                "setSelection" -> {
+                    val unused = editor.setSelection(int("start"), int("end"))
+                }
                 "performEditorAction" -> editor.performEditorAction()
                 "closeConnection" -> editor.closeConnection()
                 "sendKeyEvent" ->

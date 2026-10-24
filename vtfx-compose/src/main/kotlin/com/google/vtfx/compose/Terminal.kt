@@ -239,8 +239,9 @@ internal fun Terminal(
         // returns it, does not (docs/decisions/0012). Collected rather than read in the
         // composition, so that typing and output do not recompose the terminal.
         snapshotFlow {
-            display.observeVersion()
-            Pair(display.observeEditorVersion(), session.cursorPosition())
+            display.observeVersion().let {
+                Pair(display.observeEditorVersion(), session.cursorPosition())
+            }
         }
             .collectLatest {
                 cursorOn = true
@@ -393,16 +394,14 @@ internal fun Terminal(
                     },
                 )
         ) {
-            display.observeVersion()
-            display.observeEditorVersion()
-            val snapshot = display.displaySnapshot()
+            val snapshot = display.observeVersion().let { display.displaySnapshot() }
             val links = if (onLinkClick != null) linkFinder.find(snapshot) else emptyList()
             with(renderer) {
                 draw(
                     snapshot,
                     images,
                     links,
-                    session.edit { it.composingText },
+                    display.observeEditorVersion().let { session.edit { it.composingText } },
                     session.ambiguousWidth,
                     focused,
                     display.selection,
@@ -507,7 +506,13 @@ private fun Modifier.paddingTaps(
 private fun showMenu(toolbar: TextToolbar, display: TerminalDisplay, rect: Rect) {
     toolbar.showMenu(
         rect = rect,
-        onCopyRequested = if (display.selection != null) ({ display.copySelection() }) else null,
+        // Nothing is left to do when there is no clipboard to copy to.
+        onCopyRequested =
+            if (display.selection != null)
+                ({
+                    val unused = display.copySelection()
+                })
+            else null,
         onPasteRequested = { display.session.pasteFromClipboard() },
         onSelectAllRequested = {
             display.selectAll()
@@ -592,8 +597,7 @@ private class DisplayText(private val display: TerminalDisplay) {
 
     /** Reads the state that the text depends on, so that an observer is told when it changes. */
     fun observe() {
-        display.observeVersion()
-        display.scrollOffset
+        val unused = Pair(display.observeVersion(), display.scrollOffset)
     }
 
     /**

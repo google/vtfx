@@ -919,7 +919,9 @@ class TerminalSessionTest {
         val typing = Thread { session.sendText(" ") }
         typing.start()
         writing.await(TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
-        val editing = Thread { session.edit { it.replaceText(0, 3, "cat") } }
+        val editing = Thread {
+            val unused = session.edit { it.replaceText(0, 3, "cat") }
+        }
         editing.start()
         awaitBlocked(editing)
         val feeding = Thread { session.feed("ls \r\n$ ".toByteArray()) }
@@ -942,7 +944,7 @@ class TerminalSessionTest {
         fun useOnAnotherThread(caller: String) {
             val done = CountDownLatch(1)
             Thread {
-                listening.snapshot()
+                val unused = listening.snapshot()
                 listening.sendText("x")
                 done.countDown()
             }
@@ -1066,7 +1068,9 @@ class TerminalSessionTest {
         lateinit var session: TerminalSession
         val unblocked = mutableListOf<String>()
         fun snapshotOnAnotherThread(caller: String) {
-            val thread = Thread { session.snapshot() }
+            val thread = Thread {
+                val unused = session.snapshot()
+            }
             thread.start()
             thread.join(TIMEOUT_MILLIS)
             if (!thread.isAlive) unblocked += caller
@@ -1345,7 +1349,7 @@ class TerminalSessionTest {
         session =
             TerminalSession({
                 received.append(String(it, Charsets.UTF_8))
-                runCatching { session.sendText("b") }
+                val unused = runCatching { session.sendText("b") }
             })
         session.edit { it.commitText("a") }
 
@@ -1416,7 +1420,7 @@ class TerminalSessionTest {
                 List(21) {
                         Thread.sleep(2)
                         val before = feeds.get()
-                        session.snapshot()
+                        val unused = session.snapshot()
                         feeds.get() - before
                     }
                     .sorted()

@@ -48,7 +48,7 @@ object TerminalBenchmark {
             ) + listOfNotNull(recordings?.let { Workload("recordings", replay(it)) })
         println("workload\tMB/s\tscrollback MiB")
         for (workload in workloads.filter { only == null || it.name == only }) {
-            run(workload, seconds / 3)
+            val unused = run(workload, seconds / 3)
             val rate = run(workload, seconds)
             println(
                 "${workload.name}\t${"%.1f".format(rate)}\t${"%.1f".format(scrollbackMebibytes(workload.data))}"

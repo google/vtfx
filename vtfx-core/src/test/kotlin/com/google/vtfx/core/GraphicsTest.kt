@@ -895,9 +895,11 @@ class GraphicsTest {
             terminal.write(apc("a=t,i=1,f=24,s=1,v=1,q=2", byteArrayOf(0, 0, 0)))
             val threads = ManagementFactory.getThreadMXBean()
             fun cpuMillis(): Long {
-                terminal.snapshot()
+                val unused = terminal.snapshot()
                 val start = threads.currentThreadCpuTime
-                repeat(3) { terminal.snapshot() }
+                repeat(3) {
+                    val unused = terminal.snapshot()
+                }
                 return (threads.currentThreadCpuTime - start) / 3 / 1_000_000
             }
             terminal.write(apc("a=p,i=1,U=1,p=1,c=1,r=1,q=2"))

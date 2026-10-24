@@ -138,7 +138,11 @@ class MainActivity : ComponentActivity() {
         when (event.key) {
             Key.K ->
                 if (press) Toast.makeText(this, R.string.shortcut_taken, Toast.LENGTH_SHORT).show()
-            Key.C -> if (press) state.copySelection()
+            Key.C ->
+                if (press) {
+                    // Nothing to tell the user when there is no selection.
+                    val unused = state.copySelection()
+                }
             Key.F -> if (press) onFind()
             else -> return false
         }

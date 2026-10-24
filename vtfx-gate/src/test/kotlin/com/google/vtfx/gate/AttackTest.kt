@@ -825,7 +825,7 @@ class AttackTest {
         fun schemesOfAPolicyCannotBeChangedAfterItIsBuilt() {
             val policy = GatePolicy()
 
-            runCatching { (policy.urlSchemes as MutableSet<String>).add("javascript") }
+            val unused = runCatching { (policy.urlSchemes as MutableSet<String>).add("javascript") }
 
             assertEquals(setOf("http", "https"), policy.urlSchemes)
             assertFalse(gate(policy).isAllowedUrl("javascript:alert(1)"))
@@ -833,7 +833,9 @@ class AttackTest {
 
         @Test
         fun defaultSchemesCannotBeChangedForLaterPolicies() {
-            runCatching { (GatePolicy.DEFAULT_URL_SCHEMES as MutableSet<String>).add("javascript") }
+            val unused = runCatching {
+                (GatePolicy.DEFAULT_URL_SCHEMES as MutableSet<String>).add("javascript")
+            }
 
             assertEquals(setOf("http", "https"), GatePolicy.DEFAULT_URL_SCHEMES)
             assertFalse(gate(GatePolicy()).isAllowedUrl("javascript:alert(1)"))

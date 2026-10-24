@@ -243,8 +243,7 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
 
     /** Returns the matches that [snapshot] shows, oldest first, and the current one, if any. */
     fun visibleMatches(snapshot: TerminalSnapshot): VisibleMatches? {
-        searchVersion
-        val index = searchIndex ?: return null
+        val index = searchVersion.let { searchIndex } ?: return null
         val matches = index.matches
         val top = snapshot.firstLine
         val bottom = top + snapshot.rows - 1

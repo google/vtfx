@@ -114,7 +114,7 @@ class PngMutationTest {
                 PngDecoder.Result.Malformed -> outcomes[2]++
             }
             try {
-                PngDecoder.readSize(mutated, 0, mutated.size)
+                val unused = PngDecoder.readSize(mutated, 0, mutated.size)
             } catch (e: Throwable) {
                 throw AssertionError("iteration $iteration: readSize threw", e)
             }
@@ -223,13 +223,13 @@ class PngMutationTest {
                 val mutated = png.copyOf()
                 mutated[i] = value.toByte()
                 fixCrcs(mutated)
-                PngDecoder.decode(mutated, 0, mutated.size, maxPixels)
+                val unused = PngDecoder.decode(mutated, 0, mutated.size, maxPixels)
             }
         }
         // And a header alone, at every valid format, with no image data.
         for ((colorType, bitDepth) in PngTestEncoder.VALID_FORMATS) {
             val header = png(ihdr(3, 3, bitDepth, colorType))
-            PngDecoder.decode(header, 0, header.size, maxPixels)
+            val unused = PngDecoder.decode(header, 0, header.size, maxPixels)
         }
     }
 

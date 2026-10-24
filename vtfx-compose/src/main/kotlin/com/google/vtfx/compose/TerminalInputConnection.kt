@@ -205,7 +205,8 @@ internal class TerminalInputConnection(
     // --- Keys (section 6.3) ---
 
     override fun sendKeyEvent(event: KeyEvent): Boolean {
-        KeyEventHandler.handle(session, event)
+        // The IME is told that the event was sent, whether or not it is a terminal key.
+        val unused = KeyEventHandler.handle(session, event)
         reportSelection()
         return true
     }

@@ -101,46 +101,44 @@ internal object HostileIme {
             3 ->
                 offset().let { a ->
                     offset().let { b ->
-                        editor.setComposingRegion(a, b)
-                        describe("setComposingRegion", a, b)
+                        editor.setComposingRegion(a, b).let { describe("setComposingRegion", a, b) }
                     }
                 }
             4 ->
                 offset().let { a ->
                     offset().let { b ->
-                        editor.deleteSurroundingText(a, b)
-                        describe("deleteSurroundingText", a, b)
+                        editor.deleteSurroundingText(a, b).let {
+                            describe("deleteSurroundingText", a, b)
+                        }
                     }
                 }
             5 ->
                 offset().let { a ->
                     offset().let { b ->
-                        editor.deleteSurroundingTextInCodePoints(a, b)
-                        describe("deleteSurroundingTextInCodePoints", a, b)
+                        editor.deleteSurroundingTextInCodePoints(a, b).let {
+                            describe("deleteSurroundingTextInCodePoints", a, b)
+                        }
                     }
                 }
             6 ->
                 offset().let { a ->
                     offset().let { b ->
                         text().let { t ->
-                            editor.replaceText(a, b, t)
-                            describe("replaceText", a, b, t)
+                            editor.replaceText(a, b, t).let { describe("replaceText", a, b, t) }
                         }
                     }
                 }
             7 ->
                 offset().let { a ->
                     offset().let { b ->
-                        editor.setSelection(a, b)
-                        describe("setSelection", a, b)
+                        editor.setSelection(a, b).let { describe("setSelection", a, b) }
                     }
                 }
             8 -> editor.beginBatchEdit().let { describe("beginBatchEdit") }
             9 -> editor.endBatchEdit().let { describe("endBatchEdit") }
             10 ->
                 offset().let {
-                    editor.textBeforeCursor(it)
-                    describe("textBeforeCursor", it)
+                    editor.textBeforeCursor(it).let { describe("textBeforeCursor", it) }
                 }
             11 ->
                 KEYS[choose(KEYS.size)].let {
