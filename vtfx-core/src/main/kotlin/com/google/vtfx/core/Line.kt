@@ -176,16 +176,15 @@ internal class Line(columns: Int, style: CellStyle = CellStyle.Default) {
     }
 
     /**
-     * Appends a combining [codePoint] to the character at [column]. Returns false if there is no
+     * Appends a combining [codePoint] to the character at [column]. Does nothing if there is no
      * character or the cluster would be longer than [MAX_CLUSTER_LENGTH].
      */
-    fun combine(column: Int, codePoint: Int): Boolean {
-        val current = textAt(column) ?: return false
+    fun combine(column: Int, codePoint: Int) {
+        val current = textAt(column) ?: return
         // A supplementary code point takes two UTF-16 units.
-        if (current.length + Character.charCount(codePoint) > MAX_CLUSTER_LENGTH) return false
+        if (current.length + Character.charCount(codePoint) > MAX_CLUSTER_LENGTH) return
         val array = clusters ?: arrayOfNulls<String>(codes.size).also { clusters = it }
         array[column] = current + String(Character.toChars(codePoint))
-        return true
     }
 
     /**
