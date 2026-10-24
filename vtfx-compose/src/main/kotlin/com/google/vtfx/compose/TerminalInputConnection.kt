@@ -93,6 +93,7 @@ internal class TerminalInputConnection(
 
     override fun setComposingText(text: CharSequence, newCursorPosition: Int): Boolean = edit {
         it.setComposingText(text)
+        true
     }
 
     override fun setComposingText(
@@ -103,6 +104,7 @@ internal class TerminalInputConnection(
 
     override fun commitText(text: CharSequence, newCursorPosition: Int): Boolean = edit {
         it.commitText(text)
+        true
     }
 
     override fun commitText(
@@ -111,7 +113,10 @@ internal class TerminalInputConnection(
         textAttribute: TextAttribute?,
     ): Boolean = commitText(text, newCursorPosition)
 
-    override fun finishComposingText(): Boolean = edit { it.finishComposingText() }
+    override fun finishComposingText(): Boolean = edit {
+        it.finishComposingText()
+        true
+    }
 
     override fun setComposingRegion(start: Int, end: Int): Boolean = edit {
         it.setComposingRegion(start, end)
@@ -144,7 +149,10 @@ internal class TerminalInputConnection(
     /** The correction already arrived through the edits before it. */
     override fun commitCorrection(correctionInfo: CorrectionInfo): Boolean = true
 
-    override fun beginBatchEdit(): Boolean = session.edit { it.beginBatchEdit() }
+    override fun beginBatchEdit(): Boolean {
+        session.edit { it.beginBatchEdit() }
+        return true
+    }
 
     override fun endBatchEdit(): Boolean {
         val inBatch = session.edit { it.endBatchEdit() }

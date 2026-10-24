@@ -137,11 +137,10 @@ public class ImeEditor(
     // --- Edits (section 6.1) ---
 
     /** Replaces the composing text, or the selection if there is one, with [text]. */
-    public fun setComposingText(text: CharSequence): Boolean {
+    public fun setComposingText(text: CharSequence) {
         removeSelectedText()
         composing = withoutDroppedControls(text)
         endOperation()
-        return true
     }
 
     /**
@@ -149,12 +148,11 @@ public class ImeEditor(
      * Text with a line break, other than a line feed alone, is pasted, and so is a line feed alone
      * after a paste in the same batch edit (section 4.2).
      */
-    public fun commitText(text: CharSequence): Boolean {
+    public fun commitText(text: CharSequence) {
         removeSelectedText()
         composing = ""
         commit(withoutDroppedControls(text))
         endOperation()
-        return true
     }
 
     /**
@@ -187,10 +185,9 @@ public class ImeEditor(
     }
 
     /** Commits the composing text, which is sent to the host. */
-    public fun finishComposingText(): Boolean {
+    public fun finishComposingText() {
         commitComposingText()
         endOperation()
-        return true
     }
 
     /**
@@ -204,7 +201,10 @@ public class ImeEditor(
         val from = minOf(start, end)
         val to = maxOf(start, end)
         if (from < 0 || to > buffer.length || splitsSurrogatePair(buffer, from)) return false
-        if (from == to) return finishComposingText()
+        if (from == to) {
+            finishComposingText()
+            return true
+        }
         if (to != buffer.length) return false
         if (from < history.length) {
             history = buffer.substring(0, from)
@@ -306,9 +306,8 @@ public class ImeEditor(
     }
 
     /** Starts a batch edit: nothing is sent to the host until the outermost batch ends. */
-    public fun beginBatchEdit(): Boolean {
+    public fun beginBatchEdit() {
         batchDepth++
-        return true
     }
 
     /**
