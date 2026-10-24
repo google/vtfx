@@ -1,6 +1,6 @@
 # The adversaries are the inputs, and changes to the code are mistakes
 
-- Status: Provisional
+- Status: Approved (2026-10-24, approved by a human)
 - Date: 2026-10-24
 - Related: Requirement 6.1, sections 1 and 5 of [architecture.md](../design/architecture.md), sections 2 and 4.2 of [gate-policy.md](../design/gate-policy.md), section 7 of [boundaries.md](../design/boundaries.md), [0042](0042-user-clipboard-through-gate.md), [0044](0044-boundaries-in-gradle-and-classes.md)
 

@@ -12,7 +12,6 @@ Until decided, the provisional decision is implemented. The impact of reversing 
 |---|---|---|
 | Robolectric's Android jars | Whether and how to verify the `android-all` jars that Robolectric downloads into `~/.m2` with its own downloader, outside Gradle, so that `gradle/verification-metadata.xml` does not cover them. Candidates: declare them as Gradle dependencies and run Robolectric offline from them, or keep relying on the repository | [0035](decisions/0035-dependency-verification.md), `build-logic` |
 | The target of the flood benchmark | The target values of the `flood` scene of the rendering benchmark (frames per second against the refresh rate, the share of janky frames, and the throughput with the display against that without one), on the reference device, a Pixel XL (Android 10), which a human chose on 2026-10-23. Until decided, the scene is reported without a target | [0066](decisions/0066-flood-benchmark.md), [0014](decisions/0014-performance.md) |
-| The adversaries of requirement 6.1 | Whether to approve the reading of requirement 6.1 that a human agreed to on 2026-10-24: the adversaries are the untrusted inputs, not the code; the check against changes written to get around it covers where the capabilities are; how code outside review calls the gate is guarded against mistakes, by checks in the gate, types, the callers' contracts, and tests | [0075](decisions/0075-adversaries-are-inputs.md), requirement 6.1 |
 
 ## 2. Work only humans can do
 
