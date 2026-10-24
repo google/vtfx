@@ -47,7 +47,13 @@ internal object HostileIme {
 
         override fun send(input: HostInput) {
             when (input) {
-                is HostInput.Text -> line.append(input.text)
+                is HostInput.Text -> {
+                    // The gate refuses text with a line break (docs/decisions/0075).
+                    check(input.text.none { it == '\n' || it == '\r' }) {
+                        "line break in text: ${input.text}"
+                    }
+                    line.append(input.text)
+                }
                 is HostInput.Delete -> {
                     largestDelete = maxOf(largestDelete, input.count)
                     repeat(minOf(input.count, line.codePointCount(0, line.length))) {
@@ -164,16 +170,15 @@ internal object HostileIme {
         val history =
             editor.text.substring(0, editor.composingStart.takeIf { it >= 0 } ?: editor.cursor)
         check(history.codePointCount(0, history.length) <= maxHistoryLength) { context }
+        // A line break is Enter or part of a paste, never history (ime-contract.md section 4.2).
+        check(history.none { it == '\n' || it == '\r' }) { context }
         if (!editor.isBatchEditInProgress) {
             // The host has exactly the committed part of the history at the end of its line.
             val committed =
-                editor.text
-                    .substring(
-                        0,
-                        if (editor.composingStart >= 0) editor.composingStart else editor.cursor,
-                    )
-                    .replace("\r\n", "\n")
-                    .replace('\r', '\n')
+                editor.text.substring(
+                    0,
+                    if (editor.composingStart >= 0) editor.composingStart else editor.cursor,
+                )
             check(host.line.endsWith(committed)) {
                 "$context: host '${host.line}' editor '$committed'"
             }

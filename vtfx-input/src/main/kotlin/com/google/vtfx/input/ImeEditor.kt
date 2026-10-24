@@ -158,14 +158,16 @@ public class ImeEditor(
     /**
      * Adds [committed], text that the IME commits, to the input history. Text with a line break,
      * other than a line feed alone, is pasted instead, and so is a line feed alone after a paste in
-     * the same batch edit (section 4.2). Every edit that commits text goes through here, also the
-     * composing text, which may have line breaks too: otherwise its lines would run one by one.
+     * the same batch edit; a line feed alone is otherwise Enter (section 4.2). Every edit that
+     * commits text goes through here, also the composing text, which may have line breaks too:
+     * otherwise its lines would run one by one. So no line break reaches the input history, and the
+     * gate refuses text with one, rather than let its lines run.
      */
     private fun commit(committed: String) {
-        if (isPaste(committed) || (committed == "\n" && pastedInBatch)) {
-            sendPaste(committed)
-        } else {
-            history += committed
+        when {
+            isPaste(committed) || (committed == "\n" && pastedInBatch) -> sendPaste(committed)
+            committed == "\n" -> sendEnter()
+            else -> history += committed
         }
     }
 
@@ -179,7 +181,23 @@ public class ImeEditor(
     public fun typeText(text: String) {
         commitComposingText()
         flush()
-        history += withoutDroppedControls(text)
+        val typed = withoutDroppedControls(text)
+        var start = 0
+        var i = 0
+        while (i < typed.length) {
+            val c = typed[i]
+            if (c != '\n' && c != '\r') {
+                i++
+                continue
+            }
+            history += typed.substring(start, i)
+            flush()
+            listener.send(HostInput.Key(KeyStroke.Special(TerminalKey.Enter)))
+            clearHistory()
+            i += if (c == '\r' && i + 1 < typed.length && typed[i + 1] == '\n') 2 else 1
+            start = i
+        }
+        history += typed.substring(start)
         // Not an edit that the IME saw: the reset restarts it only if it saw one before.
         requestReset()
     }
@@ -409,6 +427,18 @@ public class ImeEditor(
         requestReset()
     }
 
+    /**
+     * Sends the edits not sent yet, even during a batch edit, and then Enter, for a line feed that
+     * the IME commits alone, and resets (sections 4.2 and 5.2): a later edit in the batch must not
+     * take back the line break before it reaches the host, or delete across it.
+     */
+    private fun sendEnter() {
+        changedSinceRestart = true
+        flush()
+        listener.send(HostInput.Key(KeyStroke.Special(TerminalKey.Enter)))
+        requestReset()
+    }
+
     /** Handles `performEditorAction`, which the contract treats as Enter (section 6.4). */
     public fun performEditorAction() {
         onKeyDown(KeyStroke.Special(TerminalKey.Enter))
@@ -457,11 +487,11 @@ public class ImeEditor(
             // bound (invariant 5).
             commitComposingText()
             flush()
-        } else if (batchDepth == 0 || history.any { it == '\n' || it == '\r' || it == '\t' }) {
-            // A line break or HT resets after it is sent (section 5.1), which sends the edits made
-            // before it and empties the history at once, also during a batch edit (section 5.2).
-            // Otherwise a later edit in the batch could delete the line break before it reached
-            // the host, or delete across it.
+        } else if (batchDepth == 0 || '\t' in history) {
+            // HT resets after it is sent (section 5.1), which sends the edits made before it and
+            // empties the history at once, also during a batch edit (section 5.2). Otherwise a
+            // later edit in the batch could delete the HT before it reached the host, or delete
+            // across it.
             flush()
         }
     }
@@ -491,9 +521,10 @@ public class ImeEditor(
         if (deletes > 0) listener.send(HostInput.Delete(deletes))
         val added = history.substring(prefix)
         sentHistory = history
+        if (added.isNotEmpty()) listener.send(HostInput.Text(added))
         // A committed HT resets as the Tab key does: the shell may complete the word, and the
         // history no longer predicts the host's line (docs/decisions/0057).
-        if (sendText(added) || '\t' in added || isHistoryOverLimit()) clearHistory()
+        if ('\t' in added || isHistoryOverLimit()) clearHistory()
         restartIfReady()
     }
 
@@ -520,30 +551,6 @@ public class ImeEditor(
             changedSinceRestart = false
             listener.restartInput()
         }
-    }
-
-    /**
-     * Sends [text], with each line break (CR LF, CR, or LF) as Enter. Returns whether there was a
-     * line break.
-     */
-    private fun sendText(text: String): Boolean {
-        var start = 0
-        var i = 0
-        var hasLineBreak = false
-        while (i < text.length) {
-            val c = text[i]
-            if (c != '\n' && c != '\r') {
-                i++
-                continue
-            }
-            if (i > start) listener.send(HostInput.Text(text.substring(start, i)))
-            listener.send(HostInput.Key(KeyStroke.Special(TerminalKey.Enter)))
-            hasLineBreak = true
-            i += if (c == '\r' && i + 1 < text.length && text[i + 1] == '\n') 2 else 1
-            start = i
-        }
-        if (start < text.length) listener.send(HostInput.Text(text.substring(start)))
-        return hasLineBreak
     }
 
     @InternalVtfxApi

@@ -27,7 +27,10 @@ import com.google.vtfx.core.KeyStroke
  */
 @InternalVtfxApi
 public sealed interface HostInput {
-    /** Committed [text]. Never contains line breaks, which are sent as [Key] Enter. */
+    /**
+     * Committed [text]. Never contains line breaks, which are sent as [Key] Enter or in a [Paste];
+     * vtfx-gate refuses text with one.
+     */
     @InternalVtfxApi
     public data class Text(val text: String) : HostInput {
         init {
