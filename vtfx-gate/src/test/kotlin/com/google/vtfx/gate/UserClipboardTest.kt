@@ -56,6 +56,28 @@ class UserClipboardTest {
     }
 
     @Test
+    fun copyDropsWhatAnOsc52WriteMayNotCarry() {
+        val clipboard = FakeClipboard("old")
+        val gate = TerminalGate(HostWriter {}, GatePolicy(), clipboard)
+
+        assertTrue(
+            gate.copyToClipboard("a\u001b[31mb\u0007\u007f\u0085\u009bc\u202edcba\u2066\u200fe")
+        )
+
+        assertEquals("a[31mbcdcbae", clipboard.text)
+    }
+
+    @Test
+    fun copyKeepsTabsAndLineBreaks() {
+        val clipboard = FakeClipboard("old")
+        val gate = TerminalGate(HostWriter {}, GatePolicy(), clipboard)
+
+        assertTrue(gate.copyToClipboard("a\tb\nc\r\nd"))
+
+        assertEquals("a\tb\nc\r\nd", clipboard.text)
+    }
+
+    @Test
     fun pasteReadsTheClipboardWhateverTheOsc52Policy() {
         val gate = TerminalGate(HostWriter {}, osc52Refused, FakeClipboard("from another app"))
 

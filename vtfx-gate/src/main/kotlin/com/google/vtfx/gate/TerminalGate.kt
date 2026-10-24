@@ -117,12 +117,14 @@ public class TerminalGate(
     // calls the clipboard (docs/decisions/0042).
     /**
      * Copies [text] to the clipboard. Must be called only for an explicit action of the user, such
-     * as copying a selection: the OSC 52 policy does not apply to it. Returns whether there is a
-     * clipboard to copy it to.
+     * as copying a selection: the OSC 52 policy does not apply to it. The characters that an OSC 52
+     * write may not carry are dropped, controls other than HT, LF, and CR and bidi controls, since
+     * the text comes from the screen, which the host wrote, and the caller is not under review
+     * (docs/decisions/0075). Returns whether there is a clipboard to copy it to.
      */
     public fun copyToClipboard(text: String): Boolean {
         val clipboard = clipboard ?: return false
-        clipboard.write(text)
+        clipboard.write(text.filterNot { isHidingInClipboard(it) })
         return true
     }
 
