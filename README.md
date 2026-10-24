@@ -10,16 +10,19 @@ No WebView, no native code, and no third-party dependencies beyond Kotlin and Je
 
 ### A small, explicit security boundary
 
-A terminal constantly processes untrusted bytes from the host. vtfx is designed so that this input cannot reach anything sensitive by accident.
+A terminal constantly processes untrusted input: bytes from the host, pasted text, and edits from the IME. vtfx treats these inputs as the adversary, and is designed so that a mistake in the code that handles them does not turn into something serious.
 
-- **Capabilities live in two small modules.** Only `vtfx-gate` and `vtfx-gate-android` can send bytes to the host, use the clipboard, or open URLs. The rest of the library, including the parser and the UI, does not even hold the references needed to do so. Security review can focus on this small amount of code.
+- **Capabilities live in a few small modules.** Only the gate modules act on the outside world: `vtfx-gate` and `vtfx-gate-android` send bytes to the host, use the clipboard, and open URLs; `vtfx-font-gate` and `vtfx-font-gate-android` hand font data to the platform. The rest of the library, including the parser, the font readers, and the UI, does not even hold the references needed to do so. The build checks this on the compiled classes, and the check holds even against changes written to get around it.
+- **The gates check rather than trust.** Each gate assumes that the code in front of it can be wrong. A bug in the parser can garble the screen, but replies to the host are still built from constants and numbers, and clipboard and URL requests still go through the gate's own policy. A bug in the font readers ends in a rejected font: only bytes that a separate, small verifier accepts as the canonical form reach the platform's native code. Typed text with a line break is refused, and pasted text stays inside the gate until it is sent as one paste, bracketed when the host asks for bracketed paste mode.
+- **What the gates cannot check is a contract.** Whether the user really asked for a copy or chose a link, and what the IME and accessibility services see, depend on the code that calls the gate. These are kept by types, documented contracts, and tests.
+- **Review is focused, not limited.** Every change is reviewed. The gate modules and the build configuration, which decides what the checks cover, get the closest security review: they are listed in [config/protected-paths.toml](config/protected-paths.toml), and CI reports every change to them.
 - **Side effects are values.** The terminal model never acts on its own: it emits typed requests ("the host asked for a reply", "the host wants to write the clipboard"), and the gate decides whether and how to carry them out.
 - **Host strings are never echoed back.** Replies to host queries are built only from constants and numbers from the terminal state. Pastes are sanitized so that they cannot break out of bracketed paste mode.
 - **Safe defaults.** Clipboard reads and writes through OSC 52 are denied (writes, when allowed, are size-limited), and only http and https links can be opened, on an explicit user action. Apps relax these only by configuring a `GatePolicy` explicitly.
 - **Less attack surface.** vtfx does not access the network, start processes, or use reflection. Input from the host is bounded by resource limits, and the parser, input, and gate are fuzzed.
 - **No third-party code to trust.** The JVM modules depend only on the Kotlin standard library, and the UI adds only Jetpack Compose. The build checks that this stays so, down to the packages of the standard library that each module may use.
 - **Fonts that users choose are rebuilt, not trusted.** Font files are read in Kotlin and rewritten into a simple canonical form, and only that form, after a separate verifier checks it, reaches the platform's native font code. Font files, URIs, and downloadable fonts are never handed to the platform directly.
-- **Checked mechanically.** The allowed module dependencies and the places allowed to use sensitive APIs are declared in [config/boundaries.toml](config/boundaries.toml) and checked by `scripts/check.sh`, which CI runs. The paths that need security review are listed in [config/protected-paths.toml](config/protected-paths.toml).
+- **Checked mechanically.** The allowed module dependencies and the places allowed to use sensitive APIs are declared in [config/boundaries.toml](config/boundaries.toml) and checked by `scripts/check.sh`, which CI runs.
 
 ### IME support
 
