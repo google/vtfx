@@ -169,7 +169,7 @@ Keys, IME ─▶ vtfx-compose (adapter) ─▶ vtfx-session ─▶ vtfx-input (e
 
 ## 5. Verifying the security boundary
 
-The checks of the module boundaries read Gradle's model of the build and the compiled classes and artifacts, so that they hold against changes written to get around them, not only against obvious mistakes. What they do not cover (the build itself, how allowed APIs are used, tests) is left to review, backed by being able to audit afterward (requirement 6.1). How the checks work and what each rule means is in [boundaries.md](boundaries.md); why they work this way is in [decisions/0044](../decisions/0044-boundaries-in-gradle-and-classes.md).
+The checks of the module boundaries read Gradle's model of the build and the compiled classes and artifacts, so that they hold against changes written to get around them, not only against obvious mistakes. What they do not cover (the build itself, how allowed APIs are used, tests) is left to review, backed by being able to audit afterward (requirement 6.1). How code outside review calls the gate, such as whether text that it sends is what the user typed or whether the user asked for a copy, is guarded against mistakes: the gate checks what it can from the values and fails fast, types narrow what a caller can pass or see, and the KDoc states the caller's contract ([decisions/0075](../decisions/0075-adversaries-are-inputs.md)). How the checks work and what each rule means is in [boundaries.md](boundaries.md); why they work this way is in [decisions/0044](../decisions/0044-boundaries-in-gradle-and-classes.md).
 
 | Verification | Method |
 |---|---|

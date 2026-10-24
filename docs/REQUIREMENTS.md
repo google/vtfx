@@ -138,6 +138,8 @@ The following inputs are not trusted.
 - Pasted content
 - The IME, which is a third-party app
 
+These inputs are the adversaries. The code of vtfx is not: a change to it that breaks a property below is a mistake, which the design guards against with checks in the reviewed code, types, tests, and review and audit ([0075](decisions/0075-adversaries-are-inputs.md)).
+
 **Attack types to prevent** (at a minimum)
 
 - Command injection into the host through terminal responses
@@ -153,7 +155,7 @@ The following inputs are not trusted.
 - Most of the code does not need security review, and human review is limited to a part of the code.
 - Explicitly list the code subject to review.
 - Mechanically verify that the boundary is respected, and detect violations in CI.
-  - In phases 1 to 3 (7.1), the enforcement did not need to be impossible for an agent to circumvent: a guardrail-like check that keeps agents from making obviously wrong changes was enough. From phase 4, the check holds against changes written to get around it, within the limits of what review covers ([0044](decisions/0044-boundaries-in-gradle-and-classes.md)).
+  - In phases 1 to 3 (7.1), the enforcement did not need to be impossible for an agent to circumvent: a guardrail-like check that keeps agents from making obviously wrong changes was enough. From phase 4, the check holds against changes written to get around it, within the limits of what review covers ([0044](decisions/0044-boundaries-in-gradle-and-classes.md)). It covers where the capabilities are: which code can hold the references that perform effects. How code outside review calls the code under review is guarded against mistakes, not against changes written to get around it ([0075](decisions/0075-adversaries-are-inputs.md)).
   - This is backed by keeping the whole git history so that it can be audited afterward.
 - Adding or changing dependencies and changing the build configuration are included in the review scope.
 
