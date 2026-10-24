@@ -17,8 +17,9 @@
 package com.google.vtfx.font.gate
 
 /**
- * Thrown when a font cannot be read or sanitized. [message] describes the problem in English, for
- * logs; [kind] tells apps what to say to users.
+ * Thrown when a font cannot be read or sanitized. [message][InvalidFontException.message] describes
+ * the problem in English, for logs; [kind][InvalidFontException.kind] tells apps what to say to
+ * users.
  *
  * The constructor is public because the readers of font files, in vtfx-font, throw it from outside
  * the module that defines it; apps have no reason to construct one.

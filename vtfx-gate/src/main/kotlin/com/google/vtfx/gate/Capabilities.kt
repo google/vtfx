@@ -90,10 +90,11 @@ public sealed interface UrlOpenerResult : OpenUrlResult
  */
 public class GatePolicy(
     /**
-     * Whether the host may set the clipboard with OSC 52, within [maxClipboardWriteLength]. Off by
-     * default: before Android 13 the system shows no preview when the clipboard changes, so the
-     * host could replace what the user copied without the user noticing. Apps that want remote
-     * copy, as tmux and vim do, turn it on.
+     * Whether the host may set the clipboard with OSC 52, within
+     * [maxClipboardWriteLength][GatePolicy.maxClipboardWriteLength]. Off by default: before Android
+     * 13 the system shows no preview when the clipboard changes, so the host could replace what the
+     * user copied without the user noticing. Apps that want remote copy, as tmux and vim do, turn
+     * it on.
      */
     public val allowClipboardWrite: Boolean = false,
     /** The longest text, in UTF-16 code units, that the host may put on the clipboard. */

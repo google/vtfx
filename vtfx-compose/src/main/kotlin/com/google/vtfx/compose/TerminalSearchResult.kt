@@ -30,13 +30,14 @@ internal constructor(
     /** The number of matches kept: the newest ones, at most 1,000. */
     public val matchCount: Int,
     /**
-     * Whether there are more matches than [matchCount], which then counts only the newest, so that
-     * text full of matches takes bounded memory. Show the count as a lower bound.
+     * Whether there are more matches than [matchCount][TerminalSearchResult.matchCount], which then
+     * counts only the newest, so that text full of matches takes bounded memory. Show the count as
+     * a lower bound.
      */
     public val isMatchCountCapped: Boolean,
     /**
-     * The position of the current match among the [matchCount] matches, from 0 for the oldest (the
-     * top), or null if there are no matches.
+     * The position of the current match among the [matchCount][TerminalSearchResult.matchCount]
+     * matches, from 0 for the oldest (the top), or null if there are no matches.
      */
     public val currentMatchIndex: Int?,
 ) {

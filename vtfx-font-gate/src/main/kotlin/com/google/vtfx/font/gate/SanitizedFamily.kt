@@ -18,8 +18,9 @@ package com.google.vtfx.font.gate
 
 /**
  * A family of sanitized fonts, which the terminal draws in turn with other families. Without
- * [bold], [italic], or [boldItalic], the system synthesizes them from the closest font of the
- * family.
+ * [bold][SanitizedFamily.bold], [italic][SanitizedFamily.italic], or
+ * [boldItalic][SanitizedFamily.boldItalic], the system synthesizes them from the closest font of
+ * the family.
  *
  * Immutable and thread-safe.
  */
