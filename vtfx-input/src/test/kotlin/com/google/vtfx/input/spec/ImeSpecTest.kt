@@ -146,6 +146,8 @@ class ImeSpecTest {
             is HostInput.Delete -> ByteArray(input.count) { 0x7f }
             is HostInput.Key -> encode(input.stroke)
             is HostInput.Paste -> input.text.toByteArray(Charsets.UTF_8)
+            // The traces paste nothing from the clipboard.
+            HostInput.ClipboardPaste -> error("clipboard paste")
         }
 
     /**

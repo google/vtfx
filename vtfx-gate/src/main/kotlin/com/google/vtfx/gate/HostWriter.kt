@@ -101,6 +101,17 @@ public class HostWriter(private val connection: HostConnection) {
     }
 
     /**
+     * Sends the text on the clipboard, read for the user's paste, as [sendPaste] sends text, as one
+     * paste.
+     *
+     * @suppress
+     */
+    @InternalVtfxApi
+    public fun sendPaste(text: ClipboardText, bracketed: Boolean) {
+        sendPaste(text.text, bracketed)
+    }
+
+    /**
      * Sends the reply to [query], built from the terminal state only. Color queries are answered
      * with [colors], or not at all without them.
      *

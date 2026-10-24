@@ -56,4 +56,10 @@ public sealed interface HostInput {
      * Pasted [text], which vtfx-gate sanitizes and brackets if the host enabled bracketed paste.
      */
     @InternalVtfxApi public data class Paste(val text: String) : HostInput
+
+    /**
+     * The text on the clipboard, pasted. Only vtfx-gate reads it, and sanitizes and brackets it as
+     * a [Paste] (docs/decisions/0075).
+     */
+    @InternalVtfxApi public data object ClipboardPaste : HostInput
 }

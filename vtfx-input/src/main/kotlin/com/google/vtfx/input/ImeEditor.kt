@@ -165,7 +165,8 @@ public class ImeEditor(
      */
     private fun commit(committed: String) {
         when {
-            isPaste(committed) || (committed == "\n" && pastedInBatch) -> sendPaste(committed)
+            isPaste(committed) || (committed == "\n" && pastedInBatch) ->
+                sendPaste(HostInput.Paste(committed))
             committed == "\n" -> sendEnter()
             else -> history += committed
         }
@@ -412,17 +413,26 @@ public class ImeEditor(
      */
     public fun paste(text: String) {
         commitComposingText()
-        sendPaste(text)
+        sendPaste(HostInput.Paste(text))
     }
 
     /**
-     * Sends the edits not sent yet, even during a batch edit, and then [text] as a paste, and
-     * resets (section 6.4).
+     * Pastes the text on the clipboard, which only the gate reads, as [paste] pastes text
+     * (docs/decisions/0075).
      */
-    private fun sendPaste(text: String) {
+    public fun pasteClipboard() {
+        commitComposingText()
+        sendPaste(HostInput.ClipboardPaste)
+    }
+
+    /**
+     * Sends the edits not sent yet, even during a batch edit, and then [paste], and resets (section
+     * 6.4).
+     */
+    private fun sendPaste(paste: HostInput) {
         changedSinceRestart = true
         flush()
-        listener.send(HostInput.Paste(text))
+        listener.send(paste)
         if (batchDepth > 0) pastedInBatch = true
         requestReset()
     }

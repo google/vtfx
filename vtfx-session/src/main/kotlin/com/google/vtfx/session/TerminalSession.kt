@@ -33,6 +33,7 @@ import com.google.vtfx.core.TerminalLimits
 import com.google.vtfx.core.TerminalModes
 import com.google.vtfx.core.TerminalSnapshot
 import com.google.vtfx.gate.ClipboardAccess
+import com.google.vtfx.gate.ClipboardText
 import com.google.vtfx.gate.GatePolicy
 import com.google.vtfx.gate.HostConnection
 import com.google.vtfx.gate.HostWriter
@@ -328,6 +329,12 @@ public class TerminalSession(
             if (changed) notifyUserInput()
         }
 
+    /**
+     * The text on the clipboard that the current input operation of [pasteFromClipboard] pastes,
+     * which only the gate reads, or null. Used only within [input], with [lock] held.
+     */
+    private var pastedClipboard: ClipboardText? = null
+
     /** Whether to send keys without the sticky modifiers, during [sendScrollKey]. */
     private var keepStickyModifiers = false
 
@@ -358,6 +365,12 @@ public class TerminalSession(
                         is HostInput.Paste -> outbox += {
                                 writer.sendPaste(input.text, modes.bracketedPaste)
                             }
+                        HostInput.ClipboardPaste -> {
+                            val text =
+                                checkNotNull(pastedClipboard) { "no clipboard text to paste" }
+                            pastedClipboard = null
+                            outbox += { writer.sendPaste(text, modes.bracketedPaste) }
+                        }
                     }
                 }
 
@@ -725,8 +738,18 @@ public class TerminalSession(
 
     /** Pastes the text on the clipboard, if there is a clipboard and it has text. */
     public fun pasteFromClipboard() {
+        // The session never sees the text: it goes from the gate to HostWriter as one paste
+        // (docs/decisions/0075).
         val text = gate.readClipboardForPaste() ?: return
-        paste(text)
+        input { editor ->
+            pastedClipboard = text
+            try {
+                editor.pasteClipboard()
+            } finally {
+                pastedClipboard = null
+            }
+        }
+        notifyUserInput()
     }
 
     /**

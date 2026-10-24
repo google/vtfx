@@ -131,9 +131,11 @@ public class TerminalGate(
     /**
      * Returns the text on the clipboard, for the user's paste, or null if there is no clipboard or
      * it has no text. Must be called only for an explicit action of the user: the OSC 52 policy
-     * does not apply to it. Send the text with [HostWriter.sendPaste], which sanitizes it.
+     * does not apply to it. Send the text with [HostWriter.sendPaste], which sanitizes it; only
+     * vtfx-gate can read it (docs/decisions/0075).
      */
-    public fun readClipboardForPaste(): String? = clipboard?.read()
+    public fun readClipboardForPaste(): ClipboardText? =
+        clipboard?.read()?.let { ClipboardText(it) }
 
     /**
      * Opens a hyperlink. Must be called only for an explicit action of the user, after the UI

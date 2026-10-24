@@ -81,7 +81,7 @@ class UserClipboardTest {
     fun pasteReadsTheClipboardWhateverTheOsc52Policy() {
         val gate = TerminalGate(HostWriter {}, osc52Refused, FakeClipboard("from another app"))
 
-        assertEquals("from another app", gate.readClipboardForPaste())
+        assertEquals("from another app", gate.readClipboardForPaste()?.text)
     }
 
     @Test

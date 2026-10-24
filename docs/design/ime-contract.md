@@ -163,7 +163,7 @@ When the app arms sticky modifiers (`TerminalSession.stickyModifiers`), the comp
 | Call | Effect | Return value |
 |---|---|---|
 | `performEditorAction(action)` | Same as Enter. | `true` |
-| `performContextMenuAction(android.R.id.paste)` | Sends the clipboard content as a paste (`sendPaste` in `vtfx-gate`). Commits the composing text, and sends it and any difference not yet sent before the paste, even in the middle of a batch edit, so that the order of sending matches the order of input. Resets after the paste. Pastes through the app's API (`TerminalSession.paste`) are the same. | `true` |
+| `performContextMenuAction(android.R.id.paste)` | Sends the clipboard content as a paste (`sendPaste` in `vtfx-gate`). The editing model sends `HostInput.ClipboardPaste`, which has no text: the text goes from the gate to `sendPaste` without passing through it ([decisions/0075](../decisions/0075-adversaries-are-inputs.md)). Commits the composing text, and sends it and any difference not yet sent before the paste, even in the middle of a batch edit, so that the order of sending matches the order of input. Resets after the paste. Pastes through the app's API (`TerminalSession.paste`) are the same. | `true` |
 | `performContextMenuAction(other)` | Does nothing. | `false` |
 | `requestCursorUpdates(mode)` | Sends `CursorAnchorInfo` immediately for `CURSOR_UPDATE_IMMEDIATE`, and on each later change for `CURSOR_UPDATE_MONITOR` (section 7). | `true` |
 | `clearMetaKeyStates(states)` | Does nothing (there is no meta key state). | `true` |

@@ -71,6 +71,8 @@ internal object HostileIme {
                         else -> {}
                     }
                 is HostInput.Paste -> line.append(input.text)
+                // The fuzzer makes no clipboard pastes.
+                HostInput.ClipboardPaste -> error("clipboard paste")
             }
         }
 
