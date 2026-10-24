@@ -211,7 +211,7 @@ class FontFileTest {
 
     @Test
     fun woffIsUnsupported() {
-        val woff = bytes { u32(tag("wOFF")).u32(Tag.TRUE_TYPE).u32(44) }
+        val woff = bytes { u32(tag("wOFF"), Tag.TRUE_TYPE, 44) }
 
         assertEquals(Kind.Unsupported, inspectFailure(woff))
     }
@@ -228,7 +228,11 @@ class FontFileTest {
 
     @Test
     fun collectionFaceWithWoffHeaderIsUnsupported() {
-        val collection = bytes { u32(Tag.COLLECTION).u16(1).u16(0).u32(1).u32(16).u32(tag("wOFF")) }
+        val collection = bytes {
+            u32(Tag.COLLECTION)
+            u16(1, 0)
+            u32(1, 16, tag("wOFF"))
+        }
 
         assertEquals(Kind.Unsupported, inspectFailure(collection))
     }
@@ -236,7 +240,9 @@ class FontFileTest {
     @Test
     fun collectionInsideACollectionIsMalformed() {
         val collection = bytes {
-            u32(Tag.COLLECTION).u16(1).u16(0).u32(1).u32(16).u32(Tag.COLLECTION)
+            u32(Tag.COLLECTION)
+            u16(1, 0)
+            u32(1, 16, Tag.COLLECTION)
         }
 
         assertEquals(Kind.Malformed, inspectFailure(collection))
@@ -244,14 +250,22 @@ class FontFileTest {
 
     @Test
     fun collectionWithoutFacesIsMalformed() {
-        val collection = bytes { u32(Tag.COLLECTION).u16(1).u16(0).u32(0) }
+        val collection = bytes {
+            u32(Tag.COLLECTION)
+            u16(1, 0)
+            u32(0)
+        }
 
         assertEquals(Kind.Malformed, inspectFailure(collection))
     }
 
     @Test
     fun collectionOfAnUnknownVersionIsUnsupported() {
-        val collection = bytes { u32(Tag.COLLECTION).u16(3).u16(0).u32(1).u32(16) }
+        val collection = bytes {
+            u32(Tag.COLLECTION)
+            u16(3, 0)
+            u32(1, 16)
+        }
 
         assertEquals(Kind.Unsupported, inspectFailure(collection))
     }
@@ -259,8 +273,9 @@ class FontFileTest {
     @Test
     fun tableBeyondTheEndOfTheFileIsMalformed() {
         val font = bytes {
-            u32(Tag.TRUE_TYPE).u16(1).u16(16).u16(0).u16(0)
-            u32(tag("glyf")).u32(0).u32(28).u32(5)
+            u32(Tag.TRUE_TYPE)
+            u16(1, 16, 0, 0)
+            u32(tag("glyf"), 0, 28, 5)
             u32(0)
         }
 
@@ -269,7 +284,10 @@ class FontFileTest {
 
     @Test
     fun tableDirectoryBeyondTheEndOfTheFileIsMalformed() {
-        val font = bytes { u32(Tag.TRUE_TYPE).u16(2).u16(32).u16(1).u16(0) }
+        val font = bytes {
+            u32(Tag.TRUE_TYPE)
+            u16(2, 32, 1, 0)
+        }
 
         assertEquals(Kind.Malformed, inspectFailure(font))
     }
@@ -277,9 +295,10 @@ class FontFileTest {
     @Test
     fun twoTablesWithOneTagAreMalformed() {
         val font = bytes {
-            u32(Tag.TRUE_TYPE).u16(2).u16(32).u16(1).u16(0)
-            u32(tag("glyf")).u32(0).u32(44).u32(0)
-            u32(tag("glyf")).u32(0).u32(44).u32(0)
+            u32(Tag.TRUE_TYPE)
+            u16(2, 32, 1, 0)
+            u32(tag("glyf"), 0, 44, 0)
+            u32(tag("glyf"), 0, 44, 0)
         }
 
         assertEquals(Kind.Malformed, inspectFailure(font))

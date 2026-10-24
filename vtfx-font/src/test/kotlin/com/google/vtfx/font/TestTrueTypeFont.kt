@@ -119,14 +119,15 @@ class TestTrueTypeFont(
                     val xMin = points.minOf { it.x }
                     leftSideBearings += glyph.leftSideBearing ?: xMin
                     glyf.u16(glyph.contours.size)
-                    glyf.u16(xMin).u16(points.minOf { it.y })
-                    glyf.u16(points.maxOf { it.x }).u16(points.maxOf { it.y })
+                    glyf.u16(xMin, points.minOf { it.y })
+                    glyf.u16(points.maxOf { it.x }, points.maxOf { it.y })
                     var end = -1
                     for (contour in glyph.contours) {
                         end += contour.size
                         glyf.u16(end)
                     }
-                    glyf.u16(glyph.instructions.size).bytes(glyph.instructions)
+                    glyf.u16(glyph.instructions.size)
+                    glyf.bytes(glyph.instructions)
                     // Every coordinate as a 16-bit delta, unlike the canonical form.
                     for (point in points) glyf.u8(if (point.on) 1 else 0)
                     var x = 0
@@ -142,7 +143,7 @@ class TestTrueTypeFont(
                 }
                 is TestGlyph.Composite -> {
                     leftSideBearings += glyph.leftSideBearing
-                    glyf.u16(-1).u16(glyph.headerXMin).u16(0).u16(0).u16(0)
+                    glyf.u16(-1, glyph.headerXMin, 0, 0, 0)
                     for ((i, component) in glyph.components.withIndex()) {
                         val more = if (i < glyph.components.size - 1) 0x20 else 0
                         val scaleFlag =
@@ -154,7 +155,7 @@ class TestTrueTypeFont(
                             }
                         val xy = if (component.xyValues) 0x0002 else 0
                         glyf.u16(0x0001 or xy or more or scaleFlag)
-                        glyf.u16(component.glyph).u16(component.dx).u16(component.dy)
+                        glyf.u16(component.glyph, component.dx, component.dy)
                         component.scale.forEach { glyf.u16(it) }
                     }
                 }
@@ -167,13 +168,18 @@ class TestTrueTypeFont(
         val loca = TestBytes()
         for (offset in offsets) if (shortLoca) loca.u16(offset / 2) else loca.u32(offset)
         val hmtx = TestBytes()
-        for ((i, glyph) in glyphs.withIndex()) hmtx.u16(glyph.advance).u16(leftSideBearings[i])
+        for ((i, glyph) in glyphs.withIndex()) hmtx.u16(glyph.advance, leftSideBearings[i])
 
         val tables =
             mutableMapOf(
                 "head" to head(),
                 "hhea" to hhea(),
-                "maxp" to bytes { u32(0x00010000).u16(glyphs.size).bytes(ByteArray(26)) },
+                "maxp" to
+                    bytes {
+                        u32(0x00010000)
+                        u16(glyphs.size)
+                        bytes(ByteArray(26))
+                    },
                 "hmtx" to hmtx.toByteArray(),
                 "loca" to loca.toByteArray(),
                 "glyf" to glyf.toByteArray(),
@@ -187,33 +193,36 @@ class TestTrueTypeFont(
     }
 
     private fun head() = bytes {
-        u32(0x00010000).u32(0x00010000).u32(0).u32(0x5F0F3CF5)
-        u16(0x0003).u16(unitsPerEm)
+        u32(0x00010000, 0x00010000, 0, 0x5F0F3CF5)
+        u16(0x0003, unitsPerEm)
         bytes(ByteArray(16)) // dates
-        u16(0).u16(0).u16(0).u16(0) // bounding box, not read
-        u16(macStyle).u16(8).u16(2)
-        u16(if (shortLoca) 0 else 1).u16(0)
+        u16(0, 0, 0, 0) // bounding box, not read
+        u16(macStyle, 8, 2)
+        u16(if (shortLoca) 0 else 1, 0)
     }
 
     private fun hhea() = bytes {
-        u32(0x00010000).u16(ascender).u16(descender).u16(lineGap)
+        u32(0x00010000)
+        u16(ascender, descender, lineGap)
         bytes(ByteArray(24))
         u16(glyphs.size)
     }
 
     private fun os2() = bytes {
         val typo = typoMetrics
-        u16(4).u16(500).u16(weightClass).u16(5).u16(0)
+        u16(4, 500, weightClass, 5, 0)
         bytes(ByteArray(52)) // subscript to vendor, not read
         u16(if (typo != null) 0x80 else 0x40) // fsSelection
-        u16(0x20).u16(0x7E)
-        u16(typo?.first ?: ascender).u16(typo?.second ?: descender).u16(typo?.third ?: lineGap)
-        u16(1000).u16(300).u32(0).u32(0)
-        u16(xHeight).u16(capHeight).u16(0).u16(0x20).u16(0)
+        u16(0x20, 0x7E)
+        u16(typo?.first ?: ascender, typo?.second ?: descender, typo?.third ?: lineGap)
+        u16(1000, 300)
+        u32(0, 0)
+        u16(xHeight, capHeight, 0, 0x20, 0)
     }
 
     private fun post() = bytes {
-        u32(0x00020000).u32(italicAngle).u16(underlinePosition).u16(underlineThickness)
+        u32(0x00020000, italicAngle)
+        u16(underlinePosition, underlineThickness)
         bytes(ByteArray(20))
     }
 
@@ -225,10 +234,12 @@ class TestTrueTypeFont(
                 4 -> (3 to 1) to format4()
                 else -> (3 to 10) to format12()
             }
-        val out = TestBytes().u16(0).u16(subtables.size)
+        val out = TestBytes()
+        out.u16(0, subtables.size)
         var offset = 4 + 8 * subtables.size
         for ((ids, data) in subtables) {
-            out.u16(ids.first).u16(ids.second).u32(offset)
+            out.u16(ids.first, ids.second)
+            out.u32(offset)
             offset += data.size
         }
         subtables.forEach { out.bytes(it.second) }
@@ -239,8 +250,9 @@ class TestTrueTypeFont(
     private fun format12(): ByteArray {
         val sorted = characters.toSortedMap()
         return bytes {
-            u16(12).u16(0).u32(16 + 12 * sorted.size).u32(0).u32(sorted.size)
-            for ((c, glyph) in sorted) u32(c).u32(c).u32(glyph)
+            u16(12, 0)
+            u32(16 + 12 * sorted.size, 0, sorted.size)
+            for ((c, glyph) in sorted) u32(c, c, glyph)
         }
     }
 
@@ -249,7 +261,7 @@ class TestTrueTypeFont(
         val sorted = characters.toSortedMap()
         val segments = sorted.size + 1
         return bytes {
-            u16(4).u16(16 + 8 * segments).u16(0).u16(segments * 2).u16(0).u16(0).u16(0)
+            u16(4, 16 + 8 * segments, 0, segments * 2, 0, 0, 0)
             sorted.keys.forEach { u16(it) }
             u16(0xFFFF)
             u16(0)
@@ -275,18 +287,25 @@ class TestTrueTypeFont(
                 records.u32(headerSize + tables.size)
                 // One range per code point, unmerged, unlike the canonical form.
                 tables.u32(defaults.size)
-                defaults.sorted().forEach { tables.u24(it).u8(0) }
+                defaults.sorted().forEach {
+                    tables.u24(it)
+                    tables.u8(0)
+                }
             }
             if (nonDefaults.isEmpty()) {
                 records.u32(0)
             } else {
                 records.u32(headerSize + tables.size)
                 tables.u32(nonDefaults.size)
-                nonDefaults.toSortedMap().forEach { (c, glyph) -> tables.u24(c).u16(glyph) }
+                nonDefaults.toSortedMap().forEach { (c, glyph) ->
+                    tables.u24(c)
+                    tables.u16(glyph)
+                }
             }
         }
         return bytes {
-            u16(14).u32(headerSize + tables.size).u32(selectors.size)
+            u16(14)
+            u32(headerSize + tables.size, selectors.size)
             bytes(records.toByteArray())
             bytes(tables.toByteArray())
         }

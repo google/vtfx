@@ -33,14 +33,20 @@ fun charString(text: String): ByteArray {
             operator != null -> operator.forEach { out.u8(it) }
             token.startsWith("#") -> out.u8(token.substring(1).toInt(16))
             number == null -> error("unknown token $token")
-            number != Math.floor(number) -> out.u8(255).u32((number * 65536).roundToInt())
+            number != Math.floor(number) -> {
+                out.u8(255)
+                out.u32((number * 65536).roundToInt())
+            }
             else -> {
                 val value = number.toInt()
                 when (value) {
                     in -107..107 -> out.u8(value + 139)
-                    in 108..1131 -> out.u8((value - 108) / 256 + 247).u8((value - 108) % 256)
-                    in -1131..-108 -> out.u8((-value - 108) / 256 + 251).u8((-value - 108) % 256)
-                    else -> out.u8(28).u16(value)
+                    in 108..1131 -> out.u8((value - 108) / 256 + 247, (value - 108) % 256)
+                    in -1131..-108 -> out.u8((-value - 108) / 256 + 251, (-value - 108) % 256)
+                    else -> {
+                        out.u8(28)
+                        out.u16(value)
+                    }
                 }
             }
         }
@@ -131,7 +137,11 @@ class TestCffFont(
                 unitsPerEm = unitsPerEm,
             )
         return trueType.tables() - "glyf" - "loca" +
-            ("maxp" to bytes { u32(0x00005000).u16(glyphCount) }) +
+            ("maxp" to
+                bytes {
+                    u32(0x00005000)
+                    u16(glyphCount)
+                }) +
             ("CFF " to cff)
     }
 
@@ -144,7 +154,7 @@ class TestCffFont(
         // The Top DICT writes offsets in five bytes, so its size does not depend on them.
         val placeholder = topDict(0, 0, 0, 0, 0)
         val head = TestBytes()
-        head.u8(1).u8(0).u8(4).u8(4)
+        head.u8(1, 0, 4, 4)
         head.bytes(index(fontNames.map { it.toByteArray() }))
         head.bytes(index(listOf(placeholder)))
         val strings = index(listOf("Adobe".toByteArray(), "Identity".toByteArray()))
@@ -156,9 +166,14 @@ class TestCffFont(
         var offset = charStringsOffset + charStrings.size
         fun privateDict(subrs: List<String>): Pair<Int, Int> {
             // A Private DICT of only Subrs, in five bytes, with the INDEX right after it.
-            val dict = bytes { u8(29).u32(6).u8(19) }
+            val dict = bytes {
+                u8(29)
+                u32(6)
+                u8(19)
+            }
             val start = offset
-            tail.bytes(dict).bytes(index(subrs.map { charString(it) }))
+            tail.bytes(dict)
+            tail.bytes(index(subrs.map { charString(it) }))
             offset = head.size + strings.size + gsubrs.size + charStrings.size + tail.size
             return dict.size to start
         }
@@ -171,7 +186,13 @@ class TestCffFont(
             val fontDicts =
                 cid.fontDictSubrs.map { subrs ->
                     val (size, privateOffset) = privateDict(subrs)
-                    bytes { u8(29).u32(size).u8(29).u32(privateOffset).u8(18) }
+                    bytes {
+                        u8(29)
+                        u32(size)
+                        u8(29)
+                        u32(privateOffset)
+                        u8(18)
+                    }
                 }
             val fdArray = index(fontDicts)
             val fdArrayOffset = offset
@@ -182,7 +203,7 @@ class TestCffFont(
         }
         check(top.size == placeholder.size)
         return bytes {
-            u8(1).u8(0).u8(4).u8(4)
+            u8(1, 0, 4, 4)
             bytes(index(fontNames.map { it.toByteArray() }))
             bytes(index(listOf(top)))
             bytes(strings)
@@ -199,19 +220,39 @@ class TestCffFont(
         fdArray: Int,
         fdSelect: Int,
     ): ByteArray = bytes {
-        charstringType?.let { u8(29).u32(it).u8(12).u8(6) }
+        charstringType?.let {
+            u8(29)
+            u32(it)
+            u8(12, 6)
+        }
         fontMatrix?.let { matrix ->
             matrix.forEach { bytes(real(it)) }
-            u8(12).u8(7)
+            u8(12, 7)
         }
-        u8(29).u32(charStrings).u8(17)
+        u8(29)
+        u32(charStrings)
+        u8(17)
         if (cid == null) {
-            u8(29).u32(privateSize).u8(29).u32(privateOffset).u8(18)
+            u8(29)
+            u32(privateSize)
+            u8(29)
+            u32(privateOffset)
+            u8(18)
         } else {
             // Registry "Adobe" and ordering "Identity", from the String INDEX, supplement 0.
-            u8(29).u32(391).u8(29).u32(392).u8(29).u32(0).u8(12).u8(30)
-            u8(29).u32(fdArray).u8(12).u8(36)
-            u8(29).u32(fdSelect).u8(12).u8(37)
+            u8(29)
+            u32(391)
+            u8(29)
+            u32(392)
+            u8(29)
+            u32(0)
+            u8(12, 30)
+            u8(29)
+            u32(fdArray)
+            u8(12, 36)
+            u8(29)
+            u32(fdSelect)
+            u8(12, 37)
         }
     }
 
@@ -223,8 +264,12 @@ class TestCffFont(
                 for (glyph in glyphs.indices) u8(ranges.last { it.first <= glyph }.second)
             }
             else -> {
-                u8(3).u16(ranges.size)
-                ranges.forEach { (first, fd) -> u16(first).u8(fd) }
+                u8(3)
+                u16(ranges.size)
+                ranges.forEach { (first, fd) ->
+                    u16(first)
+                    u8(fd)
+                }
                 u16(glyphs.size)
             }
         }

@@ -330,9 +330,14 @@ class ReviewReproTest {
         base["glyf"] = glyf.toByteArray()
         base["loca"] = loca.toByteArray()
         base["hmtx"] = hmtx.toByteArray()
-        base["maxp"] = bytes { u32(0x00010000).u16(numGlyphs).bytes(ByteArray(26)) }
+        base["maxp"] = bytes {
+            u32(0x00010000)
+            u16(numGlyphs)
+            bytes(ByteArray(26))
+        }
         base["hhea"] = bytes {
-            u32(0x00010000).u16(800).u16(-200).u16(0)
+            u32(0x00010000)
+            u16(800, -200, 0)
             bytes(ByteArray(24))
             u16(numGlyphs)
         }

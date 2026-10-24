@@ -260,12 +260,18 @@ internal object CanonicalWriter {
         out.u16(0) // version
         if (format14 == null) {
             out.u16(1)
-            out.u16(3).u16(10).u32(12)
+            out.u16(3)
+            out.u16(10)
+            out.u32(12)
         } else {
             // Records are sorted by platform and encoding, and the subtables follow in their order.
             out.u16(2)
-            out.u16(0).u16(5).u32(20)
-            out.u16(3).u16(10).u32(20 + format14.size)
+            out.u16(0)
+            out.u16(5)
+            out.u32(20)
+            out.u16(3)
+            out.u16(10)
+            out.u32(20 + format14.size)
             out.bytes(format14)
         }
         out.bytes(format12)
@@ -287,17 +293,21 @@ internal object CanonicalWriter {
             ) {
                 j++
             }
-            groups.u32(codePoints[i]).u32(codePoints[j]).u32(glyphs[i])
+            groups.u32(codePoints[i])
+            groups.u32(codePoints[j])
+            groups.u32(glyphs[i])
             count++
             i = j + 1
         }
         return Sink(Int.MAX_VALUE)
-            .u16(12)
-            .u16(0)
-            .u32(16 + groups.size)
-            .u32(0) // language
-            .u32(count)
-            .bytes(groups.toByteArray())
+            .apply {
+                u16(12)
+                u16(0)
+                u32(16 + groups.size)
+                u32(0) // language
+                u32(count)
+                bytes(groups.toByteArray())
+            }
             .toByteArray()
     }
 
@@ -325,11 +335,13 @@ internal object CanonicalWriter {
                     ) {
                         j++
                     }
-                    ranges.u24(defaults[i]).u8(j - i)
+                    ranges.u24(defaults[i])
+                    ranges.u8(j - i)
                     count++
                     i = j + 1
                 }
-                tables.u32(count).bytes(ranges.toByteArray())
+                tables.u32(count)
+                tables.bytes(ranges.toByteArray())
             }
             if (selector.baseCharacters.isEmpty()) {
                 records.u32(0)
@@ -337,61 +349,66 @@ internal object CanonicalWriter {
                 records.u32(headerSize + tables.size)
                 tables.u32(selector.baseCharacters.size)
                 for (k in selector.baseCharacters.indices) {
-                    tables.u24(selector.baseCharacters[k]).u16(selector.glyphs[k])
+                    tables.u24(selector.baseCharacters[k])
+                    tables.u16(selector.glyphs[k])
                 }
             }
         }
         return Sink(Int.MAX_VALUE)
-            .u16(14)
-            .u32(headerSize + tables.size)
-            .u32(selectors.size)
-            .bytes(records.toByteArray())
-            .bytes(tables.toByteArray())
+            .apply {
+                u16(14)
+                u32(headerSize + tables.size)
+                u32(selectors.size)
+                bytes(records.toByteArray())
+                bytes(tables.toByteArray())
+            }
             .toByteArray()
     }
 
     private fun head(parts: FaceParts, glyphs: GlyphStats): Sink =
-        Sink(Int.MAX_VALUE)
-            .u32(0x00010000) // version
-            .u32(0x00010000) // fontRevision
-            .u32(0) // checksumAdjustment, set by assemble
-            .u32(HEAD_MAGIC)
-            .u16(HEAD_FLAGS)
-            .u16(parts.unitsPerEm)
-            .u32(0)
-            .u32(0) // created
-            .u32(0)
-            .u32(0) // modified
-            .u16(glyphs.fontXMin)
-            .u16(glyphs.fontYMin)
-            .u16(glyphs.fontXMax)
-            .u16(glyphs.fontYMax)
-            .u16(parts.macStyle)
-            .u16(8) // lowestRecPPEM
-            .u16(2) // fontDirectionHint
-            .u16(1) // indexToLocFormat: long offsets
-            .u16(0) // glyphDataFormat
+        Sink(Int.MAX_VALUE).apply {
+            u32(0x00010000) // version
+            u32(0x00010000) // fontRevision
+            u32(0) // checksumAdjustment, set by assemble
+            u32(HEAD_MAGIC)
+            u16(HEAD_FLAGS)
+            u16(parts.unitsPerEm)
+            u32(0)
+            u32(0) // created
+            u32(0)
+            u32(0) // modified
+            u16(glyphs.fontXMin)
+            u16(glyphs.fontYMin)
+            u16(glyphs.fontXMax)
+            u16(glyphs.fontYMax)
+            u16(parts.macStyle)
+            u16(8) // lowestRecPPEM
+            u16(2) // fontDirectionHint
+            u16(1) // indexToLocFormat: long offsets
+            u16(0) // glyphDataFormat
+        }
 
     private fun hhea(parts: FaceParts, glyphs: GlyphStats): Sink {
         // Advances reach 65535 and coordinates -16384, so the right side bearings may not fit.
         if (glyphs.minRight > Short.MAX_VALUE) unsupported("right side bearings out of range")
-        return Sink(Int.MAX_VALUE)
-            .u32(0x00010000) // version
-            .u16(parts.ascender)
-            .u16(parts.descender)
-            .u16(parts.lineGap)
-            .u16(parts.advances.max())
+        return Sink(Int.MAX_VALUE).apply {
+            u32(0x00010000) // version
+            u16(parts.ascender)
+            u16(parts.descender)
+            u16(parts.lineGap)
+            u16(parts.advances.max())
             // The left side bearing and the extent of a glyph are its xMin and xMax.
-            .u16(glyphs.fontXMin)
-            .u16(glyphs.minRight)
-            .u16(glyphs.fontXMax)
-            .u16(1) // caretSlopeRise
-            .u16(0) // caretSlopeRun
-            .u16(0) // caretOffset
-            .u32(0)
-            .u32(0) // reserved
-            .u16(0) // metricDataFormat
-            .u16(parts.numGlyphs)
+            u16(glyphs.fontXMin)
+            u16(glyphs.minRight)
+            u16(glyphs.fontXMax)
+            u16(1) // caretSlopeRise
+            u16(0) // caretSlopeRun
+            u16(0) // caretOffset
+            u32(0)
+            u32(0) // reserved
+            u16(0) // metricDataFormat
+            u16(parts.numGlyphs)
+        }
     }
 
     private fun hmtx(parts: FaceParts, glyphs: GlyphStats): Sink {
@@ -404,22 +421,23 @@ internal object CanonicalWriter {
     }
 
     private fun maxp(numGlyphs: Int, glyphs: GlyphStats): Sink =
-        Sink(Int.MAX_VALUE)
-            .u32(0x00010000) // version
-            .u16(numGlyphs)
-            .u16(glyphs.maxPoints)
-            .u16(glyphs.maxContours)
-            .u16(0) // maxCompositePoints
-            .u16(0) // maxCompositeContours
-            .u16(1) // maxZones
-            .u16(0) // maxTwilightPoints
-            .u16(0) // maxStorage
-            .u16(0) // maxFunctionDefs
-            .u16(0) // maxInstructionDefs
-            .u16(0) // maxStackElements
-            .u16(0) // maxSizeOfInstructions
-            .u16(0) // maxComponentElements
-            .u16(0) // maxComponentDepth
+        Sink(Int.MAX_VALUE).apply {
+            u32(0x00010000) // version
+            u16(numGlyphs)
+            u16(glyphs.maxPoints)
+            u16(glyphs.maxContours)
+            u16(0) // maxCompositePoints
+            u16(0) // maxCompositeContours
+            u16(1) // maxZones
+            u16(0) // maxTwilightPoints
+            u16(0) // maxStorage
+            u16(0) // maxFunctionDefs
+            u16(0) // maxInstructionDefs
+            u16(0) // maxStackElements
+            u16(0) // maxSizeOfInstructions
+            u16(0) // maxComponentElements
+            u16(0) // maxComponentDepth
+        }
 
     private fun name(macStyle: Int): Sink {
         val subfamily =
@@ -436,10 +454,18 @@ internal object CanonicalWriter {
                 4 to "$FAMILY $subfamily",
                 6 to "$FAMILY-${subfamily.replace(" ", "")}",
             )
-        val out = Sink(Int.MAX_VALUE).u16(0).u16(strings.size).u16(6 + 12 * strings.size)
+        val out = Sink(Int.MAX_VALUE)
+        out.u16(0)
+        out.u16(strings.size)
+        out.u16(6 + 12 * strings.size)
         var offset = 0
         for ((nameId, string) in strings) {
-            out.u16(3).u16(1).u16(0x0409).u16(nameId).u16(string.length * 2).u16(offset)
+            out.u16(3)
+            out.u16(1)
+            out.u16(0x0409)
+            out.u16(nameId)
+            out.u16(string.length * 2)
+            out.u16(offset)
             offset += string.length * 2
         }
         for ((_, string) in strings) string.forEach { out.u16(it.code) }
@@ -447,16 +473,17 @@ internal object CanonicalWriter {
     }
 
     private fun post(parts: FaceParts, widthClass: WidthClass): Sink =
-        Sink(Int.MAX_VALUE)
-            .u32(0x00030000) // version 3: no glyph names
-            .u32(parts.italicAngle)
-            .u16(parts.underlinePosition)
-            .u16(parts.underlineThickness)
-            .u32(if (widthClass == WidthClass.Monospaced) 1 else 0) // isFixedPitch
-            .u32(0)
-            .u32(0)
-            .u32(0)
-            .u32(0) // memory use when downloaded, unknown
+        Sink(Int.MAX_VALUE).apply {
+            u32(0x00030000) // version 3: no glyph names
+            u32(parts.italicAngle)
+            u16(parts.underlinePosition)
+            u16(parts.underlineThickness)
+            u32(if (widthClass == WidthClass.Monospaced) 1 else 0) // isFixedPitch
+            u32(0)
+            u32(0)
+            u32(0)
+            u32(0) // memory use when downloaded, unknown
+        }
 
     /**
      * The font file of [tables], in this order, with the directory and the checksums. The tables
@@ -468,7 +495,8 @@ internal object CanonicalWriter {
         if (size > limits.maxOutputBytes) tooLarge("sanitized font of $size bytes")
         val out = ByteArray(size.toInt())
         val directory = Sink(Int.MAX_VALUE)
-        directory.u32(0x00010000).u16(tables.size)
+        directory.u32(0x00010000)
+        directory.u16(tables.size)
         // 16 times the largest power of two that is at most the number of tables, and so on.
         var power = 1
         var log = 0
@@ -476,12 +504,17 @@ internal object CanonicalWriter {
             power *= 2
             log++
         }
-        directory.u16(power * 16).u16(log).u16(tables.size * 16 - power * 16)
+        directory.u16(power * 16)
+        directory.u16(log)
+        directory.u16(tables.size * 16 - power * 16)
         var offset = 12 + 16 * tables.size
         var headOffset = 0
         for ((tag, data) in tables) {
             data.copyInto(out, offset)
-            directory.u32(tag).u32(checksum(out, offset, data.size)).u32(offset).u32(data.size)
+            directory.u32(tag)
+            directory.u32(checksum(out, offset, data.size))
+            directory.u32(offset)
+            directory.u32(data.size)
             if (tag == Tag.HEAD) headOffset = offset
             offset += align4(data.size.toLong()).toInt()
         }
@@ -540,25 +573,25 @@ internal object CanonicalWriter {
             size++
         }
 
-        fun u8(value: Int) = apply {
+        fun u8(value: Int) {
             ensure(1)
             put(value)
         }
 
-        fun u16(value: Int) = apply {
+        fun u16(value: Int) {
             ensure(2)
             put(value ushr 8)
             put(value)
         }
 
-        fun u24(value: Int) = apply {
+        fun u24(value: Int) {
             ensure(3)
             put(value ushr 16)
             put(value ushr 8)
             put(value)
         }
 
-        fun u32(value: Int) = apply {
+        fun u32(value: Int) {
             ensure(4)
             put(value ushr 24)
             put(value ushr 16)
@@ -566,7 +599,7 @@ internal object CanonicalWriter {
             put(value)
         }
 
-        fun bytes(value: ByteArray) = apply {
+        fun bytes(value: ByteArray) {
             ensure(value.size)
             for (byte in value) put(byte.toInt())
         }

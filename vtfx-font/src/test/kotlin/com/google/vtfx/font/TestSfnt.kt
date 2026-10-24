@@ -18,31 +18,41 @@ package com.google.vtfx.font
 
 import java.io.ByteArrayOutputStream
 
-/** Big-endian writes for building fonts in tests. */
+/** Big-endian writes for building fonts in tests. Each write takes the values in order. */
 class TestBytes {
     private val out = ByteArrayOutputStream()
 
     val size: Int
         get() = out.size()
 
-    fun u8(value: Int) = apply { out.write(value) }
+    fun u8(vararg values: Int) {
+        for (value in values) out.write(value)
+    }
 
-    fun u16(value: Int) = apply {
-        out.write(value ushr 8)
+    fun u16(vararg values: Int) {
+        for (value in values) {
+            out.write(value ushr 8)
+            out.write(value)
+        }
+    }
+
+    fun u24(vararg values: Int) {
+        for (value in values) {
+            out.write(value ushr 16)
+            u16(value)
+        }
+    }
+
+    fun u32(vararg values: Int) {
+        for (value in values) {
+            u16(value ushr 16)
+            u16(value)
+        }
+    }
+
+    fun bytes(value: ByteArray) {
         out.write(value)
     }
-
-    fun u24(value: Int) = apply {
-        out.write(value ushr 16)
-        u16(value)
-    }
-
-    fun u32(value: Int) = apply {
-        u16(value ushr 16)
-        u16(value)
-    }
-
-    fun bytes(value: ByteArray) = apply { out.write(value) }
 
     fun toByteArray(): ByteArray = out.toByteArray()
 }
@@ -89,7 +99,9 @@ object TestSfnt {
         }
         val out = TestBytes()
         if (collection) {
-            out.u32(Tag.COLLECTION).u16(1).u16(0).u32(faces.size)
+            out.u32(Tag.COLLECTION)
+            out.u16(1, 0)
+            out.u32(faces.size)
             var directory = headerSize
             for (size in directorySizes) {
                 out.u32(directory)
@@ -105,22 +117,22 @@ object TestSfnt {
                 entrySelector++
             }
             out.u32(versions[index])
-                .u16(numTables)
-                .u16(searchRange * 16)
-                .u16(entrySelector)
-                .u16(numTables * 16 - searchRange * 16)
+            out.u16(numTables, searchRange * 16, entrySelector, numTables * 16 - searchRange * 16)
             for (name in tables.keys.sorted()) {
                 val data = tables.getValue(name)
-                out.u32(tag(name))
-                    .u32(checksum(data))
-                    .u32(tableOffsets[index].getValue(name))
-                    .u32(data.size)
+                out.u32(
+                    tag(name),
+                    checksum(data),
+                    tableOffsets[index].getValue(name),
+                    data.size,
+                )
             }
         }
         for (tables in faces) {
             for (name in tables.keys.sorted()) {
                 val data = tables.getValue(name)
-                out.bytes(data).bytes(ByteArray(align4(data.size) - data.size))
+                out.bytes(data)
+                out.bytes(ByteArray(align4(data.size) - data.size))
             }
         }
         return out.toByteArray()
@@ -128,15 +140,18 @@ object TestSfnt {
 
     fun nameTable(records: List<TestName>): ByteArray {
         val storageOffset = 6 + 12 * records.size
-        val out = TestBytes().u16(0).u16(records.size).u16(storageOffset)
+        val out = TestBytes()
+        out.u16(0, records.size, storageOffset)
         var stringOffset = 0
         for (record in records) {
-            out.u16(record.platform)
-                .u16(record.encoding)
-                .u16(record.language)
-                .u16(record.nameId)
-                .u16(record.string.size)
-                .u16(stringOffset)
+            out.u16(
+                record.platform,
+                record.encoding,
+                record.language,
+                record.nameId,
+                record.string.size,
+                stringOffset,
+            )
             stringOffset += record.string.size
         }
         for (record in records) out.bytes(record.string)
