@@ -204,7 +204,7 @@ The tests of each module are listed below. Where the oracles live, the gate rule
 
 - Kotlin, Gradle (Kotlin DSL), Jetpack Compose.
 - The package name and Maven groupId are `com.google.vtfx`.
-- CI is GitHub Actions. However, workflows only call the check script, which can also run locally, so that nothing depends on CI.
+- CI is GitHub Actions. However, workflows only run commands that can also run locally (the check script, and the generation and check of the API reference), so that nothing depends on CI but the deployment of the API reference to GitHub Pages on each release tag ([decisions/0073](../decisions/0073-api-reference-on-github-pages.md)).
 - The public API uses Kotlin's explicit API mode to make the public surface explicit.
 - Every module is compiled with Kotlin's unused return value checker, so that builds that check the use of results, as CheckReturnValue does, take the sources as they are ([decisions/0072](../decisions/0072-results-are-used.md)).
 - Compatibility of the public API is checked by `check` by comparing ABI dumps and dumps of the Kotlin signatures (each module's `api/`) (requirement 6.5, [decisions/0016](../decisions/0016-public-api.md)).
