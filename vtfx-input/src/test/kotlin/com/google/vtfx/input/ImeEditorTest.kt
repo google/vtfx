@@ -74,7 +74,7 @@ class ImeEditorTest {
         editor.commitText("Dont")
         sent.clear()
         editor.beginBatchEdit()
-        editor.deleteSurroundingText(4, 0)
+        assertTrue(editor.deleteSurroundingText(4, 0))
         editor.commitText("Don't ")
         assertEquals(emptyList<HostInput>(), sent)
         assertFalse(editor.endBatchEdit())
@@ -115,7 +115,7 @@ class ImeEditorTest {
     fun deletingBeyondTheHistorySendsDelForTheRest() {
         editor.commitText("ab")
         sent.clear()
-        editor.deleteSurroundingText(5, 0)
+        assertTrue(editor.deleteSurroundingText(5, 0))
         assertEquals(listOf<HostInput>(delete(5)), sent)
         assertEquals("", editor.text)
     }
@@ -125,10 +125,10 @@ class ImeEditorTest {
         editor.commitText("abc")
         sent.clear()
         editor.beginBatchEdit()
-        editor.deleteSurroundingText(5, 0)
+        assertTrue(editor.deleteSurroundingText(5, 0))
         editor.commitText("z")
-        editor.deleteSurroundingText(3, 0)
-        editor.endBatchEdit()
+        assertTrue(editor.deleteSurroundingText(3, 0))
+        assertFalse(editor.endBatchEdit())
         // "abc", 2 characters before it, "z", and 2 more.
         assertEquals(listOf<HostInput>(delete(7)), sent)
     }
@@ -137,7 +137,7 @@ class ImeEditorTest {
     fun deleteDoesNotSplitASurrogatePair() {
         editor.commitText("a😀")
         sent.clear()
-        editor.deleteSurroundingText(1, 0)
+        assertTrue(editor.deleteSurroundingText(1, 0))
         assertEquals(listOf<HostInput>(delete(1)), sent)
         assertEquals("a", editor.text)
     }
@@ -146,7 +146,7 @@ class ImeEditorTest {
     fun deleteInCodePointsCountsCodePoints() {
         editor.commitText("a😀b")
         sent.clear()
-        editor.deleteSurroundingTextInCodePoints(2, 0)
+        assertTrue(editor.deleteSurroundingTextInCodePoints(2, 0))
         assertEquals(listOf<HostInput>(delete(2)), sent)
         assertEquals("a", editor.text)
     }
@@ -156,7 +156,7 @@ class ImeEditorTest {
         editor.commitText("a")
         editor.setComposingText("かな")
         sent.clear()
-        editor.deleteSurroundingText(1, 0)
+        assertTrue(editor.deleteSurroundingText(1, 0))
         assertEquals(emptyList<HostInput>(), sent)
         assertEquals("aか", editor.text)
     }
@@ -217,7 +217,7 @@ class ImeEditorTest {
     fun composingTextReplacesTheSelection() {
         editor.commitText("abc")
         sent.clear()
-        editor.setSelection(1, 3)
+        assertTrue(editor.setSelection(1, 3))
         editor.setComposingText("x")
         assertEquals(listOf<HostInput>(delete(2)), sent)
         assertEquals("ax", editor.text)
@@ -228,8 +228,8 @@ class ImeEditorTest {
     fun otherEditsCollapseTheSelectionFirst() {
         editor.commitText("abc")
         sent.clear()
-        editor.setSelection(0, 3)
-        editor.deleteSurroundingText(1, 0)
+        assertTrue(editor.setSelection(0, 3))
+        assertTrue(editor.deleteSurroundingText(1, 0))
         assertEquals(listOf<HostInput>(delete(1)), sent)
         assertEquals("ab", editor.text)
         assertEquals(editor.cursor, editor.selectionStart)
@@ -260,7 +260,7 @@ class ImeEditorTest {
         assertEquals(listOf<HostInput>(enter), sent)
         assertEquals("", editor.text)
         // The deletion cannot take back the Enter: it is BS on the new line.
-        editor.deleteSurroundingText(1, 0)
+        assertTrue(editor.deleteSurroundingText(1, 0))
         assertEquals(0, restarts)
         assertFalse(editor.endBatchEdit())
         assertEquals(listOf(enter, delete(1)), sent)
@@ -298,7 +298,7 @@ class ImeEditorTest {
         editor.commitText("cd Doc")
         sent.clear()
         editor.beginBatchEdit()
-        editor.replaceText(3, 6, "Doc\t")
+        assertTrue(editor.replaceText(3, 6, "Doc\t"))
         assertEquals(listOf<HostInput>(text("\t")), sent)
         assertEquals("", editor.text)
         assertFalse(editor.endBatchEdit())
@@ -365,12 +365,12 @@ class ImeEditorTest {
 
         // Calls that Android or an IME makes right after a restart, which change nothing.
         editor.finishComposingText()
-        editor.setComposingRegion(0, 0)
+        assertTrue(editor.setComposingRegion(0, 0))
         editor.beginBatchEdit()
-        editor.endBatchEdit()
+        assertFalse(editor.endBatchEdit())
         editor.setComposingText("")
         editor.commitText("")
-        editor.replaceText(0, 0, "")
+        assertTrue(editor.replaceText(0, 0, ""))
         // The host's echo of Enter, and a prompt drawn in several receives.
         editor.requestReset()
         editor.requestReset()
@@ -424,10 +424,10 @@ class ImeEditorTest {
     fun aLineFeedAfterTheBatchEditOfAPasteIsEnter() {
         editor.beginBatchEdit()
         editor.commitText("echo one\necho two")
-        editor.endBatchEdit()
+        assertFalse(editor.endBatchEdit())
         editor.beginBatchEdit()
         editor.commitText("\n")
-        editor.endBatchEdit()
+        assertFalse(editor.endBatchEdit())
         assertEquals(
             listOf(HostInput.Paste("echo one\necho two"), enter),
             sent,
@@ -440,7 +440,7 @@ class ImeEditorTest {
         editor.beginBatchEdit()
         editor.commitText("echo evil")
         editor.commitText("\n")
-        editor.endBatchEdit()
+        assertFalse(editor.endBatchEdit())
         assertEquals(listOf(text("echo evil"), enter), sent)
     }
 
@@ -487,8 +487,8 @@ class ImeEditorTest {
     @Test
     fun aLineFeedReplacingTextAfterAPasteInTheSameBatchEditIsPastedToo() {
         editor.beginBatchEdit()
-        editor.replaceText(0, 0, "line1\nline2")
-        editor.replaceText(0, 0, "\n")
+        assertTrue(editor.replaceText(0, 0, "line1\nline2"))
+        assertTrue(editor.replaceText(0, 0, "\n"))
         assertFalse(editor.endBatchEdit())
         assertEquals(
             listOf<HostInput>(HostInput.Paste("line1\nline2"), HostInput.Paste("\n")),
@@ -535,7 +535,7 @@ class ImeEditorTest {
     fun composingTextOfSeveralLinesIsPastedWhenAnyCallCommitsIt() {
         val commits =
             listOf<Pair<String, (ImeEditor) -> Unit>>(
-                "setComposingRegion(0, 0)" to { it.setComposingRegion(0, 0) },
+                "setComposingRegion(0, 0)" to { assertTrue(it.setComposingRegion(0, 0)) },
                 "onKeyDown(q)" to { it.onKeyDown(characterKey('q'.code)) },
                 "onKeyDown(Left)" to { it.onKeyDown(KeyStroke.Special(TerminalKey.Left)) },
                 "closeConnection" to { it.closeConnection() },
@@ -579,7 +579,7 @@ class ImeEditorTest {
         small.commitText("abc")
         small.setComposingText("dx\ny")
         // Commits "d", which takes the history over its limit.
-        small.setComposingRegion(4, 7)
+        assertTrue(small.setComposingRegion(4, 7))
         assertEquals(listOf<HostInput>(text("abcd"), HostInput.Paste("x\ny")), sent)
         assertEquals("", small.text)
     }
@@ -607,7 +607,7 @@ class ImeEditorTest {
         editor.commitText("echo one\necho two")
         editor.setComposingText("\n")
         editor.finishComposingText()
-        editor.endBatchEdit()
+        assertFalse(editor.endBatchEdit())
         assertEquals(
             listOf<HostInput>(HostInput.Paste("echo one\necho two"), HostInput.Paste("\n")),
             sent,
@@ -657,7 +657,7 @@ class ImeEditorTest {
         assertEquals("abc", editor.text)
         // Only the characters that reached the host are deleted.
         sent.clear()
-        editor.replaceText(0, 0, "X")
+        assertTrue(editor.replaceText(0, 0, "X"))
         assertEquals(listOf<HostInput>(delete(3), text("Xabc")), sent)
     }
 
@@ -684,7 +684,7 @@ class ImeEditorTest {
     fun controlsAreRemovedFromReplacements() {
         editor.commitText("ab")
         sent.clear()
-        editor.replaceText(1, 2, "\u001bc")
+        assertTrue(editor.replaceText(1, 2, "\u001bc"))
         assertEquals(listOf<HostInput>(delete(1), text("c")), sent)
         assertEquals("ac", editor.text)
     }
@@ -725,7 +725,7 @@ class ImeEditorTest {
         assertEquals(0, restarts)
         // The history matches the host, so a later replacement deletes only what remains.
         sent.clear()
-        editor.replaceText(0, 1, "x")
+        assertTrue(editor.replaceText(0, 1, "x"))
         assertEquals(listOf<HostInput>(delete(1), text("x")), sent)
     }
 
@@ -764,7 +764,7 @@ class ImeEditorTest {
         editor.commitText("ab")
         sent.clear()
         editor.beginBatchEdit()
-        editor.deleteSurroundingText(1, 0)
+        assertTrue(editor.deleteSurroundingText(1, 0))
         editor.setComposingText("か")
         editor.paste("p")
         assertEquals(listOf(delete(1), text("か"), HostInput.Paste("p")), sent)
@@ -780,7 +780,7 @@ class ImeEditorTest {
         editor.commitText("ab")
         sent.clear()
         editor.beginBatchEdit()
-        editor.deleteSurroundingText(1, 0)
+        assertTrue(editor.deleteSurroundingText(1, 0))
         editor.setComposingText("か")
         editor.sendPendingInput()
         assertEquals(listOf(delete(1), text("か")), sent)
@@ -845,11 +845,11 @@ class ImeEditorTest {
     fun aResetInABatchSendsTheEditsMadeBeforeIt() {
         editor.commitText("ab")
         editor.beginBatchEdit()
-        editor.replaceText(1, 2, "c")
+        assertTrue(editor.replaceText(1, 2, "c"))
         editor.requestReset()
         assertEquals(listOf(text("ab"), delete(1), text("c")), sent)
         assertEquals("", editor.text)
-        editor.deleteSurroundingText(1, 0)
+        assertTrue(editor.deleteSurroundingText(1, 0))
         assertFalse(editor.endBatchEdit())
         // The deletion reaches before the empty history, as BS.
         assertEquals(listOf(text("ab"), delete(1), text("c"), delete(1)), sent)
@@ -882,7 +882,7 @@ class ImeEditorTest {
         editor.commitText("a")
         editor.requestReset()
         assertEquals(0, restarts)
-        editor.endBatchEdit()
+        assertFalse(editor.endBatchEdit())
         assertEquals(listOf<HostInput>(text("a")), sent)
         assertEquals(1, restarts)
     }
@@ -933,7 +933,7 @@ class ImeEditorTest {
         assertFalse(editor.setComposingRegion(1, 2))
         assertFalse(editor.replaceText(1, 2, "x"))
         // Deleting the character deletes the U+FFFD that the host got for the committed half.
-        editor.deleteSurroundingText(1, 0)
+        assertTrue(editor.deleteSurroundingText(1, 0))
         assertEquals(listOf<HostInput>(delete(1)), sent)
         assertEquals("", editor.text)
     }

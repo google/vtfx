@@ -80,7 +80,10 @@ class AndroidCapabilitiesTest {
 
     @Test
     fun urlsOpenOnlyBrowsableActivities() {
-        AndroidUrlOpener(application).open("https://example.com/a")
+        assertEquals(
+            OpenUrlResult.Opened,
+            AndroidUrlOpener(application).open("https://example.com/a"),
+        )
         val intent = shadowOf(application).nextStartedActivity
         assertEquals(Intent.ACTION_VIEW, intent.action)
         assertEquals(Uri.parse("https://example.com/a"), intent.data)
@@ -92,7 +95,10 @@ class AndroidCapabilitiesTest {
     fun urlsOpenWithTheSchemeInLowerCase() {
         // The gate allows schemes in any case, but intent filters match them case-sensitively, so
         // "HTTPS" would reach no browser, or an app that registered "HTTPS" as its own scheme.
-        AndroidUrlOpener(application).open("HTTPS://Example.com/A")
+        assertEquals(
+            OpenUrlResult.Opened,
+            AndroidUrlOpener(application).open("HTTPS://Example.com/A"),
+        )
         val intent = shadowOf(application).nextStartedActivity
         assertEquals(Uri.parse("https://Example.com/A"), intent.data)
     }

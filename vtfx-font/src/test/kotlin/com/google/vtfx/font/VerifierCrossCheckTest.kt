@@ -82,11 +82,13 @@ class VerifierCrossCheckTest {
                 font[at] = (font[at] + delta).toByte()
                 val fixed = withChecksums(font)
                 if (fixed.contentEquals(canonical)) continue
-                try {
-                    SanitizedFont.fromCanonical(fixed, limits)
-                } catch (_: InvalidFontException) {
-                    continue
-                }
+                val verified =
+                    try {
+                        SanitizedFont.fromCanonical(fixed, limits)
+                    } catch (_: InvalidFontException) {
+                        null
+                    }
+                if (verified == null) continue
                 accepted += at to delta
                 val again = FontFile.sanitize(fixed, 0, limits).toByteArray()
                 if (!again.contentEquals(fixed)) notFixedPoints += at to delta

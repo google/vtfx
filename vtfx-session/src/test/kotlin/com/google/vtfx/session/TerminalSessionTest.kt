@@ -555,7 +555,7 @@ class TerminalSessionTest {
             it.beginBatchEdit()
             it.commitText("echo one\necho two")
             it.commitText("\n")
-            it.endBatchEdit()
+            assertFalse(it.endBatchEdit())
         }
         assertEquals(
             "\u001b[200~echo one\recho two\u001b[201~\u001b[200~\r\u001b[201~",
@@ -589,7 +589,7 @@ class TerminalSessionTest {
         session.edit { it.setComposingText("日本") }
         session.edit { it.beginBatchEdit() }
         session.paste("x\n")
-        session.edit { it.endBatchEdit() }
+        assertFalse(session.edit { it.endBatchEdit() })
         assertEquals("日本x\r", sent.toString())
         assertEquals(1, restarts)
     }
@@ -601,8 +601,8 @@ class TerminalSessionTest {
         session.edit { it.beginBatchEdit() }
         session.edit { it.commitText("a") }
         session.pasteFromClipboard()
-        session.edit { it.endBatchEdit() }
-        session.edit { it.endBatchEdit() }
+        assertTrue(session.edit { it.endBatchEdit() })
+        assertFalse(session.edit { it.endBatchEdit() })
         assertEquals("a\u001b[200~pasted[201~\r\u001b[201~", sent.toString())
         assertEquals("", session.edit { it.text })
     }
@@ -716,7 +716,7 @@ class TerminalSessionTest {
         session.edit { it.beginBatchEdit() }
         feed("ls\r\n$ ")
         assertFalse(session.edit { it.replaceText(0, 2, "cat") })
-        session.edit { it.endBatchEdit() }
+        assertFalse(session.edit { it.endBatchEdit() })
         assertEquals("ls", sent.toString())
     }
 
@@ -776,7 +776,7 @@ class TerminalSessionTest {
         assertEquals(long, sent.toString())
         assertEquals("", session.edit { it.text })
         session.edit { it.setComposingText("b") }
-        session.edit { it.endBatchEdit() }
+        assertFalse(session.edit { it.endBatchEdit() })
         assertFalse(session.edit { it.setComposingRegion(0, long.length + 1) })
         assertEquals(long, sent.toString())
     }
@@ -803,15 +803,15 @@ class TerminalSessionTest {
         )
         session.edit { it.finishComposingText() }
         session.edit { it.setComposingText("に") }
-        session.edit { it.text }
+        assertEquals("に", session.edit { it.text })
         assertEquals(0, inputs)
         session.edit { it.finishComposingText() }
         assertEquals(1, inputs)
-        session.edit { it.deleteSurroundingText(1, 0) }
+        assertTrue(session.edit { it.deleteSurroundingText(1, 0) })
         assertEquals("", session.edit { it.text })
         assertEquals(2, inputs)
         // A Backspace with an empty edit buffer leaves it empty, but sends a DEL.
-        session.edit { it.deleteSurroundingText(1, 0) }
+        assertTrue(session.edit { it.deleteSurroundingText(1, 0) })
         assertEquals(3, inputs)
         assertEquals("に\u007f\u007f", sent.toString())
     }
@@ -1349,7 +1349,7 @@ class TerminalSessionTest {
             })
         session.edit { it.commitText("a") }
 
-        session.edit { it.replaceText(0, 1, "c") }
+        assertTrue(session.edit { it.replaceText(0, 1, "c") })
 
         assertEquals("a\u007fc", received.toString())
     }

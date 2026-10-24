@@ -291,11 +291,13 @@ class CanonicalVerifierTest {
                 val fixedUp = withChecksums(changed)
                 // A change to a checksum is undone by computing the checksums again.
                 if (fixedUp.contentEquals(font)) continue
-                try {
-                    SanitizedFont.fromCanonical(fixedUp, limits)
-                } catch (_: InvalidFontException) {
-                    continue
-                }
+                val verified =
+                    try {
+                        SanitizedFont.fromCanonical(fixedUp, limits)
+                    } catch (_: InvalidFontException) {
+                        null
+                    }
+                if (verified == null) continue
                 accepted += at to delta
             }
         }

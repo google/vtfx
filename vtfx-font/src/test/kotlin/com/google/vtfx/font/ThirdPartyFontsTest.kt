@@ -121,7 +121,7 @@ class ThirdPartyFontsTest {
      */
     private fun assertCanonical(font: SanitizedFont) {
         val bytes = font.toByteArray()
-        SanitizedFont.fromCanonical(bytes, limits)
+        assertContentEquals(bytes, SanitizedFont.fromCanonical(bytes, limits).toByteArray())
         assertContentEquals(bytes, FontFile.sanitize(bytes, 0, limits).toByteArray())
     }
 

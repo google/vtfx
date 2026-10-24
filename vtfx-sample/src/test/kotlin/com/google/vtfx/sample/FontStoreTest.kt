@@ -101,7 +101,9 @@ class FontStoreTest {
 
     @Test
     fun savedFontThatFailsTheCheckIsLeftOutAndReported() {
-        store().import({ ByteArrayInputStream(font) }, null)
+        assertTrue(
+            store().import({ ByteArrayInputStream(font) }, null) is FontStore.ImportResult.Imported
+        )
         File(directory, "001.ttf").writeBytes(font.copyOf(font.size - 1))
 
         val loaded = store().load()

@@ -62,7 +62,7 @@ class TerminalDisplayTest {
         val display = TerminalDisplay(session)
         display.selection = TerminalSelection(Cell(0, 0), Cell(299, 99))
 
-        display.copySelection()
+        assertTrue(display.copySelection())
 
         val text = clipboard.copied.single()
         assertTrue("${text.length}", text.length <= MAX_COPIED_LENGTH)

@@ -21,6 +21,7 @@ package com.google.vtfx.input
 import com.google.vtfx.core.InternalVtfxApi
 import kotlin.random.Random
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.junit.Test
 
@@ -56,9 +57,9 @@ class HostileImeTest {
         val editor = ImeEditor(host, maxHistoryLength = 16)
         editor.beginBatchEdit()
         // Twice, so that an unbounded count would also overflow.
-        editor.deleteSurroundingText(Int.MAX_VALUE, 0)
-        editor.deleteSurroundingTextInCodePoints(Int.MAX_VALUE, Int.MAX_VALUE)
-        editor.endBatchEdit()
+        assertTrue(editor.deleteSurroundingText(Int.MAX_VALUE, 0))
+        assertTrue(editor.deleteSurroundingTextInCodePoints(Int.MAX_VALUE, Int.MAX_VALUE))
+        assertFalse(editor.endBatchEdit())
         assertEquals(16, host.largestDelete)
     }
 
@@ -72,7 +73,7 @@ class HostileImeTest {
             editor.commitText("abcdefghij")
             assertTrue(editor.text.length <= 16, "after $it commits: ${editor.text.length}")
         }
-        editor.endBatchEdit()
+        assertFalse(editor.endBatchEdit())
         // What was committed reached the host, in order.
         assertEquals("$ " + "abcdefghij".repeat(100), host.line.toString())
     }
@@ -85,9 +86,9 @@ class HostileImeTest {
         val editor = ImeEditor(host, maxHistoryLength = 16)
         editor.commitText("ls")
         editor.beginBatchEdit()
-        editor.deleteSurroundingText(4, 0)
+        assertTrue(editor.deleteSurroundingText(4, 0))
         editor.commitText("ls")
-        editor.endBatchEdit()
+        assertFalse(editor.endBatchEdit())
         assertEquals("ls", host.line.toString())
     }
 
