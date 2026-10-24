@@ -113,15 +113,14 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
 
     /**
      * Scrolls the display [lines] lines back into the scrollback (or forward, if negative), within
-     * the scrollback. Returns whether it moved.
+     * the scrollback.
      */
-    fun scrollBy(lines: Int): Boolean {
+    fun scrollBy(lines: Int) {
         val limit = session.scrollbackSize
         val next = (scrollOffset + lines).coerceIn(0, limit)
-        if (next == scrollOffset) return false
+        if (next == scrollOffset) return
         scrollOffset = next
         onDisplayChanged()
-        return true
     }
 
     /**
