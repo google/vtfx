@@ -84,13 +84,17 @@ internal class QuadraticPen(private val maxPoints: Int, tolerance: Double) {
     }
 
     fun curveTo(x1: Double, y1: Double, x2: Double, y2: Double, x: Double, y: Double) {
-        checkCoordinate(x1)
-        checkCoordinate(y1)
-        checkCoordinate(x2)
-        checkCoordinate(y2)
-        checkCoordinate(x)
-        checkCoordinate(y)
-        val count = curves.approximate(this.x, this.y, x1, y1, x2, y2, x, y)
+        val count =
+            curves.approximate(
+                this.x,
+                this.y,
+                checkCoordinate(x1),
+                checkCoordinate(y1),
+                checkCoordinate(x2),
+                checkCoordinate(y2),
+                checkCoordinate(x),
+                checkCoordinate(y),
+            )
         for (i in 0 until count) point(curves.points[2 * i], curves.points[2 * i + 1], on = false)
         endAt(x, y)
     }
