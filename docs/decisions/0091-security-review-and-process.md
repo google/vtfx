@@ -114,8 +114,6 @@ An agent that finds that the history needs to be rewritten stops and consults a 
 3. **The status is per decision**: `Provisional` or `Approved`, for the whole file. Only a human approves a decision. A merge, or a rewrite, that keeps the meaning of everything it carries over (it reorders, removes repetition, removes descriptions of the current design that the design documents hold, or drops what was superseded) keeps the status `Approved` when every decision it carries over was approved; otherwise the result is `Provisional`. The commit says which decisions it carries over and that their meaning is kept.
 4. **The change that deletes or renumbers a decision updates every reference to it** in the same commit. `scripts/check_doc_links.py` fails on a reference to a decision that does not exist.
 
-The decisions written before this rule are merged area by area. Until a decision is merged, it keeps the status it has, superseded items included ([decisions/README.md](README.md)).
-
 **Why.** Keeping a changed decision as a record with the status `Superseded by`, or with its superseded items named in its status, made a reader follow the status to the decisions that replaced some of its items, and read the old text knowing which parts no longer hold; and the reasons for one area were spread over many decisions written as the area grew. Since the history is never rewritten (topic 5), every past version of a decision can be read from the commit before it changed; closed review reports are removed from the tree on the same ground (section 3.4 of [reviews/README.md](../reviews/README.md)).
 
 **Alternatives considered.**

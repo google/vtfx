@@ -20,7 +20,8 @@ Checked:
   configuration, documents), where `docs/decisions/NNNN` without the rest of the file name stands
   for the decision with that number;
 - every relative link in the Markdown files;
-- that a decision whose status says it is superseded links to the decision that supersedes it.
+- that the status of every decision is Provisional or Approved: a decision that is superseded or
+  dropped is deleted, not kept with another status (docs/decisions/0091).
 
 References to sections ("section 5 of testing.md") are not checked, which is why the documents keep
 their section numbers (AGENTS.md).
@@ -49,7 +50,7 @@ DECISION_NUMBER = re.compile(r"^docs/decisions/(\d{4})$")
 MARKDOWN_LINK = re.compile(r"!?\[[^\]]*\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
 FENCE = re.compile(r"^\s*(```|~~~)")
 STATUS_LINE = re.compile(r"^- Status:(.*)$", re.MULTILINE)
-DECISION_LINK = re.compile(r"\]\((?:\.\./decisions/|\./)?\d{4}-[\w.-]+\.md\)")
+STATUS = re.compile(r"^ (?:Provisional|Approved)(?: \([^)]*\))?$")
 
 
 def tracked_files(root: pathlib.Path) -> list[str]:
@@ -124,13 +125,11 @@ def check_markdown_links(root: pathlib.Path, path: str, text: str) -> list[str]:
     return problems
 
 
-def check_superseded(path: str, text: str) -> list[str]:
-    problems = []
-    for match in STATUS_LINE.finditer(text):
-        status = match.group(1)
-        if "uperseded" in status and not DECISION_LINK.search(status):
-            problems.append(f"{path}: the status says it is superseded but links to no decision")
-    return problems
+def check_status(path: str, text: str) -> list[str]:
+    statuses = STATUS_LINE.findall(text)
+    if len(statuses) != 1 or not STATUS.match(statuses[0]):
+        return [f"{path}: the status is not one line of Provisional or Approved"]
+    return []
 
 
 def check(root: pathlib.Path) -> list[str]:
@@ -143,7 +142,7 @@ def check(root: pathlib.Path) -> list[str]:
         if path.endswith(".md"):
             problems += check_markdown_links(root, path, text)
         if re.match(r"^docs/decisions/\d{4}-", path):
-            problems += check_superseded(path, text)
+            problems += check_status(path, text)
     return problems
 
 

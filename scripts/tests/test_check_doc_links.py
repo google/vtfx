@@ -100,11 +100,17 @@ class CheckDocLinksTest(unittest.TestCase):
             """)
         self.assert_passes()
 
-    def test_superseded_decision_links_to_its_successor(self):
-        self.write("docs/decisions/0002-limits.md", "# Limits\n\n- Status: Superseded by [0001](0001-parser.md)\n")
+    def test_decision_is_provisional_or_approved(self):
+        self.write("docs/decisions/0002-limits.md", "# Limits\n\n- Status: Approved\n")
+        self.write("docs/decisions/0003-fuzzing.md", "# Fuzzing\n\n- Status: Approved (2026-10-25)\n")
+        self.write("docs/decisions/0004-keys.md", "# Keys\n\n- Status: Provisional\n")
         self.assert_passes()
-        self.write("docs/decisions/0003-fuzzing.md", "# Fuzzing\n\n- Status: Superseded by 0001\n")
-        self.assert_fails_with("docs/decisions/0003-fuzzing.md: the status says it is superseded")
+        self.write("docs/decisions/0005-mouse.md", "# Mouse\n\n- Status: Superseded by [0004](0004-keys.md)\n")
+        self.assert_fails_with("docs/decisions/0005-mouse.md: the status is not one line of Provisional or Approved")
+
+    def test_decision_without_a_status_fails(self):
+        self.write("docs/decisions/0002-limits.md", "# Limits\n")
+        self.assert_fails_with("docs/decisions/0002-limits.md: the status is not one line of Provisional or Approved")
 
     def test_skips_oracles_and_test_fixtures(self):
         self.write("spec/core/a.vtspec.md", "docs/missing.md\n")

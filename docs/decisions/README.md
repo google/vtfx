@@ -72,7 +72,3 @@ Decisions hold the reasons that hold now; the past versions are in the history, 
 - The change that deletes or renumbers a decision updates every reference to it. `scripts/check_doc_links.py` fails on a reference to a decision that does not exist.
 - Correct errors of fact (a wrong name, count, or path) in place, without a dated note.
 - Do not add measurements, experiment logs, or how something came about: those go in [docs/research/](../research/) or in commit messages.
-
-The decisions written before 0078 are being merged area by area; until then, some of them keep the status `Superseded by [NNNN](...)`, or name their superseded items in their status, and `scripts/check_doc_links.py` checks that such a status links to a decision.
-
-Milestone numbers (M1–M13) in older decisions refer to the plan of the initial development, which has been completed.
