@@ -108,7 +108,7 @@ The exact names are in `config/boundaries.toml`.
 
 ### 4.6 Reserved packages
 
-`reserved_packages` lists packages, with their subpackages, in which only the listed modules may declare classes, checked on the names of the compiled classes. Another module could otherwise declare a class of the same name and replace a reviewed one on the class path ([decisions/0041](../decisions/0041-security-review-by-module.md)).
+`reserved_packages` lists packages, with their subpackages, in which only the listed modules may declare classes, checked on the names of the compiled classes. Another module could otherwise declare a class of the same name and replace a reviewed one on the class path ([decisions/0091](../decisions/0091-security-review-and-process.md)).
 
 | Package | Modules |
 |---|---|
@@ -172,7 +172,7 @@ These are left to review, backed by being able to audit afterward (requirement 6
 
 - The build itself: build files, the build logic, the Gradle wrapper, and dependency verification can change what is checked. They are all under security review (`config/protected-paths.toml`), and so is `config/boundaries.toml`. Build files are every file that Gradle and its plugins read to configure the build, at any depth: Kotlin and Groovy scripts (a Groovy script takes the place of a Kotlin one in the same directory), `buildSrc/`, and `gradle.properties` and `local.properties`.
 - How an allowed API is used: what is written to the log, what is shown to accessibility services, what a library that a module may use does inside. Tests and review keep checking these.
-- How code outside review calls the reviewed modules, for example whether the text that it sends to the host is what the user typed. The gate checks what it can from the values; the rest is the caller's contract, guarded against mistakes rather than against changes written to get around it ([decisions/0075](../decisions/0075-adversaries-are-inputs.md)).
+- How code outside review calls the reviewed modules, for example whether the text that it sends to the host is what the user typed. The gate checks what it can from the values; the rest is the caller's contract, guarded against mistakes rather than against changes written to get around it ([decisions/0091](../decisions/0091-security-review-and-process.md)).
 - The classes of tests, which are not shipped, and `vtfx-sample`, an app.
 - A new external dependency is reviewed with its build file and `gradle/verification-metadata.xml` ([decisions/0088](../decisions/0088-build-boundaries-and-tests.md)); using its classes then fails until an allowlist names them.
 - A new version of Kotlin or of a library may change the references that the compiler emits, so an update can need changes to the lists, which are reviewed with the update.

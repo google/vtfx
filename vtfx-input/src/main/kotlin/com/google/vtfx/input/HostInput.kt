@@ -59,7 +59,7 @@ public sealed interface HostInput {
 
     /**
      * The text on the clipboard, pasted. Only vtfx-gate reads it, and sanitizes and brackets it as
-     * a [Paste] (docs/decisions/0075).
+     * a [Paste] (docs/decisions/0091).
      */
     @InternalVtfxApi public data object ClipboardPaste : HostInput
 }

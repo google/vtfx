@@ -138,7 +138,7 @@ The following inputs are not trusted.
 - Pasted content
 - The IME, which is a third-party app
 
-These inputs are the adversaries. The code of vtfx is not: a change to it that breaks a property below is a mistake, which the design guards against with checks in the reviewed code, types, tests, and review and audit ([0075](decisions/0075-adversaries-are-inputs.md)).
+These inputs are the adversaries. The code of vtfx is not: a change to it that breaks a property below is a mistake, which the design guards against with checks in the reviewed code, types, tests, and review and audit ([0091](decisions/0091-security-review-and-process.md)).
 
 **Attack types to prevent** (at a minimum)
 
@@ -152,11 +152,11 @@ These inputs are the adversaries. The code of vtfx is not: a change to it that b
 
 **Focusing the review**
 
-- No code is exempt from review, but the closest security review is limited to a small part of the code: the code that can act on the outside world, and the build configuration that decides what the checks cover ([0076](decisions/0076-security-review-is-focused.md)).
-- The code under that review checks what it receives from the rest rather than trust it, so that a mistake elsewhere is caught there wherever the values allow ([0075](decisions/0075-adversaries-are-inputs.md)).
+- No code is exempt from review, but the closest security review is limited to a small part of the code: the code that can act on the outside world, and the build configuration that decides what the checks cover ([0091](decisions/0091-security-review-and-process.md)).
+- The code under that review checks what it receives from the rest rather than trust it, so that a mistake elsewhere is caught there wherever the values allow ([0091](decisions/0091-security-review-and-process.md)).
 - Explicitly list the code subject to that review.
 - Mechanically verify that the boundary is respected, and detect violations in CI.
-  - In phases 1 to 3 (7.1), the enforcement did not need to be impossible for an agent to circumvent: a guardrail-like check that keeps agents from making obviously wrong changes was enough. From phase 4, the check holds against changes written to get around it, within the limits of what review covers ([0088](decisions/0088-build-boundaries-and-tests.md)). It covers where the capabilities are: which code can hold the references that perform effects. How code outside review calls the code under review is guarded against mistakes, not against changes written to get around it ([0075](decisions/0075-adversaries-are-inputs.md)).
+  - In phases 1 to 3 (7.1), the enforcement did not need to be impossible for an agent to circumvent: a guardrail-like check that keeps agents from making obviously wrong changes was enough. From phase 4, the check holds against changes written to get around it, within the limits of what review covers ([0088](decisions/0088-build-boundaries-and-tests.md)). It covers where the capabilities are: which code can hold the references that perform effects. How code outside review calls the code under review is guarded against mistakes, not against changes written to get around it ([0091](decisions/0091-security-review-and-process.md)).
   - This is backed by keeping the whole git history so that it can be audited afterward.
 - Adding or changing dependencies and changing the build configuration are included in the review scope.
 
@@ -257,6 +257,6 @@ Every release in phases 4 to 6 requires that humans have reviewed the changes to
 - The acceptable range and limits for resource exhaustion (Resolved: [0081](decisions/0081-resource-limits.md))
 - Performance targets (Resolved: [0089](decisions/0089-performance.md))
 - minSdk (trade-offs per feature) (Resolved: minSdk is 29, [0090](decisions/0090-distribution.md); the initial value was 34)
-- The concrete scope of the code under security review, and how to verify the boundary (Resolved: [0041](decisions/0041-security-review-by-module.md), [0088](decisions/0088-build-boundaries-and-tests.md), [0076](decisions/0076-security-review-is-focused.md))
+- The concrete scope of the code under security review, and how to verify the boundary (Resolved: [0091](decisions/0091-security-review-and-process.md), [0088](decisions/0088-build-boundaries-and-tests.md))
 - The compatibility policy of the public API, and when to start guaranteeing stability (Resolved: [0087](decisions/0087-public-api.md))
 - Distribution and license (Resolved: [0090](decisions/0090-distribution.md))

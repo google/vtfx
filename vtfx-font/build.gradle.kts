@@ -17,7 +17,7 @@
 // Reads fonts that users choose and writes them again in one canonical form (docs/decisions/0086).
 // What reaches native code is decided by the verifier of vtfx-font-gate, so this module is not
 // under
-// security review (docs/decisions/0041).
+// security review (docs/decisions/0091).
 plugins {
     id("vtfx.fuzz")
 }

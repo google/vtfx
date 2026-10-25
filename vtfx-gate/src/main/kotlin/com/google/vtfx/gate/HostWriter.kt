@@ -49,7 +49,7 @@ public class HostWriter(private val connection: HostConnection) {
      * @throws IllegalArgumentException if [text] has a line break (CR or LF). Enter, with
      *   [sendKey], and a paste, with [sendPaste], are the only ways to end a line, so that a caller
      *   that takes pasted text for typed text fails rather than run its lines one by one despite
-     *   bracketed paste mode (docs/decisions/0075).
+     *   bracketed paste mode (docs/decisions/0091).
      * @suppress
      */
     @InternalVtfxApi

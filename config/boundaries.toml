@@ -164,7 +164,7 @@ check_classes = true
 classes = [
     "java/io/ByteArrayOutputStream",
     # The canonical font is kept in a read-only direct buffer, which the platform's typefaces read
-    # (docs/decisions/0041).
+    # (docs/decisions/0091).
     "java/nio/Buffer",
     "java/nio/ByteBuffer",
 ]
@@ -496,7 +496,7 @@ allowed_modules = []
 
 [[restricted_classes]]
 # vtfx-font-gate-android makes typefaces from SanitizedFont alone, whose bytes passed the verifier of
-# vtfx-font-gate (docs/decisions/0086, 0041); the module is under security review.
+# vtfx-font-gate (docs/decisions/0086, docs/decisions/0091); the module is under security review.
 packages = ["android/graphics/fonts", "androidx/compose/ui/text/googlefonts"]
 classes = [
     "android/graphics/Typeface$Builder",
@@ -525,7 +525,7 @@ allowed_modules = []
 # and vtfx-font-gate-android has a subpackage of it.
 package = "com/google/vtfx/font/gate"
 modules = ["vtfx-font-gate", "vtfx-font-gate-android"]
-reason = "A class of the same name in another module could replace a reviewed one on the class path (docs/decisions/0041)."
+reason = "A class of the same name in another module could replace a reviewed one on the class path (docs/decisions/0091)."
 
 [[reserved_packages]]
 # Likewise for vtfx-gate, which keeps its classes in this package, and vtfx-gate-android, which has a
@@ -533,4 +533,4 @@ reason = "A class of the same name in another module could replace a reviewed on
 # replace the reviewed class that builds the replies.
 package = "com/google/vtfx/gate"
 modules = ["vtfx-gate", "vtfx-gate-android"]
-reason = "A class of the same name in another module could replace a reviewed one on the class path (docs/decisions/0041)."
+reason = "A class of the same name in another module could replace a reviewed one on the class path (docs/decisions/0091)."

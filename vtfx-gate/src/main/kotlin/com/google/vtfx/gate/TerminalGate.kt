@@ -120,7 +120,7 @@ public class TerminalGate(
      * as copying a selection: the OSC 52 policy does not apply to it. The characters that an OSC 52
      * write may not carry are dropped, controls other than HT, LF, and CR and bidi controls, since
      * the text comes from the screen, which the host wrote, and the caller is not under review
-     * (docs/decisions/0075). Returns whether there is a clipboard to copy it to.
+     * (docs/decisions/0091). Returns whether there is a clipboard to copy it to.
      */
     public fun copyToClipboard(text: String): Boolean {
         val clipboard = clipboard ?: return false
@@ -132,7 +132,7 @@ public class TerminalGate(
      * Returns the text on the clipboard, for the user's paste, or null if there is no clipboard or
      * it has no text. Must be called only for an explicit action of the user: the OSC 52 policy
      * does not apply to it. Send the text with [HostWriter.sendPaste], which sanitizes it; only
-     * vtfx-gate can read it (docs/decisions/0075).
+     * vtfx-gate can read it (docs/decisions/0091).
      */
     public fun readClipboardForPaste(): ClipboardText? =
         clipboard?.read()?.let { ClipboardText(it) }

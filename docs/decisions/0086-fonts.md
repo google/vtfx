@@ -2,7 +2,7 @@
 
 - Status: Approved
 - Date: 2026-10-25
-- Related: Requirements 6.1 and 6.5 (customizability, safe defaults), [fonts.md](../design/fonts.md), section 2 of [architecture.md](../design/architecture.md), section 4.5 of [boundaries.md](../design/boundaries.md), section 7 of [testing.md](../design/testing.md), [0081](0081-resource-limits.md), [0087](0087-public-api.md), [0090](0090-distribution.md), [0088](0088-build-boundaries-and-tests.md), [0080](0080-kitty-graphics.md) (PNG decoded in Kotlin), [0041](0041-security-review-by-module.md), [0088](0088-build-boundaries-and-tests.md)
+- Related: Requirements 6.1 and 6.5 (customizability, safe defaults), [fonts.md](../design/fonts.md), section 2 of [architecture.md](../design/architecture.md), section 4.5 of [boundaries.md](../design/boundaries.md), section 7 of [testing.md](../design/testing.md), [0081](0081-resource-limits.md), [0087](0087-public-api.md), [0090](0090-distribution.md), [0088](0088-build-boundaries-and-tests.md), [0080](0080-kitty-graphics.md) (PNG decoded in Kotlin), [0091](0091-security-review-and-process.md), [0088](0088-build-boundaries-and-tests.md)
 
 ## Background
 
@@ -56,7 +56,7 @@ Accepted costs: no ligatures; CFF2 and hinting are dropped (the effect of no hin
 1. **A separate verifier** reads the written bytes again and checks every rule of the canonical form; only bytes that pass it become a `SanitizedFont`. It shares no code with the readers and the writer (sections 2 and 6 of [fonts.md](../design/fonts.md)).
 2. **The type proves the check**: a `SanitizedFont` can only come from functions that end in the verifier (section 3 of [fonts.md](../design/fonts.md)).
 3. **vtfx takes bytes, never paths or URIs.** A saved font is loaded with `fromCanonical`, which runs only the verifier (section 3 of [fonts.md](../design/fonts.md)).
-4. **Security review** covers the verifier, with the public types that its guarantee relies on, and the code that turns verified bytes into a typeface, the one place of topic 1, and not the readers, the charstring interpreter, or the curve approximation. The modules that hold them are in section 2 of [fonts.md](../design/fonts.md) ([0041](0041-security-review-by-module.md)).
+4. **Security review** covers the verifier, with the public types that its guarantee relies on, and the code that turns verified bytes into a typeface, the one place of topic 1, and not the readers, the charstring interpreter, or the curve approximation. The modules that hold them are in section 2 of [fonts.md](../design/fonts.md) ([0091](0091-security-review-and-process.md)).
 5. **No fallback**: if the platform rejects verified bytes, that is a bug in the canonical form, and it fails loudly (section 8 of [fonts.md](../design/fonts.md)).
 6. The kinds of `InvalidFontException`, `WidthClass`, and the outline format of a face are value classes, not enums, since vtfx returns them and they may grow ([0087](0087-public-api.md), section 3 of [fonts.md](../design/fonts.md)).
 

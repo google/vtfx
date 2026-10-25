@@ -15,7 +15,7 @@
  */
 
 // SECURITY REVIEW REQUIRED. Makes typefaces from SanitizedFonts, the only code of vtfx that hands
-// font data to the platform's native font code (docs/decisions/0086, 0041).
+// font data to the platform's native font code (docs/decisions/0086, docs/decisions/0091).
 plugins {
     id("vtfx.android-library")
 }

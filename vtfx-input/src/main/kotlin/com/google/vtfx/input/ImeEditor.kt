@@ -418,7 +418,7 @@ public class ImeEditor(
 
     /**
      * Pastes the text on the clipboard, which only the gate reads, as [paste] pastes text
-     * (docs/decisions/0075).
+     * (docs/decisions/0091).
      */
     public fun pasteClipboard() {
         commitComposingText()

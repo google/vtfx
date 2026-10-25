@@ -21,7 +21,7 @@ import com.google.vtfx.core.InternalVtfxApi
 /**
  * The text on the clipboard, read for the user's paste. Only vtfx-gate reads it, so that the code
  * that asks for the paste can only send it to the host with [HostWriter.sendPaste], as one paste,
- * and cannot by mistake send it elsewhere or send its lines one by one (docs/decisions/0075).
+ * and cannot by mistake send it elsewhere or send its lines one by one (docs/decisions/0091).
  *
  * Immutable.
  *

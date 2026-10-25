@@ -48,7 +48,7 @@ internal object HostileIme {
         override fun send(input: HostInput) {
             when (input) {
                 is HostInput.Text -> {
-                    // The gate refuses text with a line break (docs/decisions/0075).
+                    // The gate refuses text with a line break (docs/decisions/0091).
                     check(input.text.none { it == '\n' || it == '\r' }) {
                         "line break in text: ${input.text}"
                     }

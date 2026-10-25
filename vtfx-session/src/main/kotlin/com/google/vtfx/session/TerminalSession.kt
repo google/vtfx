@@ -699,7 +699,7 @@ public class TerminalSession(
      * Sends a key that a scroll gesture makes, such as an arrow key on the alternate screen, as
      * [sendKey] does, but without [stickyModifiers], which are for the keys the user types: they
      * stay armed. It takes a [TerminalKey], without modifiers, rather than a [KeyStroke], so that a
-     * display can send no text with it (docs/decisions/0075).
+     * display can send no text with it (docs/decisions/0091).
      *
      * @suppress
      */
@@ -740,7 +740,7 @@ public class TerminalSession(
     /** Pastes the text on the clipboard, if there is a clipboard and it has text. */
     public fun pasteFromClipboard() {
         // The session never sees the text: it goes from the gate to HostWriter as one paste
-        // (docs/decisions/0075).
+        // (docs/decisions/0091).
         val text = gate.readClipboardForPaste() ?: return
         input { editor ->
             pastedClipboard = text

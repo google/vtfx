@@ -18,7 +18,7 @@ Files, URIs, `Typeface`, custom `AndroidFont`, and downloadable fonts are not ac
 
 ## 2. Modules
 
-The work is split so that only the code that decides what reaches native code is under security review, and a mistake in the rest cannot let unverified bytes reach native code ([decisions/0041](../decisions/0041-security-review-by-module.md)):
+The work is split so that only the code that decides what reaches native code is under security review, and a mistake in the rest cannot let unverified bytes reach native code ([decisions/0091](../decisions/0091-security-review-and-process.md)):
 
 | Module | Kind | Package | Contents | Security review |
 |---|---|---|---|---|

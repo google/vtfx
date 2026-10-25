@@ -22,7 +22,7 @@
 
 [security_review]
 description = "Code with external effects, the check of fonts before native code reads them, and build and dependency configuration."
-# Code is listed by whole modules, never by single files (docs/decisions/0041): what a module's code
+# Code is listed by whole modules, never by single files (docs/decisions/0091): what a module's code
 # relies on is then reviewed with it.
 paths = [
     "vtfx-gate/**",

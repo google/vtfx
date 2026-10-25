@@ -2,7 +2,7 @@
 
 Design decisions are recorded one decision per file. Deviations from the references (requirement 5.1) are also recorded here.
 
-A decision records why: what needed to be decided, what was decided, the alternatives, and the impact of reversing. The current design is described in the design documents ([docs/design/](../design/)), and decisions link to them rather than describe it again ([0045](0045-decisions-and-design-documents.md)).
+A decision records why: what needed to be decided, what was decided, the alternatives, and the impact of reversing. The current design is described in the design documents ([docs/design/](../design/)), and decisions link to them rather than describe it again ([0091](0091-security-review-and-process.md)).
 
 ## File names
 
@@ -61,11 +61,11 @@ What was decided. Link to the sections of the design documents that describe the
 
 A topic leaves out the alternatives or the impact of reversing when none was recorded. Code and documents cite such a decision as a whole, or by topic (`topic 2 of [NNNN](...)`). A new topic is added at the end, so that the numbers of the topics stay.
 
-The status is for the whole decision. The status of every decision written by an agent is "Provisional". Only a human sets it to "Approved", except that a merge or a rewrite that keeps the meaning of everything it carries over keeps "Approved" when every decision it carries over was approved ([0078](0078-decisions-hold-current-reasons.md)).
+The status is for the whole decision. The status of every decision written by an agent is "Provisional". Only a human sets it to "Approved", except that a merge or a rewrite that keeps the meaning of everything it carries over keeps "Approved" when every decision it carries over was approved ([0091](0091-security-review-and-process.md)).
 
 ## Changing a decision
 
-Decisions hold the reasons that hold now; the past versions are in the history, which is never rewritten ([0078](0078-decisions-hold-current-reasons.md)).
+Decisions hold the reasons that hold now; the past versions are in the history, which is never rewritten ([0091](0091-security-review-and-process.md)).
 
 - When a decision changes, rewrite it, or write a new decision in its place and delete the old one. A decision that is dropped with nothing in its place is deleted.
 - Decisions about one area may be merged into one decision with a new number; the merged decisions are deleted. Say in the commit which decisions are carried over, and whether their meaning is kept.

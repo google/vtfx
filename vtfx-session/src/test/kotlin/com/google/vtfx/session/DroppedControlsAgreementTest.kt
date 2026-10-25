@@ -32,7 +32,7 @@ import org.junit.Test
  * 3).
  *
  * The copies stay apart on purpose: the gate must not depend on code outside security review
- * (docs/decisions/0041), and vtfx-input must not depend on the gate (`config/boundaries.toml`). The
+ * (docs/decisions/0091), and vtfx-input must not depend on the gate (`config/boundaries.toml`). The
  * session has both, so the agreement is tested here, through the session's real wiring.
  *
  * Committed text passes the editor's rule and then the gate's, so what the host receives of it

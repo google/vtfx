@@ -39,7 +39,7 @@ dependencies {
     // that apps make with vtfx-font from the fonts that users choose (docs/decisions/0086).
     api(project(":vtfx-font"))
     api(project(":vtfx-font-gate"))
-    // Makes the typefaces of TerminalFont.Sanitized (docs/decisions/0041).
+    // Makes the typefaces of TerminalFont.Sanitized (docs/decisions/0091).
     implementation(project(":vtfx-font-gate-android"))
     // The IME editing model, which has no public API.
     implementation(project(":vtfx-input"))

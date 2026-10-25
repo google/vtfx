@@ -88,7 +88,7 @@ Direction of the fix:
 ## R3: `config/protected-paths.toml` omits scripts and tests that `scripts/check.sh` executes
 
 - Related: [protected-paths.toml](../../config/protected-paths.toml), [check.sh](../../scripts/check.sh), [report_protected_changes.py](../../scripts/report_protected_changes.py)
-- Contract: section 5 of [architecture.md](../design/architecture.md), section 9 of [testing.md](../design/testing.md), and [decisions/0041](../decisions/0041-security-review-by-module.md): files that define or run the gate and CI verification are listed under `security_review` in `config/protected-paths.toml` so that changes to them are flagged for human security review.
+- Contract: section 5 of [architecture.md](../design/architecture.md), section 9 of [testing.md](../design/testing.md), and [decisions/0091](../decisions/0091-security-review-and-process.md): files that define or run the gate and CI verification are listed under `security_review` in `config/protected-paths.toml` so that changes to them are flagged for human security review.
 - Reproduction test: `r3_protectedPathsCoverAllScriptsExecutedByCheckSh`
 
 Steps:
