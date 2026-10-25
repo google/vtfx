@@ -132,7 +132,7 @@ In xterm.js, addons (automatic links, search, shell integration, saving sessions
 **Why.** The readers of the reference are developers of apps embedding vtfx, who do not necessarily read this repository's documents. In the reference, references to repository documents and files do not become links, and point to documents readers cannot open. Implementation details, such as the bit layout of `CellStyle` or the script that generates the table of `CharWidth`, are invisible to apps.
 
 **Alternatives considered.**
-- **Make references links to GitHub URLs**: A reference of one version would point to the latest documents on `main`.
+- **Make references links to GitHub URLs**: the KDoc also reaches apps in the sources jar that Maven Central requires with every published version, and IDEs show it from there; a link from a published version would point to the documents on `main`, which describe a later design and may no longer have the decision, since decisions are merged and deleted ([0091](0091-security-review-and-process.md)). It would also still send the readers to maintainers' documents for a contract that the KDoc should state.
 - **Keep the references and explain at the top of the reference that they point to documents in the repository**: Fewer changes, but it would still point to documents readers cannot open.
 - **Just delete the references**: Maintainers could no longer trace from the code to the decisions.
 

@@ -87,7 +87,6 @@ An agent that finds that the history needs to be rewritten stops and consults a 
 
 **Alternatives considered.**
 - **Allow rewriting the history to clean it up** (squashing fixups, rewording messages): every clone and fork would diverge from `main`, and the SHAs in `.git-blame-ignore-revs` and in the documents would point at commits that no longer exist on `main`.
-- **Keep the history before publication**: a human chose to publish one squashed commit instead.
 
 **Impact of reversing.** Clones and forks would need to be reset to the rewritten `main`. The SHAs in `.git-blame-ignore-revs`, review-queue.md, and the review reports in `docs/reviews/` would need to be found again in the rewritten history, and the "History" bullet of AGENTS.md would change.
 
