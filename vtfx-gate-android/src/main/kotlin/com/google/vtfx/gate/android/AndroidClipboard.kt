@@ -43,7 +43,7 @@ public class AndroidClipboard(context: Context) : ClipboardAccess {
     override fun write(text: String) {
         val clipboard = clipboard ?: return
         // Not marked sensitive: the clipboard preview shows the text, so that the user sees what
-        // the host put there with OSC 52 (docs/decisions/0006).
+        // the host put there with OSC 52 (docs/decisions/0083).
         clipboard.setPrimaryClip(ClipData.newPlainText(LABEL, text))
     }
 

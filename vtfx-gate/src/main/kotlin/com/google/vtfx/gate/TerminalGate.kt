@@ -114,7 +114,7 @@ public class TerminalGate(
     }
 
     // The user's copy and paste go through the gate, like opening URLs, so that only vtfx-gate
-    // calls the clipboard (docs/decisions/0042).
+    // calls the clipboard (docs/decisions/0083).
     /**
      * Copies [text] to the clipboard. Must be called only for an explicit action of the user, such
      * as copying a selection: the OSC 52 policy does not apply to it. The characters that an OSC 52
@@ -142,8 +142,7 @@ public class TerminalGate(
      * showed them [url] (requirement 6.1: spoofed links). Returns what the [UrlOpener] reported, or
      * [OpenUrlResult.NotAllowed] without calling it if the scheme is not allowed, the URL is
      * malformed, it has characters, userinfo, or a host that is not ASCII that could make the URL
-     * shown differ from where it goes (docs/decisions/0006-gate-defaults.md), or there is no
-     * [UrlOpener].
+     * shown differ from where it goes (docs/decisions/0083-gate.md), or there is no [UrlOpener].
      */
     public fun openUrl(url: String): OpenUrlResult {
         val opener = urlOpener ?: return OpenUrlResult.NotAllowed

@@ -27,7 +27,7 @@ import com.google.vtfx.core.TerminalModes
 /**
  * Encodes key strokes into the bytes that xterm sends for them (xterm ctlseqs, "PC-Style Function
  * Keys"), or, when the host set flag 1 of the kitty keyboard protocol, into the forms of that
- * protocol, with the alternate keys of flag 4 if the host set it too (docs/decisions/0070). The
+ * protocol, with the alternate keys of flag 4 if the host set it too (docs/decisions/0083). The
  * only inputs are the key, the modifiers, and the terminal modes: no text from the host can reach
  * the output.
  */

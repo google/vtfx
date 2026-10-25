@@ -103,7 +103,7 @@ In the tables, "Yes" means supported, "No" not supported, and "Partial" supporte
 |---|---|---|
 | Setting colors | 6: all but JediTerm | Left out, [0079](../decisions/0079-emulation-scope.md) |
 | Block selection | 5: alacritty, xterm.js, Ghostty, WezTerm, VTE | Left out for now, [0079](../decisions/0079-emulation-scope.md) |
-| XTGETTCAP | 4: Termux, Ghostty, WezTerm, VTE | Not answered, [0006](../decisions/0006-gate-defaults.md), [0079](../decisions/0079-emulation-scope.md) |
+| XTGETTCAP | 4: Termux, Ghostty, WezTerm, VTE | Not answered, [0083](../decisions/0083-gate.md), [0079](../decisions/0079-emulation-scope.md) |
 | DA3 | 3: Ghostty, WezTerm, VTE | Not recorded |
 | Left and right margins | 4: Termux, Ghostty, WezTerm, VTE | Left out, [0079](../decisions/0079-emulation-scope.md) |
 | Search with regular expressions | 4: alacritty, xterm.js, WezTerm, VTE | Left out, [0047](../decisions/0047-search.md) |

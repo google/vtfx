@@ -133,7 +133,7 @@ object EsctestHost {
                 }
                 final == 't' && body == "21" -> {
                     terminal.write(data, start, at - start)
-                    // Not a reply vtfx makes (docs/decisions/0006), so it is written here.
+                    // Not a reply vtfx makes (docs/decisions/0083), so it is written here.
                     out.write("\u001b]l${title()}\u001b\\".toByteArray(Charsets.UTF_8))
                     out.flush()
                 }

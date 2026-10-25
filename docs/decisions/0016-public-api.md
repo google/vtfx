@@ -2,7 +2,7 @@
 
 - Status: Approved (2026-10-13, approved by a human in the final review); the opt-in through compiler settings superseded by [0029](0029-import-without-gradle.md), and the public constructor of `HostWriter` by [0027](0027-session-takes-connection.md); the source links of the reference always pointing at the tag `v<version>` superseded by [0074](0074-api-reference-of-the-default-branch.md), which lets `vtfx.sourceRef` set them
 - Date: 2026-10-12
-- Related: Requirement 6.5 (public API) and section 8 (the compatibility policy of the public API, and when to start guaranteeing stability), [0007](0007-compose-session.md), [0036](0036-adding-parameters.md), [0037](0037-api-shape-before-1.0.md), [0043](0043-url-open-results.md)
+- Related: Requirement 6.5 (public API) and section 8 (the compatibility policy of the public API, and when to start guaranteeing stability), [0007](0007-compose-session.md), [0036](0036-adding-parameters.md), [0037](0037-api-shape-before-1.0.md), [0083](0083-gate.md)
 
 ## Background
 
@@ -25,7 +25,7 @@ Requirement 6.5 asks for keeping the public API to the minimum needed, mechanica
 - Versions follow Semantic Versioning.
 - Before 1.0 (0.x), compatibility is not guaranteed. However, changes to the public API are always detected by the check and appear in commits as differences in the dump. For changes that break compatibility, write the reason in the commit message.
 - From 1.0 on, changes that break compatibility are made only in major versions. An API to be removed is first replaced with `@Deprecated` (WARNING) pointing to its replacement, becomes ERROR after at least one minor version, and is removed in the next major version. A parameter added from 1.0 on keeps the previous signature as a hidden overload ([0036](0036-adding-parameters.md)).
-- The closed types, which take new entries or subtypes only in a major version, are `UnderlineStyle` and `CursorShape` ([0037](0037-api-shape-before-1.0.md)), and `OpenUrlResult` with its subtype `UrlOpenerResult` ([0043](0043-url-open-results.md)). The other enums and sealed types that vtfx returns are shaped so that apps cannot match them exhaustively; those that apps give to vtfx may grow in a minor version ([0037](0037-api-shape-before-1.0.md)).
+- The closed types, which take new entries or subtypes only in a major version, are `UnderlineStyle` and `CursorShape` ([0037](0037-api-shape-before-1.0.md)), and `OpenUrlResult` with its subtype `UrlOpenerResult` ([0083](0083-gate.md)). The other enums and sealed types that vtfx returns are shaped so that apps cannot match them exhaustively; those that apps give to vtfx may grow in a minor version ([0037](0037-api-shape-before-1.0.md)).
 - `@InternalVtfxApi` declarations may change without notice in any version.
 - When to start guaranteeing stability (1.0) is decided by humans once the publishing (Maven) policy is decided ("Publishing" in [review-queue.md](../review-queue.md)).
 

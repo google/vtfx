@@ -104,14 +104,14 @@ internal constructor(
     @InternalVtfxApi public val mouseEncoding: MouseEncoding = MouseEncoding.Default,
     /**
      * Flag 1 of the kitty keyboard protocol (`CSI > 1 u` and the like): keys are sent in its
-     * unambiguous forms, such as `CSI 27 u` for Esc (docs/decisions/0070).
+     * unambiguous forms, such as `CSI 27 u` for Esc (docs/decisions/0083).
      *
      * @suppress
      */
     @InternalVtfxApi public val disambiguateEscapeCodes: Boolean = false,
     /**
      * Flag 4 of the kitty keyboard protocol: keys sent as `CSI u` report their shifted key and the
-     * key of the base layout too (docs/decisions/0070).
+     * key of the base layout too (docs/decisions/0083).
      *
      * @suppress
      */

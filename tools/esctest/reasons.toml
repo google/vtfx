@@ -42,7 +42,7 @@ detail = "Colors are decided by the app's style. Queries are answered (decisions
 tests = "^XtermWinopsTests\\."
 summary = "Window operations (XTWINOPS)"
 kind = "Assumption of esctest"
-detail = "Changing and reporting the window size and position, iconifying, and icon names do not exist for a terminal embedded in an Android screen. Title reports are not made, because they become an injection path through replies (decisions/0006). Only the report for esctest to read the title (XTWINOPS 21) is answered by the harness's EsctestHost, so the stack cases that use only titles and ReportWindowLabel pass. ReportWindowLabel passing does not mean that vtfx reports it. The cases that read the icon name (XTWINOPS 20) fail (decisions/0079)."
+detail = "Changing and reporting the window size and position, iconifying, and icon names do not exist for a terminal embedded in an Android screen. Title reports are not made, because they become an injection path through replies (decisions/0083). Only the report for esctest to read the title (XTWINOPS 21) is answered by the harness's EsctestHost, so the stack cases that use only titles and ReportWindowLabel pass. ReportWindowLabel passing does not mean that vtfx reports it. The cases that read the icon name (XTWINOPS 20) fail (decisions/0079)."
 
 [[reason]]
 tests = "Protection|DECSCA|ISOProtect"
@@ -84,7 +84,7 @@ detail = "The conformance level is not switched. It always works with the same r
 tests = "^(DA|DA2)Tests\\."
 summary = "Values of device attributes (DA1, DA2)"
 kind = "Deliberate deviation"
-detail = "esctest expects xterm's values (the VT500 family for DA1, 41 for DA2, and so on). vtfx announces VT220 and ANSI color (decisions/0006)."
+detail = "esctest expects xterm's values (the VT500 family for DA1, 41 for DA2, and so on). vtfx announces VT220 and ANSI color (decisions/0083)."
 
 [[reason]]
 tests = "MoreFix"
@@ -96,7 +96,7 @@ detail = "An xterm setting for a bug in old curses, which no app needs."
 tests = "TitleMode|Title"
 summary = "Title reports and modes"
 kind = "Deliberate deviation"
-detail = "Title reports are not made, because they become an injection path through replies (decisions/0006)."
+detail = "Title reports are not made, because they become an injection path through replies (decisions/0083)."
 
 [[reason]]
 tests = "^XtermSaveTests\\."

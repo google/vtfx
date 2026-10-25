@@ -205,7 +205,7 @@ public class TerminalSession(
     @InternalVtfxApi @Volatile public var reportedColors: ReportedColors? = null
 
     // The session hands the clipboard and the URL opener to the gate without calling them, also for
-    // the user's copy and paste (docs/decisions/0042).
+    // the user's copy and paste (docs/decisions/0083).
     private val gate =
         TerminalGate(
             writer,
@@ -386,7 +386,7 @@ public class TerminalSession(
         // HT, the only control that the editing model's text has (line breaks are keys or a
         // paste), is the Tab key, which the key encoding has with every modifier: it drops a
         // control character with modifiers, which would send nothing. Text has no key on a
-        // keyboard, so its unshifted key is the character in lower case (docs/decisions/0070).
+        // keyboard, so its unshifted key is the character in lower case (docs/decisions/0083).
         val stroke =
             withStickyModifiers(
                 if (first == '\t'.code) KeyStroke.Special(TerminalKey.Tab)

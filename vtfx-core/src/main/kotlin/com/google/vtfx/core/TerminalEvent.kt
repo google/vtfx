@@ -120,7 +120,7 @@ public sealed interface TerminalQuery {
 
     /**
      * The flags of the kitty keyboard protocol (CSI ? u), of which vtfx supports only
-     * [disambiguateEscapeCodes] (flag 1) and [reportAlternateKeys] (flag 4) (docs/decisions/0070).
+     * [disambiguateEscapeCodes] (flag 1) and [reportAlternateKeys] (flag 4) (docs/decisions/0083).
      */
     @InternalVtfxApi
     public data class KeyboardFlags(

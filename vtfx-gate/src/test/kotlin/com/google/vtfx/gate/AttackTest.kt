@@ -234,7 +234,7 @@ class AttackTest {
         }
 
         // Before Android 13 the OS shows no preview of the clipboard, so a host could replace it
-        // unnoticed (docs/decisions/0006).
+        // unnoticed (docs/decisions/0083).
         @Test
         fun writeIsDeniedByDefault() {
             host(gate(), "\u001b]52;c;${base64("x")}\u0007")

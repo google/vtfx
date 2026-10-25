@@ -2,7 +2,7 @@
 
 - Status: Approved (2026-10-15, approved by a human in a review of the review queue. The approach was decided in a discussion with a human on 2026-10-14, and the agent decided the details)
 - Date: 2026-10-14
-- Related: Requirement 6.5 (documenting the contract of the public API), section 1 of [session-and-threads.md](../design/session-and-threads.md) (the resulting conventions), [0021](0021-thread-checks.md), [0026](0026-session-module.md), [0043](0043-url-open-results.md), section 8 of [ime-contract.md](../design/ime-contract.md)
+- Related: Requirement 6.5 (documenting the contract of the public API), section 1 of [session-and-threads.md](../design/session-and-threads.md) (the resulting conventions), [0021](0021-thread-checks.md), [0026](0026-session-module.md), [0083](0083-gate.md), section 8 of [ime-contract.md](../design/ime-contract.md)
 
 ## Background
 

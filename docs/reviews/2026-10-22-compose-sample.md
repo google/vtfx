@@ -78,7 +78,7 @@ Direction of the fix: Skip the trailing wide-padding cell (`endsWithWidePadding`
 ## R3: Word selection includes a preceding fullwidth space (`U+3000`) or concealed wide character
 
 - Related: [TerminalSelection.kt](../../vtfx-compose/src/main/kotlin/com/google/vtfx/compose/TerminalSelection.kt) (`word`, `isBlank`, `text`)
-- Contract: section 4 of [compose-input.md](../design/compose-input.md) ("A word is the run of non-blank characters around a cell; a blank cell selects that cell alone") and [decisions/0049](../decisions/0049-concealed-text-not-copied.md) ("Word selection takes a concealed cell as blank too, so that double-clicking next to concealed text does not join its blank cells to the word").
+- Contract: section 4 of [compose-input.md](../design/compose-input.md) ("A word is the run of non-blank characters around a cell; a blank cell selects that cell alone") and [decisions/0083](../decisions/0083-gate.md) ("Word selection takes a concealed cell as blank too, so that double-clicking next to concealed text does not join its blank cells to the word").
 - Reproduction test: `wordSelectionDoesNotIncludePrecedingBlankOrConcealedWideCharacter`
 
 Steps:

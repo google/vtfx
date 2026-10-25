@@ -59,7 +59,7 @@ internal object KeyEventHandler {
             return KeyStroke.Special(it, modifiers)
         }
         // Shift is applied to the character; the other modifiers are sent separately. Shift is
-        // passed too, for the kitty keyboard protocol, which reports it (docs/decisions/0070).
+        // passed too, for the kitty keyboard protocol, which reports it (docs/decisions/0083).
         val metaState = event.metaState and NON_SHIFT_MODIFIERS.inv()
         val unicode = event.getUnicodeChar(metaState)
         if (unicode == 0 || unicode and KeyCharacterMap.COMBINING_ACCENT != 0) return null
@@ -80,7 +80,7 @@ internal object KeyEventHandler {
     /**
      * The keys of a US PC-101 keyboard without modifiers, by the Linux scan codes that Android
      * reports for them. The key code would not do: the key character maps of some layouts map scan
-     * codes to other key codes (docs/decisions/0070).
+     * codes to other key codes (docs/decisions/0083).
      */
     private val BASE_LAYOUT_KEYS: Map<Int, Char> = buildMap {
         "1234567890-=".forEachIndexed { i, c -> put(2 + i, c) }
@@ -91,7 +91,7 @@ internal object KeyEventHandler {
         put(57, ' ')
     }
 
-    /** The digits and the decimal point of the keypad with NumLock off (docs/decisions/0070). */
+    /** The digits and the decimal point of the keypad with NumLock off (docs/decisions/0083). */
     private val KEYPAD_KEYS_WITHOUT_NUM_LOCK =
         mapOf(
             KeyEvent.KEYCODE_NUMPAD_0 to TerminalKey.KeypadInsert,

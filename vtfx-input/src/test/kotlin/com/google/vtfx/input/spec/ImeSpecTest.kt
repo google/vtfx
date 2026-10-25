@@ -152,8 +152,8 @@ class ImeSpecTest {
 
     /**
      * Returns the bytes that vtfx-gate's key encoder sends for [stroke] in the default modes, for
-     * the keys that the traces press. vtfx-input cannot depend on vtfx-gate (decision 0005), and
-     * the encoder has its own tests there.
+     * the keys that the traces press. vtfx-input cannot depend on vtfx-gate (docs/decisions/0083),
+     * and the encoder has its own tests there.
      */
     private fun encode(stroke: KeyStroke): ByteArray {
         if (!stroke.modifiers.isEmpty) throw AssertionError("unsupported key $stroke")

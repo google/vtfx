@@ -84,7 +84,7 @@ A class also uses, through the superclass that declares it, each method that it 
 | Classes | Allowed modules | Why |
 |---|---|---|
 | `HostConnection` | vtfx-gate | Only vtfx-gate writes to the host ([decisions/0027](../decisions/0027-session-takes-connection.md)). |
-| `ClipboardAccess`, `UrlOpener` | vtfx-gate, vtfx-gate-android | Only vtfx-gate calls them, and vtfx-gate-android implements them ([decisions/0042](../decisions/0042-user-clipboard-through-gate.md)). |
+| `ClipboardAccess`, `UrlOpener` | vtfx-gate, vtfx-gate-android | Only vtfx-gate calls them, and vtfx-gate-android implements them ([decisions/0083](../decisions/0083-gate.md)). |
 
 This is how `TerminalSession` in vtfx-session takes the connection, the clipboard, and the URL opener from the app and hands them over to vtfx-gate: any file of vtfx-session may name them as types, and none may call them.
 
@@ -96,7 +96,7 @@ This is how `TerminalSession` in vtfx-session takes the connection, the clipboar
 |---|---|
 | The clipboard, including Compose's (`LocalClipboard`, `LocalClipboardManager`, `ClipEntry`) | vtfx-gate-android |
 | Opening other apps: `Intent`, `PendingIntent`, the `startActivity` family of `Context`, and Compose's and AndroidX's ways that do not name `Intent` (`LocalUriHandler`, `UriHandler`, `LinkAnnotation.Url`, `ShareCompat`, `CustomTabsIntent`) | vtfx-gate-android |
-| `AndroidClipboard` and `AndroidUrlOpener`, which only apps make, and which vtfx code reaches through their interfaces in vtfx-gate ([decisions/0042](../decisions/0042-user-clipboard-through-gate.md)) | vtfx-gate-android |
+| `AndroidClipboard` and `AndroidUrlOpener`, which only apps make, and which vtfx code reaches through their interfaces in vtfx-gate ([decisions/0083](../decisions/0083-gate.md)) | vtfx-gate-android |
 | Fonts that do not come from `SanitizedFont`: `android/graphics/fonts`, the builders of `Typeface` and its `createFromAsset` and `createFromFile`, `ParcelFileDescriptor`, Compose's fonts from files (`AndroidFont`, `AndroidFontKt`, whose `Font(File)` and `Font(ParcelFileDescriptor)` have mangled names, `LoadedFontFamily`, `FontFamily(Typeface)`), and downloadable Google Fonts ([decisions/0020](../decisions/0020-fonts.md), [decisions/0040](../decisions/0040-sanitized-user-fonts.md)) | vtfx-font-gate-android |
 | `Context.getSystemService(String)`, which names a service by a string and so gets past the rules on its class | none |
 | Reflection and loading classes: `java/lang/reflect`, `java/lang/invoke`, `kotlin/reflect/full`, `kotlin/reflect/jvm`, `dalvik/system`, `ClassLoader`, and the methods of `Class` that look up or load classes, constructors, fields, and methods | none |

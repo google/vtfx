@@ -79,7 +79,7 @@ internal class Emulator(
     private var mainSavedCursor = SavedCursor()
     private var alternateSavedCursor = SavedCursor()
 
-    /** The flags of the kitty keyboard protocol, one stack per screen (docs/decisions/0070). */
+    /** The flags of the kitty keyboard protocol, one stack per screen (docs/decisions/0083). */
     private var mainKeyboardFlags = KeyboardFlagStack.Empty
     private var alternateKeyboardFlags = KeyboardFlagStack.Empty
 
@@ -723,7 +723,7 @@ internal class Emulator(
 
     private fun modeState(set: Boolean): ModeState = if (set) ModeState.Set else ModeState.Reset
 
-    // --- The kitty keyboard protocol (docs/decisions/0070) ---
+    // --- The kitty keyboard protocol (docs/decisions/0083) ---
 
     /** Applies [change] to the stack of keyboard flags of the screen displayed. */
     private fun changeKeyboardFlags(change: (KeyboardFlagStack) -> KeyboardFlagStack) {

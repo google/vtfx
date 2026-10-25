@@ -17,7 +17,7 @@
 package com.google.vtfx.core
 
 /**
- * The stack of the flags of the kitty keyboard protocol of one screen (docs/decisions/0070).
+ * The stack of the flags of the kitty keyboard protocol of one screen (docs/decisions/0083).
  * Immutable. Holds at most [MAX_DEPTH] entries, dropping the oldest to make room, and only the
  * flags that vtfx supports ([SUPPORTED_FLAGS]), so that the reply to a query reports what vtfx
  * does.

@@ -33,7 +33,7 @@ the wcwidth() of hosts with the same Unicode version:
 
 The default-ignorable code points are those with the Default_Ignorable_Code_Point property in
 DerivedCoreProperties.txt. They draw as nothing, so TerminalGate refuses URLs that contain them
-(docs/decisions/0006).
+(docs/decisions/0083).
 
 The diacritics give the row, the column, and the high byte of the image id of a placeholder cell
 (docs/decisions/0080), in the order of kitty's rowcolumn-diacritics.txt, which kitty derives from

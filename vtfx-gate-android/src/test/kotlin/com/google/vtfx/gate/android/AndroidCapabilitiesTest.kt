@@ -46,7 +46,7 @@ class AndroidCapabilitiesTest {
         assertEquals("secret", clip.getItemAt(0).text)
         assertTrue(clip.description.hasMimeType(ClipDescription.MIMETYPE_TEXT_PLAIN))
         // Not marked sensitive, so that the clipboard preview shows what the host or the user
-        // copied (docs/decisions/0006).
+        // copied (docs/decisions/0083).
         assertFalse(
             clip.description.extras?.getBoolean(ClipDescription.EXTRA_IS_SENSITIVE) ?: false
         )

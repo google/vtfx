@@ -226,7 +226,7 @@ class EmulationCoverageTest {
         }
     }
 
-    /** The flags of the kitty keyboard protocol (docs/decisions/0070). */
+    /** The flags of the kitty keyboard protocol (docs/decisions/0083). */
     class KeyboardFlags : EventRecorder by TerminalEvents() {
         private fun Terminal.flags(): Boolean {
             events.clear()

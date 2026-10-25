@@ -282,7 +282,7 @@ class TerminalKeyInterceptionTest {
         show(takesShortcut = false)
         pressCtrlShiftC()
         // The character key reports Shift, which the protocol sends with the key in lower case
-        // (docs/decisions/0070).
+        // (docs/decisions/0083).
         assertEquals("\u001b[99;6u", sent.toString())
     }
 

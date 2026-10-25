@@ -49,7 +49,7 @@ public class AndroidUrlOpener(private val context: Context) : UrlOpener {
                 if (context !is android.app.Activity) addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
         // Only the failures that startActivity documents become results; anything else is a
-        // programming error and propagates (docs/decisions/0043).
+        // programming error and propagates (docs/decisions/0083).
         return try {
             context.startActivity(intent)
             OpenUrlResult.Opened

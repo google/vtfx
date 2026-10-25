@@ -402,7 +402,7 @@ allowed_modules = ["vtfx-gate"]
 
 [[restricted_members]]
 classes = ["com/google/vtfx/gate/ClipboardAccess", "com/google/vtfx/gate/UrlOpener"]
-reason = "Only vtfx-gate may call the clipboard and the URL opener, which vtfx-gate-android implements. TerminalSession only hands them over (docs/decisions/0042)."
+reason = "Only vtfx-gate may call the clipboard and the URL opener, which vtfx-gate-android implements. TerminalSession only hands them over (docs/decisions/0083)."
 allowed_modules = ["vtfx-gate", "vtfx-gate-android"]
 
 # Classes and members that only the listed modules may refer to at all, in the main classes of every
@@ -454,7 +454,7 @@ allowed_modules = ["vtfx-gate-android"]
 [[restricted_classes]]
 # Apps make them and hand them to the session, which hands them to vtfx-gate.
 classes = ["com/google/vtfx/gate/android/AndroidClipboard", "com/google/vtfx/gate/android/AndroidUrlOpener"]
-reason = "Only the app may make the implementations of the clipboard and the URL opener; vtfx code reaches them through vtfx-gate (docs/decisions/0042)."
+reason = "Only the app may make the implementations of the clipboard and the URL opener; vtfx code reaches them through vtfx-gate (docs/decisions/0083)."
 allowed_modules = ["vtfx-gate-android"]
 
 [[restricted_classes]]

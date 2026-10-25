@@ -45,9 +45,9 @@ class KeyEncoderTest {
      * Every key, with any modifiers, under any modes, encodes to the shape of a key: a CSI or SS3
      * sequence, CR LF, or one character, optionally after ESC for Alt, or nothing. So no key can
      * send a string (OSC, DCS) or several characters, which the gate checked of the bytes it was
-     * given before it encoded keys itself (docs/decisions/0005). This holds for the forms of the
+     * given before it encoded keys itself (docs/decisions/0083). This holds for the forms of the
      * kitty keyboard protocol too, whose CSI u carries a code point only in digits
-     * (docs/decisions/0070).
+     * (docs/decisions/0083).
      */
     @Test
     fun everyKeyHasTheShapeOfAKey() {
@@ -219,7 +219,7 @@ class KeyEncoderTest {
             ) + kittyCases()
 
         /**
-         * Flag 1 of the kitty keyboard protocol, as kitty encodes the keys (docs/decisions/0070).
+         * Flag 1 of the kitty keyboard protocol, as kitty encodes the keys (docs/decisions/0083).
          */
         private fun kittyCases(): List<Case> {
             fun kitty(stroke: KeyStroke, expected: String) = case(stroke, expected, kitty, "kitty")
@@ -298,7 +298,7 @@ class KeyEncoderTest {
             ) + alternateKeyCases()
         }
 
-        /** Flag 4 of the kitty keyboard protocol, report alternate keys (docs/decisions/0070). */
+        /** Flag 4 of the kitty keyboard protocol, report alternate keys (docs/decisions/0083). */
         private fun alternateKeyCases(): List<Case> {
             fun alternate(stroke: KeyStroke, expected: String) =
                 case(stroke, expected, alternateKeys, "kitty alternate keys")

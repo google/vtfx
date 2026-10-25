@@ -43,7 +43,7 @@ public fun interface ReportedColors {
 }
 
 /**
- * Builds the replies to the host's queries and requests (docs/decisions/0006 and
+ * Builds the replies to the host's queries and requests (docs/decisions/0083 and
  * docs/decisions/0079).
  *
  * Every reply is built from constants and numbers from the terminal state, except that the reply to
@@ -111,7 +111,7 @@ internal object Replies {
                 TerminalQuery.UnsupportedStatus -> "${DCS}0\$r$ST"
                 TerminalQuery.TerminalVersion -> "$DCS>|$VERSION$ST"
                 // The flags of the kitty keyboard protocol, of which only 1 and 4 are supported
-                // (docs/decisions/0070).
+                // (docs/decisions/0083).
                 is TerminalQuery.KeyboardFlags -> {
                     val flags =
                         (if (query.disambiguateEscapeCodes) 1 else 0) +

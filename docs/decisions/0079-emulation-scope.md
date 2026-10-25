@@ -2,7 +2,7 @@
 
 - Status: Approved
 - Date: 2026-10-25
-- Related: Requirements 4.2, 5.1, 5.2, 5.4, 6.1, 6.2, 6.5, and section 8 of [REQUIREMENTS.md](../REQUIREMENTS.md), sections 1 to 8 and 9.7 of [emulation.md](../design/emulation.md), sections 2 to 4 of [compose-input.md](../design/compose-input.md), section 3 of [gate-policy.md](../design/gate-policy.md), [fonts.md](../design/fonts.md), [conformance-references.md](../research/conformance-references.md), [terminal-comparison-2026-10.md](../research/terminal-comparison-2026-10.md), [0081](0081-resource-limits.md), [0005](0005-key-bytes-through-gate.md), [0014](0014-performance.md), [0029](0029-import-without-gradle.md), [0031](0031-desktop-pointer-and-terminal-state.md), [0032](0032-keys-and-layout.md), [0080](0080-kitty-graphics.md), [0047](0047-search.md), [0070](0070-kitty-keyboard-protocol.md)
+- Related: Requirements 4.2, 5.1, 5.2, 5.4, 6.1, 6.2, 6.5, and section 8 of [REQUIREMENTS.md](../REQUIREMENTS.md), sections 1 to 8 and 9.7 of [emulation.md](../design/emulation.md), sections 2 to 4 of [compose-input.md](../design/compose-input.md), section 3 of [gate-policy.md](../design/gate-policy.md), [fonts.md](../design/fonts.md), [conformance-references.md](../research/conformance-references.md), [terminal-comparison-2026-10.md](../research/terminal-comparison-2026-10.md), [0081](0081-resource-limits.md), [0083](0083-gate.md), [0014](0014-performance.md), [0029](0029-import-without-gradle.md), [0031](0031-desktop-pointer-and-terminal-state.md), [0032](0032-keys-and-layout.md), [0080](0080-kitty-graphics.md), [0047](0047-search.md), [0083](0083-gate.md)
 
 ## Background
 
@@ -33,7 +33,7 @@ Apply Williams's state machine to code points after UTF-8 decoding, replace malf
 
 ## 3. Supported and unsupported features
 
-Support the features in section 3 of [emulation.md](../design/emulation.md), and not those in section 4. The lower bound is what the `xterm-256color` terminfo declares (topic 5). The title stack (XTWINOPS 22, 23) is supported although titles are not reported. The keyboard protocols (the kitty keyboard protocol and xterm's modifyOtherKeys) are decided apart, in [0070](0070-kitty-keyboard-protocol.md).
+Support the features in section 3 of [emulation.md](../design/emulation.md), and not those in section 4. The lower bound is what the `xterm-256color` terminfo declares (topic 5). The title stack (XTWINOPS 22, 23) is supported although titles are not reported. The keyboard protocols (the kitty keyboard protocol and xterm's modifyOtherKeys) are decided apart, in [0083](0083-gate.md).
 
 **Why.** The reasons for leaving features out:
 
@@ -60,7 +60,7 @@ Support the features in section 3 of [emulation.md](../design/emulation.md), and
 
 The title stack is supported because push and pop are complete within the terminal, and vim saves the title with `CSI 22;2t` and `CSI 22;1t` at startup (`recordings/vim.out`) and restores it at exit, so without the stack vim's title would remain in the shell after leaving vim.
 
-The keyboard protocols are decided apart because they change the bytes that the gate sends for keys, which the gate builds from the key, its modifiers, and the terminal modes ([0005](0005-key-bytes-through-gate.md)): modifyOtherKeys stays within what xterm encodes, while the kitty keyboard protocol goes beyond it, so taking it changes what the gate may send ([0070](0070-kitty-keyboard-protocol.md)).
+The keyboard protocols are decided apart because they change the bytes that the gate sends for keys, which the gate builds from the key, its modifiers, and the terminal modes ([0083](0083-gate.md)): modifyOtherKeys stays within what xterm encodes, while the kitty keyboard protocol goes beyond it, so taking it changes what the gate may send.
 
 **Alternatives considered.**
 - **Support OSC 22**: the pointer icon over links would depend on what the host last set, for a sequence that major apps do not send.

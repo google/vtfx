@@ -1,6 +1,6 @@
 # Desktop pointer input and the terminal's state
 
-- Status: Approved (2026-10-15, approved by a human in a review of the review queue. The shape of `TerminalState` and of the right click were chosen by a human on 2026-10-14; the agent decided the details); the copy path of `copySelection()` superseded by [0042](0042-user-clipboard-through-gate.md), and `TerminalLinkClick` as a data class by [0037](0037-api-shape-before-1.0.md)
+- Status: Approved (2026-10-15, approved by a human in a review of the review queue. The shape of `TerminalState` and of the right click were chosen by a human on 2026-10-14; the agent decided the details); the copy path of `copySelection()` superseded by [0083](0083-gate.md), and `TerminalLinkClick` as a data class by [0037](0037-api-shape-before-1.0.md)
 - Date: 2026-10-14
 - Related: Requirement 5.4, sections 1, 3, 4, 5, and 6.1 of [compose-input.md](../design/compose-input.md), [0012](0012-touch-and-selection.md) (touch and selection), [0019](0019-extensibility.md) (links), `TerminalState`, `TerminalMouse`, `TerminalGestures`
 

@@ -35,7 +35,7 @@ public interface ClipboardAccess {
     public fun read(): String?
 }
 
-// How "must not throw" applies to the failures of opening a URL is in docs/decisions/0043.
+// How "must not throw" applies to the failures of opening a URL is in docs/decisions/0083.
 /**
  * Opens URLs in another app, implemented by vtfx-gate-android. vtfx calls it only after the
  * [GatePolicy] allowed the URL.
@@ -52,7 +52,7 @@ public fun interface UrlOpener {
 }
 
 // Closed: a new kind of result is added only in a major version, so that apps can match it
-// exhaustively (docs/decisions/0043).
+// exhaustively (docs/decisions/0083).
 /**
  * What came of asking vtfx to open a URL: [NotAllowed] if vtfx did not try, or what the [UrlOpener]
  * reported ([UrlOpenerResult]).
@@ -83,7 +83,7 @@ public sealed interface OpenUrlResult {
  */
 public sealed interface UrlOpenerResult : OpenUrlResult
 
-// The defaults are chosen in docs/decisions/0006.
+// The defaults are chosen in docs/decisions/0083.
 /**
  * Which requests from the host with external effects are allowed. The defaults refuse setting and
  * reading the clipboard, and allow opening http and https URLs. Immutable.
@@ -132,7 +132,7 @@ public class GatePolicy(
         require(maxClipboardReadLength >= 0) { "maxClipboardReadLength must not be negative" }
         // A scheme outside the grammar of URLs would match no URL, so every link would be refused.
         for (scheme in this.urlSchemes) require(isUrlScheme(scheme)) { "not a URL scheme: $scheme" }
-        // docs/decisions/0058.
+        // docs/decisions/0083.
         require("file" !in this.urlSchemes) { "file URLs cannot be opened in another app" }
     }
 

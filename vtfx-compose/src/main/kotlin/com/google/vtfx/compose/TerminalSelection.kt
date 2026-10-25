@@ -25,7 +25,7 @@ import com.google.vtfx.core.TerminalSnapshot
 /**
  * Returns the text of the cell at [column] as the display shows it: null for a blank cell, and for
  * a concealed cell (SGR 8), which is not drawn, so that copying, accessibility, and the text of a
- * hyperlink do not give text that the user cannot see (docs/decisions/0049).
+ * hyperlink do not give text that the user cannot see (docs/decisions/0083).
  */
 internal fun LineSnapshot.visibleTextAt(column: Int): String? =
     if (styleAt(column).isInvisible) null else textAt(column)

@@ -21,7 +21,7 @@ package com.google.vtfx.gate
  *
  * The reply to a read repeats the selection. It is spelled again from the [Target] constants, so
  * the reply never carries the host's text, and its safety does not depend on what vtfx-core lets
- * through (docs/decisions/0006).
+ * through (docs/decisions/0083).
  */
 internal class ClipboardSelection private constructor(private val targets: List<Target>) {
     /** The targets of xterm's selection parameter. */
