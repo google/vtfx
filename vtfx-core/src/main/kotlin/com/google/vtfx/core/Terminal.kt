@@ -238,7 +238,7 @@ public class Terminal(
     }
 
     /**
-     * The placeholders of images among [lines] (docs/decisions/0038), each with the virtual
+     * The placeholders of images among [lines] (docs/decisions/0080), each with the virtual
      * placement that its underline color names, or the newest one of its image.
      */
     private fun imageTiles(lines: List<LineSnapshot>): List<ImageTile> {
@@ -315,7 +315,7 @@ public class Terminal(
 
     /**
      * Sets the size of a cell in pixels, which sizes images placed without a size in cells, and
-     * which the host can then ask for with XTWINOPS 14 and 16 (docs/decisions/0038). Until it is
+     * which the host can then ask for with XTWINOPS 14 and 16 (docs/decisions/0080). Until it is
      * set, images take cells of 10 by 20 pixels, and those queries are not answered.
      *
      * @throws IllegalArgumentException unless both are from 1 to 1000.

@@ -89,7 +89,7 @@ class TerminalLayoutTest {
 
     @Test
     fun theSessionLearnsTheSizeOfACellInPixels() {
-        // For images and the host's queries of pixel sizes (docs/decisions/0038).
+        // For images and the host's queries of pixel sizes (docs/decisions/0080).
         val pixels = mutableListOf<List<Int>>()
         val sent = StringBuilder()
         val session =

@@ -43,7 +43,7 @@ The biggest point of differentiation from existing libraries is **confining, by 
 - Notifying the host of terminal size changes
 - Scrollback, text selection and copy
 - A UI-independent terminal emulation API, usable from Kotlin programs on the JVM.
-- Images by the kitty graphics protocol, with the image data sent in the escape sequences (direct transmission). Enabled by default, and bounded by resource limits (`TerminalLimits.maxImageBytes`) like other host output ([decisions/0038](decisions/0038-kitty-graphics.md)).
+- Images by the kitty graphics protocol, with the image data sent in the escape sequences (direct transmission). Enabled by default, and bounded by resource limits (`TerminalLimits.maxImageBytes`) like other host output ([decisions/0080](decisions/0080-kitty-graphics.md)).
 
 ### 4.2 Out of scope
 

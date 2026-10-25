@@ -25,7 +25,7 @@ To regenerate only the reference screens, add `--reference-only`.
 
 ## Images (`graphics/`)
 
-Programs that show images with the kitty graphics protocol, recorded by `tools/recordings/record_graphics.py` ([decisions/0038](../docs/decisions/0038-kitty-graphics.md)). The script answers the programs' queries as vtfx does, in a terminal of 80 × 24 cells of 10 × 20 pixels, and gives them an image it makes (64 × 48 pixels), so the recordings hold no file of the machine. tmux knows nothing of the protocol, so there is no reference screen: `GraphicsRecordingTest` in `vtfx-core` checks where the images are and where the cursor ends, and `replay <name>` in the sample app shows them.
+Programs that show images with the kitty graphics protocol, recorded by `tools/recordings/record_graphics.py` ([decisions/0080](../docs/decisions/0080-kitty-graphics.md)). The script answers the programs' queries as vtfx does, in a terminal of 80 × 24 cells of 10 × 20 pixels, and gives them an image it makes (64 × 48 pixels), so the recordings hold no file of the machine. tmux knows nothing of the protocol, so there is no reference screen: `GraphicsRecordingTest` in `vtfx-core` checks where the images are and where the cursor ends, and `replay <name>` in the sample app shows them.
 
 | File | Contents |
 |---|---|

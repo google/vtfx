@@ -136,7 +136,7 @@ classes = [
     "java/util/regex/Matcher",
     "java/util/regex/Pattern",
     "java/util/zip/CRC32",
-    # Inflates the zlib data of images of the kitty graphics protocol (docs/decisions/0038), with the
+    # Inflates the zlib data of images of the kitty graphics protocol (docs/decisions/0080), with the
     # platform's native zlib.
     "java/util/zip/DataFormatException",
     "java/util/zip/Inflater",
@@ -346,7 +346,7 @@ packages = [
     "kotlin/coroutines/intrinsics",
     "kotlin/coroutines/jvm/internal",
 ]
-# The pixels of images (docs/decisions/0038) are copied into bitmaps; a Bundle only passes through
+# The pixels of images (docs/decisions/0080) are copied into bitmaps; a Bundle only passes through
 # the IME's private commands.
 types = ["android/graphics/Bitmap", "android/os/Bundle"]
 members = [
@@ -516,7 +516,7 @@ allowed_modules = ["vtfx-font-gate-android"]
 
 [[restricted_classes]]
 classes = ["android/graphics/BitmapFactory", "android/graphics/ImageDecoder"]
-reason = "Images from the host must not reach the platform's native decoders; vtfx decodes them itself (docs/decisions/0038)."
+reason = "Images from the host must not reach the platform's native decoders; vtfx decodes them itself (docs/decisions/0080)."
 allowed_modules = []
 
 # Packages, with their subpackages, in which only the listed modules may declare classes.

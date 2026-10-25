@@ -26,7 +26,7 @@ import com.google.vtfx.core.TerminalLimits
 import com.google.vtfx.core.TerminalQuery
 
 /**
- * Carries out kitty graphics commands (docs/decisions/0038): transmissions, placements, deletions,
+ * Carries out kitty graphics commands (docs/decisions/0080): transmissions, placements, deletions,
  * and the replies to them, within [maxBytes] of decoded pixels for both screens together.
  */
 internal class Graphics(
@@ -121,7 +121,7 @@ internal class Graphics(
             'q' -> startTransmission(command, data, screen)
             'p' -> put(command, screen)
             'd' -> delete(command, screen)
-            // Animation is not supported (docs/decisions/0038).
+            // Animation is not supported (docs/decisions/0080).
             'f',
             'a',
             'c' -> respond(command, GraphicsStatus.Unsupported)
@@ -549,7 +549,7 @@ internal class Graphics(
     }
 
     companion object {
-        /** The size of a cell until the display tells it (docs/decisions/0038). */
+        /** The size of a cell until the display tells it (docs/decisions/0080). */
         const val DEFAULT_CELL_WIDTH = 10
         const val DEFAULT_CELL_HEIGHT = 20
 
@@ -558,7 +558,7 @@ internal class Graphics(
 
         /**
          * The most memory of the pixels of one image, whatever the limit for all images: below the
-         * size of a bitmap that Android refuses to draw (docs/decisions/0051).
+         * size of a bitmap that Android refuses to draw (docs/decisions/0080).
          */
         const val MAX_BYTES_PER_IMAGE = 64L * 1024 * 1024
 

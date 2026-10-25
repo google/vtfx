@@ -26,7 +26,7 @@ import org.junit.Test
  * Replays the output of real programs that show images (recordings/graphics, made by
  * tools/recordings/record_graphics.py in a terminal of 80 by 24 cells of 10 by 20 pixels) and
  * checks where the images are and where the cursor ends, which the programs rely on to lay out what
- * they write next (docs/decisions/0038). Each program shows the same image of 64 by 48 pixels.
+ * they write next (docs/decisions/0080). Each program shows the same image of 64 by 48 pixels.
  */
 class GraphicsRecordingTest {
     private val directory =

@@ -17,7 +17,7 @@
 package com.google.vtfx.core
 
 /**
- * An image that the host sent with the kitty graphics protocol (docs/decisions/0038). Immutable:
+ * An image that the host sent with the kitty graphics protocol (docs/decisions/0080). Immutable:
  * its pixels never change, so a display may keep what it made of them for as long as it keeps the
  * image. Images are compared by identity; [key] tells them apart across snapshots.
  *

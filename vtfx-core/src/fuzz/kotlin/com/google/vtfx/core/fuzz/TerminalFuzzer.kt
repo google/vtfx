@@ -88,7 +88,7 @@ object TerminalFuzzer {
 
     /**
      * Images stay within their limits, and every placement anchored to a line has a row on the
-     * screen or in the scrollback (docs/decisions/0038, docs/decisions/0069).
+     * screen or in the scrollback ().
      */
     private fun checkImages(terminal: Terminal, snapshot: TerminalSnapshot) {
         check(terminal.imageBytes in 0..MAX_IMAGE_BYTES) { "images take ${terminal.imageBytes}" }

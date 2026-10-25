@@ -17,7 +17,7 @@
 
 Each scenario runs a program in a pseudo terminal of 80 x 24 cells of 10 x 20 pixels, with
 TERM=xterm-256color and none of the variables by which programs recognize kitty, and answers its
-queries as vtfx does (docs/decisions/0038): DA1, XTVERSION with vtfx's name, the pixel sizes
+queries as vtfx does (docs/decisions/0080): DA1, XTVERSION with vtfx's name, the pixel sizes
 (XTWINOPS 14 and 16, and the PTY's window size), DSR 6 with the cursor of a simple tracker, and
 graphics commands with OK for direct data and EBADF for files and shared memory. Every byte the
 program writes is recorded in OUT_DIR/<scenario>.out, with the versions and the queries it asked in

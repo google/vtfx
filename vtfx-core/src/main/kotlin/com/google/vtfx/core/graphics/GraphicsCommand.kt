@@ -23,7 +23,7 @@ import com.google.vtfx.core.ProtocolLimits
 
 /**
  * The control data of a kitty graphics command (`ESC _ G <control> ; <payload> ESC \`), and where
- * its payload starts in the string (docs/decisions/0038).
+ * its payload starts in the string (docs/decisions/0080).
  *
  * Keys that are absent keep the protocol's defaults. Values that the protocol defines as unsigned
  * 32-bit integers are kept as [Long]s from 0 to 4294967295; the signed one ([z]) as an [Int]. Keys

@@ -74,7 +74,7 @@ internal class Scrollback(val capacity: Int) {
      * Adds [line] as the newest, and drops the oldest lines beyond the capacity or the budget for
      * [columns]. The newest line is kept even if it alone is over the budget. The image placements
      * of a dropped line move down to the line after it, unless none of their rows are left there
-     * (docs/decisions/0069).
+     * (docs/decisions/0080).
      */
     private fun add(line: CompactLine, columns: Int) {
         lines.addLast(line)
@@ -117,7 +117,7 @@ internal class Scrollback(val capacity: Int) {
      * placements move here; the placements of the lines replaced must already have moved to
      * [newLines] (reflow takes them along). The placements of the lines that do not fit move down
      * to the first line kept, or to [nextLine], the line after [newLines] on the screen, if none is
-     * kept, unless none of their rows are left there (docs/decisions/0069).
+     * kept, unless none of their rows are left there (docs/decisions/0080).
      */
     fun replaceAll(newLines: List<Line>, nextLine: Line) {
         generation++
@@ -210,7 +210,7 @@ internal class ScreenBuffer(
         val scrollOffTheTop = saveToScrollback && top == 0
         val scrollback = scrollback?.takeIf { scrollOffTheTop && it.capacity > 0 }
         // Placements whose lines leave the top of the screen without going to the scrollback, and
-        // which still have rows on the screen (docs/decisions/0069).
+        // which still have rows on the screen (docs/decisions/0080).
         var moved: ArrayList<Placement>? = null
         for (i in 0 until n) {
             val line = this[top + i]

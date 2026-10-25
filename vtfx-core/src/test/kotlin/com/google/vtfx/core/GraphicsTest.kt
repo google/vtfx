@@ -31,7 +31,7 @@ import org.junit.experimental.runners.Enclosed
 import org.junit.runner.RunWith
 
 /**
- * The kitty graphics protocol (docs/decisions/0038): transmissions and their replies, placements
+ * The kitty graphics protocol (docs/decisions/0080): transmissions and their replies, placements
  * and how they follow the text, deletions, and the limits. The expected cursor positions after
  * placements are those that kitty 0.48.2 reported under Xvfb (the decision's background).
  */

@@ -164,7 +164,7 @@ class ResourceExhaustionTest {
                     "\u001b[38;2;${it % 256};${it / 256 % 256};1m\u001b[48;5;${it % 256}mx"
                 },
                 Case("queries") { "\u001b[6n\u001b[c\u001b]10;?\u0007" },
-                // Kitty graphics (docs/decisions/0038).
+                // Kitty graphics (docs/decisions/0080).
                 Case("images") { "\u001b_Ga=t,i=${it + 1},f=24,s=1,v=1,q=2;AAAA\u001b\\" },
                 Case("images without ids") { "\u001b_Ga=T,f=24,s=1,v=1,c=1,r=1,q=2;AAAA\u001b\\" },
                 Case("large images") {

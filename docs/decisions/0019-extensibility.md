@@ -37,7 +37,7 @@ The addon mechanism itself is thin: it just receives a `Terminal` and uses the p
 | Saving and restoring sessions | SerializeAddon | Not supported. For multiple tabs, it is enough for the app to have a `TerminalSession` per tab ([0007](0007-compose-session.md)). When the process ends, the connection to the host is also cut, and if the connection is kept in a service, the session lives there too |
 | Link actions decided by the app (opening paths and so on), a selection API, items of the long-press menu | link provider, `getSelection`, and so on | Not made until a use appears |
 | Typeahead (VS Code's typeahead) | An addon that depends on internal APIs | Deferred because of its size |
-| Images, ligatures | ImageAddon, LigaturesAddon | Ligatures are out of scope, as in requirement 4.2. Images: the kitty graphics protocol is built in ([0038](0038-kitty-graphics.md)) |
+| Images, ligatures | ImageAddon, LigaturesAddon | Ligatures are out of scope, as in requirement 4.2. Images: the kitty graphics protocol is built in ([0080](0080-kitty-graphics.md)) |
 
 ### Link patterns
 

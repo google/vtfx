@@ -22,7 +22,7 @@ import com.google.vtfx.core.Scrollback
 import java.util.IdentityHashMap
 
 /**
- * The images and placements of one screen (docs/decisions/0038). The main screen's placements can
+ * The images and placements of one screen (docs/decisions/0080). The main screen's placements can
  * be in its [scrollback]; the alternate screen has none.
  */
 internal class GraphicsLayer(

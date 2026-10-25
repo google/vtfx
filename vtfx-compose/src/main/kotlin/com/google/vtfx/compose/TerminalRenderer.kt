@@ -193,7 +193,7 @@ internal class TerminalRenderer(
         val defaultBackground = if (reverse) colors.foreground else colors.background
         drawRect(defaultBackground)
         images.startFrame()
-        // Images with a negative z-index go under the text (docs/decisions/0038).
+        // Images with a negative z-index go under the text (docs/decisions/0080).
         drawImages(snapshot, images, underText = true)
         val nativeCanvas = drawContext.canvas.nativeCanvas
         if (nativeCanvas.isHardwareAccelerated) {
@@ -313,7 +313,7 @@ internal class TerminalRenderer(
 
     /**
      * Draws the placeholders of images: each cell shows its part of the image fitted into the box
-     * of its virtual placement, keeping the aspect ratio, and centered (docs/decisions/0038). The
+     * of its virtual placement, keeping the aspect ratio, and centered (docs/decisions/0080). The
      * whole image is drawn at the box's place, cut to the cell.
      */
     private fun DrawScope.drawImageTiles(snapshot: TerminalSnapshot, images: ImageBitmaps) {

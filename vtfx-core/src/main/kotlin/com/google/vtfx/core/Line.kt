@@ -44,7 +44,7 @@ internal class Line(columns: Int, style: CellStyle = CellStyle.Default) {
     private var underlineColors: IntArray? = null
 
     /**
-     * The image placements whose top left cell is on this line (docs/decisions/0038), or whose top
+     * The image placements whose top left cell is on this line (docs/decisions/0080), or whose top
      * rows went away with the lines above (`Placement.rowsAbove`), allocated when the first is
      * placed. They move with the line object: scrolling, the scrollback, and reflow take them
      * along, and only [killAnchors] deletes them. Copies made for snapshots do not have them.

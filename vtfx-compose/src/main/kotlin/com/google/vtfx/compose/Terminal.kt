@@ -212,7 +212,7 @@ internal fun Terminal(
             TerminalRenderer(paints, style, metrics, density)
         }
     // Per display: each session numbers its images from 1, so another session's bitmaps would show
-    // in place of this one's images (docs/decisions/0038).
+    // in place of this one's images (docs/decisions/0080).
     val images = remember(display) { ImageBitmaps() }
     var focused by remember { mutableStateOf(false) }
     SideEffect {
@@ -371,7 +371,7 @@ internal fun Terminal(
                     val rows = (size.height / metrics.height).toInt().coerceIn(1, max)
                     gridRows = rows
                     // The size of a cell in pixels, for images and the host's queries
-                    // (docs/decisions/0038).
+                    // (docs/decisions/0080).
                     display.resize(
                         columns,
                         rows,

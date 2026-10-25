@@ -65,7 +65,7 @@ internal object Reflow {
             for (row in start..end) {
                 val line = rows[row]
                 val hasCursor = row == cursorRow
-                // Image placements move with the cell they are anchored to (docs/decisions/0038).
+                // Image placements move with the cell they are anchored to (docs/decisions/0080).
                 val anchors = line.takeAnchors()?.also { array -> array.sortBy { it.column } }
                 var nextAnchor = 0
                 val contentEnd =

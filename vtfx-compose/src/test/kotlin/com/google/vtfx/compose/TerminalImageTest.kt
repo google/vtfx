@@ -36,7 +36,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * Checks the images of the kitty graphics protocol that a `Terminal` draws (docs/decisions/0038).
+ * Checks the images of the kitty graphics protocol that a `Terminal` draws (docs/decisions/0080).
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)

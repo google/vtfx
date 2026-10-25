@@ -87,7 +87,7 @@ class DeviceLimitsTest {
     @Test
     fun theLargestImageIsDrawn() {
         // An app may let images take more than the 100 MiB of one bitmap that Android draws; one
-        // image still takes at most 64 MiB (docs/decisions/0051).
+        // image still takes at most 64 MiB (docs/decisions/0080).
         val session =
             TerminalSession({}, limits = TerminalLimits(maxImageBytes = 256 * 1024 * 1024))
         val display = TerminalDisplay(session)

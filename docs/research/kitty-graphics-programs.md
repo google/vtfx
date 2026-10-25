@@ -1,6 +1,6 @@
 # Research: what programs send with the kitty graphics protocol
 
-A record of what programs that show images sent, and of how kitty behaved, as observed on 2026-10-16 while [decisions/0038](../decisions/0038-kitty-graphics.md) was written. It is not kept up to date; the behavior vtfx implements is in section 9 of [design/emulation.md](../design/emulation.md).
+A record of what programs that show images sent, and of how kitty behaved, as observed on 2026-10-16 while [decisions/0080](../decisions/0080-kitty-graphics.md) was written. It is not kept up to date; the behavior vtfx implements is in section 9 of [design/emulation.md](../design/emulation.md).
 
 The programs ran on the development machine (kitty 0.48.2, timg 1.6.3, fastfetch 2.57.1) in a pseudo-terminal that answered as vtfx does, and kitty itself was checked under Xvfb. The recordings are made by `tools/recordings/record_graphics.py` (section 10 of [testing.md](../design/testing.md)).
 

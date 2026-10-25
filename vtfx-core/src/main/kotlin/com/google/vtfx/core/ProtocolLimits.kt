@@ -47,7 +47,7 @@ public object ProtocolLimits {
 
     /**
      * The largest unsigned number of a kitty graphics command, 2^32 - 1, as the protocol defines
-     * them (docs/decisions/0038). It also bounds the ids and numbers of images and placements that
+     * them (docs/decisions/0080). It also bounds the ids and numbers of images and placements that
      * graphics replies carry.
      */
     public val MAX_GRAPHICS_NUMBER: Long = 0xFFFF_FFFFL

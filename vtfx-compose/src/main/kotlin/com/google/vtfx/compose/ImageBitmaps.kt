@@ -23,11 +23,11 @@ import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.TerminalImage
 
 /**
- * The bitmaps of the images that frames draw (docs/decisions/0038), made once per image. A bitmap
+ * The bitmaps of the images that frames draw (docs/decisions/0080), made once per image. A bitmap
  * that no frame drew for [KEEP_FRAMES] frames goes, so that the bitmaps of deleted images do not
  * stay; images that come back, scrolled into view again for example, are made again. The bitmaps of
  * images that the last frame did not draw are kept up to [MAX_UNDRAWN_BYTES], so that their memory
- * stays bounded when the host replaces an image on every frame (docs/decisions/0052).
+ * stays bounded when the host replaces an image on every frame (docs/decisions/0080).
  *
  * One per display: the keys of images are unique only within a session.
  */

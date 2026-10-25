@@ -16,7 +16,7 @@ Host output is not trustworthy. It must not be able to make the terminal use mem
 - Values given by the app (the screen size, `TerminalLimits`) out of range are programming errors, and throw `IllegalArgumentException`.
 - The scrollback has a memory budget besides its number of lines, which scales with the number of lines and the width.
 
-The limits and their values are in section 10 of [emulation.md](../design/emulation.md); the limits of images were added by [0038](0038-kitty-graphics.md). The reasons for the less obvious ones:
+The limits and their values are in section 10 of [emulation.md](../design/emulation.md); the limits of images were added by [0080](0080-kitty-graphics.md). The reasons for the less obvious ones:
 
 - **Strings are dropped whole, not truncated and executed**: cutting an OSC 52 clipboard value or an OSC 8 URL in the middle turns it into a value with a different meaning.
 - **String lengths are counted in UTF-16 units**: this bounds the memory of the held strings directly. Counting in code points, a string of characters outside the BMP (emoji and so on) would take twice the memory with the same limit.

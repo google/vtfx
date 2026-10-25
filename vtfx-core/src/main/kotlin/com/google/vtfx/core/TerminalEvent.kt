@@ -136,7 +136,7 @@ public sealed interface TerminalQuery {
 
     /**
      * XTWINOPS 14 (CSI 14 t): the size of the text area in pixels, [height] and [width], from the
-     * size of a cell that the display gave (docs/decisions/0038).
+     * size of a cell that the display gave (docs/decisions/0080).
      */
     @InternalVtfxApi
     public data class TextAreaPixelSize(val height: Int, val width: Int) : TerminalQuery
@@ -152,7 +152,7 @@ public sealed interface TerminalQuery {
     @InternalVtfxApi public data class Color(val target: ColorTarget) : TerminalQuery
 
     /**
-     * The reply to a kitty graphics command (docs/decisions/0038): the [imageId] (or the id given
+     * The reply to a kitty graphics command (docs/decisions/0080): the [imageId] (or the id given
      * to a new image with a number), the [imageNumber] and [placementId] of the command, each from
      * 0 to 4294967295 with 0 for none, and the [status].
      */

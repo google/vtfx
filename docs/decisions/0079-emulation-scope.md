@@ -2,7 +2,7 @@
 
 - Status: Approved
 - Date: 2026-10-25
-- Related: Requirements 4.2, 5.1, 5.2, 5.4, 6.1, 6.2, 6.5, and section 8 of [REQUIREMENTS.md](../REQUIREMENTS.md), sections 1 to 8 and 9.7 of [emulation.md](../design/emulation.md), sections 2 to 4 of [compose-input.md](../design/compose-input.md), section 3 of [gate-policy.md](../design/gate-policy.md), [fonts.md](../design/fonts.md), [conformance-references.md](../research/conformance-references.md), [terminal-comparison-2026-10.md](../research/terminal-comparison-2026-10.md), [0002](0002-resource-limits.md), [0005](0005-key-bytes-through-gate.md), [0014](0014-performance.md), [0029](0029-import-without-gradle.md), [0031](0031-desktop-pointer-and-terminal-state.md), [0032](0032-keys-and-layout.md), [0038](0038-kitty-graphics.md), [0047](0047-search.md), [0070](0070-kitty-keyboard-protocol.md)
+- Related: Requirements 4.2, 5.1, 5.2, 5.4, 6.1, 6.2, 6.5, and section 8 of [REQUIREMENTS.md](../REQUIREMENTS.md), sections 1 to 8 and 9.7 of [emulation.md](../design/emulation.md), sections 2 to 4 of [compose-input.md](../design/compose-input.md), section 3 of [gate-policy.md](../design/gate-policy.md), [fonts.md](../design/fonts.md), [conformance-references.md](../research/conformance-references.md), [terminal-comparison-2026-10.md](../research/terminal-comparison-2026-10.md), [0002](0002-resource-limits.md), [0005](0005-key-bytes-through-gate.md), [0014](0014-performance.md), [0029](0029-import-without-gradle.md), [0031](0031-desktop-pointer-and-terminal-state.md), [0032](0032-keys-and-layout.md), [0080](0080-kitty-graphics.md), [0047](0047-search.md), [0070](0070-kitty-keyboard-protocol.md)
 
 ## Background
 
@@ -47,7 +47,7 @@ Support the features in section 3 of [emulation.md](../design/emulation.md), and
 | Setting colors (setting OSC 4, 10, 11, 12; 104, 110–112) | Colors are decided by the app's style. Queries are answered. |
 | Protection attribute for selective erase (DECSCA) | Major apps do not use it. |
 | Printing (MC), sounds other than the bell | Outside the scope of terminal emulation. |
-| Image protocols other than kitty's, such as sixel | Out of scope (section 4.2 of [REQUIREMENTS.md](../REQUIREMENTS.md)); why the kitty graphics protocol was taken rather than sixel is in [0038](0038-kitty-graphics.md). |
+| Image protocols other than kitty's, such as sixel | Out of scope (section 4.2 of [REQUIREMENTS.md](../REQUIREMENTS.md)); why the kitty graphics protocol was taken rather than sixel is in [0080](0080-kitty-graphics.md). |
 | C1 control characters (8-bit) | As in topic 2. |
 | XTGETTCAP (DCS + q) | Replies would include terminfo strings. The TERM policy (topic 5) is enough. |
 | Rectangle editing and column operations (DECCRA, DECERA, DECFRA, DECSERA, DECIC, DECDC, DECBI, DECFI) | VT400 and later features that major apps do not use. |

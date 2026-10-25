@@ -273,7 +273,7 @@ class TerminalScreenshotTest {
     }
 
     /**
-     * Images of the kitty graphics protocol (docs/decisions/0038), each from [quarters]: scaled to
+     * Images of the kitty graphics protocol (docs/decisions/0080), each from [quarters]: scaled to
      * 6 by 3 cells; at its natural size, which takes 4 by 2 cells and leaves the cursor on its last
      * row; its middle cut from a source rectangle, with an offset in its cell; under the text with
      * a negative z-index; and its translucent quarter stretched over the text.
@@ -303,7 +303,7 @@ class TerminalScreenshotTest {
     }
 
     /**
-     * Unicode placeholders (docs/decisions/0038): the image of [quarters] in a virtual placement of
+     * Unicode placeholders (docs/decisions/0080): the image of [quarters] in a virtual placement of
      * 8 by 2 cells, fitted and centered, written as placeholders with only the row diacritic on the
      * first cell of each row, as the protocol's example does; then the same placeholders with their
      * columns in reverse, which show the image in vertical strips swapped.

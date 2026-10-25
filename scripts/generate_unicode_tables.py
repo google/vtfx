@@ -36,7 +36,7 @@ DerivedCoreProperties.txt. They draw as nothing, so TerminalGate refuses URLs th
 (docs/decisions/0006).
 
 The diacritics give the row, the column, and the high byte of the image id of a placeholder cell
-(docs/decisions/0038), in the order of kitty's rowcolumn-diacritics.txt, which kitty derives from
+(docs/decisions/0080), in the order of kitty's rowcolumn-diacritics.txt, which kitty derives from
 UnicodeData.txt of Unicode 6.0.0: the characters of general category Mn and combining class 230
 without a decomposition, except 19 that normalization may join with a base character. The same
 rule over these files, limited to the characters of Unicode 6.0 or earlier (DerivedAge.txt), gives

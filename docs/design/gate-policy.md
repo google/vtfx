@@ -74,7 +74,7 @@ The code of a character key is `KeyStroke.Character.unshiftedCodePoint`, the cha
 | XTWINOPS 18 | `CSI 8 ; rows ; columns t` |
 | XTWINOPS 14, 16 | `CSI 4 ; height ; width t`, `CSI 6 ; height ; width t` in pixels, only once the display has given the size of a cell |
 | OSC 10, 11, 12, 4 queries | `OSC n ; rgb:rrrr/gggg/bbbb ST` from the colors the display reports (`ReportedColors`); not answered without them |
-| kitty graphics commands | `APC G` with the numbers of the command and a fixed status string ([decisions/0038](../decisions/0038-kitty-graphics.md)) |
+| kitty graphics commands | `APC G` with the numbers of the command and a fixed status string ([decisions/0080](../decisions/0080-kitty-graphics.md)) |
 
 Every number in a reply is checked against its range before the reply is built (positions up to `TerminalLimits.MAX_DIMENSION`, sizes in pixels up to that times `ProtocolLimits.MAX_CELL_SIZE`, palette indexes 0 to 255); a number out of range is a programming error.
 

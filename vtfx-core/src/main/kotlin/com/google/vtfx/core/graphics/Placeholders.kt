@@ -24,7 +24,7 @@ import com.google.vtfx.core.Line
 import com.google.vtfx.core.TerminalColor
 
 /**
- * Reads the Unicode placeholders of the kitty graphics protocol (docs/decisions/0038): cells of
+ * Reads the Unicode placeholders of the kitty graphics protocol (docs/decisions/0080): cells of
  * U+10EEEE whose foreground color gives an image id, whose underline color gives a placement id,
  * and whose diacritics give the row and column of the image to show there, and the high byte of the
  * image id. Missing diacritics are taken from the placeholder to the left, by the rules of the

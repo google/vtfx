@@ -113,7 +113,7 @@ internal class Emulator(
     private var title = ""
     private val savedTitles = TitleStack(MAX_SAVED_TITLES, limits.maxStringLength)
 
-    /** Images of the kitty graphics protocol (docs/decisions/0038), one layer per screen. */
+    /** Images of the kitty graphics protocol (docs/decisions/0080), one layer per screen. */
     val graphics = Graphics(limits.maxImageBytes.toLong()) { reply(it) }
     private val mainLayer = GraphicsLayer(graphics, mainScreen, scrollback)
     private val alternateLayer = GraphicsLayer(graphics, alternateScreen, null)
@@ -212,7 +212,7 @@ internal class Emulator(
         val line = screen[cursorY]
         if (insert) line.insertBlanks(cursorX, width, style.erased())
         // A placeholder of an image keeps the underline color without an underline: it is the
-        // placement id (docs/decisions/0038).
+        // placement id (docs/decisions/0080).
         val underlineColor =
             if (codePoint == Placeholders.CODE_POINT) rendition.underlineColor.bits
             else rendition.cellUnderlineColor
@@ -604,7 +604,7 @@ internal class Emulator(
     /**
      * XTWINOPS 14 and 16: the size of the text area or of a cell in pixels, which programs that
      * show images need. Not answered until the display gives the size of a cell, as colors are not
-     * (docs/decisions/0038).
+     * (docs/decisions/0080).
      */
     private fun reportPixelSize(cell: Boolean) {
         if (!graphics.isCellSizeKnown) return
@@ -799,7 +799,7 @@ internal class Emulator(
             }
             2 -> {
                 // Clearing the screen clears its images too, so that `clear` works, as the
-                // protocol says (docs/decisions/0038).
+                // protocol says (docs/decisions/0080).
                 graphics.deleteVisible(layer, rows)
                 screen.eraseAll(style)
             }
@@ -915,7 +915,7 @@ internal class Emulator(
         if (alternate == isAlternateScreen) return
         // The cursor is now on a line of the other screen.
         lineChanges++
-        // The images of the alternate screen go when it is left (docs/decisions/0038).
+        // The images of the alternate screen go when it is left (docs/decisions/0080).
         if (!alternate) alternateLayer.clear()
         screen = if (alternate) alternateScreen else mainScreen
         if (alternate && clearAlternate) alternateScreen.eraseAll(CellStyle.Default)
@@ -926,7 +926,7 @@ internal class Emulator(
     /**
      * Moves the cursor after an image placed at it, as kitty does: to the column after the image,
      * on its last row, wrapping to the next row at the right edge and scrolling at the bottom
-     * margin (docs/decisions/0038).
+     * margin (docs/decisions/0080).
      */
     private fun moveCursorAfterImage(columnsSpanned: Int, rowsSpanned: Int) {
         var x = cursorX + columnsSpanned

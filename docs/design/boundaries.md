@@ -102,7 +102,7 @@ This is how `TerminalSession` in vtfx-session takes the connection, the clipboar
 | Reflection and loading classes: `java/lang/reflect`, `java/lang/invoke`, `kotlin/reflect/full`, `kotlin/reflect/jvm`, `dalvik/system`, `ClassLoader`, and the methods of `Class` that look up or load classes, constructors, fields, and methods | none |
 | Processes: `Process`, `ProcessBuilder`, `ProcessHandle`, `Runtime` | none |
 | The network: `java/net`, `javax/net`, `android/webkit`, `okhttp3`, `DownloadManager` | none |
-| The platform's image decoders (`BitmapFactory`, `ImageDecoder`), which must not see images from the host ([decisions/0038](../decisions/0038-kitty-graphics.md)) | none |
+| The platform's image decoders (`BitmapFactory`, `ImageDecoder`), which must not see images from the host ([decisions/0080](../decisions/0080-kitty-graphics.md)) | none |
 
 The exact names are in `config/boundaries.toml`.
 
@@ -146,7 +146,7 @@ It leaves out `kotlin.io`, `kotlin.concurrent`, `kotlin.reflect`, `System`, `Run
 
 ### 5.3 The modules' lists
 
-- The JVM modules list the few classes they need beyond the baseline, for example `Inflater` in vtfx-core for the zlib data of images ([decisions/0038](../decisions/0038-kitty-graphics.md)), `ByteBuffer` and `MessageDigest` in vtfx-font-gate, `Thread.interrupted` in vtfx-font, and the locks of vtfx-session.
+- The JVM modules list the few classes they need beyond the baseline, for example `Inflater` in vtfx-core for the zlib data of images ([decisions/0080](../decisions/0080-kitty-graphics.md)), `ByteBuffer` and `MessageDigest` in vtfx-font-gate, `Thread.interrupted` in vtfx-font, and the locks of vtfx-session.
 - vtfx-gate-android and vtfx-font-gate-android list classes one by one, so that each list is what the module may do: the clipboard and opening URLs (with `Context.startActivity` and `Context.getSystemService(Class)` by member), and making typefaces from buffers.
 - vtfx-compose allows whole the packages of Compose without capabilities (runtime, layout, drawing, geometry, input events, semantics) and the coroutines of Kotlin, lists the classes of Android it draws and handles input with, and allows by member the classes that hold capabilities among others: `Context` (`getSystemService(Class)` only), `View`, `InputMethodManager`, `Bitmap` (`createBitmap`), `Typeface` (`create`), the composition locals of `androidx.compose.ui.platform`, among which are the clipboard and the URL handler, and `Log` (`w` only, since the log is a way out for information). The classes of vtfx-gate-android, which vtfx-compose depends on, are classes of the project, so its allowlist does not cover them (section 4.1); `restricted_classes` keeps `AndroidClipboard` and `AndroidUrlOpener`, all that vtfx-gate-android declares, to the app (section 4.5).
 

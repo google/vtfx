@@ -57,7 +57,7 @@ internal class StoredImage(
  * above that line.
  *
  * The size is kept in cells, computed when it was placed, so that it does not depend on the display
- * afterwards (docs/decisions/0038).
+ * afterwards (docs/decisions/0080).
  */
 internal class Placement(
     image: StoredImage,
@@ -95,7 +95,7 @@ internal class Placement(
     /**
      * The rows of the image above the line it is anchored to: 0 until the line of its top row goes
      * away while rows below are still kept, which moves the anchor down to the next line
-     * ([moveDown]; docs/decisions/0069).
+     * ([moveDown]; docs/decisions/0080).
      */
     var rowsAbove: Int = 0
         private set

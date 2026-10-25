@@ -1,6 +1,6 @@
 # Size changes, reflow, lifecycle
 
-- Status: Approved (2026-10-13, approved by a human in the final review); the place of the resize batching (the session) superseded by [0026](0026-session-module.md), which moved it to vtfx-compose, and in item 3, reporting later calls only when the size changes by [0038](0038-kitty-graphics.md), with which they also report a change of the size of a cell in pixels
+- Status: Approved (2026-10-13, approved by a human in the final review); the place of the resize batching (the session) superseded by [0026](0026-session-module.md), which moved it to vtfx-compose, and in item 3, reporting later calls only when the size changes by [0080](0080-kitty-graphics.md), with which they also report a change of the size of a cell in pixels
 - Date: 2026-10-12
 - Related: Requirement 5.5, section 8 (whether to reflow on resize, the policy for resize notifications during the IME animation), sections 3 and 4 of [session-and-threads.md](../design/session-and-threads.md) (the resulting design), `Reflow`, `Emulator.resize`, `TerminalSession.resize`, `TerminalDisplay.resize`
 

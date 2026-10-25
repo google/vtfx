@@ -179,7 +179,7 @@ The underline color, the drawing of underlines and overlines, and the cursor's t
 
 ## 9. Images: the kitty graphics protocol
 
-vtfx implements the kitty graphics protocol (kitty 0.48) with direct transmission. It is on by default, and `TerminalLimits.maxImageBytes = 0` turns it off: APC strings are then ignored and queries are not answered. The reasons are in [decisions/0038](../decisions/0038-kitty-graphics.md), and those for the size of one image in [decisions/0051](../decisions/0051-largest-image.md). The code is in the `graphics` package of `vtfx-core`, and the images that the display draws are in `TerminalSnapshot` as internal API (`@InternalVtfxApi`).
+vtfx implements the kitty graphics protocol (kitty 0.48) with direct transmission. It is on by default, and `TerminalLimits.maxImageBytes = 0` turns it off: APC strings are then ignored and queries are not answered. The reasons are in [decisions/0080](../decisions/0080-kitty-graphics.md). The code is in the `graphics` package of `vtfx-core`, and the images that the display draws are in `TerminalSnapshot` as internal API (`@InternalVtfxApi`).
 
 ### 9.1 Scope
 
@@ -211,13 +211,13 @@ vtfx implements the kitty graphics protocol (kitty 0.48) with direct transmissio
 ### 9.4 Storage and eviction
 
 - Each screen has its own images and placements, so the images of the main screen stay while a program runs on the alternate screen. The memory limit counts both screens together (section 10).
-- When a new image does not fit, the oldest images go first, those without placements before those with them. An image larger than the limit by itself, or larger than 64 MiB of decoded pixels whatever the limit ([decisions/0051](../decisions/0051-largest-image.md)), is refused with `EFBIG`. Beyond 1024 images on a screen, the oldest goes; beyond 1024 placements, the oldest placement goes.
+- When a new image does not fit, the oldest images go first, those without placements before those with them. An image larger than the limit by itself, or larger than 64 MiB of decoded pixels whatever the limit ([decisions/0080](../decisions/0080-kitty-graphics.md)), is refused with `EFBIG`. Beyond 1024 images on a screen, the oldest goes; beyond 1024 placements, the oldest placement goes.
 - An image without an id or number goes with its last placement.
 - A transmission that is still in chunks when the screen changes (entering or leaving the alternate screen) is refused with `EINVAL` when it ends.
 
 ### 9.5 Placements and the text
 
-- A placement is anchored to the cell at the cursor, also when a wrap is pending: to the line object, so that it moves with its line when the screen scrolls, in a scrolling region too, when lines are inserted or deleted, and into the scrollback. When its line leaves the scrollback, or scrolls off the top of the screen without going to the scrollback (the alternate screen, or no scrollback), the placement moves down to the line that takes its place, as long as rows of the image are left on that line or below; the rows above are cut when it is drawn ([decisions/0069](../decisions/0069-placements-scrolled-off-the-top.md)). When a line is deleted without going to the scrollback otherwise (scrolling a region below the top, deleted lines), the placement goes with it. A placement deleted while its line is in the scrollback is also removed from that line, so that deleted placements do not take memory beyond the limit on placements. The rows of the image below its anchor are drawn over whatever is there.
+- A placement is anchored to the cell at the cursor, also when a wrap is pending: to the line object, so that it moves with its line when the screen scrolls, in a scrolling region too, when lines are inserted or deleted, and into the scrollback. When its line leaves the scrollback, or scrolls off the top of the screen without going to the scrollback (the alternate screen, or no scrollback), the placement moves down to the line that takes its place, as long as rows of the image are left on that line or below; the rows above are cut when it is drawn ([decisions/0080](../decisions/0080-kitty-graphics.md)). When a line is deleted without going to the scrollback otherwise (scrolling a region below the top, deleted lines), the placement goes with it. A placement deleted while its line is in the scrollback is also removed from that line, so that deleted placements do not take memory beyond the limit on placements. The rows of the image below its anchor are drawn over whatever is there.
 - When the size changes, an anchor moves with the cell it is on, and a line that has only an anchor is kept as if it had content. The image is not rewrapped: it is drawn from its anchor and cut at the right edge. Placements on lines that leave the scrollback when the size changes, or the screen without a scrollback, move down as when scrolling. On the alternate screen, anchors beyond the new width go.
 - Clearing the screen (ED 2) and RIS delete the placements visible on the screen; leaving the alternate screen deletes the alternate screen's images and placements. Other erasing (ED 0 and 1, EL, ECH, DCH) leaves images alone. ED 3 deletes the placements in the scrollback with it.
 - The size in cells of a placement without `c` and `r` is its size in pixels (plus the cell offset) divided by the size of a cell, rounded up, taken when it is placed. The display gives the size of a cell to the session (`TerminalSession.resize`); until it does, placements take 10 × 20 pixels, and XTWINOPS 14 and 16 are not answered. Once placed, a placement keeps its size in cells, and the image is scaled with the cells if the font changes.
@@ -228,7 +228,7 @@ vtfx implements the kitty graphics protocol (kitty 0.48) with direct transmissio
 - Images with a negative z-index are drawn under the text and under the backgrounds of cells, the others over the text, before the selection and the cursor.
 - An image is drawn from its anchor, scaled to its size in cells, and cut at the edges of the grid.
 - Each display (a session shown by a `Terminal`) keeps its own bitmaps, since each session numbers its images from 1.
-- A display keeps the bitmap of an image that it no longer draws, scrolled out of view or deleted, for 60 frames, so that an image scrolled back into view is not made again; of these, it keeps at most 32 MiB, dropping the least recently drawn first (`ImageBitmaps.MAX_UNDRAWN_BYTES`), so that a host that replaces an image on every frame does not build up bitmaps beyond the limit of the core ([decisions/0052](../decisions/0052-display-bitmap-budget.md)). The bitmaps of the images drawn in a frame are bounded by `maxImageBytes`.
+- A display keeps the bitmap of an image that it no longer draws, scrolled out of view or deleted, for 60 frames, so that an image scrolled back into view is not made again; of these, it keeps at most 32 MiB, dropping the least recently drawn first (`ImageBitmaps.MAX_UNDRAWN_BYTES`), so that a host that replaces an image on every frame does not build up bitmaps beyond the limit of the core ([decisions/0080](../decisions/0080-kitty-graphics.md)). The bitmaps of the images drawn in a frame are bounded by `maxImageBytes`.
 
 ### 9.7 Unicode placeholders
 
@@ -245,7 +245,7 @@ vtfx implements the kitty graphics protocol (kitty 0.48) with direct transmissio
 
 ## 10. Resource limits
 
-Host output is untrusted (requirement 6.1). The policy and the reasons for each limit are in [decisions/0002](../decisions/0002-resource-limits.md); the limits of images are explained in [decisions/0038](../decisions/0038-kitty-graphics.md) and [decisions/0051](../decisions/0051-largest-image.md).
+Host output is untrusted (requirement 6.1). The policy and the reasons for each limit are in [decisions/0002](../decisions/0002-resource-limits.md); the limits of images are explained in [decisions/0080](../decisions/0080-kitty-graphics.md).
 
 ### 10.1 Policy
 
@@ -275,7 +275,7 @@ Host output is untrusted (requirement 6.1). The policy and the reasons for each 
 | Pixels of the images of the kitty graphics protocol | 32 MiB of decoded pixels (4 bytes each) by default, for both screens together (at most 1 GiB; 0 turns the protocol off) | `TerminalLimits.maxImageBytes` | The oldest images are dropped, those without placements first. An image larger than the limit by itself is refused with `EFBIG` |
 | Data of a transmission in progress | `maxImageBytes` of decoded base64 | Follows `maxImageBytes` | Refused with `EFBIG` when it ends |
 | Width and height of an image | 10000 pixels each (as kitty) | Not configurable (`Graphics.MAX_SIDE`) | Refused with `EFBIG` before anything is allocated |
-| Pixels of one image | 64 MiB of decoded pixels (16,777,216 pixels), or `maxImageBytes` if smaller, below the size of a bitmap that Android refuses to draw ([decisions/0051](../decisions/0051-largest-image.md)) | Not configurable (`Graphics.MAX_BYTES_PER_IMAGE`) | Refused with `EFBIG` before the pixels are allocated |
+| Pixels of one image | 64 MiB of decoded pixels (16,777,216 pixels), or `maxImageBytes` if smaller, below the size of a bitmap that Android refuses to draw ([decisions/0080](../decisions/0080-kitty-graphics.md)) | Not configurable (`Graphics.MAX_BYTES_PER_IMAGE`) | Refused with `EFBIG` before the pixels are allocated |
 | Images, placements | 1024 of each per screen | Not configurable (`Graphics.MAX_IMAGES`, `MAX_PLACEMENTS`) | The oldest are dropped |
 | Columns and rows of a placement, and the width and height of the area it is drawn in | `TerminalLimits.MAX_DIMENSION` cells | Not configurable | Clamped, also a side computed from the image's aspect ratio when only `c` or `r` is given |
 | Bitmaps of images that a display no longer draws | 32 MiB per display, each for 60 frames | Not configurable (`ImageBitmaps.MAX_UNDRAWN_BYTES`, `KEEP_FRAMES` in `vtfx-compose`) | The least recently drawn are dropped (section 9.6) |

@@ -150,7 +150,7 @@ internal object Replies {
 
     /**
      * The reply to a kitty graphics command: the numbers of the command and a fixed status string.
-     * Unlike kitty's, the messages never carry anything from the request (docs/decisions/0038).
+     * Unlike kitty's, the messages never carry anything from the request (docs/decisions/0080).
      */
     private fun graphics(query: TerminalQuery.GraphicsReply): String {
         val ids = buildList {
