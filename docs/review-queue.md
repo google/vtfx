@@ -23,23 +23,22 @@ Until decided, the provisional decision is implemented. The impact of reversing 
 
 ## 3. Checks on real devices
 
-Things that cannot be checked on the emulator and the JVM. Each item says what to check; the steps, and what was already checked on the emulator and the JVM, are in the linked section of [device-checks.md](device-checks.md).
+Things that cannot be checked on the emulator and the JVM. What to check, the steps, and what was already checked are in the linked section of [device-checks.md](device-checks.md).
 
-| Item | What to check | Related |
-|---|---|---|
-| IMEs other than Gboard, and direct input | Whether Samsung Keyboard, SwiftKey, and Simeji send Latin letters one at a time, by default and with `directInput`; voice and handwriting input | section 2 of [device-checks.md](device-checks.md), section 13 of [ime-contract.md](design/ime-contract.md), [0017](decisions/0017-ime-scope.md) |
-| Rendering performance | Whether the frame time stays around 16 ms on a real GPU, and whether the display keeps drawing and keys reach the host while the host prints a large file without a break | section 5 of [device-checks.md](device-checks.md), [0014](decisions/0014-performance.md) |
-| Images | Whether images of the kitty graphics protocol appear at the right size and place and move with scrolling, and the frame time and memory with large images | section 8 of [device-checks.md](device-checks.md), section 9 of [emulation.md](design/emulation.md), [0038](decisions/0038-kitty-graphics.md), [0014](decisions/0014-performance.md) |
-| The largest image | Whether devices draw an image of 64 MiB (4096 × 4096 pixels), the largest one image may be, with `maxImageBytes` above 100 MiB, given their largest texture size and their memory. On the emulator (Android 17) and a Pixel XL (Android 10), `DeviceLimitsTest` draws it with `maxImageBytes` of 256 MiB and refuses a larger one, which the Pixel XL refused to draw before the limit ("Canvas: trying to draw too large(108160000bytes) bitmap") | section 8 of [device-checks.md](device-checks.md), section 10.2 of [emulation.md](design/emulation.md), [0051](decisions/0051-largest-image.md), `ImageBitmaps` |
-| TalkBack | Moving by line, explore by touch, the keyboard appearing on a double tap, and input | section 4 of [device-checks.md](device-checks.md), section 11 of [compose-input.md](design/compose-input.md), [0015](decisions/0015-accessibility.md) |
-| The input history on switching IMEs | Whether switching the IME in the middle of a line hands the text typed with the previous IME to the new one; if it does, the input history must also be reset on `closeConnection` | section 9 of [device-checks.md](device-checks.md), `TerminalInputConnection`, 5.1 of [ime-contract.md](design/ime-contract.md) |
-| Links taken by a protected activity | Whether `AndroidUrlOpener.open` returns `OpenUrlResult.Refused`, rather than crashing, when the activity that takes the link requires a permission. Needs a second app, which Robolectric does not model | section 10 of [device-checks.md](device-checks.md), `AndroidUrlOpener`, sections 5.3 and 6 of [gate-policy.md](design/gate-policy.md), [0043](decisions/0043-url-open-results.md) |
-| Imported fonts | Whether sanitized fonts without hinting look acceptable at small sizes and low densities, the time and memory of `FontFile.sanitize` for a CJK font on a low-end phone, and whether the limits on the work of a whole face (section 9 of fonts.md) accept the CJK fonts that devices ship and that users import. On the emulator (Android 17) and a Pixel XL (Android 10), `SystemFontsTest` sanitizes the first face of each font in `/system/fonts`, the Noto CJK collections included, within the limits; the Pixel XL took 4.6 s for the first face of NotoSansCJK-Regular.ttc (20 MB) | section 11 of [device-checks.md](device-checks.md), [fonts.md](design/fonts.md), [0040](decisions/0040-sanitized-user-fonts.md) |
-| Han glyphs and locale | Whether `LocaleList("ja")` gives Japanese glyphs on devices with their own CJK font (Samsung and others) | section 6 of [device-checks.md](device-checks.md), section 7.3 of [emulation.md](design/emulation.md), [0011](decisions/0011-unicode.md) |
-| Key interception | Whether `onPreImeKeyEvent` of `Terminal` receives the keys of a real physical keyboard before Gboard, in English and in Japanese | section 3.1 of [device-checks.md](device-checks.md), section 7.2 of [compose-input.md](design/compose-input.md), [0032](decisions/0032-keys-and-layout.md) |
-| Mouse and touchpad | Scrolling, selection, the menu, pointer icons, and mouse reports with a real mouse and touchpad, and how touchpads and the right button arrive | section 7 of [device-checks.md](device-checks.md), section 3 of [compose-input.md](design/compose-input.md), [0031](decisions/0031-desktop-pointer-and-terminal-state.md), `TerminalMouse` |
-| Copying all the text | How long Select all and Copy of a full scrollback, and Copy of a selection of a large display whose cells the host filled with combining marks, freeze the UI on a real device. On the emulator and a Pixel XL (Android 10), `DeviceLimitsTest` checks that both reach the system clipboard without `TransactionTooLargeException` | section 12 of [device-checks.md](device-checks.md), section 4 of [compose-input.md](design/compose-input.md), [0031](decisions/0031-desktop-pointer-and-terminal-state.md), `TerminalDisplay.selectedText` |
-| Searching | Whether searching a full scrollback, as the user types and while output flows, stays smooth on the main thread of a real device | section 14 of [device-checks.md](device-checks.md), section 13 of [compose-input.md](design/compose-input.md), [0047](decisions/0047-search.md) |
-| AltGr on physical keyboards | Whether characters typed with AltGr on layouts such as German arrive, rather than ESC and a letter | section 3.2 of [device-checks.md](device-checks.md), `KeyEventHandler` in `vtfx-compose`, 6.3 of [ime-contract.md](design/ime-contract.md) |
-| Restarts of the IME | Whether Gboard drops its composition when the input restarts after a key of a real hardware keyboard commits the composing text, whether keys that a person types on a hardware keyboard right after Enter all reach the host (keys injected with `adb shell input` right after Enter were lost before `bd194b21ccce3eeab2fb8efb92b4d3db145bdbec` when the echo of Enter restarted the input a second time), and whether the restart when arming Ctrl after typing a word feels disruptive. On the emulator (Gboard 18.4), Japanese and Korean composing text that the key bar's → committed reached the host once, and Gboard dropped its composition, as Japanese did on a Pixel XL (Android 10, Gboard 18.4); Gboard took the injected hardware keys itself while composing, so no hardware key committed composing text there | 5.1 and 5.2 of [ime-contract.md](design/ime-contract.md), [0054](decisions/0054-resets-during-batch-edits.md), [0055](decisions/0055-arming-sticky-modifiers-resets.md) |
-| IMEs on API 29 to 33 | Gboard 8.0 (emulator) and 18.4 (real device) on Android 10 corrected text correctly without `replaceText`, measured by the bytes sent ([research/ime-gboard-api29.md](research/ime-gboard-api29.md)). Still open: reconversion (13.4), which could not be tried; API 30 to 33; and traces of the calls: `tools/ime-probe/app` runs on API 29, but `run_scenarios.py` switches keyboards by `selected_input_method_subtype`, which Gboard on API 29 does not update, and taps key coordinates of the Pixel 7 AVD, so recording the `spec/ime` scenarios there and proposing them in `spec-proposals/` needs those adapted | section 13 of [device-checks.md](device-checks.md), [0039](decisions/0039-minsdk-29.md), sections 3 and 6.1 of [ime-contract.md](design/ime-contract.md) |
+| Item | Section of [device-checks.md](device-checks.md) |
+|---|---|
+| IMEs other than Gboard, voice and handwriting input | 2 |
+| Key interception | 3.1 |
+| AltGr on physical keyboards | 3.2 |
+| TalkBack | 4 |
+| Rendering performance | 5 |
+| Han glyphs and locale | 6 |
+| Mouse and touchpad | 7 |
+| Images, and the largest image | 8 |
+| The input history on switching IMEs | 9 |
+| Links taken by a protected activity | 10 |
+| Imported fonts | 11 |
+| Copying all the text | 12 |
+| IMEs on API 29 to 33 | 13 |
+| Searching | 14 |
+| Restarts of the IME | 15 |

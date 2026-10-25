@@ -174,13 +174,7 @@ Hardware keys go to the focused terminal. `TerminalInputView` passes the keys th
 
 ## 12. Not verified on devices
 
-The following are verified only with Robolectric and the emulator, and are listed in [review-queue.md](../review-queue.md) with the procedures in [device-checks.md](../device-checks.md):
-
-- `onPreImeKeyEvent` with a real physical keyboard and Gboard, in English and in Japanese.
-- The mouse and touchpads on a Chromebook, Samsung DeX, or a tablet with a mouse.
-- How long copying all the text with a full scrollback freezes the UI (that it reaches the system clipboard was also checked on a real device).
-- Reading and operating the rows with TalkBack.
-- The time that searching takes on the main thread (section 13).
+What is verified only with Robolectric and the emulator is in [device-checks.md](../device-checks.md): key interception (3.1), the mouse and touchpads (7), TalkBack (4), copying all the text (12), and searching (14).
 
 ## 13. Search
 

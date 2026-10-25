@@ -2,7 +2,7 @@
 
 These are steps for humans to check on real devices the items in section 3 of [review-queue.md](review-queue.md). Tell an agent, for each item, "what was used and what happened", and the agent records the result in the related decisions and documents and removes the item from review-queue.md. Results different from the expectation are handled as bugs following the procedure in [reviews/README.md](reviews/README.md).
 
-What was checked on the emulator is written in each section. Only what cannot be checked on the emulator remains here.
+This file is the only description of what remains to be checked on real devices: what to check, the steps, and what was already checked on the emulator, on the JVM, and on devices. review-queue.md lists the items, and the design documents link here.
 
 ## 1. Preparation
 
@@ -223,7 +223,7 @@ If the sample app crashes, tell us the exception in logcat.
 
 ## 11. Imported fonts
 
-[fonts.md](design/fonts.md). Sanitized fonts have no hinting, and sanitizing a CJK font takes seconds. On the x86_64 emulator, face 0 of Noto Serif CJK (65535 glyphs, CFF) took about 10 s in a release build and about 60 s in a debuggable one, where Android's runtime optimizes much less, measured before later optimizations of the verifier and the conversion. `SystemFontsTest` (an instrumented test) logs the time of every font of the device.
+[fonts.md](design/fonts.md). Sanitized fonts have no hinting, and sanitizing a CJK font takes seconds. On the x86_64 emulator, face 0 of Noto Serif CJK (65535 glyphs, CFF) took about 10 s in a release build and about 60 s in a debuggable one, where Android's runtime optimizes much less, measured before later optimizations of the verifier and the conversion. `SystemFontsTest` (an instrumented test) logs the time of every font of the device. On the emulator (Android 17) and a Pixel XL (Android 10), it sanitized the first face of each font in `/system/fonts`, the Noto CJK collections included, within the limits on the work of a whole face (section 9 of [fonts.md](design/fonts.md)); the Pixel XL took 4.6 s for the first face of NotoSansCJK-Regular.ttc (20 MB). What remains is whether the CJK fonts that other devices ship and that users import stay within those limits, and the time and memory on a low-end phone.
 
 Use a low-end phone and a device with a low density, and copy the font files to the device (for example to Downloads).
 
@@ -237,19 +237,20 @@ What to tell us: the device, the Android version, the density, whether the build
 
 ## 12. Copying all the text
 
-Section 4 of [compose-input.md](design/compose-input.md). Copying all the text copies at most the newest 10,000 lines, cut to 256 Ki characters (`TerminalDisplay.selectedText`), so that the system clipboard can take it. Robolectric's clipboard has no Binder limit; on the emulator, `DeviceLimitsTest` in `vtfx-compose` checks that the copy reaches the system clipboard without `TransactionTooLargeException`. What the emulator cannot tell is how long the UI freezes on a real device.
+Section 4 of [compose-input.md](design/compose-input.md). Copying all the text copies at most the newest 10,000 lines, cut to 256 Ki characters (`TerminalDisplay.selectedText`), so that the system clipboard can take it. Robolectric's clipboard has no Binder limit; on the emulator and a Pixel XL (Android 10), `DeviceLimitsTest` in `vtfx-compose` checks that a copy of all the text, and a copy of a selection of a large display whose cells the host filled with combining marks, reach the system clipboard without `TransactionTooLargeException`. What is not known is how long the UI freezes on other devices.
 
 | # | Action | Expected |
 |---|---|---|
 | 12.1 | In the sample app, fill the scrollback with long lines (for example, paste a long text of tens of KB and press Enter, several times; the fake host echoes it) | The scrollback holds many long lines |
 | 12.2 | Long-press, choose Select all, then Copy | The system's clipboard preview shows the start of the text, and the app does not crash. Note how long the UI freezes |
 | 12.3 | Paste into another app | The text is the newest part of the terminal, at most 256 Ki characters |
+| 12.4 | Make the host fill the screen with characters that each carry many combining marks (for example, paste such a text of many lines), select the whole screen, and copy | The app does not crash. Note how long the UI freezes |
 
 If the app crashes, tell us the exception in logcat.
 
 ## 13. IMEs on API 29 to 33
 
-[decisions/0039](decisions/0039-minsdk-29.md), sections 3 and 6.1 of [ime-contract.md](design/ime-contract.md). IMEs on Android 10 to 13 do not call `replaceText`, and on API 29 get no initial surrounding text, so they correct text through the other paths of the contract. On Android 10, rows 13.1 to 13.3 were checked with Gboard 8.0 on the emulator and Gboard 18.4 on a real device, and 13.4 could not be tried ([research/ime-gboard-api29.md](research/ime-gboard-api29.md)); Android 11 to 13 were not checked.
+[decisions/0039](decisions/0039-minsdk-29.md), sections 3 and 6.1 of [ime-contract.md](design/ime-contract.md). IMEs on Android 10 to 13 do not call `replaceText`, and on API 29 get no initial surrounding text, so they correct text through the other paths of the contract. On Android 10, rows 13.1 to 13.3 were checked with Gboard 8.0 on the emulator and Gboard 18.4 on a real device, and 13.4 could not be tried ([research/ime-gboard-api29.md](research/ime-gboard-api29.md)); Android 11 to 13 were not checked. Traces of the calls were not recorded on API 29: `tools/ime-probe/app` runs there, but `run_scenarios.py` switches keyboards by `selected_input_method_subtype`, which Gboard on API 29 does not update, and taps the key coordinates of the Pixel 7 AVD, so recording the `spec/ime` scenarios there and proposing them in `spec-proposals/` needs those adapted.
 
 Use Gboard on devices with Android 10, 11, 12, and 13, and start the sample app with logHostInput enabled (section 1).
 
@@ -275,3 +276,17 @@ Section 13 of [compose-input.md](design/compose-input.md), [decisions/0047](deci
 | 14.5 | Close the search bar | The highlights go |
 
 What to tell us: the device and Android version, and any pause or freeze, with roughly how long it lasted.
+
+## 15. Restarts of the IME
+
+5.1 and 5.2 of [ime-contract.md](design/ime-contract.md), [decisions/0054](decisions/0054-resets-during-batch-edits.md), [decisions/0055](decisions/0055-arming-sticky-modifiers-resets.md). The input history is reset, and the IME restarts, when a key of a hardware keyboard commits the composing text, after Enter, and when a sticky modifier is armed. On the emulator (Gboard 18.4), Japanese and Korean composing text that the key bar's → committed reached the host once, and Gboard dropped its composition, as Japanese did on a Pixel XL (Android 10, Gboard 18.4). Gboard took the keys injected with `adb shell input` itself while composing, so no hardware key committed composing text there; and keys injected right after Enter were lost before `bd194b21ccce3eeab2fb8efb92b4d3db145bdbec`, when the echo of Enter restarted the input a second time.
+
+Connect a USB or Bluetooth keyboard, set the IME to Gboard, and start the sample app with logHostInput enabled (section 1).
+
+| # | Action | Expected |
+|---|---|---|
+| 15.1 | In Japanese, type `にほんご` on the software keyboard without committing, then press an arrow key of the hardware keyboard | The composing text reaches the host once, and Gboard drops its composition (no composing text is left on the keyboard) |
+| 15.2 | Type `echo hi` on the hardware keyboard, press Enter, and right away type `ls` and Enter | Every key reaches the host: `echo hi`, `0d`, `ls`, `0d` |
+| 15.3 | Type a word on the software keyboard, then tap Ctrl on the key bar and a letter | Ctrl and the letter are sent. Note whether the restart of the keyboard when Ctrl is armed feels disruptive |
+
+What to tell us: the Gboard version, the device and Android version, and each row's logcat output.

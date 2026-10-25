@@ -195,10 +195,9 @@ IME calls arrive on the UI thread. `vtfx-compose` operates the editing model of 
 
 | Item | Contents |
 |---|---|
-| Limit of the input history | 1024 code points (`ImeEditor.DEFAULT_MAX_HISTORY_LENGTH`, an argument of `ImeEditor`; [decisions/0004](../decisions/0004-ime-editor-details.md)). |
-| IMEs other than Gboard | The behavior of Samsung Keyboard, SwiftKey, and Simeji. Their place in the matrix of target IMEs is in section 13. IMEs that hold English words as composing text are handled by direct input (section 3). |
 | Autocorrect of misspellings, and undoing it | Observed only on API 29, with Gboard 18.4 on a real device (`helo` corrected to `hello`, and back by choosing the suggestion), where the bytes sent were correct ([research/ime-gboard-api29.md](../research/ime-gboard-api29.md)). No trace has it: `teh` is not corrected in the recordings. |
-| Handwriting input, voice input | Unverified. Handwriting gestures are not accepted (6.4, section 13). |
+
+What remains to be checked on real devices, IMEs other than Gboard and voice and handwriting input among them, is in [device-checks.md](../device-checks.md) (sections 2, 9, 13, and 15).
 
 ## 11. Details of the editing model
 
