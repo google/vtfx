@@ -10,7 +10,6 @@ Until decided, the provisional decision is implemented. The impact of reversing 
 
 | Item | What to decide | Related |
 |---|---|---|
-| Robolectric's Android jars | Whether and how to verify the `android-all` jars that Robolectric downloads into `~/.m2` with its own downloader, outside Gradle, so that `gradle/verification-metadata.xml` does not cover them. Candidates: declare them as Gradle dependencies and run Robolectric offline from them, or keep relying on the repository | [0088](decisions/0088-build-boundaries-and-tests.md), `build-logic` |
 
 ## 2. Work only humans can do
 

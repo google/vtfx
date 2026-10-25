@@ -23,6 +23,11 @@ jazzer = "0.30.0"
 junit4 = "4.13.2"
 testparameterinjector = "1.24"
 robolectric = "4.17"
+# The Android jars that Robolectric 4.17 runs the tests on, for the SDKs that the tests use (SDK and
+# MIN_SDK in vtfx-compose's TestSdk.kt). Each is the version that Robolectric's DefaultSdkProvider
+# names for the SDK, and changes with Robolectric (docs/decisions/0088).
+robolectric-android-sdk29 = "10-robolectric-5803371-i7"
+robolectric-android-sdk36 = "16-robolectric-13921718-i7"
 roborazzi = "1.76.0"
 androidx-test-runner = "1.7.0"
 espresso = "3.7.0"
@@ -58,6 +63,8 @@ jazzer = { module = "com.code-intelligence:jazzer", version.ref = "jazzer" }
 junit4 = { module = "junit:junit", version.ref = "junit4" }
 testparameterinjector = { module = "com.google.testparameterinjector:test-parameter-injector", version.ref = "testparameterinjector" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+robolectric-android-sdk29 = { module = "org.robolectric:android-all-instrumented", version.ref = "robolectric-android-sdk29" }
+robolectric-android-sdk36 = { module = "org.robolectric:android-all-instrumented", version.ref = "robolectric-android-sdk36" }
 roborazzi = { module = "io.github.takahirom.roborazzi:roborazzi", version.ref = "roborazzi" }
 roborazzi-compose = { module = "io.github.takahirom.roborazzi:roborazzi-compose", version.ref = "roborazzi" }
 roborazzi-junit-rule = { module = "io.github.takahirom.roborazzi:roborazzi-junit-rule", version.ref = "roborazzi" }
