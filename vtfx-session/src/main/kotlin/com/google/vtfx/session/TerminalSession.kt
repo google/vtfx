@@ -299,7 +299,7 @@ public class TerminalSession(
             input(notifySent = true) { editor ->
                 if (value == stickyModifiersState) return@input
                 // Text typed before the modifiers must not take them, not even when the IME
-                // corrects it later (docs/decisions/0033, docs/decisions/0055).
+                // corrects it later (docs/decisions/0082).
                 if (!value.isEmpty) editor.sendPendingInput()
                 stickyModifiersState = value
             }
@@ -307,7 +307,7 @@ public class TerminalSession(
 
     private var directInputState = false
 
-    // Direct input is chosen in docs/decisions/0017.
+    // Direct input is chosen in docs/decisions/0082.
     /**
      * Whether the IME is asked for plain characters, which it commits one at a time, instead of
      * text with suggestions and composition. Some IMEs keep a whole English word as composing text
@@ -781,7 +781,7 @@ public class TerminalSession(
     @InternalVtfxApi
     public fun sendMouse(report: MouseReport) {
         input { editor ->
-            // As a key would (docs/decisions/0057). Not motion, which comes in streams while the
+            // As a key would (docs/decisions/0082). Not motion, which comes in streams while the
             // user may be composing.
             if (report.action == MouseAction.Press) editor.sendPendingInput()
             val modes = terminal.modes

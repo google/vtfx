@@ -37,7 +37,7 @@ Requires JDK 21 (no Android emulator is needed).
 ## R1: Multiline composing text committed via `finishComposingText` or other commit paths bypasses `HostInput.Paste` and bracketed paste mode
 
 - Related: `ImeEditor.setComposingText`, `ImeEditor.finishComposingText`, `ImeEditor.setComposingRegion`, `ImeEditor.replaceText`, `ImeEditor.onKeyDown`, `ImeEditor.closeConnection`, `ImeEditor.typeText`, `ImeEditor.paste`, `ImeEditor.sendPendingInput`, and `ImeEditor.sendText` in [ImeEditor.kt](../../vtfx-input/src/main/kotlin/com/google/vtfx/input/ImeEditor.kt); `ComposingLayout` in [ComposingLayout.kt](../../vtfx-compose/src/main/kotlin/com/google/vtfx/compose/ComposingLayout.kt)
-- Contract: Requirement 6.1 in [REQUIREMENTS.md](../REQUIREMENTS.md), sections 4.2, 6.1, and 11 of [ime-contract.md](../design/ime-contract.md), and [0050-ime-text-of-several-lines-is-a-paste.md](../decisions/0050-ime-text-of-several-lines-is-a-paste.md) ("Committed text with a line break (CR, LF, or CR LF) is a paste, unless it is a line feed alone... An IME commits a clipboard suggestion as text, and its lines must not run one by one")
+- Contract: Requirement 6.1 in [REQUIREMENTS.md](../REQUIREMENTS.md), sections 4.2, 6.1, and 11 of [ime-contract.md](../design/ime-contract.md), and [0082-ime-editing-model.md](../decisions/0082-ime-editing-model.md) ("Committed text with a line break (CR, LF, or CR LF) is a paste, unless it is a line feed alone... An IME commits a clipboard suggestion as text, and its lines must not run one by one")
 - Reproduction test: `ReviewReproTest.r1_multilineComposingTextFinished_isSentAsBracketedPaste`
 
 Steps:
@@ -56,7 +56,7 @@ Direction of the fix: Check all paths by which text containing line breaks can e
 ## R2: Committed newline (`\n`) or Tab (`\t`) inside a batch edit does not flush or reset the input history at once
 
 - Related: `ImeEditor.commitText`, `ImeEditor.replaceText`, `ImeEditor.onKeyDown`, `ImeEditor.endOperation`, and `ImeEditor.flush` in [ImeEditor.kt](../../vtfx-input/src/main/kotlin/com/google/vtfx/input/ImeEditor.kt)
-- Contract: Sections 4.2, 5.1, and 5.2 of [ime-contract.md](../design/ime-contract.md) ("1. Send the edits not sent yet, even during a batch edit: they were made before the reset. 2. Empty the input history at once, even during a batch edit and while there is composing text, so that the IME's later edits apply to the empty history"), [0054-resets-during-batch-edits.md](../decisions/0054-resets-during-batch-edits.md), and [0057-provisional-ime-details.md](../decisions/0057-provisional-ime-details.md)
+- Contract: Sections 4.2, 5.1, and 5.2 of [ime-contract.md](../design/ime-contract.md) ("1. Send the edits not sent yet, even during a batch edit: they were made before the reset. 2. Empty the input history at once, even during a batch edit and while there is composing text, so that the IME's later edits apply to the empty history"), [0082-ime-editing-model.md](../decisions/0082-ime-editing-model.md)
 - Reproduction test: `ReviewReproTest.r2a_commitNewlineInBatchEdit_flushesAndResetsHistoryImmediately`, `ReviewReproTest.r2b_commitTabThenTextInBatchEdit_keepsTextAfterTabInHistory`
 
 Steps:
@@ -79,7 +79,7 @@ Direction of the fix: Check all paths that commit a reset-triggering character (
 ## R3: `replaceText` with `"\n"` before the end of the edit buffer or after a paste in the same batch edit fails to paste
 
 - Related: `ImeEditor.replaceText` and `ImeEditor.isPaste` in [ImeEditor.kt](../../vtfx-input/src/main/kotlin/com/google/vtfx/input/ImeEditor.kt)
-- Contract: Sections 4.2, 6.1, and 11 of [ime-contract.md](../design/ime-contract.md), [0050-ime-text-of-several-lines-is-a-paste.md](../decisions/0050-ime-text-of-several-lines-is-a-paste.md), and [0064-line-feed-after-a-paste-in-a-batch-edit.md](../decisions/0064-line-feed-after-a-paste-in-a-batch-edit.md)
+- Contract: Sections 4.2, 6.1, and 11 of [ime-contract.md](../design/ime-contract.md), [0082-ime-editing-model.md](../decisions/0082-ime-editing-model.md)
 - Reproduction test: `ReviewReproTest.r3a_replaceTextWithNewlineBeforeEndOfBuffer_isSentAsPaste`, `ReviewReproTest.r3b_replaceTextWithNewlineAfterPasteInSameBatch_isSentAsPaste`
 
 Steps:

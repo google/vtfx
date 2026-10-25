@@ -1,6 +1,6 @@
 # Structure of the session and the Composable
 
-- Status: Approved (2026-10-13, approved by a human in the final review); the threads superseded by [0024](0024-thread-conventions.md) and [0026](0026-session-module.md), the IME connection through `PlatformTextInputModifierNode` by [0008](0008-ime-view-and-selection.md), passing a `HostWriter` by [0027](0027-session-takes-connection.md), and the single accessibility node by [0015](0015-accessibility.md)
+- Status: Approved (2026-10-13, approved by a human in the final review); the threads superseded by [0024](0024-thread-conventions.md) and [0026](0026-session-module.md), the IME connection through `PlatformTextInputModifierNode` by [0082](0082-ime-editing-model.md), passing a `HostWriter` by [0027](0027-session-takes-connection.md), and the single accessibility node by [0015](0015-accessibility.md)
 - Date: 2026-10-12
 - Related: 3.5 of [architecture.md](../design/architecture.md), sections 2 and 4 of [session-and-threads.md](../design/session-and-threads.md), sections 5 and 7 of [ime-contract.md](../design/ime-contract.md), [0042](0042-user-clipboard-through-gate.md), requirements 5.3, 5.5, and 6.3, `vtfx-compose`
 
@@ -23,7 +23,7 @@
 
 ### IME
 
-- The IME connection was to be our own `InputConnection` made with Compose's `PlatformTextInputModifierNode`. Compose's wrapper does not forward `replaceText`, so [0008](0008-ime-view-and-selection.md) replaced this with a `View` placed behind the terminal.
+- The IME connection was to be our own `InputConnection` made with Compose's `PlatformTextInputModifierNode`. Compose's wrapper does not forward `replaceText`, so [0082](0082-ime-editing-model.md) replaced this with a `View` placed behind the terminal.
 - The `InputConnection` is a thin adapter that delegates to `ImeEditor`, and does not use the `Editable` of `BaseInputConnection`. The adapter sends selection notifications (`updateSelection`) and `CursorAnchorInfo`.
 - "Host output moved the cursor to another line", a trigger for resetting the input history, is judged by the session from the terminal's state before and after `feed`; following the echo of long input over autowrapped rows is not a move ([0013](0013-resize-and-lifecycle.md); 5.1 of [ime-contract.md](../design/ime-contract.md)).
 - Pastes (the IME's context menu and `pasteFromClipboard`) read from the `ClipboardAccess` passed to the session. `vtfx-compose` does not use `ClipboardManager` directly. [0042](0042-user-clipboard-through-gate.md) routes the reading through the gate.
@@ -45,7 +45,7 @@ The SDK for tests run with Robolectric is 36. With compileSdk 37, Robolectric 4.
 ## Alternatives considered
 
 - **Limit `feed` to the main thread**: The implementation would be simpler, but large output would clog the main thread. Many apps (SSH libraries and so on) receive data on another thread.
-- **Use `AndroidView` and our own `View` for the IME connection**: Initially, Compose's official API was judged to be enough; [0008](0008-ime-view-and-selection.md) changed to this.
+- **Use `AndroidView` and our own `View` for the IME connection**: Initially, Compose's official API was judged to be enough; [0082](0082-ime-editing-model.md) changed to this.
 
 ## Impact of reversing
 

@@ -76,7 +76,7 @@ class ReviewReproTest {
          * R1 (case A): Calling an inherited external method (both a restricted member and an
          * unallowed member) through a project-internal interface that declares the same signature
          * bypasses both `classViolations` and `allowlistViolations` (docs/design/boundaries.md
-         * sections 4.2, 4.3, 5.1; docs/decisions/0054).
+         * sections 4.2, 4.3, 5.1; docs/decisions/0082).
          */
         @Test
         fun r1a_interfaceTunnelBypassesRestrictedMemberAndAllowlist() {

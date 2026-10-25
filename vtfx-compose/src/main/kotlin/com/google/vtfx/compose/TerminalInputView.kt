@@ -36,7 +36,7 @@ import com.google.vtfx.session.TerminalSession
  * A view is used instead of Compose's `PlatformTextInputModifierNode`, because Compose wraps the
  * `InputConnection` in a wrapper that does not forward `replaceText`. Its default implementation
  * selects the range and commits, which cannot reject a range outside the edit buffer as
- * docs/design/ime-contract.md section 6.1 requires (docs/decisions/0008).
+ * docs/design/ime-contract.md section 6.1 requires (docs/decisions/0082).
  */
 @SuppressLint("ViewConstructor")
 internal class TerminalInputView(context: Context) : View(context), InputHost {

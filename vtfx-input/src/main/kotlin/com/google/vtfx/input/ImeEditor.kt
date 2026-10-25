@@ -92,7 +92,7 @@ public class ImeEditor(
 
     /**
      * The start of a selection that ends at the cursor, or -1 if the selection is collapsed. Only
-     * set while there is no composing text (docs/decisions/0008).
+     * set while there is no composing text (docs/decisions/0082).
      */
     private var selectionFrom = -1
 
@@ -177,7 +177,7 @@ public class ImeEditor(
      * Enter. For text from the app, which is not a paste. Both are sent at once, even during a
      * batch edit, since the app's call is not part of the IME's edit, and the input history is then
      * reset, so that the IME never sees the app's text, which may be a secret such as a saved
-     * password (docs/decisions/0056).
+     * password (docs/decisions/0082).
      */
     public fun typeText(text: String) {
         commitComposingText()
@@ -303,7 +303,7 @@ public class ImeEditor(
      * Accepts a selection that ends at the cursor, without composing text, so that invariant 1
      * holds. The next [commitText] or [setComposingText] replaces the selected text; any other edit
      * collapses the selection first. Gboard selects a trailing space this way to replace it with ".
-     * " (docs/decisions/0008).
+     * " (docs/decisions/0082).
      */
     public fun setSelection(start: Int, end: Int): Boolean {
         val from = minOf(start, end)
@@ -388,7 +388,7 @@ public class ImeEditor(
         ) {
             history += withoutDroppedControls(String(Character.toChars(key.codePoint)))
             endOperation()
-            // The IME still has the composing text, which the host received (docs/decisions/0054).
+            // The IME still has the composing text, which the host received (docs/decisions/0082).
             if (hadComposingText) requestReset()
             return
         }
@@ -459,7 +459,7 @@ public class ImeEditor(
      * edit, so that a change that applies to later input, such as the app arming sticky modifiers,
      * does not apply to it (section 6.3). Then resets, so that the IME can no longer correct the
      * text typed before, which would be sent again with the change; the reset restarts the IME only
-     * if it saw an edit since the last restart (docs/decisions/0055).
+     * if it saw an edit since the last restart (docs/decisions/0082).
      */
     public fun sendPendingInput() {
         commitComposingText()
@@ -474,7 +474,7 @@ public class ImeEditor(
      * even during a batch edit, so that the IME's later edits do not apply to text the host's line
      * may no longer end with. Restarting the IME's input waits for the end of the batch edit, and
      * for the composing text to finish, since restarting the input would commit it
-     * (docs/decisions/0054).
+     * (docs/decisions/0082).
      */
     public fun requestReset() {
         flush()
@@ -533,7 +533,7 @@ public class ImeEditor(
         sentHistory = history
         if (added.isNotEmpty()) listener.send(HostInput.Text(added))
         // A committed HT resets as the Tab key does: the shell may complete the word, and the
-        // history no longer predicts the host's line (docs/decisions/0057).
+        // history no longer predicts the host's line (docs/decisions/0082).
         if ('\t' in added || isHistoryOverLimit()) clearHistory()
         restartIfReady()
     }
@@ -588,7 +588,7 @@ public class ImeEditor(
         /**
          * Whether committed [text] is a paste rather than typing: it has a line break, and is not a
          * line feed alone, which is how an IME commits Enter. An IME commits a clipboard suggestion
-         * as text, and its lines must not run one by one (docs/decisions/0050).
+         * as text, and its lines must not run one by one (docs/decisions/0082).
          */
         private fun isPaste(text: String): Boolean =
             text != "\n" && text.any { it == '\n' || it == '\r' }

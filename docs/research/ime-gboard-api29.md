@@ -39,7 +39,7 @@ Decision 0039 accepts that IMEs on API 29 to 33 correct text without `replaceTex
 | en-double-space (`ok \x7f. \r`) | pass | pass |
 | en-vim-j (`jj`) | **fail**: nothing sent | pass |
 
-en-vim-j on Gboard 8.0: Gboard kept the English word as composing text (underlined, with suggestions), so nothing was sent until a space or Enter, as invariant 2 of ime-contract.md specifies. With direct input (the Direct key of the sample app), the same taps sent `jj`. This is the kind of IME that direct input is for ([decisions/0017](../decisions/0017-ime-scope.md)); Gboard 18.4 commits each character on the same version of Android, so it depends on the Gboard version, not on API 29.
+en-vim-j on Gboard 8.0: Gboard kept the English word as composing text (underlined, with suggestions), so nothing was sent until a space or Enter, as invariant 2 of ime-contract.md specifies. With direct input (the Direct key of the sample app), the same taps sent `jj`. This is the kind of IME that direct input is for ([decisions/0082](../decisions/0082-ime-editing-model.md)); Gboard 18.4 commits each character on the same version of Android, so it depends on the Gboard version, not on API 29.
 
 ### 3.3 Corrections without `replaceText`
 

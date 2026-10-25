@@ -202,7 +202,7 @@ class ImeEditorTest {
 
     @Test
     fun commitReplacesTheSelection() {
-        // Gboard's double-space period on the emulator (docs/decisions/0008).
+        // Gboard's double-space period on the emulator (docs/decisions/0082).
         editor.commitText("ok ")
         sent.clear()
         editor.finishComposingText()
@@ -734,7 +734,7 @@ class ImeEditorTest {
         editor.setComposingText("か")
         editor.onKeyDown(characterKey('x'.code))
         assertEquals(listOf<HostInput>(text("かx")), sent)
-        // The IME still has the composing text, which the host received (docs/decisions/0054).
+        // The IME still has the composing text, which the host received (docs/decisions/0082).
         assertEquals("", editor.text)
         assertEquals(1, restarts)
     }

