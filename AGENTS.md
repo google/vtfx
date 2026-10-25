@@ -17,7 +17,7 @@ The scope of work and the instructions given by the user take precedence.
 - [docs/design/compose-input.md](docs/design/compose-input.md): touch, mouse, selection, links, hardware keys, and accessibility in the Compose UI
 - [docs/design/fonts.md](docs/design/fonts.md): where fonts come from, font sanitizing, and the font modules
 - [docs/design/boundaries.md](docs/design/boundaries.md): how the build checks the module boundaries in `config/boundaries.toml`
-- [docs/decisions/README.md](docs/decisions/README.md): records of design decisions
+- [docs/decisions/README.md](docs/decisions/README.md): records of design decisions. Read only the README up front; the design documents say what the current design is. Open a decision itself only when you need the reasons behind the design or are about to make or change a decision.
 - [docs/review-queue.md](docs/review-queue.md): items waiting for a human
 - [docs/reviews/README.md](docs/reviews/README.md): the procedure of the code review feedback loop, and the list of open bug reports
 
