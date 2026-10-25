@@ -2,7 +2,7 @@
 
 - Status: Approved
 - Date: 2026-10-25
-- Related: Requirements 4.1, 4.2, 6.1, and 6.5, and section 8 of [REQUIREMENTS.md](../REQUIREMENTS.md); sections 2 and 7 of [architecture.md](../design/architecture.md); [usage.md](../usage.md); sections 5, 6, 7.2, and 13 of [compose-input.md](../design/compose-input.md); section 9 of [testing.md](../design/testing.md); section 11 of [fonts.md](../design/fonts.md); [0018](0018-distribution.md), [0088](0088-build-boundaries-and-tests.md), [0083](0083-gate.md), [0074](0074-api-reference-of-the-default-branch.md)
+- Related: Requirements 4.1, 4.2, 6.1, and 6.5, and section 8 of [REQUIREMENTS.md](../REQUIREMENTS.md); sections 2 and 7 of [architecture.md](../design/architecture.md); [usage.md](../usage.md); sections 5, 6, 7.2, and 13 of [compose-input.md](../design/compose-input.md); section 9 of [testing.md](../design/testing.md); section 11 of [fonts.md](../design/fonts.md); [0090](0090-distribution.md), [0088](0088-build-boundaries-and-tests.md), [0083](0083-gate.md), [0090](0090-distribution.md)
 
 ## Background
 
@@ -110,7 +110,7 @@ In xterm.js, addons (automatic links, search, shell integration, saving sessions
 
 ## 6. The API reference
 
-1. The HTML API reference of the library modules is generated with Dokka. Each module applies `vtfx.dokka` from `build-logic`, and `vtfx.api-reference` at the root aggregates them (`./gradlew :dokkaGenerate`, output in `build/dokka/html`). Generation is not part of `check`; it is for publishing. Where its source links point and how it is published are in [0074](0074-api-reference-of-the-default-branch.md).
+1. The HTML API reference of the library modules is generated with Dokka. Each module applies `vtfx.dokka` from `build-logic`, and `vtfx.api-reference` at the root aggregates them (`./gradlew :dokkaGenerate`, output in `build/dokka/html`). Generation is not part of `check`; it is for publishing. Where its source links point and how it is published are in [0090](0090-distribution.md).
 2. The footer of the reference carries the same notice as the license headers of the sources, and the version comes from `gradle.properties`.
 3. `@InternalVtfxApi` declarations are excluded from the reference with KDoc's `@suppress`, and `scripts/check_kdoc.py` checks for missing ones (section 9 of [testing.md](../design/testing.md)).
 4. `scripts/check_api_reference.py` checks the generated reference for broken links, and `scripts/check_kdoc.py` checks that each property declared in a primary constructor has its own KDoc or `@property`. The rules are in the docstrings of the two scripts.

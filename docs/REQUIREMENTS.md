@@ -209,7 +209,7 @@ These inputs are the adversaries. The code of vtfx is not: a change to it that b
 2. Agents develop autonomously. Human review is minimized.
 3. Release after human review.
    - The review centers on the code under review in 6.1 and the public API in 6.5.
-   - Done: the repository was published on 2026-10-15 at version 0.1.0 after a human review of the whole tree ([0018](decisions/0018-distribution.md)).
+   - Done: the repository was published on 2026-10-15 at version 0.1.0 after a human review of the whole tree ([0090](decisions/0090-distribution.md)).
 4. Continuous development after publication.
    - Agents develop autonomously as in phase 2. What needs a human (decisions, work only humans can do, checks on real devices) is gathered in [review-queue.md](review-queue.md).
    - Humans review the changes to the code under review in 6.1 periodically, and before every release.
@@ -256,7 +256,7 @@ Every release in phases 4 to 6 requires that humans have reviewed the changes to
 - The policy for resize notifications during the IME animation (Resolved: [0084](decisions/0084-session-and-threads.md))
 - The acceptable range and limits for resource exhaustion (Resolved: [0081](decisions/0081-resource-limits.md))
 - Performance targets (Resolved: [0089](decisions/0089-performance.md))
-- minSdk (trade-offs per feature) (Resolved: minSdk is 29, [0039](decisions/0039-minsdk-29.md); the initial value was 34)
+- minSdk (trade-offs per feature) (Resolved: minSdk is 29, [0090](decisions/0090-distribution.md); the initial value was 34)
 - The concrete scope of the code under security review, and how to verify the boundary (Resolved: [0041](decisions/0041-security-review-by-module.md), [0088](decisions/0088-build-boundaries-and-tests.md), [0076](decisions/0076-security-review-is-focused.md))
 - The compatibility policy of the public API, and when to start guaranteeing stability (Resolved: [0087](decisions/0087-public-api.md))
-- Distribution and license (Resolved: [0018](decisions/0018-distribution.md))
+- Distribution and license (Resolved: [0090](decisions/0090-distribution.md))

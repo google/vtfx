@@ -1,8 +1,8 @@
 # Research: Gboard and rendering on API 29 (2026-10)
 
-Status: Record. It records checks made on 2026-10-20 at commit `7e2a60353493e8814b213fddf82a345a3f83bdcb`, after minSdk was lowered to 29 ([decisions/0039](../decisions/0039-minsdk-29.md)), and is not kept up to date. The current contract is in [ime-contract.md](../design/ime-contract.md).
+Status: Record. It records checks made on 2026-10-20 at commit `7e2a60353493e8814b213fddf82a345a3f83bdcb`, after minSdk was lowered to 29 ([decisions/0090](../decisions/0090-distribution.md)), and is not kept up to date. The current contract is in [ime-contract.md](../design/ime-contract.md).
 
-Decision 0039 accepts that IMEs on API 29 to 33 correct text without `replaceText`, through paths of the contract that only unit tests checked. This document records how Gboard on Android 10 behaved with the sample app, and the rendering e2e on the same environments.
+Topic 4 of decision 0090 accepts that IMEs on API 29 to 33 correct text without `replaceText`, through paths of the contract that only unit tests checked. This document records how Gboard on Android 10 behaved with the sample app, and the rendering e2e on the same environments.
 
 ## 1. Environment
 
@@ -55,7 +55,7 @@ In every row, the text that reached the host was what the screen showed. Reconve
 ### 3.4 Other observations
 
 - Gboard showed its incognito icon in the sample app on both versions, so `IME_FLAG_NO_PERSONALIZED_LEARNING` takes effect on API 29.
-- `uiautomator dump`, which is not an accessibility tool, could read the text of the rows on both, as decision 2 of 0039 expects below API 34.
+- `uiautomator dump`, which is not an accessibility tool, could read the text of the rows on both, as topic 4 of decision 0090 expects below API 34.
 - The app started and took input on both without crashes, with the guards of `setInitialSurroundingText` (API 30) and `getSurroundingText` (API 31) in place.
 - On the emulator, `adb shell input text` while Gboard 8.0's Japanese keyboard was active went through Gboard's romaji conversion and the result was garbled. Not investigated; it does not involve the software keyboard.
 
@@ -64,4 +64,4 @@ In every row, the text that reached the host was what the screen showed. Reconve
 - Traces of the `InputConnection` calls on API 29 to 33 (needs the minSdk of `tools/ime-probe/app` lowered).
 - API 31 and 33.
 - Reconversion (13.4).
-- The clipboard on API 29 to 32 (decision 3 of 0039): the sample app has no way to send OSC 52.
+- The clipboard on API 29 to 32 (topic 4 of decision 0090): the sample app has no way to send OSC 52.

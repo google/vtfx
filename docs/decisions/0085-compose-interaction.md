@@ -2,7 +2,7 @@
 
 - Status: Approved
 - Date: 2026-10-25
-- Related: Requirements 4.1, 5.4, 5.5, 6.1, 6.3, and 6.5, [compose-input.md](../design/compose-input.md), sections 4.2 and 5 of [gate-policy.md](../design/gate-policy.md), 2.7 of [research/xterm-js-ime.md](../research/xterm-js-ime.md), [0083](0083-gate.md), [0084](0084-session-and-threads.md), [0087](0087-public-api.md), [0039](0039-minsdk-29.md), [0081](0081-resource-limits.md)
+- Related: Requirements 4.1, 5.4, 5.5, 6.1, 6.3, and 6.5, [compose-input.md](../design/compose-input.md), sections 4.2 and 5 of [gate-policy.md](../design/gate-policy.md), 2.7 of [research/xterm-js-ime.md](../research/xterm-js-ime.md), [0083](0083-gate.md), [0084](0084-session-and-threads.md), [0087](0087-public-api.md), [0090](0090-distribution.md), [0081](0081-resource-limits.md)
 
 ## Background
 
@@ -163,7 +163,7 @@ See section 11 of [compose-input.md](../design/compose-input.md).
 2. **Computed only when queried**, so that the rendering load does not increase without an accessibility service.
 3. **No click action on rows.**
 4. **The view for the IME is not exposed.**
-5. **Rows are sensitive data**: only services that declare `isAccessibilityTool` (TalkBack, Switch Access, and so on) see them. On API 29 to 33, the platform cannot tell a tool from another service ([0039](0039-minsdk-29.md)).
+5. **Rows are sensitive data**: only services that declare `isAccessibilityTool` (TalkBack, Switch Access, and so on) see them. On API 29 to 33, the platform cannot tell a tool from another service ([0090](0090-distribution.md)).
 6. **Content Capture and screen sharing are left to the app**: the library sets neither.
 7. **No automatic reading of new output (live regions).**
 

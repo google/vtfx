@@ -205,11 +205,11 @@ The tests of each module are listed below. Where the oracles live, the gate rule
 
 - Kotlin, Gradle (Kotlin DSL), Jetpack Compose.
 - The package name and Maven groupId are `com.google.vtfx`.
-- CI is GitHub Actions. However, workflows only run commands that can also run locally (the check script, and the generation and check of the API reference), so that nothing depends on CI but the deployment of the API reference of the default branch to GitHub Pages ([decisions/0074](../decisions/0074-api-reference-of-the-default-branch.md)).
+- CI is GitHub Actions. However, workflows only run commands that can also run locally (the check script, and the generation and check of the API reference), so that nothing depends on CI but the deployment of the API reference of the default branch to GitHub Pages ([decisions/0090](../decisions/0090-distribution.md)).
 - The public API uses Kotlin's explicit API mode to make the public surface explicit.
 - Every module is compiled with Kotlin's unused return value checker, so that builds that check the use of results, as CheckReturnValue does, take the sources as they are ([decisions/0088](../decisions/0088-build-boundaries-and-tests.md)).
 - Compatibility of the public API is checked by `check` by comparing ABI dumps and dumps of the Kotlin signatures (each module's `api/`) (requirement 6.5, [decisions/0087](../decisions/0087-public-api.md)).
-- minSdk is 29 (Android 10), weighed per feature (requirement 6.4, [decisions/0039](../decisions/0039-minsdk-29.md)). 29 is the first API level with `RenderNode`, which the line cache uses, and with foreground-only clipboard reads. On API 29 to 33, IMEs correct text without `replaceText` and the sensitive mark on the rows has no effect, and on API 29 to 32 the clipboard has no copy preview; the decision accepts these gaps. The two IME calls newer than 29 are guarded in `TerminalInputConnection` (sections 3 and 6 of [ime-contract.md](ime-contract.md)).
+- minSdk is 29 (Android 10), weighed per feature (requirement 6.4, [decisions/0090](../decisions/0090-distribution.md)). 29 is the first API level with `RenderNode`, which the line cache uses, and with foreground-only clipboard reads. On API 29 to 33, IMEs correct text without `replaceText` and the sensitive mark on the rows has no effect, and on API 29 to 32 the clipboard has no copy preview; the decision accepts these gaps. The two IME calls newer than 29 are guarded in `TerminalInputConnection` (sections 3 and 6 of [ime-contract.md](ime-contract.md)).
 
 ## 8. What this document does not decide
 

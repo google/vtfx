@@ -28,8 +28,8 @@ dokka {
         // The descriptions of the module and its packages.
         includes.from("Module.md")
         // Links each declaration to its source in the published repository, at the tag of the
-        // version (docs/decisions/0018), or at the commit that -Pvtfx.sourceRef names, which the
-        // reference of the default branch is built from (docs/decisions/0074).
+        // version (docs/decisions/0090), or at the commit that -Pvtfx.sourceRef names, which the
+        // reference of the default branch is built from (docs/decisions/0090).
         sourceLink {
             // Read outside the lambda, which the configuration cache stores without the project.
             val sourceDirectory = "${project.name}/src/main/kotlin"

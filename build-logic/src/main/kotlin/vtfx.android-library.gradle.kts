@@ -25,7 +25,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        // See docs/REQUIREMENTS.md section 6.4 and docs/decisions/0039-minsdk-29.md.
+        // See docs/REQUIREMENTS.md section 6.4 and docs/decisions/0090-distribution.md.
         minSdk = 29
     }
 

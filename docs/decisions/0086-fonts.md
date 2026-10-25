@@ -2,7 +2,7 @@
 
 - Status: Approved
 - Date: 2026-10-25
-- Related: Requirements 6.1 and 6.5 (customizability, safe defaults), [fonts.md](../design/fonts.md), section 2 of [architecture.md](../design/architecture.md), section 4.5 of [boundaries.md](../design/boundaries.md), section 7 of [testing.md](../design/testing.md), [0081](0081-resource-limits.md), [0087](0087-public-api.md), [0018](0018-distribution.md), [0088](0088-build-boundaries-and-tests.md), [0080](0080-kitty-graphics.md) (PNG decoded in Kotlin), [0041](0041-security-review-by-module.md), [0088](0088-build-boundaries-and-tests.md)
+- Related: Requirements 6.1 and 6.5 (customizability, safe defaults), [fonts.md](../design/fonts.md), section 2 of [architecture.md](../design/architecture.md), section 4.5 of [boundaries.md](../design/boundaries.md), section 7 of [testing.md](../design/testing.md), [0081](0081-resource-limits.md), [0087](0087-public-api.md), [0090](0090-distribution.md), [0088](0088-build-boundaries-and-tests.md), [0080](0080-kitty-graphics.md) (PNG decoded in Kotlin), [0041](0041-security-review-by-module.md), [0088](0088-build-boundaries-and-tests.md)
 
 ## Background
 
@@ -76,7 +76,7 @@ Accepted costs: no ligatures; CFF2 and hinting are dropped (the effect of no hin
 **Why.** The generated fonts cover the structures that the readers know, but not the sizes and the combinations of real CJK fonts. Committed fonts would make every clone tens of megabytes larger, and git compresses font files hardly at all. Gradle caches the downloaded fonts, so the network is needed only where the other dependencies are not cached either.
 
 **Alternatives considered.**
-- **Commit the fonts under `third_party/`**, as [0018](0018-distribution.md) keeps third-party material: tens of megabytes in every clone for three fonts, and more for each one added.
+- **Commit the fonts under `third_party/`**, as [0090](0090-distribution.md) keeps third-party material: tens of megabytes in every clone for three fonts, and more for each one added.
 - **Download them in the test code**: the test would need its own checksums, cache, and proxy settings, a way into the build that dependency verification does not cover.
 - **Run the test outside `check.sh`**, like long fuzzing: the gate would not see a change that breaks real fonts, and the download costs nothing more once Gradle has cached the fonts.
 - **Keep only generated fonts in the gating tests**: real fonts would be checked only on the emulator.

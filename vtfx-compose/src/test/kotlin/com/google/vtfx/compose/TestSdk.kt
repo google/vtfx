@@ -23,5 +23,5 @@ package com.google.vtfx.compose
  */
 const val SDK = 36
 
-/** The minSdk of the Android modules (docs/decisions/0039-minsdk-29.md). */
+/** The minSdk of the Android modules (docs/decisions/0090-distribution.md). */
 const val MIN_SDK = 29

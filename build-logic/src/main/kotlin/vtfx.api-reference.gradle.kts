@@ -15,7 +15,7 @@
  */
 
 // The HTML API reference of all library modules: ./gradlew :dokkaGenerate writes it to
-// build/dokka/html. Not part of the check: it is for publishing (docs/decisions/0018).
+// build/dokka/html. Not part of the check: it is for publishing (docs/decisions/0090).
 
 plugins {
     id("org.jetbrains.dokka")

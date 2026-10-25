@@ -27,7 +27,7 @@ A boundary drawn around files has to be redrawn by hand whenever code moves betw
 
 ### Changes to the public API
 
-Version 0.1.0 was published only as the source repository: no artifacts were uploaded and no release was tagged ([0018](0018-distribution.md)). [0087](0087-public-api.md) allows changing the API before 1.0.
+Version 0.1.0 was published only as the source repository: no artifacts were uploaded and no release was tagged ([0090](0090-distribution.md)). [0087](0087-public-api.md) allows changing the API before 1.0.
 
 - `SanitizedFont.sanitize` becomes `FontFile.sanitize`, beside `FontFile.inspect`: `vtfx-font-gate` cannot call the readers, which depend on it. It ends in `SanitizedFont.fromCanonical`, so the verifier is still the only way to a `SanitizedFont`.
 - `InvalidFontException` gets a public constructor, since the readers throw it from another module. Apps have no reason to construct one, and one that they construct proves nothing.
