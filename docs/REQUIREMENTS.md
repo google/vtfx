@@ -258,5 +258,5 @@ Every release in phases 4 to 6 requires that humans have reviewed the changes to
 - Performance targets (Resolved: [0014](decisions/0014-performance.md))
 - minSdk (trade-offs per feature) (Resolved: minSdk is 29, [0039](decisions/0039-minsdk-29.md); the initial value was 34)
 - The concrete scope of the code under security review, and how to verify the boundary (Resolved: [0041](decisions/0041-security-review-by-module.md), [0044](decisions/0044-boundaries-in-gradle-and-classes.md), [0076](decisions/0076-security-review-is-focused.md))
-- The compatibility policy of the public API, and when to start guaranteeing stability (Resolved: [0016](decisions/0016-public-api.md))
+- The compatibility policy of the public API, and when to start guaranteeing stability (Resolved: [0087](decisions/0087-public-api.md))
 - Distribution and license (Resolved: [0018](decisions/0018-distribution.md))

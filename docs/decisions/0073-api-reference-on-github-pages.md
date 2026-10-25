@@ -2,11 +2,11 @@
 
 - Status: Superseded by [0074](0074-api-reference-of-the-default-branch.md)
 - Date: 2026-10-24
-- Related: [0016](0016-public-api.md) (the HTML API reference), [0018](0018-distribution.md) (versions and tags), [0022](0022-api-reference-content.md), section 7 of [architecture.md](../design/architecture.md), "API reference on GitHub Pages" in [review-queue.md](../review-queue.md)
+- Related: [0087](0087-public-api.md) (the HTML API reference), [0018](0018-distribution.md) (versions and tags), section 7 of [architecture.md](../design/architecture.md), "API reference on GitHub Pages" in [review-queue.md](../review-queue.md)
 
 ## Background
 
-`./gradlew :dokkaGenerate` writes the HTML API reference of the library modules to `build/dokka/html`, for publishing ([0016](0016-public-api.md)), but it was published nowhere: developers of apps had to build it themselves. The source links of the reference point at the tag of the version in `gradle.properties` (`v<version>`, `vtfx.dokka`), so a reference matches the sources it links to only when it is built from that tag.
+`./gradlew :dokkaGenerate` writes the HTML API reference of the library modules to `build/dokka/html`, for publishing ([0087](0087-public-api.md)), but it was published nowhere: developers of apps had to build it themselves. The source links of the reference point at the tag of the version in `gradle.properties` (`v<version>`, `vtfx.dokka`), so a reference matches the sources it links to only when it is built from that tag.
 
 ## Decision
 
@@ -21,7 +21,7 @@
 
 - **Publish from `main` on every push**: The reference would show API that no release has, while its source links point at the tag of the last release, whose lines differ.
 - **A `gh-pages` branch**: The build would need `contents: write` to push to it, and the branch would grow with every release.
-- **Keep the reference of every version (Dokka's versioning plugin)**: Another dependency and the previous references to keep somewhere, before there is a second release and while the API may change before 1.0 ([0016](0016-public-api.md)).
+- **Keep the reference of every version (Dokka's versioning plugin)**: Another dependency and the previous references to keep somewhere, before there is a second release and while the API may change before 1.0 ([0087](0087-public-api.md)).
 - **javadoc.io**: Serves the javadoc jars of artifacts on Maven Central, where vtfx is not published yet ([0018](0018-distribution.md)).
 
 ## Impact of reversing

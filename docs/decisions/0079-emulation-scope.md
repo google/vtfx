@@ -2,7 +2,7 @@
 
 - Status: Approved
 - Date: 2026-10-25
-- Related: Requirements 4.2, 5.1, 5.2, 5.4, 6.1, 6.2, 6.5, and section 8 of [REQUIREMENTS.md](../REQUIREMENTS.md), sections 1 to 8 and 9.7 of [emulation.md](../design/emulation.md), sections 2 to 4 of [compose-input.md](../design/compose-input.md), section 3 of [gate-policy.md](../design/gate-policy.md), [fonts.md](../design/fonts.md), [conformance-references.md](../research/conformance-references.md), [terminal-comparison-2026-10.md](../research/terminal-comparison-2026-10.md), [0081](0081-resource-limits.md), [0083](0083-gate.md), [0014](0014-performance.md), [0029](0029-import-without-gradle.md), [0085](0085-compose-interaction.md), [0080](0080-kitty-graphics.md), [0085](0085-compose-interaction.md), [0083](0083-gate.md)
+- Related: Requirements 4.2, 5.1, 5.2, 5.4, 6.1, 6.2, 6.5, and section 8 of [REQUIREMENTS.md](../REQUIREMENTS.md), sections 1 to 8 and 9.7 of [emulation.md](../design/emulation.md), sections 2 to 4 of [compose-input.md](../design/compose-input.md), section 3 of [gate-policy.md](../design/gate-policy.md), [fonts.md](../design/fonts.md), [conformance-references.md](../research/conformance-references.md), [terminal-comparison-2026-10.md](../research/terminal-comparison-2026-10.md), [0081](0081-resource-limits.md), [0083](0083-gate.md), [0014](0014-performance.md), [0029](0029-import-without-gradle.md), [0085](0085-compose-interaction.md), [0080](0080-kitty-graphics.md)
 
 ## Background
 

@@ -2,7 +2,7 @@
 
 - Status: Approved (2026-10-15, approved by a human in a review of the review queue. The direction was chosen by a human on 2026-10-14)
 - Date: 2026-10-14
-- Related: [0016](0016-public-api.md) (`@InternalVtfxApi`), [0079](0079-emulation-scope.md) (the character width tables), [0018](0018-distribution.md), [0023](0023-code-style.md), `build-logic`, `scripts/generate_unicode_tables.py`
+- Related: [0087](0087-public-api.md) (`@InternalVtfxApi`), [0079](0079-emulation-scope.md) (the character width tables), [0018](0018-distribution.md), [0023](0023-code-style.md), `build-logic`, `scripts/generate_unicode_tables.py`
 
 ## Background
 

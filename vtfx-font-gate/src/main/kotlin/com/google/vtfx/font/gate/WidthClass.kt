@@ -17,7 +17,7 @@
 package com.google.vtfx.font.gate
 
 // A value class rather than an enum, since vtfx returns it and may add classes
-// (docs/decisions/0037).
+// (docs/decisions/0087).
 /**
  * How the advance widths of the characters of a font compare, for an app to warn about a font that
  * is not monospaced. The terminal draws any font in its cells; a proportional font just looks

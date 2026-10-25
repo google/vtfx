@@ -26,7 +26,7 @@ package com.google.vtfx.core
  * definition keeps the two sides equal.
  *
  * Plain vals rather than consts, so that each module reads the values of the vtfx-core it runs
- * with, not those it was compiled with (docs/decisions/0037).
+ * with, not those it was compiled with (docs/decisions/0087).
  *
  * @suppress
  */

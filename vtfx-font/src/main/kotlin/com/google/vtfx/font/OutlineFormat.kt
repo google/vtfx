@@ -17,7 +17,7 @@
 package com.google.vtfx.font
 
 // A value class rather than an enum, since vtfx returns it and may add formats
-// (docs/decisions/0037).
+// (docs/decisions/0087).
 /** The format of the outlines of a face. More formats may be added. */
 @JvmInline
 public value class OutlineFormat private constructor(private val value: Int) {

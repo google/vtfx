@@ -40,7 +40,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 /**
  * Dumps the public ABI of compiled classes, in the format of KGP's ABI validation, with the Kotlin
- * Build Tools API that KGP uses (docs/decisions/0016).
+ * Build Tools API that KGP uses (docs/decisions/0087).
  *
  * The Android libraries need this: KGP's ABI validation finds no Kotlin compilation in them with
  * AGP's built-in Kotlin. The JVM libraries use KGP's ABI validation.
@@ -82,7 +82,7 @@ abstract class DumpAbiTask : DefaultTask() {
 
 /**
  * Dumps the Kotlin signatures of the public API of compiled classes ([KotlinSignatures]), which the
- * ABI dump leaves out. Fails if the public API has a `const val` (docs/decisions/0037).
+ * ABI dump leaves out. Fails if the public API has a `const val` (docs/decisions/0087).
  */
 @CacheableTask
 abstract class DumpKotlinSignaturesTask : DefaultTask() {
@@ -103,7 +103,7 @@ abstract class DumpKotlinSignaturesTask : DefaultTask() {
         if (result.publicConstants.isNotEmpty()) {
             throw GradleException(
                 "Public const vals are copied into apps at compile time, so later versions cannot " +
-                    "change them; make them plain vals (docs/decisions/0037): " +
+                    "change them; make them plain vals (docs/decisions/0087): " +
                     result.publicConstants.joinToString()
             )
         }
@@ -128,7 +128,7 @@ abstract class CheckAbiTask : DefaultTask() {
         if (actual.get().asFile.readText() != file.readText()) {
             throw GradleException(
                 "The public ABI differs from $file. If the change is intended, run the updateKotlinAbi task " +
-                    "and review the diff (docs/decisions/0016)."
+                    "and review the diff (docs/decisions/0087)."
             )
         }
     }
@@ -137,7 +137,7 @@ abstract class CheckAbiTask : DefaultTask() {
 /**
  * Registers the dump of the Kotlin signatures of the public API compiled by [compileTask] into
  * `api/<module>.signatures` next to the ABI dump: `updateKotlinAbi` also writes it, and
- * `checkKotlinAbi` and `check` compare it (docs/decisions/0016).
+ * `checkKotlinAbi` and `check` compare it (docs/decisions/0087).
  */
 fun Project.registerKotlinSignatures(compileTask: String) {
     val dump =

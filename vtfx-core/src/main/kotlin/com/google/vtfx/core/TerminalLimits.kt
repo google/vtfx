@@ -59,7 +59,7 @@ public class TerminalLimits(
     public companion object {
         // Plain vals rather than consts, so that apps read the values of the vtfx they run with,
         // not
-        // those they were compiled with (docs/decisions/0037).
+        // those they were compiled with (docs/decisions/0087).
         /** The largest number of columns or rows. */
         public val MAX_DIMENSION: Int = 2048
 

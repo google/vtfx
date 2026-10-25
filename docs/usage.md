@@ -6,7 +6,7 @@ This shows how to embed vtfx in an Android app. How to use it without a UI from 
 
 Apps depend on `vtfx-compose`. `vtfx-compose` transitively exposes the other modules (`vtfx-core`, `vtfx-gate`, `vtfx-gate-android`, `vtfx-session`, `vtfx-font`, `vtfx-font-gate`) for the types the public API uses and for the Android implementations. JVM programs without a UI depend on `vtfx-session` (section 8).
 
-Declarations marked `@InternalVtfxApi` are not public API ([decisions/0016](decisions/0016-public-api.md)). Apps must not opt in.
+Declarations marked `@InternalVtfxApi` are not public API ([decisions/0087](decisions/0087-public-api.md)). Apps must not opt in.
 
 minSdk is 29 (section 7 of [architecture.md](design/architecture.md)).
 

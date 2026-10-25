@@ -66,7 +66,7 @@ import org.objectweb.asm.Opcodes
 
 /**
  * Renders the Kotlin signatures of the public API from compiled classes, as a complement to the ABI
- * dump (docs/decisions/0016).
+ * dump (docs/decisions/0087).
  *
  * The ABI dump lists JVM descriptors, which leave out what only the Kotlin metadata holds: type
  * arguments, nullability, parameter names, which parameters have default values, and modifiers such
@@ -77,7 +77,7 @@ import org.objectweb.asm.Opcodes
  * are nested in a class that does), are left out, like in the ABI dump.
  */
 object KotlinSignatures {
-    /** The rendered signatures, and the public `const val`s found (docs/decisions/0037). */
+    /** The rendered signatures, and the public `const val`s found (docs/decisions/0087). */
     class Result(val text: String, val publicConstants: List<String>)
 
     fun dump(classFiles: Collection<ByteArray>, excludedAnnotations: Set<String>): Result {

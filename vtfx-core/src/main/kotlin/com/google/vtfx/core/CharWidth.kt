@@ -32,7 +32,7 @@ import com.google.vtfx.core.graphics.Placeholders
  */
 public object CharWidth {
     // A plain val rather than a const, so that apps read the version of the tables they run with
-    // (docs/decisions/0037).
+    // (docs/decisions/0087).
     /** The Unicode version of the tables. */
     public val UNICODE_VERSION: String = UnicodeWidthTables.UNICODE_VERSION
 

@@ -139,7 +139,7 @@ public class GatePolicy(
     public companion object {
         // Plain vals rather than consts, so that apps read the values of the vtfx they run with,
         // not
-        // those they were compiled with (docs/decisions/0037).
+        // those they were compiled with (docs/decisions/0087).
         /**
          * The default of [maxClipboardWriteLength][GatePolicy.maxClipboardWriteLength]: 64 Ki
          * UTF-16 code units.

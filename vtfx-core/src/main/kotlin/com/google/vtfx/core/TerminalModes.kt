@@ -20,7 +20,7 @@ package com.google.vtfx.core
 
 // The mouse modes are not public API: only vtfx-compose and vtfx-gate act on them, and the
 // encodings are likely to grow (SGR-Pixels, mode 1016), which would break exhaustive whens of apps
-// compiled earlier (docs/decisions/0037).
+// compiled earlier (docs/decisions/0087).
 /**
  * Which mouse events the host asked to receive (DECSET 9, 1000, 1002, 1003).
  *
@@ -63,7 +63,7 @@ public enum class CursorShape {
 }
 
 // Not a data class, so that modes can be added without changing what apps compiled earlier call
-// (docs/decisions/0037). Only vtfx makes them.
+// (docs/decisions/0087). Only vtfx makes them.
 /**
  * The modes that affect input and display, as set by the host. Immutable, and equal to modes with
  * the same values.

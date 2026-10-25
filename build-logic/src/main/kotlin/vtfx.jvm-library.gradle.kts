@@ -33,7 +33,7 @@ java {
 kotlin {
     explicitApi()
     // The public API's ABI is dumped to api/ and checked by `check` (requirement 6.5,
-    // docs/decisions/0016). After an intended change, run the updateKotlinAbi task and review the
+    // docs/decisions/0087). After an intended change, run the updateKotlinAbi task and review the
     // diff. Declarations marked with InternalVtfxApi are not public API.
     @OptIn(org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation::class)
     abiValidation {

@@ -18,7 +18,7 @@
 Dokka renders a KDoc link that it resolves to a page it does not generate as a broken link, not as
 a warning: a link to a declaration hidden with `@suppress`, or an unqualified link to a property
 declared in a primary constructor, which Dokka 2.2 resolves to the constructor parameter
-(docs/decisions/0016). Run this after `./gradlew :dokkaGenerate`.
+(docs/decisions/0087). Run this after `./gradlew :dokkaGenerate`.
 
 Usage: scripts/check_api_reference.py [DIR]
 

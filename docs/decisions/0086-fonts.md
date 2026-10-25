@@ -2,7 +2,7 @@
 
 - Status: Approved
 - Date: 2026-10-25
-- Related: Requirements 6.1 and 6.5 (customizability, safe defaults), [fonts.md](../design/fonts.md), section 2 of [architecture.md](../design/architecture.md), section 4.5 of [boundaries.md](../design/boundaries.md), section 7 of [testing.md](../design/testing.md), [0081](0081-resource-limits.md), [0016](0016-public-api.md), [0018](0018-distribution.md), [0035](0035-dependency-verification.md), [0037](0037-api-shape-before-1.0.md), [0080](0080-kitty-graphics.md) (PNG decoded in Kotlin), [0041](0041-security-review-by-module.md), [0044](0044-boundaries-in-gradle-and-classes.md), [0060](0060-artifacts-ship-only-checked-classes.md)
+- Related: Requirements 6.1 and 6.5 (customizability, safe defaults), [fonts.md](../design/fonts.md), section 2 of [architecture.md](../design/architecture.md), section 4.5 of [boundaries.md](../design/boundaries.md), section 7 of [testing.md](../design/testing.md), [0081](0081-resource-limits.md), [0087](0087-public-api.md), [0018](0018-distribution.md), [0035](0035-dependency-verification.md), [0080](0080-kitty-graphics.md) (PNG decoded in Kotlin), [0041](0041-security-review-by-module.md), [0044](0044-boundaries-in-gradle-and-classes.md), [0060](0060-artifacts-ship-only-checked-classes.md)
 
 ## Background
 
@@ -58,7 +58,7 @@ Accepted costs: no ligatures; CFF2 and hinting are dropped (the effect of no hin
 3. **vtfx takes bytes, never paths or URIs.** A saved font is loaded with `fromCanonical`, which runs only the verifier (section 3 of [fonts.md](../design/fonts.md)).
 4. **Security review** covers the verifier, with the public types that its guarantee relies on, and the code that turns verified bytes into a typeface, the one place of topic 1, and not the readers, the charstring interpreter, or the curve approximation. The modules that hold them are in section 2 of [fonts.md](../design/fonts.md) ([0041](0041-security-review-by-module.md)).
 5. **No fallback**: if the platform rejects verified bytes, that is a bug in the canonical form, and it fails loudly (section 8 of [fonts.md](../design/fonts.md)).
-6. The kinds of `InvalidFontException`, `WidthClass`, and the outline format of a face are value classes, not enums, since vtfx returns them and they may grow ([0037](0037-api-shape-before-1.0.md), section 3 of [fonts.md](../design/fonts.md)).
+6. The kinds of `InvalidFontException`, `WidthClass`, and the outline format of a face are value classes, not enums, since vtfx returns them and they may grow ([0087](0087-public-api.md), section 3 of [fonts.md](../design/fonts.md)).
 
 **Why.** Keeping the verifier apart from the readers and the writer keeps the readers, the charstring interpreter, and the curve approximation out of security review. Taking bytes and checking them again on loading means that the place where the app keeps a saved font does not need to be trusted, and loading does not convert again.
 

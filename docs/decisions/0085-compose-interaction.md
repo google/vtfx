@@ -2,7 +2,7 @@
 
 - Status: Approved
 - Date: 2026-10-25
-- Related: Requirements 4.1, 5.4, 5.5, 6.1, 6.3, and 6.5, [compose-input.md](../design/compose-input.md), sections 4.2 and 5 of [gate-policy.md](../design/gate-policy.md), 2.7 of [research/xterm-js-ime.md](../research/xterm-js-ime.md), [0083](0083-gate.md), [0084](0084-session-and-threads.md), [0016](0016-public-api.md), [0019](0019-extensibility.md), [0084](0084-session-and-threads.md), [0036](0036-adding-parameters.md), [0037](0037-api-shape-before-1.0.md), [0039](0039-minsdk-29.md), [0083](0083-gate.md), [0081](0081-resource-limits.md)
+- Related: Requirements 4.1, 5.4, 5.5, 6.1, 6.3, and 6.5, [compose-input.md](../design/compose-input.md), sections 4.2 and 5 of [gate-policy.md](../design/gate-policy.md), 2.7 of [research/xterm-js-ime.md](../research/xterm-js-ime.md), [0083](0083-gate.md), [0084](0084-session-and-threads.md), [0087](0087-public-api.md), [0039](0039-minsdk-29.md), [0081](0081-resource-limits.md)
 
 ## Background
 
@@ -109,15 +109,15 @@ See section 6.1 of [compose-input.md](../design/compose-input.md).
 ## 8. Hardware keys
 
 1. The numeric keypad sends SS3 sequences with DECKPAM (or DECNKM), the same as xterm with NumLock off (section 7.1 of [compose-input.md](../design/compose-input.md)).
-2. `Terminal` takes `onPreImeKeyEvent: ((KeyEvent) -> Boolean)?`, which `TerminalInputView.dispatchKeyEventPreIme` calls with each hardware key event before the IME; returning true consumes the event (section 7.2 of [compose-input.md](../design/compose-input.md)). This is the per-terminal key interception that [0019](0019-extensibility.md) calls for.
+2. `Terminal` takes `onPreImeKeyEvent: ((KeyEvent) -> Boolean)?`, which `TerminalInputView.dispatchKeyEventPreIme` calls with each hardware key event before the IME; returning true consumes the event (section 7.2 of [compose-input.md](../design/compose-input.md)). This is the per-terminal key interception that [0087](0087-public-api.md) calls for.
 
 **Why.** App shortcuts (Ctrl+Shift+C and V) must be caught with a physical keyboard and Gboard, which consumes the keys before the views' `dispatchKeyEvent`, where Compose runs `onPreviewKeyEvent` (section 7.2 of [compose-input.md](../design/compose-input.md)). Compose's own pre-IME modifier (`onPreInterceptKeyBeforeSoftKeyboard`) is experimental and runs only when a Compose node has the focus, while here the `View` for the IME connection has it (`AndroidComposeView` passes the pre-IME dispatch to its focused child view). The name says when it is called, like Android's `dispatchKeyEventPreIme` and `onKeyPreIme`, and that it sees every key (`onShortcut` would suggest that vtfx decides what a shortcut is). Compose's `KeyEvent` is what Compose apps already match with `key`, `isCtrlPressed`, and `type`; `nativeKeyEvent` gives the Android event, such as its repeat count.
 
 **Alternatives considered.**
-- **Keep `Modifier.onPreviewKeyEvent` on an ancestor and only correct the documentation**: It sees only the keys the IME passes on, so the app would have to override `Activity.dispatchKeyEvent`, which cannot tell which of several terminals a key is for ([0019](0019-extensibility.md)).
+- **Keep `Modifier.onPreviewKeyEvent` on an ancestor and only correct the documentation**: It sees only the keys the IME passes on, so the app would have to override `Activity.dispatchKeyEvent`, which cannot tell which of several terminals a key is for ([0087](0087-public-api.md)).
 - **Pass Android's `KeyEvent`**: Apps would need Android's meta-state flags instead of the Compose extensions they use elsewhere.
 
-**Impact of reversing.** Removing `onPreImeKeyEvent` removes the parameter of `Terminal` (an API change; [0016](0016-public-api.md)) and the override in `TerminalInputView`, and changes section 7.2 of [compose-input.md](../design/compose-input.md).
+**Impact of reversing.** Removing `onPreImeKeyEvent` removes the parameter of `Terminal` (an API change; [0087](0087-public-api.md)) and the override in `TerminalInputView`, and changes section 7.2 of [compose-input.md](../design/compose-input.md).
 
 ## 9. Extra key bar and sticky modifiers
 
@@ -177,12 +177,12 @@ See section 11 of [compose-input.md](../design/compose-input.md).
 
 ## 14. Search: where it is held and its API
 
-The app has the search field; the terminal finds the matches, highlights them, and scrolls to them ([0019](0019-extensibility.md)). See section 13 of [compose-input.md](../design/compose-input.md) for this topic and topics 15 and 16.
+The app has the search field; the terminal finds the matches, highlights them, and scrolls to them ([0087](0087-public-api.md)). See section 13 of [compose-input.md](../design/compose-input.md) for this topic and topics 15 and 16.
 
 1. The state of a search belongs to the display, as the selection does: `TerminalDisplay` holds it, and `TerminalState` (topic 5) is the app's handle on it.
 2. `TerminalColors` takes `searchMatch` and `searchCurrentMatch`, required like `selection`.
 
-**Why.** Two `Terminal`s showing one session search apart, and a session without a UI has no search. Moving to the next match is an event, like Select all, so the API is calls on the state rather than a parameter of `Terminal`. Before 1.0, parameters may be added without keeping the previous signature ([0036](0036-adding-parameters.md)).
+**Why.** Two `Terminal`s showing one session search apart, and a session without a UI has no search. Moving to the next match is an event, like Select all, so the API is calls on the state rather than a parameter of `Terminal`. Before 1.0, parameters may be added without keeping the previous signature ([0087](0087-public-api.md)).
 
 **Alternatives considered.**
 - **Hold the search in `TerminalSession`**: One search for every display, and one for JVM programs without a UI, but the session holds no display state ([0084](0084-session-and-threads.md)), and a search scrolls a display. A JVM program can read the lines with `TerminalSession.snapshot`.
@@ -211,7 +211,7 @@ The app has the search field; the terminal finds the matches, highlights them, a
 3. **At most 1,000 matches are kept**, the newest; `TerminalSearchResult.isMatchCountCapped` tells the app to show the count as a lower bound.
 4. **The search starts from the bottom and goes up**, as terminals do: a new query makes current the nearest match at or above the current one. Only moving to a match (a new query, `findNext`, `findPrevious`) scrolls the display; output and the user's input do not move it for the search.
 
-**Why.** Linear time means that text, which the host decides, cannot make the search slow. Android's regular expressions cannot be stopped once started ([0019](0019-extensibility.md)), and a search runs on the main thread at every keystroke, also on half-typed patterns. The display does not draw a concealed cell, so a highlight there would show text that the user cannot see. The cap bounds the memory and drawing of text full of matches, which the host decides. Keeping the nearest match keeps the view where it is while the user types more of a word.
+**Why.** Linear time means that text, which the host decides, cannot make the search slow. Android's regular expressions cannot be stopped once started ([0087](0087-public-api.md)), and a search runs on the main thread at every keystroke, also on half-typed patterns. The display does not draw a concealed cell, so a highlight there would show text that the user cannot see. The cap bounds the memory and drawing of text full of matches, which the host decides. Keeping the nearest match keeps the view where it is while the user types more of a word.
 
 **Alternatives considered.**
 - **Regular expressions**: See the reasons above.

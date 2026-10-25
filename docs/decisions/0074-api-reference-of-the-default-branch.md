@@ -2,7 +2,7 @@
 
 - Status: Approved (2026-10-25, approved by a human)
 - Date: 2026-10-24
-- Related: supersedes [0073](0073-api-reference-on-github-pages.md), [0016](0016-public-api.md) (the HTML API reference), [0018](0018-distribution.md) (versions and tags), section 7 of [architecture.md](../design/architecture.md), "API reference on GitHub Pages" in [review-queue.md](../review-queue.md)
+- Related: supersedes [0073](0073-api-reference-on-github-pages.md), [0087](0087-public-api.md) (the HTML API reference), [0018](0018-distribution.md) (versions and tags), section 7 of [architecture.md](../design/architecture.md), "API reference on GitHub Pages" in [review-queue.md](../review-queue.md)
 
 ## Background
 

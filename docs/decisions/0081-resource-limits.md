@@ -2,7 +2,7 @@
 
 - Status: Approved
 - Date: 2026-10-25
-- Related: Requirement 6.1 (resource exhaustion, unauthorized reading of the clipboard), Requirement 6.5 (safe defaults), section 8 of [REQUIREMENTS.md](../REQUIREMENTS.md) (the acceptable range and limits for resource exhaustion), sections 5 and 10 of [emulation.md](../design/emulation.md), section 4.1 of [gate-policy.md](../design/gate-policy.md), section 13 of [compose-input.md](../design/compose-input.md), [0083](0083-gate.md), [0079](0079-emulation-scope.md), [0014](0014-performance.md), [0036](0036-adding-parameters.md), [0037](0037-api-shape-before-1.0.md), [0080](0080-kitty-graphics.md), [0044](0044-boundaries-in-gradle-and-classes.md), [0085](0085-compose-interaction.md)
+- Related: Requirement 6.1 (resource exhaustion, unauthorized reading of the clipboard), Requirement 6.5 (safe defaults), section 8 of [REQUIREMENTS.md](../REQUIREMENTS.md) (the acceptable range and limits for resource exhaustion), sections 5 and 10 of [emulation.md](../design/emulation.md), section 4.1 of [gate-policy.md](../design/gate-policy.md), section 13 of [compose-input.md](../design/compose-input.md), [0083](0083-gate.md), [0079](0079-emulation-scope.md), [0014](0014-performance.md), [0087](0087-public-api.md), [0080](0080-kitty-graphics.md), [0044](0044-boundaries-in-gradle-and-classes.md), [0085](0085-compose-interaction.md)
 
 ## Background
 
@@ -83,7 +83,7 @@ Sections 5 and 10.2 of [emulation.md](../design/emulation.md) describe the resul
 **Alternatives considered.**
 - **Document the length and the characters, and leave the cleaning to the app**: the smallest change, but every app that shows the title would need the same code, and the default would still be unsafe.
 - **Drop a title over the limit**, as for strings over the string limit: a long title would leave the previous one in place, which is more confusing than a cut one. The string limit drops the whole string because a cut control string could do something else (topic 2); a cut title is still a title.
-- **A limit in `TerminalLimits`**: no app has needed another value, and a parameter can be added later ([0036](0036-adding-parameters.md)).
+- **A limit in `TerminalLimits`**: no app has needed another value, and a parameter can be added later ([0087](0087-public-api.md)).
 - **Remove all format characters (Cf)**: would break emoji sequences with ZWJ in titles, which some prompts use.
 
 **Impact of reversing.** Remove the cleaning in `Emulator.setTitle` (or its caller for OSC 0 and 2), the row of the table in section 10.2 of emulation.md, the line in section 5, and the tests in `EmulationCoverageTest`. Apps that rely on the cleaned title would need their own.

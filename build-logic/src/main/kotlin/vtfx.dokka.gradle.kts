@@ -16,7 +16,7 @@
 
 // The API reference of a library module, generated with Dokka and aggregated by the root project
 // (vtfx.api-reference). Declarations marked with InternalVtfxApi are not public API
-// (docs/decisions/0016); their KDoc has @suppress, which scripts/check_kdoc.py checks, so that the
+// (docs/decisions/0087); their KDoc has @suppress, which scripts/check_kdoc.py checks, so that the
 // reference leaves them out.
 
 plugins {

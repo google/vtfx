@@ -16,7 +16,7 @@
 
 package com.google.vtfx.core
 
-// See docs/decisions/0019.
+// See docs/decisions/0087.
 /**
  * Text that the display shows as a link, besides OSC 8 hyperlinks: the matches of a regular
  * expression, each linking to the URL that a template makes from it, or the URLs written in the
@@ -252,7 +252,7 @@ public class CellSpan(public val row: Int, public val start: Int, public val end
  * matches overlap, the earlier pattern in [patterns] wins. Then a match that covers a cell with an
  * OSC 8 hyperlink, or a concealed cell (SGR 8), is not a link, and the matches that it won over
  * stay dropped: overlaps are decided on the text alone, so a later pattern does not make a link
- * inside an earlier pattern's match (docs/decisions/0019).
+ * inside an earlier pattern's match (docs/decisions/0087).
  *
  * A line that the display cuts is matched with its rows beyond the display that the snapshot keeps,
  * a screen each way. Where a line goes on beyond those too, a match that reaches the cut is not a

@@ -46,7 +46,7 @@ kotlin {
 }
 
 // The public API's ABI is dumped to api/ and checked by `check` (requirement 6.5,
-// docs/decisions/0016). After an intended change, run the updateKotlinAbi task and review the diff.
+// docs/decisions/0087). After an intended change, run the updateKotlinAbi task and review the diff.
 // Declarations marked with InternalVtfxApi are not public API. KGP's ABI validation, which the JVM
 // libraries use, finds no Kotlin compilation here with AGP's built-in Kotlin, so these tasks dump
 // the release classes with the Kotlin Build Tools API, in the same format.

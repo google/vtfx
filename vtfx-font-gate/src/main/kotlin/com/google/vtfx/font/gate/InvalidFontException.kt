@@ -32,7 +32,7 @@ public class InvalidFontException(
     message: String,
 ) : Exception(message) {
     // A value class rather than an enum, since vtfx returns it and may add kinds
-    // (docs/decisions/0037).
+    // (docs/decisions/0087).
     /** What kind of problem a font has. More kinds may be added. */
     @JvmInline
     public value class Kind private constructor(private val value: Int) {

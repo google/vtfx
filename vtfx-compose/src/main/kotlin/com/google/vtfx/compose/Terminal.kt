@@ -88,7 +88,7 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 
-// The touch input follows docs/decisions/0085, and the links and the keys 0019.
+// The touch input follows docs/decisions/0085, and the links and the keys docs/decisions/0087.
 /**
  * Displays [session] and sends the user's input to it.
  *

@@ -23,14 +23,14 @@ A property declared in a primary constructor is also documented by `@property na
 of its class. Dokka shows neither `@param name` nor a mention of `[name]` as the documentation of
 the property. Companion objects need no KDoc.
 
-Declarations marked with InternalVtfxApi are not public API (docs/decisions/0016), so they are kept
+Declarations marked with InternalVtfxApi are not public API (docs/decisions/0087), so they are kept
 out of the API reference with `@suppress` in their KDoc. Dokka also hides what they contain, so
 only the outermost ones need it: those not inside another marked declaration, as told by
 indentation.
 
 The KDoc that the API reference shows does not refer to files of the repository (docs/, scripts/)
 or to sections of the requirements, which the readers of the reference cannot open
-(docs/decisions/0022). Such references go in comments.
+(docs/decisions/0087). Such references go in comments.
 
 This is a line-based check that relies on the formatting of the sources (one declaration per line,
 parameters of a multi-line primary constructor on lines of their own).

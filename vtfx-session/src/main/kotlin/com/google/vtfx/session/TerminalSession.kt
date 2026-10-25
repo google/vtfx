@@ -876,7 +876,7 @@ public class TerminalSession(
     public companion object {
         // Plain vals rather than consts, so that apps read the values of the vtfx they run with,
         // not
-        // those they were compiled with (docs/decisions/0037).
+        // those they were compiled with (docs/decisions/0087).
         /** The number of columns until the session is resized. */
         public val DEFAULT_COLUMNS: Int = 80
 

@@ -62,7 +62,7 @@ public class FontLimits(
 
     public companion object {
         // Plain vals rather than consts, so that apps read the values of the vtfx they run with,
-        // not those they were compiled with (docs/decisions/0037).
+        // not those they were compiled with (docs/decisions/0087).
         /**
          * The largest [maxInputBytes][FontLimits.maxInputBytes] and
          * [maxOutputBytes][FontLimits.maxOutputBytes]: 256 MiB.

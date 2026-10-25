@@ -114,7 +114,7 @@ public sealed interface TerminalFont {
 
         public companion object {
             // A plain val rather than a const, so that apps read the value of the vtfx they run
-            // with (docs/decisions/0037). The platform takes this many fallback families.
+            // with (docs/decisions/0087). The platform takes this many fallback families.
             /** The most families that [Sanitized] takes. */
             public val MAX_FAMILIES: Int = 64
         }

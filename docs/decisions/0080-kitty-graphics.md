@@ -2,7 +2,7 @@
 
 - Status: Approved
 - Date: 2026-10-25
-- Related: Requirements 4.1, 4.2, 5.1, 6.1, 6.2, and 6.5, sections 9 and 10 of [emulation.md](../design/emulation.md), section 3 of [gate-policy.md](../design/gate-policy.md), section 4.5 of [boundaries.md](../design/boundaries.md), section 3.1 of [session-and-threads.md](../design/session-and-threads.md), [0079](0079-emulation-scope.md), [0081](0081-resource-limits.md), [0083](0083-gate.md), [0079](0079-emulation-scope.md), [0084](0084-session-and-threads.md), [0014](0014-performance.md), [0036](0036-adding-parameters.md), the kitty documentation (`graphics-protocol.rst`, kitty 0.48), [research/kitty-graphics-programs.md](../research/kitty-graphics-programs.md)
+- Related: Requirements 4.1, 4.2, 5.1, 6.1, 6.2, and 6.5, sections 9 and 10 of [emulation.md](../design/emulation.md), section 3 of [gate-policy.md](../design/gate-policy.md), section 4.5 of [boundaries.md](../design/boundaries.md), section 3.1 of [session-and-threads.md](../design/session-and-threads.md), [0079](0079-emulation-scope.md), [0081](0081-resource-limits.md), [0083](0083-gate.md), [0084](0084-session-and-threads.md), [0014](0014-performance.md), [0087](0087-public-api.md), the kitty documentation (`graphics-protocol.rst`, kitty 0.48), [research/kitty-graphics-programs.md](../research/kitty-graphics-programs.md)
 
 ## Background
 
@@ -118,6 +118,6 @@ PNG is decoded in Kotlin by vtfx-core, not by Android's decoders, and its colors
 
 ## 10. API
 
-`TerminalLimits.maxImageBytes` is a parameter added before 1.0 ([0036](0036-adding-parameters.md)). `TerminalSession.resize` takes the size of a cell in pixels, and `TerminalSessionListener.onResize` gains an overload with the size of the text area in pixels, which calls the existing one by default; the app passes the pixels on to the host. The images that the display draws are internal API (`@InternalVtfxApi`). See section 9.8 of [emulation.md](../design/emulation.md) and section 3.1 of [session-and-threads.md](../design/session-and-threads.md).
+`TerminalLimits.maxImageBytes` is a parameter added before 1.0 ([0087](0087-public-api.md)). `TerminalSession.resize` takes the size of a cell in pixels, and `TerminalSessionListener.onResize` gains an overload with the size of the text area in pixels, which calls the existing one by default; the app passes the pixels on to the host. The images that the display draws are internal API (`@InternalVtfxApi`). See section 9.8 of [emulation.md](../design/emulation.md) and section 3.1 of [session-and-threads.md](../design/session-and-threads.md).
 
 **Why.** The default of the overload keeps listeners written before it working. Programs read the pixel sizes on the host, so the app passes them on. Only vtfx-compose reads the images, and the public API does not grow until an app needs it.

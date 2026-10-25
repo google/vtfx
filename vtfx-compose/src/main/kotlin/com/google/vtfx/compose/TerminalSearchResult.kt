@@ -19,7 +19,7 @@ package com.google.vtfx.compose
 import androidx.compose.runtime.Immutable
 
 // Not a data class, so that properties can be added without changing what apps compiled earlier
-// call (docs/decisions/0037). Only vtfx makes it.
+// call (docs/decisions/0087). Only vtfx makes it.
 /**
  * What a search of a [Terminal] found ([TerminalState.search]): how many matches, and which of them
  * the terminal moved to. Immutable, and equal to a result with the same values.

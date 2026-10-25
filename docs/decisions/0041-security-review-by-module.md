@@ -2,7 +2,7 @@
 
 - Status: Approved (2026-10-20, approved by a human in a review of the review queue; review by whole modules and the names `vtfx-font-gate` and `vtfx-font-gate-android` had been decided by a human on 2026-10-19)
 - Date: 2026-10-19
-- Related: Requirement 6.1, section 2 of [architecture.md](../design/architecture.md), section 2 of [fonts.md](../design/fonts.md), [0016](0016-public-api.md), [0037](0037-api-shape-before-1.0.md), [0086](0086-fonts.md), `config/protected-paths.toml`, `config/boundaries.toml`
+- Related: Requirement 6.1, section 2 of [architecture.md](../design/architecture.md), section 2 of [fonts.md](../design/fonts.md), [0087](0087-public-api.md), [0086](0086-fonts.md), `config/protected-paths.toml`, `config/boundaries.toml`
 
 ## Background
 
@@ -27,7 +27,7 @@ A boundary drawn around files has to be redrawn by hand whenever code moves betw
 
 ### Changes to the public API
 
-Version 0.1.0 was published only as the source repository: no artifacts were uploaded and no release was tagged ([0018](0018-distribution.md)). [0037](0037-api-shape-before-1.0.md) allows changing the API before 1.0.
+Version 0.1.0 was published only as the source repository: no artifacts were uploaded and no release was tagged ([0018](0018-distribution.md)). [0087](0087-public-api.md) allows changing the API before 1.0.
 
 - `SanitizedFont.sanitize` becomes `FontFile.sanitize`, beside `FontFile.inspect`: `vtfx-font-gate` cannot call the readers, which depend on it. It ends in `SanitizedFont.fromCanonical`, so the verifier is still the only way to a `SanitizedFont`.
 - `InvalidFontException` gets a public constructor, since the readers throw it from another module. Apps have no reason to construct one, and one that they construct proves nothing.

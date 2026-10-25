@@ -21,11 +21,11 @@ import androidx.compose.ui.input.pointer.PointerType
 import com.google.vtfx.core.Hyperlink
 import com.google.vtfx.core.LinkPattern
 
-// See docs/decisions/0019. The links and clicks are not data classes, so that properties can be
+// See docs/decisions/0087. The links and clicks are not data classes, so that properties can be
 // added without changing what apps compiled earlier call; only vtfx makes them. TerminalLink is an
 // abstract class with an internal constructor rather than a sealed interface, so that apps cannot
 // match the kinds exhaustively, and a new kind does not make code compiled earlier throw
-// NoWhenBranchMatchedException (docs/decisions/0037).
+// NoWhenBranchMatchedException (docs/decisions/0087).
 /**
  * A link on the display that the user clicked, passed to the `onLinkClick` of [Terminal] in a
  * [TerminalLinkClick]. Show [url] to the user and, when they confirm, open it with

@@ -17,7 +17,7 @@
 package com.google.vtfx.core
 
 // Not a data class, so that properties can be added without changing what apps compiled earlier
-// call (docs/decisions/0037). Only vtfx makes it.
+// call (docs/decisions/0087). Only vtfx makes it.
 /**
  * A hyperlink set by OSC 8 (https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda).
  * [uri][Hyperlink.uri] is untrusted text from the host: show it to the user, and open it only with

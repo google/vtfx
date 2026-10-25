@@ -21,7 +21,7 @@ package com.google.vtfx.core
 import com.google.vtfx.core.graphics.Placeholders
 
 // Not a data class, so that properties can be added without changing what apps compiled earlier
-// call (docs/decisions/0037). Only vtfx makes it.
+// call (docs/decisions/0087). Only vtfx makes it.
 /**
  * The position of the cursor. Whether the host shows it is [TerminalModes.cursorVisible].
  * Immutable, and equal to a state with the same values.
@@ -163,7 +163,7 @@ internal constructor(
     internal val lines: List<LineSnapshot>,
     /**
      * The rows above the display that autowrap joins to its first line, at most [rows] of them,
-     * from the top, for finding the links that the display cuts (docs/decisions/0019).
+     * from the top, for finding the links that the display cuts (docs/decisions/0087).
      */
     internal val linesAbove: List<LineSnapshot>,
     /** The rows below the display that autowrap joins to its last line, at most [rows] of them. */

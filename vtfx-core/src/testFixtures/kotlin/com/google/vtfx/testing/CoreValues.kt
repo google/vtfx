@@ -25,7 +25,7 @@ import com.google.vtfx.core.MouseEncoding
 import com.google.vtfx.core.MouseTracking
 import com.google.vtfx.core.TerminalModes
 
-// Only vtfx-core makes these values (docs/decisions/0037); the test fixtures, compiled as a friend
+// Only vtfx-core makes these values (docs/decisions/0087); the test fixtures, compiled as a friend
 // of vtfx-core, make them for the tests of the other modules.
 
 /** Returns [TerminalModes] with the given values. */

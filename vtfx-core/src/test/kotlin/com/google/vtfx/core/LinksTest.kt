@@ -116,7 +116,7 @@ class LinksTest {
     @Test
     fun dotSegmentsAreKeptInTheUrl() {
         // Opening the URL removes them, which only drops segments of the template; it was decided
-        // to allow that (docs/decisions/0019).
+        // to allow that (docs/decisions/0087).
         fun urls(pattern: LinkPattern, text: String) =
             LinkFinder(listOf(pattern)).find(terminal(40, 1, text).snapshot()).map { it.url }
         val repo =
