@@ -133,7 +133,7 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
         return session.copyToClipboard(selectedText(selected))
     }
 
-    /** Selects all the text: the scrollback and the screen (docs/decisions/0031). */
+    /** Selects all the text: the scrollback and the screen (docs/decisions/0085). */
     fun selectAll() {
         selection = TerminalSelection.all(displaySnapshot())
     }
@@ -181,7 +181,7 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
      */
     fun observeEditorVersion(): Int = editorVersion
 
-    // --- Search (docs/decisions/0047) ---
+    // --- Search (docs/decisions/0085) ---
 
     /** The search of this display, or null. */
     private var searchIndex: SearchIndex? = null

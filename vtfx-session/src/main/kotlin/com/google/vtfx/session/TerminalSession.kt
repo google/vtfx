@@ -694,7 +694,7 @@ public class TerminalSession(
         notifyUserInput()
     }
 
-    // Sticky modifiers apply to the next typed key or character (docs/decisions/0012).
+    // Sticky modifiers apply to the next typed key or character (docs/decisions/0085).
     /**
      * Sends a key that a scroll gesture makes, such as an arrow key on the alternate screen, as
      * [sendKey] does, but without [stickyModifiers], which are for the keys the user types: they

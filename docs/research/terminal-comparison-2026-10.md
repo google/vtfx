@@ -91,7 +91,7 @@ In the tables, "Yes" means supported, "No" not supported, and "Partial" supporte
 | IME | An editing model ([ime-contract.md](../design/ime-contract.md)) | No | Commits only (`TYPE_NULL` by default) | Composing text drawn over the cursor | Composing text drawn over the cursor | In the app, composing text drawn | In the app | Composing text drawn; no surrounding text |
 | Block selection | No ([0079](../decisions/0079-emulation-scope.md)) | Yes | No | No | Yes | Yes | Yes (app) | Yes |
 | Word delimiters | To be supported ([0079](../decisions/0079-emulation-scope.md)) | Yes, configurable | No (blanks only) | A fixed list | Yes, configurable | Yes, configurable | Yes, configurable | Yes, configurable |
-| Search | Plain text ([0047](../decisions/0047-search.md)) | Regular expressions | No | Plain text | Regular expressions (addon) | Plain text, on its own thread | Regular expressions (app) | Regular expressions (PCRE2) |
+| Search | Plain text ([0085](../decisions/0085-compose-interaction.md)) | Regular expressions | No | Plain text | Regular expressions (addon) | Plain text, on its own thread | Regular expressions (app) | Regular expressions (PCRE2) |
 | Keyboard mode for selecting (vi, copy mode) | No | Yes | No | No | No | Partial (key tables) | Yes (app) | No |
 | Link detection | OSC 8 and regular expressions | OSC 8 | Regular expressions in the app | Asynchronous filters | OSC 8 and regular expressions (addon) | OSC 8 and regular expressions (app) | OSC 8 and regular expressions (app) | OSC 8 and regular expressions |
 | Accessibility | Yes (a node per row) | No | Partial (the whole screen as one description) | No | Yes (screen reader mode) | Partial (macOS only) | No | Yes (ATK, GtkAccessible) |
@@ -106,7 +106,7 @@ In the tables, "Yes" means supported, "No" not supported, and "Partial" supporte
 | XTGETTCAP | 4: Termux, Ghostty, WezTerm, VTE | Not answered, [0083](../decisions/0083-gate.md), [0079](../decisions/0079-emulation-scope.md) |
 | DA3 | 3: Ghostty, WezTerm, VTE | Not recorded |
 | Left and right margins | 4: Termux, Ghostty, WezTerm, VTE | Left out, [0079](../decisions/0079-emulation-scope.md) |
-| Search with regular expressions | 4: alacritty, xterm.js, WezTerm, VTE | Left out, [0047](../decisions/0047-search.md) |
+| Search with regular expressions | 4: alacritty, xterm.js, WezTerm, VTE | Left out, [0085](../decisions/0085-compose-interaction.md) |
 | sixel | 4: Termux, xterm.js, WezTerm, VTE (off by default) | Left out, section 4 of [emulation.md](../design/emulation.md) |
 | Notifications and progress (OSC 9, 777, 9;4) | 4: xterm.js (progress), Ghostty, WezTerm, VTE | Not recorded |
 | kitty keyboard protocol | 3: xterm.js, Ghostty, WezTerm | A decision of its own, [0079](../decisions/0079-emulation-scope.md) |

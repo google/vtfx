@@ -126,7 +126,7 @@ The size is from 1 to `TerminalLimits.MAX_DIMENSION` in each direction, and a ce
 - The first size of a `TerminalDisplay` is applied to the session at once, also for a `Terminal` recreated after a configuration change.
 - Later sizes are applied only after the size has stayed the same for 150 ms (`RESIZE_DELAY_MILLIS` in `TerminalDisplay`), so that during the animation of showing the keyboard or rotating, the reflow and the notification to the host (SIGWINCH) happen once. The same mechanism covers rotation, multi-window, and foldables; the state of the IME animation (`WindowInsetsAnimation`) is not used.
 - During the animation, drawing keeps the grid of the old size, clipped to the composable.
-- Where its constraints leave the size free, `Terminal` takes 80 × 24 cells, or as much of that as the constraints allow. Laid out with no width or height, it logs a warning and does not resize the session ([decisions/0032](../decisions/0032-keys-and-layout.md)).
+- Where its constraints leave the size free, `Terminal` takes 80 × 24 cells, or as much of that as the constraints allow. Laid out with no width or height, it logs a warning and does not resize the session ([decisions/0085](../decisions/0085-compose-interaction.md)).
 
 ### 3.3 Reflow
 

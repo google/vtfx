@@ -61,14 +61,14 @@ internal class TerminalInputView(context: Context) : View(context), InputHost {
 
     /**
      * Called with each key event dispatched to this view before the IME sees it; returns whether
-     * the app consumed it (docs/decisions/0032).
+     * the app consumed it (docs/decisions/0085).
      */
     var onPreImeKeyEvent: (KeyEvent) -> Boolean = { false }
 
     init {
         isFocusable = true
         isFocusableInTouchMode = true
-        // The rows over this view expose the text to accessibility services (docs/decisions/0015).
+        // The rows over this view expose the text to accessibility services (docs/decisions/0085).
         // This view only connects the IME; exposed, it would cover the rows and take a screen
         // reader's touches.
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO

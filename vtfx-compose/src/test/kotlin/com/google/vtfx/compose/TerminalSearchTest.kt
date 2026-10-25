@@ -32,7 +32,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/** The search of a display (docs/decisions/0047), through [TerminalDisplay]. */
+/** The search of a display (docs/decisions/0085), through [TerminalDisplay]. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [SDK])
 class TerminalSearchTest {

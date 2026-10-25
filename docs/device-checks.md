@@ -265,7 +265,7 @@ What to tell us: the Gboard version, the device and Android version, and each ro
 
 ## 14. Searching
 
-Section 13 of [compose-input.md](design/compose-input.md), [decisions/0047](decisions/0047-search.md). A search runs on the main thread: a new search lays out the text of the whole scrollback, a change of the text searches the text kept, and each redraw after output searches the new lines. These were timed only on the development machine's JVM, not on ART.
+Section 13 of [compose-input.md](design/compose-input.md), [decisions/0085](decisions/0085-compose-interaction.md). A search runs on the main thread: a new search lays out the text of the whole scrollback, a change of the text searches the text kept, and each redraw after output searches the new lines. These were timed only on the development machine's JVM, not on ART.
 
 | # | Action | Expected |
 |---|---|---|

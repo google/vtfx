@@ -60,7 +60,7 @@ import org.robolectric.shadows.ShadowLog
 
 /**
  * Checks how [Terminal] sizes itself within its constraints, and where its padding puts the grid
- * (docs/decisions/0032).
+ * (docs/decisions/0085).
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)

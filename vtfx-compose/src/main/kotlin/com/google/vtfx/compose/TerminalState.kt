@@ -28,7 +28,7 @@ import androidx.compose.runtime.setValue
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.SearchQuery
 
-// See docs/decisions/0031, and 0047 for the search.
+// See docs/decisions/0085.
 /**
  * The state of a [Terminal] that the app can read and change: the selection, for the app's own Copy
  * command or shortcut, and the search, for the app's own search field. Create it with

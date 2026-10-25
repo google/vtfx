@@ -54,7 +54,7 @@ The lower bound of the supported scope is the features of the terminfo entry `xt
 | OSC | 0, 2 (title), 8 (hyperlinks), 52 (clipboard; the policy is in section 4.1 of [gate-policy.md](gate-policy.md)) | `EmulationCoverageTest`, `AttackTest` |
 | Images | The kitty graphics protocol (APC `G`), section 9 | `GraphicsTest`, `GraphicsRecordingTest`, `ResourceExhaustionTest`, the gate's `RepliesAndMouseTest` and `AttackTest`, screenshots |
 | Title stack | 0 and 2 of XTWINOPS 22 (save) and 23 (restore). Only titles are pushed. The limits on depth and length are in section 10 | `EmulationCoverageTest.SavedTitles` |
-| Mouse | Tracking (9, 1000, 1002, 1003) and encodings (default, 1005, 1006, 1015). The gate assembles the reports (`HostWriter.sendMouse`); touch and pointer input are mapped to them as in [decisions/0012](../decisions/0012-touch-and-selection.md) and [decisions/0031](../decisions/0031-desktop-pointer-and-terminal-state.md) | `RepliesAndMouseTest` |
+| Mouse | Tracking (9, 1000, 1002, 1003) and encodings (default, 1005, 1006, 1015). The gate assembles the reports (`HostWriter.sendMouse`); touch and pointer input are mapped to them as in [decisions/0085](../decisions/0085-compose-interaction.md) | `RepliesAndMouseTest` |
 | Keyboard | The kitty keyboard protocol: `CSI = flags ; mode u`, `CSI > flags u`, `CSI < n u`, and `CSI ? u`, with a stack of flags for each screen. Only flags 1 (disambiguate escape codes) and 4 (report alternate keys) are kept and acted on: the stacks drop the other flags, so the query reports only what vtfx does. As in kitty, an omitted mode of `CSI =` is 1 and an omitted count of `CSI <` is 1, while 0 sets nothing and pops nothing; a full stack drops its oldest entry (section 10); RIS and DECSTR empty both stacks. The gate encodes the keys (section 2 of [gate-policy.md](gate-policy.md), [decisions/0083](../decisions/0083-gate.md)) | `EmulationCoverageTest.KeyboardFlags`, the gate's `KeyEncoderTest` |
 | Synchronized output | 2026. While it is set, drawing is held back, and drawing happens when it is reset. If it is not reset within 200 ms of the first output held back, drawing happens even if output continues (`TerminalDisplay` in `vtfx-compose`) | `TerminalSessionTest`, `TerminalDisplayTest` |
 
@@ -71,7 +71,7 @@ The replies to queries are built by `vtfx-gate` from the state, never from the r
 | Checksums of the screen contents (DECRQCRA) | Not answered. The esctest harness computes them in the test code (section 11 of [testing.md](testing.md)) |
 | Setting colors (setting OSC 4, 10, 11, 12; OSC 104, 110–112) | Ignored. The colors come from the app's style; queries are answered |
 | Protection attribute for selective erase (DECSCA) | Ignored. DECSED and DECSEL are normal erases |
-| Drawing blinking characters (SGR 5, 6) | The model keeps the attribute, but the display does not blink the text. The cursor blinks when the host asks for it (DECSCUSR, mode 12; [decisions/0012](../decisions/0012-touch-and-selection.md)) |
+| Drawing blinking characters (SGR 5, 6) | The model keeps the attribute, but the display does not blink the text. The cursor blinks when the host asks for it (DECSCUSR, mode 12; [decisions/0085](../decisions/0085-compose-interaction.md)) |
 | Printing (MC), sounds other than the bell, image protocols other than kitty's, such as sixel | Ignored |
 | C1 control characters (8-bit) | Ignored (section 2) |
 | XTGETTCAP (DCS + q) | Not answered |

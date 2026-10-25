@@ -88,7 +88,7 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 
-// The touch input follows docs/decisions/0012, and the links and the keys 0019.
+// The touch input follows docs/decisions/0085, and the links and the keys 0019.
 /**
  * Displays [session] and sends the user's input to it.
  *
@@ -236,7 +236,7 @@ internal fun Terminal(
         // The user's input shows the cursor and starts its phase again, so that it stays on while
         // the user types, also when the host does not echo; so does output that moves the cursor,
         // as in xterm.js. Output that leaves the cursor where it was, such as a redraw that
-        // returns it, does not (docs/decisions/0012). Collected rather than read in the
+        // returns it, does not (docs/decisions/0085). Collected rather than read in the
         // composition, so that typing and output do not recompose the terminal.
         snapshotFlow {
             display.observeVersion().let {
@@ -361,7 +361,7 @@ internal fun Terminal(
                 .onSizeChanged { size ->
                     if (size.width == 0 || size.height == 0) {
                         // The session keeps its size: resizing the host to one cell would reflow
-                        // its output for nothing (docs/decisions/0032).
+                        // its output for nothing (docs/decisions/0085).
                         Log.w(LOG_TAG, "Terminal laid out with no room for the grid: $size")
                         gridRows = 0
                         return@onSizeChanged
@@ -422,7 +422,7 @@ internal fun Terminal(
 
 /**
  * Exposes the displayed text to accessibility services as one node per row, so that a screen reader
- * can move through it line by line (requirement 6.3, docs/decisions/0015).
+ * can move through it line by line (requirement 6.3, docs/decisions/0085).
  *
  * The rows have no click action: Compose would extend the bounds of a clickable node to the minimum
  * touch target, and the rows, shorter than that, would be reported over each other. A screen
@@ -452,7 +452,7 @@ private fun RowSemantics(
 
 /**
  * Sizes the terminal to [DEFAULT_COLUMNS] by [DEFAULT_ROWS] cells of [metrics] and [padding], as
- * close as the incoming constraints allow, the way text sizes to its content (docs/decisions/0032).
+ * close as the incoming constraints allow, the way text sizes to its content (docs/decisions/0085).
  */
 private fun Modifier.preferredGridSize(metrics: CellMetrics, padding: PaddingValues): Modifier =
     layout { measurable, constraints ->
@@ -656,7 +656,7 @@ private class TerminalRowSemanticsNode(
     override fun SemanticsPropertyReceiver.applySemantics() {
         text = AnnotatedString(displayText.line(row))
         // The host may show secrets. Android then shows the row only to services that declare
-        // isAccessibilityTool, such as TalkBack (docs/decisions/0015).
+        // isAccessibilityTool, such as TalkBack (docs/decisions/0085).
         isSensitiveData = true
     }
 }

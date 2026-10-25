@@ -124,7 +124,7 @@ class TerminalSemanticsTest {
         val row = composeRule.onNode(hasText("secret", substring = false)).fetchSemanticsNode()
         val provider = view.accessibilityNodeProvider
         // The host may show secrets, so other services than accessibility tools, such as TalkBack,
-        // do not see the rows (docs/decisions/0015).
+        // do not see the rows (docs/decisions/0085).
         assertTrue(provider.createAccessibilityNodeInfo(row.id)!!.isAccessibilityDataSensitive)
         ShadowToolAccessibilityManager.requestsFromTool = false
         try {

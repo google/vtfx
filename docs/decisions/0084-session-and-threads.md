@@ -2,7 +2,7 @@
 
 - Status: Approved
 - Date: 2026-10-25
-- Related: Requirements 1, 3, 4.1, 4.2, 5.3, 5.4, 5.5, 6.1, 6.2, and 6.5, [session-and-threads.md](../design/session-and-threads.md), sections 2.1, 3.5, 3.6, and 5 of [architecture.md](../design/architecture.md), sections 5.1, 7, 8, and 12 of [ime-contract.md](../design/ime-contract.md), section 4.2 of [gate-policy.md](../design/gate-policy.md), sections 7.3 and 8.3 of [emulation.md](../design/emulation.md), [0082](0082-ime-editing-model.md), [0079](0079-emulation-scope.md), [0014](0014-performance.md), [0015](0015-accessibility.md), [0016](0016-public-api.md), [0080](0080-kitty-graphics.md), [0083](0083-gate.md), [0044](0044-boundaries-in-gradle-and-classes.md)
+- Related: Requirements 1, 3, 4.1, 4.2, 5.3, 5.4, 5.5, 6.1, 6.2, and 6.5, [session-and-threads.md](../design/session-and-threads.md), sections 2.1, 3.5, 3.6, and 5 of [architecture.md](../design/architecture.md), sections 5.1, 7, 8, and 12 of [ime-contract.md](../design/ime-contract.md), section 4.2 of [gate-policy.md](../design/gate-policy.md), sections 7.3 and 8.3 of [emulation.md](../design/emulation.md), [0082](0082-ime-editing-model.md), [0079](0079-emulation-scope.md), [0014](0014-performance.md), [0085](0085-compose-interaction.md), [0016](0016-public-api.md), [0080](0080-kitty-graphics.md), [0083](0083-gate.md), [0044](0044-boundaries-in-gradle-and-classes.md)
 
 ## Background
 

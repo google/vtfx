@@ -1,8 +1,8 @@
 # Extensibility policy (correspondence with xterm.js addons)
 
-- Status: Approved (2026-10-13, approved by a human in the final review; the limit on matching effort and the links over concealed text were decided by a human afterwards); key interception with `onPreviewKeyEvent` superseded by [0032](0032-keys-and-layout.md), the parameter of `onLinkClick` by [0031](0031-desktop-pointer-and-terminal-state.md), and `TerminalLink` as a sealed type by [0037](0037-api-shape-before-1.0.md)
+- Status: Approved (2026-10-13, approved by a human in the final review; the limit on matching effort and the links over concealed text were decided by a human afterwards); key interception with `onPreviewKeyEvent` superseded by [0085](0085-compose-interaction.md), the parameter of `onLinkClick` by [0085](0085-compose-interaction.md), and `TerminalLink` as a sealed type by [0037](0037-api-shape-before-1.0.md)
 - Date: 2026-10-12
-- Related: Requirements 4.1, 4.2, 6.1, and 6.5 (customizability, minimal surface), section 6 of [compose-input.md](../design/compose-input.md), "Links" in [usage.md](../usage.md), [0083](0083-gate.md), [0084](0084-session-and-threads.md), [0012](0012-touch-and-selection.md), [0016](0016-public-api.md)
+- Related: Requirements 4.1, 4.2, 6.1, and 6.5 (customizability, minimal surface), section 6 of [compose-input.md](../design/compose-input.md), "Links" in [usage.md](../usage.md), [0083](0083-gate.md), [0084](0084-session-and-threads.md), [0085](0085-compose-interaction.md), [0016](0016-public-api.md)
 
 ## Background
 
@@ -29,7 +29,7 @@ The addon mechanism itself is thin: it just receives a `Terminal` and uses the p
 | Rendering method | WebGL, Canvas | Not needed ([0014](0014-performance.md)) |
 | Automatic URL links | WebLinksAddon, link provider | Built in. In addition, the app can give text patterns and rules for converting them to URLs (below) |
 | Link hover | link decorations, hover | Built in, for the mouse: the pointer icon changes over a link |
-| Key interception by the app | `attachCustomKeyEventHandler` | A per-terminal means, decided in [0032](0032-keys-and-layout.md) (below) |
+| Key interception by the app | `attachCustomKeyEventHandler` | A per-terminal means, decided in [0085](0085-compose-interaction.md) (below) |
 | Search and highlighting | SearchAddon, decoration | Matching, highlighting, and scrolling to a match are built in, but the search field UI belongs to the app, so an API is needed. Where the state lives and how match positions are represented are decided in a separate decision |
 | Confirmation before pasting | The app's implementation | Like hyperlinks, consider a shape that notifies the app and lets the app confirm. Clipboard suggestions of the IME arrive through `commitText`, so not every path can be covered. Those of several lines are sent as pastes, bracketed if the host enabled bracketed paste ([0082](0082-ime-editing-model.md)) |
 | Progress (OSC 9;4) | ProgressAddon | If needed, exposed as state like `title` |
@@ -52,7 +52,7 @@ The app can add links by giving pairs of a regular expression and a URL template
 
 ### Key interception
 
-With multiple tabs, the Activity's `dispatchKeyEvent` cannot tell which terminal a key is for, so a per-terminal means is needed. This decision first chose `Modifier.onPreviewKeyEvent` on an ancestor of `Terminal`, with no new API; it does not see the keys that an IME takes, and [0032](0032-keys-and-layout.md) replaced it with the `onPreImeKeyEvent` parameter of `Terminal`.
+With multiple tabs, the Activity's `dispatchKeyEvent` cannot tell which terminal a key is for, so a per-terminal means is needed. This decision first chose `Modifier.onPreviewKeyEvent` on an ancestor of `Terminal`, with no new API; it does not see the keys that an IME takes, and [0085](0085-compose-interaction.md) replaced it with the `onPreImeKeyEvent` parameter of `Terminal`.
 
 ## Alternatives considered
 
@@ -63,6 +63,6 @@ With multiple tabs, the Activity's `dispatchKeyEvent` cannot tell which terminal
 
 ## Impact of reversing
 
-- Supporting shell integration needs tracking lines (across eviction from scrollback and reflow). This is the problem [0012](0012-touch-and-selection.md) avoided for selection; start by considering giving `Line` a prompt marker.
+- Supporting shell integration needs tracking lines (across eviction from scrollback and reflow). This is the problem [0085](0085-compose-interaction.md) avoided for selection; start by considering giving `Line` a prompt marker.
 - Supporting saving and restoring sessions needs an API that reads the buffer, including scrollback. It shares its foundation with the search API.
 - Changing the link rules changes `LinkFinder` and `LinkPattern` in `vtfx-core` and section 6 of [compose-input.md](../design/compose-input.md).

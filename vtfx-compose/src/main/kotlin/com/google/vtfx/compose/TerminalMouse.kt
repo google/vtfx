@@ -45,7 +45,7 @@ import com.google.vtfx.gate.MouseReport
 import kotlin.math.abs
 
 /**
- * What a mouse does on the grid (docs/decisions/0031). Other pointers are left to
+ * What a mouse does on the grid (docs/decisions/0085). Other pointers are left to
  * [terminalGestures], which this modifier must come before, so that it sees the events first and
  * consumes the mouse's.
  *

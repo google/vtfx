@@ -51,7 +51,7 @@ import org.robolectric.annotation.GraphicsMode
 
 /**
  * Checks that an app takes hardware keys from a terminal for its own shortcuts: before the IME with
- * `onPreImeKeyEvent` of [Terminal] (docs/decisions/0032), and after it with Compose's
+ * `onPreImeKeyEvent` of [Terminal] (docs/decisions/0085), and after it with Compose's
  * `onPreviewKeyEvent` on an ancestor (docs/decisions/0019).
  */
 @RunWith(RobolectricTestRunner::class)

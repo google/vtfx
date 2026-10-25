@@ -2,7 +2,7 @@
 
 - Status: Approved
 - Date: 2026-10-25
-- Related: Requirement 6.1 (resource exhaustion, unauthorized reading of the clipboard), Requirement 6.5 (safe defaults), section 8 of [REQUIREMENTS.md](../REQUIREMENTS.md) (the acceptable range and limits for resource exhaustion), sections 5 and 10 of [emulation.md](../design/emulation.md), section 4.1 of [gate-policy.md](../design/gate-policy.md), section 13 of [compose-input.md](../design/compose-input.md), [0083](0083-gate.md), [0079](0079-emulation-scope.md), [0014](0014-performance.md), [0036](0036-adding-parameters.md), [0037](0037-api-shape-before-1.0.md), [0080](0080-kitty-graphics.md), [0044](0044-boundaries-in-gradle-and-classes.md), [0047](0047-search.md)
+- Related: Requirement 6.1 (resource exhaustion, unauthorized reading of the clipboard), Requirement 6.5 (safe defaults), section 8 of [REQUIREMENTS.md](../REQUIREMENTS.md) (the acceptable range and limits for resource exhaustion), sections 5 and 10 of [emulation.md](../design/emulation.md), section 4.1 of [gate-policy.md](../design/gate-policy.md), section 13 of [compose-input.md](../design/compose-input.md), [0083](0083-gate.md), [0079](0079-emulation-scope.md), [0014](0014-performance.md), [0036](0036-adding-parameters.md), [0037](0037-api-shape-before-1.0.md), [0080](0080-kitty-graphics.md), [0044](0044-boundaries-in-gradle-and-classes.md), [0085](0085-compose-interaction.md)
 
 ## Background
 
@@ -121,18 +121,18 @@ Section 4.1 of [gate-policy.md](../design/gate-policy.md) describes the result.
 ## 7. The search's work per redraw
 
 1. A redraw reads a bounded number of times, at most twice as many as reading the lines kept at its first read takes, plus a few, and leaves the rest to the next redraw.
-2. A line that autowrap joins through more than 100 rows is searched in parts of 100 rows (`MAX_SEARCH_TEXT_ROWS`), and a match does not cross from one part to the next. For such lines, this replaces what [0047](0047-search.md) decided, that rows joined by autowrap are one text.
+2. A line that autowrap joins through more than 100 rows is searched in parts of 100 rows (`MAX_SEARCH_TEXT_ROWS`), and a match does not cross from one part to the next. For such lines, this replaces what [0085](0085-compose-interaction.md) decided, that rows joined by autowrap are one text.
 
 Section 13 of [compose-input.md](../design/compose-input.md) describes the result.
 
 **Why.**
-- Item 1: the search is kept up to date at each redraw after output, on the main thread, reading the lines a thousand at a time with the session's lock taken for each read ([0047](0047-search.md)). When the host writes faster than the reads go (`yes`, `cat` of a large log), each read starts at the oldest line still kept, which has moved on, and never reaches the screen; without another end, the main thread would stop, and with it drawing and the user's Ctrl-C. The bound is enough to read everything once without output in between, and to start over once when the lines are numbered again. The output that scrolls faster brings the next redraw; while it goes on, the matches of the newest lines may be missing, and when it stops, the last redraw reads up to the screen.
+- Item 1: the search is kept up to date at each redraw after output, on the main thread, reading the lines a thousand at a time with the session's lock taken for each read ([0085](0085-compose-interaction.md)). When the host writes faster than the reads go (`yes`, `cat` of a large log), each read starts at the oldest line still kept, which has moved on, and never reaches the screen; without another end, the main thread would stop, and with it drawing and the user's Ctrl-C. The bound is enough to read everything once without output in between, and to start over once when the lines are numbered again. The output that scrolls faster brings the next redraw; while it goes on, the matches of the newest lines may be missing, and when it stops, the last redraw reads up to the screen.
 - Item 2: an update searches only the lines that entered the scrollback since and the screen, because a text that ended in the scrollback does not change; a text that goes on into the screen has not ended, so it would be read again from its first row at each update. Host output without line breaks (`base64 -w0`, minified JSON) makes one text of the whole scrollback and the screen, which each update would read and search with the session's lock held, in one read not bounded by the thousand lines. A part that ends in the scrollback does not change either, so it is searched once. 100 rows is a few screens: small next to the scrollback, while a match is lost only where it crosses the end of a part of a line at least that long.
 
 **Alternatives considered.**
 - **Read up to the screen as it was at the first read**: bounded while the lines keep their numbers, but output that clears the scrollback (ED 3) between the reads numbers them again and starts the search over at every read, so it needs a bound on the reads anyway.
 - **Hold the session's lock for the whole update**: it always ends, but holds up the output thread for as long as reading the whole scrollback takes, which the reads a thousand lines at a time avoid.
-- **Search on another thread**: see [0047](0047-search.md).
+- **Search on another thread**: see [0085](0085-compose-interaction.md).
 - **Keep searching a long line where the last update left it**, keeping the state of the matcher and the text of the line's rows in the scrollback, so that no match is lost: the text, the columns of its characters, and a match that goes on past the scrollback would all have to be continued across reads; much more state for matches at the ends of parts of very long lines.
 - **Parts as long as a read (1,000 rows)**: fewer lost matches, but up to ten times the work at each redraw while such a line goes on, and the parts would depend on how many lines a caller reads at a time.
 

@@ -40,7 +40,7 @@ import com.google.vtfx.session.TerminalSession
 import kotlin.math.abs
 
 /**
- * What touches do on the grid (docs/decisions/0012); [terminalMouse] handles a mouse:
+ * What touches do on the grid (docs/decisions/0085); [terminalMouse] handles a mouse:
  *
  * - A tap shows the keyboard, and if the host asked for mouse events, it is also a click. A tap
  *   drops the selection.
@@ -50,7 +50,7 @@ import kotlin.math.abs
  *   keys on the alternate screen (as xterm's alternateScroll), and through the scrollback
  *   otherwise.
  * - While the display shows the scrollback, the host does not get taps and swipes as the mouse
- *   (docs/decisions/0031): they act as if it had not asked.
+ *   (docs/decisions/0085): they act as if it had not asked.
  */
 internal fun Modifier.terminalGestures(
     display: TerminalDisplay,

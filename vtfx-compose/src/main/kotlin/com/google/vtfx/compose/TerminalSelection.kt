@@ -47,10 +47,10 @@ internal data class Cell(val column: Int, val row: Int) : Comparable<Cell> {
 
 /**
  * A selection of text on the display, from [anchor] to [focus] inclusive, in either order. It is in
- * the display's coordinates, so it is dropped whenever the display changes (docs/decisions/0012).
+ * the display's coordinates, so it is dropped whenever the display changes (docs/decisions/0085).
  *
  * @property isAll Whether it selects all the text, the scrollback included, rather than the cells
- *   from [anchor] to [focus], which then cover the display (docs/decisions/0031).
+ *   from [anchor] to [focus], which then cover the display (docs/decisions/0085).
  */
 internal data class TerminalSelection(
     val anchor: Cell,

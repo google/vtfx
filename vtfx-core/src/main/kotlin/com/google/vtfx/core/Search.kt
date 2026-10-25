@@ -18,7 +18,7 @@
 
 package com.google.vtfx.core
 
-// The design is in docs/decisions/0047.
+// The design is in docs/decisions/0085.
 
 /**
  * What to search for: [text] as it is, ignoring the case of letters if [ignoreCase]. Immutable.

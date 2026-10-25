@@ -131,7 +131,7 @@ check_classes = true
 classes = [
     "java/util/Base64",
     "java/util/Base64$Decoder",
-    # The concealed characters of the text that a search keeps (docs/decisions/0047).
+    # The concealed characters of the text that a search keeps (docs/decisions/0085).
     "java/util/BitSet",
     "java/util/regex/Matcher",
     "java/util/regex/Pattern",
