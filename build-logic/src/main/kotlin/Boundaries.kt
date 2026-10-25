@@ -19,7 +19,7 @@ import com.fasterxml.jackson.dataformat.toml.TomlMapper
 import java.io.Serializable
 
 /**
- * The module boundaries declared in `config/boundaries.toml` (docs/decisions/0044): for each module
+ * The module boundaries declared in `config/boundaries.toml` (docs/decisions/0088): for each module
  * of the build, the modules it may depend on, and what its compiled classes may refer to.
  */
 class Boundaries

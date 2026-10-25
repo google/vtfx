@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// The check of the module boundaries declared in config/boundaries.toml (docs/decisions/0044). The
+// The check of the module boundaries declared in config/boundaries.toml (docs/decisions/0088). The
 // root project applies it, and it adds the check to every other project, so that a module cannot
 // leave itself out by not applying a convention plugin. The root project itself is not checked: it
 // only aggregates the API reference, and ships nothing.
@@ -162,7 +162,7 @@ gradle.projectsEvaluated {
         if ((androidPlugins + "java").none { module.pluginManager.hasPlugin(it) }) {
             throw GradleException(
                 "Project ${module.path} applies neither the java plugin nor an Android plugin, so " +
-                    "the boundary check cannot read its classes (docs/decisions/0044)."
+                    "the boundary check cannot read its classes (docs/decisions/0088)."
             )
         }
         tasks.named<CheckDependenciesTask>("checkDependencies") {

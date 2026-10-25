@@ -262,7 +262,7 @@ class ReviewReproTest {
          * from `variantJars` in `checkedClasses` (BoundaryTasks.kt:192 vs 250). A class under
          * `META-INF/versions/` in a variant jar is therefore neither checked for boundary
          * violations nor rejected in the shipped AAR (docs/design/boundaries.md section 6,
-         * docs/decisions/0060).
+         * docs/decisions/0088).
          */
         @Test
         fun r2a_checkLibraryArtifactAllowsUncheckedMetaInfClassFromVariantJar() {

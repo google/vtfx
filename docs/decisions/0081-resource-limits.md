@@ -2,7 +2,7 @@
 
 - Status: Approved
 - Date: 2026-10-25
-- Related: Requirement 6.1 (resource exhaustion, unauthorized reading of the clipboard), Requirement 6.5 (safe defaults), section 8 of [REQUIREMENTS.md](../REQUIREMENTS.md) (the acceptable range and limits for resource exhaustion), sections 5 and 10 of [emulation.md](../design/emulation.md), section 4.1 of [gate-policy.md](../design/gate-policy.md), section 13 of [compose-input.md](../design/compose-input.md), [0083](0083-gate.md), [0079](0079-emulation-scope.md), [0014](0014-performance.md), [0087](0087-public-api.md), [0080](0080-kitty-graphics.md), [0044](0044-boundaries-in-gradle-and-classes.md), [0085](0085-compose-interaction.md)
+- Related: Requirement 6.1 (resource exhaustion, unauthorized reading of the clipboard), Requirement 6.5 (safe defaults), section 8 of [REQUIREMENTS.md](../REQUIREMENTS.md) (the acceptable range and limits for resource exhaustion), sections 5 and 10 of [emulation.md](../design/emulation.md), section 4.1 of [gate-policy.md](../design/gate-policy.md), section 13 of [compose-input.md](../design/compose-input.md), [0083](0083-gate.md), [0079](0079-emulation-scope.md), [0014](0014-performance.md), [0087](0087-public-api.md), [0080](0080-kitty-graphics.md), [0088](0088-build-boundaries-and-tests.md), [0085](0085-compose-interaction.md)
 
 ## Background
 

@@ -47,7 +47,7 @@ kotlin {
         jvmTarget.set(JvmTarget.JVM_17)
         allWarningsAsErrors.set(true)
         // Results must be used, as the CheckReturnValue checks of other build systems require
-        // (docs/decisions/0072). Only a check: the sources compile without it.
+        // (docs/decisions/0088). Only a check: the sources compile without it.
         freeCompilerArgs.add("-Xreturn-value-checker=full")
     }
 }
@@ -56,7 +56,7 @@ registerKotlinSignatures("compileKotlin")
 
 dependencies {
     // The tests run on JUnit 4, which builds of the sources with other build systems run too
-    // (docs/decisions/0048).
+    // (docs/decisions/0088).
     "testImplementation"(libs.findLibrary("junit4").get())
     "testImplementation"(libs.findLibrary("testparameterinjector").get())
     "testImplementation"(kotlin("test"))

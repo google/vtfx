@@ -30,7 +30,7 @@ import org.objectweb.asm.signature.SignatureReader
 import org.objectweb.asm.signature.SignatureVisitor
 
 /**
- * What one compiled class refers to, for the boundary check (docs/decisions/0044).
+ * What one compiled class refers to, for the boundary check (docs/decisions/0088).
  *
  * @property name the internal name of the class (e.g. `com/google/vtfx/gate/HostConnection`).
  * @property types every class that the class names anywhere: as its supertypes, in descriptors and

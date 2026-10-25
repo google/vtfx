@@ -2,7 +2,7 @@
 
 - Status: Approved
 - Date: 2026-10-25
-- Related: Requirements 1, 3, 4.1, 4.2, 5.3, 5.4, 5.5, 6.1, 6.2, and 6.5, [session-and-threads.md](../design/session-and-threads.md), sections 2.1, 3.5, 3.6, and 5 of [architecture.md](../design/architecture.md), sections 5.1, 7, 8, and 12 of [ime-contract.md](../design/ime-contract.md), section 4.2 of [gate-policy.md](../design/gate-policy.md), sections 7.3 and 8.3 of [emulation.md](../design/emulation.md), [0082](0082-ime-editing-model.md), [0079](0079-emulation-scope.md), [0014](0014-performance.md), [0085](0085-compose-interaction.md), [0087](0087-public-api.md), [0080](0080-kitty-graphics.md), [0083](0083-gate.md), [0044](0044-boundaries-in-gradle-and-classes.md)
+- Related: Requirements 1, 3, 4.1, 4.2, 5.3, 5.4, 5.5, 6.1, 6.2, and 6.5, [session-and-threads.md](../design/session-and-threads.md), sections 2.1, 3.5, 3.6, and 5 of [architecture.md](../design/architecture.md), sections 5.1, 7, 8, and 12 of [ime-contract.md](../design/ime-contract.md), section 4.2 of [gate-policy.md](../design/gate-policy.md), sections 7.3 and 8.3 of [emulation.md](../design/emulation.md), [0082](0082-ime-editing-model.md), [0079](0079-emulation-scope.md), [0014](0014-performance.md), [0085](0085-compose-interaction.md), [0087](0087-public-api.md), [0080](0080-kitty-graphics.md), [0083](0083-gate.md), [0088](0088-build-boundaries-and-tests.md)
 
 ## Background
 
@@ -94,7 +94,7 @@ The output lock exists because handing the requests of a `feed` to the gate afte
 2. `HostWriter` is `@InternalVtfxApi`, not part of the public API. It is still only `vtfx-gate` that assembles and checks the bytes for the host.
 3. `TerminalSession.kt` is not under `security_review` in `config/protected-paths.toml`.
 
-Which modules may use the members of `HostConnection` is checked by the boundary check (section 5 of [architecture.md](../design/architecture.md), [0044](0044-boundaries-in-gradle-and-classes.md)).
+Which modules may use the members of `HostConnection` is checked by the boundary check (section 5 of [architecture.md](../design/architecture.md), [0088](0088-build-boundaries-and-tests.md)).
 
 **Why.** The only public declaration of `HostWriter` was its constructor, and to apps it was merely a wrapper to pass to `TerminalSession`, an extra type to create. Having apps create it kept `vtfx-compose` from holding the raw connection while the session lived there; in `vtfx-session` (topic 2) the session only hands the connection to `HostWriter`. `TerminalSession.kt` is left out of security review because it changes often and only hands the connection to `HostWriter`.
 

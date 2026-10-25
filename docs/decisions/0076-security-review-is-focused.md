@@ -2,7 +2,7 @@
 
 - Status: Approved (2026-10-24, approved by a human)
 - Date: 2026-10-24
-- Related: Requirements 2 and 6.1, sections 1 and 2 of [architecture.md](../design/architecture.md), section 2 of [fonts.md](../design/fonts.md), [0041](0041-security-review-by-module.md), [0044](0044-boundaries-in-gradle-and-classes.md), [0075](0075-adversaries-are-inputs.md), `config/protected-paths.toml`
+- Related: Requirements 2 and 6.1, sections 1 and 2 of [architecture.md](../design/architecture.md), section 2 of [fonts.md](../design/fonts.md), [0041](0041-security-review-by-module.md), [0088](0088-build-boundaries-and-tests.md), [0075](0075-adversaries-are-inputs.md), `config/protected-paths.toml`
 
 ## Background
 
@@ -15,7 +15,7 @@ Requirements 2 and 6.1 said that most of the code does not need security review,
 1. **No code of vtfx is exempt from review, for security as for anything else.**
 2. **"Under security review" keeps its meaning**: the paths under `security_review` in `config/protected-paths.toml`, which are the gate modules, which hold the capabilities, and the build configuration, which decides what the checks cover. A human reviews them again, closely, after the review of each change, and [review-queue.md](../review-queue.md) tracks it. The list and the term do not change.
 3. **The design keeps the effect of a mistake outside those paths small**, rather than claiming that the code does not matter:
-   - the boundary check keeps the capabilities out of that code, also against changes written to get around it ([0044](0044-boundaries-in-gradle-and-classes.md));
+   - the boundary check keeps the capabilities out of that code, also against changes written to get around it ([0088](0088-build-boundaries-and-tests.md));
    - each gate checks what it receives rather than trust it: replies to the host are built from constants and numbers, every clipboard and URL request goes through the gate's policy, and only fonts that a separate verifier accepts in the canonical form reach native code. A mistake in `vtfx-core` can show the wrong thing but cannot send the host's strings back to it or use the clipboard against the policy, and a mistake in `vtfx-font` can make glyphs look wrong or reject a font but cannot let unverified bytes reach native code;
    - the properties that rest on callers' contracts are guarded by checks in the gate, types, KDoc, and tests ([0075](0075-adversaries-are-inputs.md)); resource limits and what is shown are kept by tests and fuzzing.
 4. **The module tables say whether a module is under security review ("Yes" or "No")**, not whether review is needed.

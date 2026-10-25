@@ -35,7 +35,7 @@ Requires JDK 21, the Android SDK, and `python3` (for R3). No emulator or connect
 ## R1: `checkClassReferences` allows calling restricted or unallowed inherited external methods through a project interface or deeper superclass
 
 - Related: [Boundaries.kt](../../build-logic/src/main/kotlin/Boundaries.kt) (`externalMember`, `allowlistViolations`, `classViolations`), [ClassHierarchy.kt](../../build-logic/src/main/kotlin/ClassHierarchy.kt) (`declaringClass`)
-- Contract: sections 4.2, 4.3, and 5.1 of [boundaries.md](../design/boundaries.md), and [decisions/0044](../decisions/0044-boundaries-in-gradle-and-classes.md):
+- Contract: sections 4.2, 4.3, and 5.1 of [boundaries.md](../design/boundaries.md), and [decisions/0088](../decisions/0088-build-boundaries-and-tests.md):
   - Section 4.2: "The class that declares a member used through some owner is the owner itself or the nearest of its supertypes that declares the member, superclasses before interfaces."
   - Section 4.3: "Neither the class itself nor any of its subtypes may be used as the owner of a field or method instruction or handle, so calling a restricted method through a subclass does not bypass the rule."
   - Section 5.1: "A member used through a class of the project that the class inherits from a class outside the project counts as a use of the member through the class that declares it, which an allowlist must then allow. A module's own subclass of a platform class therefore does not open up the platform class's members."
@@ -63,7 +63,7 @@ Direction of the fix:
 ## R2: `checkLibraryArtifact` allows unchecked `META-INF/` `.class` entries from `variantJars` and shadows duplicate class paths across inputs
 
 - Related: [BoundaryTasks.kt](../../build-logic/src/main/kotlin/BoundaryTasks.kt) (`CheckClassReferencesTask.check`, `CheckLibraryArtifactTask.check`, `ClassPath.find`)
-- Contract: section 6 of [boundaries.md](../design/boundaries.md) and [decisions/0060](../decisions/0060-artifacts-ship-only-checked-classes.md):
+- Contract: section 6 of [boundaries.md](../design/boundaries.md) and [decisions/0088](../decisions/0088-build-boundaries-and-tests.md):
   - Section 6: `checkLibraryArtifact` fails if it finds "A class file that is not, byte for byte, one of the classes that `checkClassReferences` reads (section 4.1; for an AAR, those of the release variant), wherever it is in the artifact, including under `META-INF/`."
 - Reproduction tests: `r2a_checkLibraryArtifactAllowsUncheckedMetaInfClassFromVariantJar`, `r2b_duplicateClassPathAcrossInputsUsesDifferentClassInHierarchyAndArtifact`
 

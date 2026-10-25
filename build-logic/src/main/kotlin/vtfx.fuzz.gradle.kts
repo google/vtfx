@@ -15,7 +15,7 @@
  */
 
 // Conventions for the JVM modules with a fuzz target (docs/design/testing.md section 7,
-// docs/decisions/0048).
+// docs/decisions/0088).
 //
 // The fuzz target is a libFuzzer entry point in the fuzz source set: an object with a @JvmStatic
 // fuzzerTestOneInput(ByteArray), named by `fuzzTarget` in the module's build file. It depends on
@@ -98,7 +98,7 @@ val fuzzSeconds =
     }
 
 // The fuzz tasks of the modules run in parallel with each other and with the other tasks, since
-// each one takes the same time whatever else runs (docs/decisions/0028).
+// each one takes the same time whatever else runs (docs/decisions/0088).
 val fuzz =
     tasks.register<JavaExec>("fuzz") {
         description = "Fuzzes the fuzz target of this module."
@@ -124,7 +124,7 @@ val fuzz =
                     "--instrumentation_includes=com.google.vtfx.**",
                     "--reproducer_path=${reproducerDirectory.get().asFile}",
                     // An input that makes the target fail is written into the committed corpus,
-                    // so that the test task replays it from then on (docs/decisions/0003).
+                    // so that the test task replays it from then on (docs/decisions/0088).
                     "-artifact_prefix=${corpus.get()}/",
                     // libFuzzer reports an input that takes this long as a hang.
                     "-timeout=10",

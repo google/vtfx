@@ -2,13 +2,13 @@
 
 - Status: Approved (2026-10-25, approved by a human)
 - Date: 2026-10-20
-- Related: [AGENTS.md](../../AGENTS.md) ("History", "Situations in which to stop and consult"), [0018](0018-distribution.md), [0023](0023-code-style.md), `.git-blame-ignore-revs`
+- Related: [AGENTS.md](../../AGENTS.md) ("History", "Situations in which to stop and consult"), [0018](0018-distribution.md), [0088](0088-build-boundaries-and-tests.md), `.git-blame-ignore-revs`
 
 ## Background
 
 The repository was published as https://github.com/google/vtfx on 2026-10-15. On that day a human decided that the published history is never rewritten, and that the history before publication is squashed into one commit. The rule was recorded as an item of [0018](0018-distribution.md) (distribution), but it governs how every change is committed, not how the artifacts are distributed, and AGENTS.md cites it for that. This decision moves the item out of 0018 so that it can be cited and changed on its own. It restates what the human decided and adds nothing to it; it is Provisional only because an agent wrote it.
 
-Others depend on the published commits staying as they are: clones and forks of the repository, `.git-blame-ignore-revs` ([0023](0023-code-style.md)), and documents that name commits by their SHA (review targets, and the base of a review range in [review-queue.md](../review-queue.md)).
+Others depend on the published commits staying as they are: clones and forks of the repository, `.git-blame-ignore-revs` ([0088](0088-build-boundaries-and-tests.md)), and documents that name commits by their SHA (review targets, and the base of a review range in [review-queue.md](../review-queue.md)).
 
 ## Decision
 

@@ -51,7 +51,7 @@ This rule applies only to what is written into the repository. Conversations wit
 - Building requires JDK 21 and the Android SDK. `scripts/check.sh` also requires Go, to run addlicense. The JDK is selected by `gradle/gradle-daemon-jvm.properties`, and the Android SDK is configured by the convention plugins in `build-logic/`. Use the repository's `./gradlew` for Gradle.
 - Before committing, run `scripts/check.sh` and confirm that everything passes. CI runs the same script.
 - `scripts/check.sh` runs the KDoc check of the public API, the check that references to documents point at existing files, the license header check, the script tests, the check that the generated character width tables are up to date, and the Gradle build (Kotlin formatting check, the module boundary check on the dependencies and the compiled classes, unit, spec, and screenshot tests, lint, public API compatibility check, and short fuzzing). See [docs/design/testing.md](docs/design/testing.md) for details.
-- Format Kotlin code in ktfmt's Kotlin coding conventions style. Format with `./gradlew formatKotlin` and review the diff before committing ([docs/decisions/0023](docs/decisions/0023-code-style.md)).
+- Format Kotlin code in ktfmt's Kotlin coding conventions style. Format with `./gradlew formatKotlin` and review the diff before committing ([docs/decisions/0088](docs/decisions/0088-build-boundaries-and-tests.md)).
 - Long fuzzing and the emulator e2e are not part of check.sh. Operate the emulator with `scripts/emulator.sh setup|start|stop`.
 - A tool for investigating IME behavior is in `tools/ime-probe/`. Its usage and past findings are in `docs/research/ime-*.md`. This development machine also has the AVD `vtfx-probe` with Gboard's Japanese (QWERTY) and Korean already set up.
 - Write the commands run and their results accurately in the `TEST=` line of the commit message. Do not write anything that was not run.
@@ -70,13 +70,13 @@ The paths listed under `security_review` in `config/protected-paths.toml` are su
 
 - Keep changes to the minimum needed, and explain why they are needed in the commit message.
 - Do not relax the restrictions in `config/boundaries.toml`. If you think they need to be relaxed, stop work and consult a human.
-- When adding or updating external dependencies (libraries, Gradle plugins, GitHub Actions), write the reason in the commit message. Pin dependency versions (pin Actions by commit SHA). Update the checksums in `gradle/verification-metadata.xml` in the same change, with the command in [docs/decisions/0035](docs/decisions/0035-dependency-verification.md).
+- When adding or updating external dependencies (libraries, Gradle plugins, GitHub Actions), write the reason in the commit message. Pin dependency versions (pin Actions by commit SHA). Update the checksums in `gradle/verification-metadata.xml` in the same change, with the command in [docs/decisions/0088](docs/decisions/0088-build-boundaries-and-tests.md).
 
 ## Modules
 
 The modules, their kinds and responsibilities, and which of them are subject to security review (those named with `gate`) are listed in section 2 of [docs/design/architecture.md](docs/design/architecture.md).
 
-- The direction of dependencies follows `config/boundaries.toml`. The `checkBoundaries` task of the root project, part of `./gradlew build`, checks it ([docs/decisions/0044](docs/decisions/0044-boundaries-in-gradle-and-classes.md)).
+- The direction of dependencies follows `config/boundaries.toml`. The `checkBoundaries` task of the root project, part of `./gradlew build`, checks it ([docs/decisions/0088](docs/decisions/0088-build-boundaries-and-tests.md)).
 - When adding a new module, add it to both `settings.gradle.kts` and `config/boundaries.toml`.
 - The shared settings of each module are in the convention plugins in `build-logic/`. Do not duplicate individual settings in module build files.
 

@@ -30,7 +30,7 @@ import org.gradle.process.ExecOperations
 import org.gradle.process.ExecResult
 
 /**
- * Runs ktfmt in the style of the Kotlin coding conventions on Kotlin sources (docs/decisions/0023).
+ * Runs ktfmt in the style of the Kotlin coding conventions on Kotlin sources (docs/decisions/0088).
  */
 abstract class KtfmtTask : DefaultTask() {
     /** The Kotlin sources to format or check. */
@@ -72,7 +72,7 @@ abstract class CheckKotlinFormatTask : KtfmtTask() {
         if (runKtfmt("--dry-run", "--set-exit-if-changed").exitValue != 0) {
             throw GradleException(
                 "ktfmt failed, or would change the Kotlin sources listed above. Run the formatKotlin task " +
-                    "and review the diff (docs/decisions/0023)."
+                    "and review the diff (docs/decisions/0088)."
             )
         }
         marker.get().asFile.writeText("")

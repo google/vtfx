@@ -156,7 +156,7 @@ These inputs are the adversaries. The code of vtfx is not: a change to it that b
 - The code under that review checks what it receives from the rest rather than trust it, so that a mistake elsewhere is caught there wherever the values allow ([0075](decisions/0075-adversaries-are-inputs.md)).
 - Explicitly list the code subject to that review.
 - Mechanically verify that the boundary is respected, and detect violations in CI.
-  - In phases 1 to 3 (7.1), the enforcement did not need to be impossible for an agent to circumvent: a guardrail-like check that keeps agents from making obviously wrong changes was enough. From phase 4, the check holds against changes written to get around it, within the limits of what review covers ([0044](decisions/0044-boundaries-in-gradle-and-classes.md)). It covers where the capabilities are: which code can hold the references that perform effects. How code outside review calls the code under review is guarded against mistakes, not against changes written to get around it ([0075](decisions/0075-adversaries-are-inputs.md)).
+  - In phases 1 to 3 (7.1), the enforcement did not need to be impossible for an agent to circumvent: a guardrail-like check that keeps agents from making obviously wrong changes was enough. From phase 4, the check holds against changes written to get around it, within the limits of what review covers ([0088](decisions/0088-build-boundaries-and-tests.md)). It covers where the capabilities are: which code can hold the references that perform effects. How code outside review calls the code under review is guarded against mistakes, not against changes written to get around it ([0075](decisions/0075-adversaries-are-inputs.md)).
   - This is backed by keeping the whole git history so that it can be audited afterward.
 - Adding or changing dependencies and changing the build configuration are included in the review scope.
 
@@ -257,6 +257,6 @@ Every release in phases 4 to 6 requires that humans have reviewed the changes to
 - The acceptable range and limits for resource exhaustion (Resolved: [0081](decisions/0081-resource-limits.md))
 - Performance targets (Resolved: [0014](decisions/0014-performance.md))
 - minSdk (trade-offs per feature) (Resolved: minSdk is 29, [0039](decisions/0039-minsdk-29.md); the initial value was 34)
-- The concrete scope of the code under security review, and how to verify the boundary (Resolved: [0041](decisions/0041-security-review-by-module.md), [0044](decisions/0044-boundaries-in-gradle-and-classes.md), [0076](decisions/0076-security-review-is-focused.md))
+- The concrete scope of the code under security review, and how to verify the boundary (Resolved: [0041](decisions/0041-security-review-by-module.md), [0088](decisions/0088-build-boundaries-and-tests.md), [0076](decisions/0076-security-review-is-focused.md))
 - The compatibility policy of the public API, and when to start guaranteeing stability (Resolved: [0087](decisions/0087-public-api.md))
 - Distribution and license (Resolved: [0018](decisions/0018-distribution.md))

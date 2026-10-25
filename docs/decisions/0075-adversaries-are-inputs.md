@@ -2,11 +2,11 @@
 
 - Status: Approved (2026-10-24, approved by a human)
 - Date: 2026-10-24
-- Related: Requirement 6.1, sections 1 and 5 of [architecture.md](../design/architecture.md), sections 2 and 4.2 of [gate-policy.md](../design/gate-policy.md), section 7 of [boundaries.md](../design/boundaries.md), [0083](0083-gate.md), [0044](0044-boundaries-in-gradle-and-classes.md)
+- Related: Requirement 6.1, sections 1 and 5 of [architecture.md](../design/architecture.md), sections 2 and 4.2 of [gate-policy.md](../design/gate-policy.md), section 7 of [boundaries.md](../design/boundaries.md), [0083](0083-gate.md), [0088](0088-build-boundaries-and-tests.md)
 
 ## Background
 
-Requirement 6.1 names three untrusted inputs: the host's output, pasted content, and the IME. From phase 4, it also asks that the check of the module boundaries hold against changes written to get around it, and [0044](0044-boundaries-in-gradle-and-classes.md) made it so for what the check covers: which modules hold the references that perform effects (the host connection, the clipboard, opening other apps, fonts from files, reflection, processes, the network).
+Requirement 6.1 names three untrusted inputs: the host's output, pasted content, and the IME. From phase 4, it also asks that the check of the module boundaries hold against changes written to get around it, and [0088](0088-build-boundaries-and-tests.md) made it so for what the check covers: which modules hold the references that perform effects (the host connection, the clipboard, opening other apps, fonts from files, reflection, processes, the network).
 
 Read more widely, the same words make the code itself an adversary. Several methods of the gate believe what the caller claims, and a change to the caller can break a property of requirement 6.1 without referring to anything that the check restricts:
 
@@ -19,7 +19,7 @@ These are properties of how values match the world outside the program (whether 
 ## Decision
 
 1. **The adversaries are the untrusted inputs** of requirement 6.1: the host's output, pasted content, and the IME. The code of vtfx is not an adversary: a change to it that breaks a property is a mistake, to be caught by the gate's checks, by types, by tests, and by review and audit afterward.
-2. **The check of the module boundaries keeps holding against changes written to get around it**, for what it covers: where the capabilities are ([0044](0044-boundaries-in-gradle-and-classes.md), unchanged). This is cheap, and decides what code outside review can do at all.
+2. **The check of the module boundaries keeps holding against changes written to get around it**, for what it covers: where the capabilities are ([0088](0088-build-boundaries-and-tests.md), unchanged). This is cheap, and decides what code outside review can do at all.
 3. **How code outside review calls the gate is guarded against mistakes, not against changes written to get around it.** For each method that takes a caller's claim:
    - the gate checks what it can from the values, also when the caller already does, and fails fast on what must not happen, rather than repair it;
    - types narrow what a caller can pass or see, where that costs little;

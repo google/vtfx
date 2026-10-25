@@ -19,8 +19,8 @@
       <verify-metadata>true</verify-metadata>
       <verify-signatures>false</verify-signatures>
       <trusted-artifacts>
-         <trust file=".*-javadoc[.]jar" regex="true" reason="Only IDEs download them, to show documentation; no build classpath contains them (docs/decisions/0035)"/>
-         <trust file=".*-sources[.]jar" regex="true" reason="Only IDEs download them, to show sources; no build classpath contains them (docs/decisions/0035)"/>
+         <trust file=".*-javadoc[.]jar" regex="true" reason="Only IDEs download them, to show documentation; no build classpath contains them (docs/decisions/0088)"/>
+         <trust file=".*-sources[.]jar" regex="true" reason="Only IDEs download them, to show sources; no build classpath contains them (docs/decisions/0088)"/>
       </trusted-artifacts>
    </configuration>
    <components>

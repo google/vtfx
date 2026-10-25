@@ -25,7 +25,7 @@ import org.objectweb.asm.Opcodes
 
 /**
  * The supertypes of the classes that [find] reads the class files of, by internal name
- * (docs/decisions/0044). Fails on a class that [find] does not find, instead of guessing that it
+ * (docs/decisions/0088). Fails on a class that [find] does not find, instead of guessing that it
  * has no supertypes.
  */
 class ClassHierarchy(private val find: (String) -> ByteArray?) {

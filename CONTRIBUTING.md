@@ -41,7 +41,7 @@ particular:
   passes. CI runs the same script. Building requires JDK 21 and the Android
   SDK, and `scripts/check.sh` also requires Go.
 - Format Kotlin code with `./gradlew formatKotlin`
-  ([docs/decisions/0023](docs/decisions/0023-code-style.md)).
+  ([docs/decisions/0088](docs/decisions/0088-build-boundaries-and-tests.md)).
 - For a bug fix, add a regression test that fails before the fix.
 - Keep one purpose per commit, and use a subject of the form
   `<component>: <imperative summary>` (e.g. `core: Parse CSI parameters`).

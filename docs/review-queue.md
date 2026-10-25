@@ -10,7 +10,7 @@ Until decided, the provisional decision is implemented. The impact of reversing 
 
 | Item | What to decide | Related |
 |---|---|---|
-| Robolectric's Android jars | Whether and how to verify the `android-all` jars that Robolectric downloads into `~/.m2` with its own downloader, outside Gradle, so that `gradle/verification-metadata.xml` does not cover them. Candidates: declare them as Gradle dependencies and run Robolectric offline from them, or keep relying on the repository | [0035](decisions/0035-dependency-verification.md), `build-logic` |
+| Robolectric's Android jars | Whether and how to verify the `android-all` jars that Robolectric downloads into `~/.m2` with its own downloader, outside Gradle, so that `gradle/verification-metadata.xml` does not cover them. Candidates: declare them as Gradle dependencies and run Robolectric offline from them, or keep relying on the repository | [0088](decisions/0088-build-boundaries-and-tests.md), `build-logic` |
 | The target of the flood benchmark | The target values of the `flood` scene of the rendering benchmark (frames per second against the refresh rate, the share of janky frames, and the throughput with the display against that without one), on the reference device, a Pixel XL (Android 10), which a human chose on 2026-10-23. Until decided, the scene is reported without a target | [0066](decisions/0066-flood-benchmark.md), [0014](decisions/0014-performance.md) |
 
 ## 2. Work only humans can do

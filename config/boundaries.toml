@@ -14,10 +14,10 @@
 
 # Module boundaries, which the build logic checks: the modules and their dependencies, and what the
 # compiled classes of each module refer to (build-logic/src/main/kotlin/vtfx.boundaries.gradle.kts,
-# docs/decisions/0044).
+# docs/decisions/0088).
 #
 # The checks are meant to hold against changes written to get around them, within the limits that
-# review covers (docs/REQUIREMENTS.md section 6.1, item 6 of docs/decisions/0044). How they work
+# review covers (docs/REQUIREMENTS.md section 6.1, topic 6 of docs/decisions/0088). How they work
 # and what they do not cover are in docs/design/boundaries.md.
 #
 # Changes to this file require security review (config/protected-paths.toml).
@@ -32,7 +32,7 @@ bootstrap_methods = [
 ]
 
 # The classes outside the project that the classes of every module with an allowlist may refer to
-# (docs/decisions/0044): the language, the compiler's output, and data structures, none of which
+# (docs/decisions/0088): the language, the compiler's output, and data structures, none of which
 # reaches the system. "classes" are allowed with all their members, but not their nested classes;
 # "packages" allow the classes directly in them, not in their subpackages; "types" may only be named
 # as types; "members" (owner.name, or owner.name(descriptor) may be used, and their owners named.
@@ -387,14 +387,14 @@ members = [
 ]
 
 # The sample app uses only the public API, as a third-party app would. Its classes are not checked:
-# an app may use any capability (docs/decisions/0044).
+# an app may use any capability (docs/decisions/0088).
 [modules.vtfx-sample]
 allowed_dependencies = ["vtfx-compose"]
 check_classes = false
 
 # Classes whose fields and methods only the listed modules may use, directly or through a subtype.
 # Other modules may still name them as types, for example to pass an instance on. Checked in the main
-# classes of every module with check_classes = true (docs/decisions/0044).
+# classes of every module with check_classes = true (docs/decisions/0088).
 [[restricted_members]]
 classes = ["com/google/vtfx/gate/HostConnection"]
 reason = "Only vtfx-gate may use the connection to the host. TerminalSession only hands it over (docs/decisions/0084)."
@@ -406,7 +406,7 @@ reason = "Only vtfx-gate may call the clipboard and the URL opener, which vtfx-g
 allowed_modules = ["vtfx-gate", "vtfx-gate-android"]
 
 # Classes and members that only the listed modules may refer to at all, in the main classes of every
-# module with check_classes = true (docs/decisions/0044). Names are internal names of the JVM
+# module with check_classes = true (docs/decisions/0088). Names are internal names of the JVM
 # (android/content/Intent). "classes" includes their nested classes; "packages" includes their
 # subpackages; "members" are owner.name, or owner.name(descriptor for the descriptors that start so,
 # used through the owner or any of its subtypes. Kotlin's top-level declarations are members of

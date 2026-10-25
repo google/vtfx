@@ -15,7 +15,7 @@
  */
 
 // Formatting of the Kotlin sources with ktfmt, in the style of the Kotlin coding conventions
-// (docs/decisions/0023). The formatKotlin task formats the sources in place, and checkKotlinFormat,
+// (docs/decisions/0088). The formatKotlin task formats the sources in place, and checkKotlinFormat,
 // which check runs, fails if any of them is not formatted.
 //
 // Applied to the root project, so that one run of ktfmt covers the build scripts, build-logic, and
@@ -56,7 +56,7 @@ dependencies {
 }
 
 // Generated sources are not formatted, because ktfmt breaks their tables of value pairs into one
-// value per line. Their generators check them instead (docs/decisions/0023).
+// value per line. Their generators check them instead (docs/decisions/0088).
 val generatedSources =
     files(
         "vtfx-core/src/main/kotlin/com/google/vtfx/core/UnicodeWidthTables.kt",

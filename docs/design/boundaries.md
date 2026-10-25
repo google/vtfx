@@ -2,11 +2,11 @@
 
 Status: Living document. It describes the current design and is kept in sync with the implementation; design choices and their reasons are recorded in [decisions/](../decisions/README.md).
 
-This document describes how the build checks the module boundaries declared in `config/boundaries.toml`: which modules may depend on which, what the compiled classes of each module may refer to, and what a library's artifact may bring into apps. The modules themselves and why the boundaries are drawn where they are are in [architecture.md](architecture.md); the reasons for checking them this way are in [decisions/0044](../decisions/0044-boundaries-in-gradle-and-classes.md). The check is implemented by the convention plugin `vtfx.boundaries` and the files it uses in `build-logic/src/main/kotlin/` (`Boundaries.kt`, `BoundaryTasks.kt`, `ClassReferences.kt`, `ClassHierarchy.kt`, `LibraryArtifacts.kt`).
+This document describes how the build checks the module boundaries declared in `config/boundaries.toml`: which modules may depend on which, what the compiled classes of each module may refer to, and what a library's artifact may bring into apps. The modules themselves and why the boundaries are drawn where they are are in [architecture.md](architecture.md); the reasons for checking them this way are in [decisions/0088](../decisions/0088-build-boundaries-and-tests.md). The check is implemented by the convention plugin `vtfx.boundaries` and the files it uses in `build-logic/src/main/kotlin/` (`Boundaries.kt`, `BoundaryTasks.kt`, `ClassReferences.kt`, `ClassHierarchy.kt`, `LibraryArtifacts.kt`).
 
 ## 1. Overview
 
-- The rules are all in `config/boundaries.toml` (section 2). The check reads Gradle's model of the build, the compiled classes, and the published artifacts, not the source text, so that it holds against changes written to get around it, within the limits of section 7 ([decisions/0044](../decisions/0044-boundaries-in-gradle-and-classes.md)).
+- The rules are all in `config/boundaries.toml` (section 2). The check reads Gradle's model of the build, the compiled classes, and the published artifacts, not the source text, so that it holds against changes written to get around it, within the limits of section 7 ([decisions/0088](../decisions/0088-build-boundaries-and-tests.md)).
 - The root project applies `vtfx.boundaries`, and the plugin registers the tasks on every other project itself, so that a module cannot leave the check out by not applying a convention plugin. Once all projects are evaluated, the build fails if a project applies neither the `java` plugin nor an Android plugin (`com.android.library`, `com.android.application`), since its classes could not be read.
 - The tasks:
 
@@ -19,7 +19,7 @@ This document describes how the build checks the module boundaries declared in `
 | `checkLibraryArtifact` | each library | The jar or the release AAR (section 6). |
 
 - A violation fails the task with one line for each violation, which names the rule's `reason` where the rule has one.
-- Each of the checks of the modules reports to a build service when it passes, and `checkBoundaries` fails, naming the check, if one that the plugin registered did not report in the same build: a check disabled, skipped with `onlyIf`, stopped before its action, or left out with `-x` fails the build rather than passing unseen. The checks have no outputs, so Gradle runs them in every build that asks for them ([decisions/0061](../decisions/0061-check-boundaries-requires-every-check.md)).
+- Each of the checks of the modules reports to a build service when it passes, and `checkBoundaries` fails, naming the check, if one that the plugin registered did not report in the same build: a check disabled, skipped with `onlyIf`, stopped before its action, or left out with `-x` fails the build rather than passing unseen. The checks have no outputs, so Gradle runs them in every build that asks for them ([decisions/0088](../decisions/0088-build-boundaries-and-tests.md)).
 - The root project is not checked: it only aggregates the API reference of the library modules, and ships nothing. Its build file is under security review like every other.
 
 ## 2. The rules file
@@ -47,7 +47,7 @@ Names are the JVM's internal names: classes as `android/content/Intent`, nested 
   - An edge from a project of the build is checked against that project's `allowed_dependencies`.
   - An edge from a module of a repository (or from files) to a project is a violation however it came about, and so is an edge to a project of another build, such as an included build.
   - A dependency that does not resolve still counts as an edge to the project it requested.
-  - Edges to modules of repositories are not checked here; external dependencies are reviewed with dependency verification ([decisions/0035](../decisions/0035-dependency-verification.md)), and what the classes use of them is checked by section 5.
+  - Edges to modules of repositories are not checked here; external dependencies are reviewed with dependency verification ([decisions/0088](../decisions/0088-build-boundaries-and-tests.md)), and what the classes use of them is checked by section 5.
 - **An edge from a project to itself is allowed** (the tests of `vtfx-core` depend on its own test fixtures).
 - **Tests have no list of their own.** The configurations of the tests and test fixtures are checked against the same `allowed_dependencies` as the main code.
 
@@ -160,7 +160,7 @@ It leaves out `kotlin.io`, `kotlin.concurrent`, `kotlin.reflect`, `System`, `Run
 - `lint.jar`, which runs in the app's build.
 - Any jar besides an AAR's `classes.jar`, whose classes the checks of classes do not read.
 - Rules for R8, which apply to the app's classes: entries under `META-INF/proguard/` and `META-INF/com.android.tools/`, and an AAR's `proguard.txt`.
-- A class file that is not, byte for byte, one of the classes that `checkClassReferences` reads (section 4.1; for an AAR, those of the release variant), wherever it is in the artifact, including under `META-INF/`. The jar of a JVM module also takes in its resources, and a class file among them would otherwise be shipped unchecked ([decisions/0060](../decisions/0060-artifacts-ship-only-checked-classes.md)).
+- A class file that is not, byte for byte, one of the classes that `checkClassReferences` reads (section 4.1; for an AAR, those of the release variant), wherever it is in the artifact, including under `META-INF/`. The jar of a JVM module also takes in its resources, and a class file among them would otherwise be shipped unchecked ([decisions/0088](../decisions/0088-build-boundaries-and-tests.md)).
 
 An AAR's `classes.jar` is checked against the same list, as an artifact of its own.
 
@@ -174,5 +174,5 @@ These are left to review, backed by being able to audit afterward (requirement 6
 - How an allowed API is used: what is written to the log, what is shown to accessibility services, what a library that a module may use does inside. Tests and review keep checking these.
 - How code outside review calls the reviewed modules, for example whether the text that it sends to the host is what the user typed. The gate checks what it can from the values; the rest is the caller's contract, guarded against mistakes rather than against changes written to get around it ([decisions/0075](../decisions/0075-adversaries-are-inputs.md)).
 - The classes of tests, which are not shipped, and `vtfx-sample`, an app.
-- A new external dependency is reviewed with its build file and `gradle/verification-metadata.xml` ([decisions/0035](../decisions/0035-dependency-verification.md)); using its classes then fails until an allowlist names them.
+- A new external dependency is reviewed with its build file and `gradle/verification-metadata.xml` ([decisions/0088](../decisions/0088-build-boundaries-and-tests.md)); using its classes then fails until an allowlist names them.
 - A new version of Kotlin or of a library may change the references that the compiler emits, so an update can need changes to the lists, which are reviewed with the update.

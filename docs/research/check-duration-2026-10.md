@@ -1,6 +1,6 @@
 # Duration of the check with the fuzz tasks one at a time and in parallel (2026-10-14)
 
-A record of measurements made on 2026-10-14, when the fuzz tasks were changed to run in parallel ([decisions/0028](../decisions/0028-parallel-fuzzing.md)). It is not kept up to date: since then two more modules (`vtfx-font` and `vtfx-font-gate`) have fuzz tasks, and the build has changed.
+A record of measurements made on 2026-10-14, when the fuzz tasks were changed to run in parallel ([decisions/0088](../decisions/0088-build-boundaries-and-tests.md)). It is not kept up to date: since then two more modules (`vtfx-font` and `vtfx-font-gate`) have fuzz tasks, and the build has changed.
 
 ## Setup
 

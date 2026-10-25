@@ -22,7 +22,7 @@ import org.w3c.dom.Element
 
 /**
  * What a library's artifact (a jar or an AAR) brings into an app besides classes, which the checks
- * of classes do not see (docs/decisions/0044): permissions and components in the manifest, which
+ * of classes do not see (docs/decisions/0088): permissions and components in the manifest, which
  * the app's manifest merges, native code, services for ServiceLoader, lint checks, which run in the
  * app's build, rules for R8, which apply to the app's classes, jars embedded in an AAR, and class
  * files that the checks of classes did not read.
@@ -49,7 +49,7 @@ object LibraryArtifacts {
      * [checkedClasses] holds the class files that the check of classes read, by their paths: every
      * class file that the artifact ships, in it or in an AAR's `classes.jar`, must be one of them,
      * byte for byte, so that a class file that came in otherwise, such as from the resources, is
-     * not shipped unchecked (docs/decisions/0060).
+     * not shipped unchecked (docs/decisions/0088).
      */
     fun violations(
         name: String,

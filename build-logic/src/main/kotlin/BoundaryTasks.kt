@@ -54,7 +54,7 @@ const val BOUNDARY_CHECKS_SERVICE = "vtfxBoundaryChecks"
 /**
  * The paths of the check tasks that passed in this build. [CheckModulesTask] requires all of them,
  * so that a check that was disabled, skipped, or left out of the task graph fails the build instead
- * of passing unseen (docs/decisions/0061).
+ * of passing unseen (docs/decisions/0088).
  */
 abstract class BoundaryChecks : BuildService<BuildServiceParameters.None> {
     private val passed: MutableSet<String> = ConcurrentHashMap.newKeySet()
@@ -312,7 +312,7 @@ private fun failOn(violations: List<String>) {
     val distinct = violations.distinct()
     if (distinct.isEmpty()) return
     throw GradleException(
-        (distinct + "${distinct.size} boundary violation(s). See docs/decisions/0044.")
+        (distinct + "${distinct.size} boundary violation(s). See docs/decisions/0088.")
             .joinToString("\n")
     )
 }

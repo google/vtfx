@@ -44,7 +44,7 @@ python3 -I -m unittest discover -s scripts/tests
 
 echo "== Generated sources"
 # The character width tables and the default-ignorable code points are checked in
-# (docs/decisions/0029). Fails if they are not what the UCD files in third_party/unicode generate.
+# (docs/decisions/0088). Fails if they are not what the UCD files in third_party/unicode generate.
 python3 -I scripts/generate_unicode_tables.py --check
 
 echo "== Gradle wrapper"
