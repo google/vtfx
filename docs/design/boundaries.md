@@ -83,7 +83,7 @@ A class also uses, through the superclass that declares it, each method that it 
 
 | Classes | Allowed modules | Why |
 |---|---|---|
-| `HostConnection` | vtfx-gate | Only vtfx-gate writes to the host ([decisions/0027](../decisions/0027-session-takes-connection.md)). |
+| `HostConnection` | vtfx-gate | Only vtfx-gate writes to the host ([decisions/0084](../decisions/0084-session-and-threads.md)). |
 | `ClipboardAccess`, `UrlOpener` | vtfx-gate, vtfx-gate-android | Only vtfx-gate calls them, and vtfx-gate-android implements them ([decisions/0083](../decisions/0083-gate.md)). |
 
 This is how `TerminalSession` in vtfx-session takes the connection, the clipboard, and the URL opener from the app and hands them over to vtfx-gate: any file of vtfx-session may name them as types, and none may call them.
@@ -140,7 +140,7 @@ A member used through a class of the project that the class inherits from a clas
 
 ### 5.2 The baseline
 
-`baseline_references` holds what every checked module may use and what the compiler emits: the packages of the Kotlin language and standard library without capabilities (`kotlin`, `kotlin/collections`, `kotlin/text`, `kotlin/jvm/internal`, and the like), the boxes, exceptions, and annotation classes of `java.lang`, the collections of `java.util`, and the nullability annotations of JetBrains. It also has `Class` as a type only (`Enum.valueOf` takes the `Class` of the enum), and `Thread.currentThread`, which `HostWriter` and `TerminalSession` use to refuse reentrant calls from the same thread ([decisions/0024](../decisions/0024-thread-conventions.md)).
+`baseline_references` holds what every checked module may use and what the compiler emits: the packages of the Kotlin language and standard library without capabilities (`kotlin`, `kotlin/collections`, `kotlin/text`, `kotlin/jvm/internal`, and the like), the boxes, exceptions, and annotation classes of `java.lang`, the collections of `java.util`, and the nullability annotations of JetBrains. It also has `Class` as a type only (`Enum.valueOf` takes the `Class` of the enum), and `Thread.currentThread`, which `HostWriter` and `TerminalSession` use to refuse reentrant calls from the same thread ([decisions/0084](../decisions/0084-session-and-threads.md)).
 
 It leaves out `kotlin.io`, `kotlin.concurrent`, `kotlin.reflect`, `System`, `Runtime`, `ClassLoader`, and `java.io`, which a module must list itself if it needs them.
 

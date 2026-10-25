@@ -2,11 +2,11 @@
 
 - Status: Approved (2026-10-23, approved by a human in a review of the review queue)
 - Date: 2026-10-22
-- Related: Requirement 6.2, [0014](0014-performance.md), [0067](0067-profileable-benchmark-build.md), [0065](0065-fair-state-lock.md), section 5 of [device-checks.md](../device-checks.md), `RenderBenchmark` in `vtfx-sample`, `scripts/benchmark.py`
+- Related: Requirement 6.2, [0014](0014-performance.md), [0067](0067-profileable-benchmark-build.md), [0084](0084-session-and-threads.md), section 5 of [device-checks.md](../device-checks.md), `RenderBenchmark` in `vtfx-sample`, `scripts/benchmark.py`
 
 ## Background
 
-The rendering benchmark of [0014](0014-performance.md) feeds an update every 16 ms, so between two frames the session interprets at most one small write. When the host prints a large file, an app's reader thread calls `feed` again as soon as the previous call returns: the main thread then waits for the state lock ([0065](0065-fair-state-lock.md)), every row of the display is new on every frame, and the reader thread competes with the main thread, the render thread, and the garbage collector for the CPU. On a Pixel XL this showed as janky frames that neither scene of the benchmark measured.
+The rendering benchmark of [0014](0014-performance.md) feeds an update every 16 ms, so between two frames the session interprets at most one small write. When the host prints a large file, an app's reader thread calls `feed` again as soon as the previous call returns: the main thread then waits for the state lock ([0084](0084-session-and-threads.md)), every row of the display is new on every frame, and the reader thread competes with the main thread, the render thread, and the garbage collector for the CPU. On a Pixel XL this showed as janky frames that neither scene of the benchmark measured.
 
 ## Decision
 

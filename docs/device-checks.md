@@ -144,7 +144,7 @@ One line of JSON appears per `scenario` (`full`: the whole screen changes every 
 
 What to tell us: the device model and Android version, and the JSON lines output.
 
-The `flood` scene measures the frames while output comes without a break, but not input. Also have the host print a large file without a break (for example `cat` of a file of several MB over SSH), and tell us whether the display keeps scrolling smoothly and keys typed meanwhile reach the host without a long delay ([decisions/0065](decisions/0065-fair-state-lock.md)).
+The `flood` scene measures the frames while output comes without a break, but not input. Also have the host print a large file without a break (for example `cat` of a file of several MB over SSH), and tell us whether the display keeps scrolling smoothly and keys typed meanwhile reach the host without a long delay ([decisions/0084](decisions/0084-session-and-threads.md)).
 
 ## 6. Han glyphs
 

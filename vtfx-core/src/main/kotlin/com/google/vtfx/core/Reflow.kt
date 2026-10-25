@@ -17,7 +17,7 @@
 package com.google.vtfx.core
 
 /**
- * Rewraps lines to a new width (docs/decisions/0013). A logical line is a run of rows joined by
+ * Rewraps lines to a new width (docs/decisions/0084). A logical line is a run of rows joined by
  * autowrap ([Line.isWrapped]); its cells are laid out again at the new width, and a wide character
  * that does not fit at the end of a row moves to the next one. The blank that autowrap left for
  * such a character ([Line.endsWithWidePadding]) is not laid out again, unless the cursor is on it.

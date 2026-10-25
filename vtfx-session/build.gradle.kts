@@ -15,7 +15,7 @@
  */
 
 // A terminal session without a UI: the terminal, the input, and the requests to the host, for the
-// Compose UI and for JVM programs alike (docs/decisions/0026).
+// Compose UI and for JVM programs alike (docs/decisions/0084).
 plugins {
     id("vtfx.jvm-library")
 }

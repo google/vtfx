@@ -397,7 +397,7 @@ check_classes = false
 # classes of every module with check_classes = true (docs/decisions/0044).
 [[restricted_members]]
 classes = ["com/google/vtfx/gate/HostConnection"]
-reason = "Only vtfx-gate may use the connection to the host. TerminalSession only hands it over (docs/decisions/0027)."
+reason = "Only vtfx-gate may use the connection to the host. TerminalSession only hands it over (docs/decisions/0084)."
 allowed_modules = ["vtfx-gate"]
 
 [[restricted_members]]

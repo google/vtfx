@@ -2,7 +2,7 @@
 
 - Status: Approved (2026-10-15, approved by a human in a review of the review queue)
 - Date: 2026-10-14
-- Related: Requirements 5.4, 5.5, and 6.5 (settings for appearance), sections 7.2 and 10 of [compose-input.md](../design/compose-input.md), [0013](0013-resize-and-lifecycle.md), [0016](0016-public-api.md), [0019](0019-extensibility.md), [ime-contract.md](../design/ime-contract.md) section 6.3
+- Related: Requirements 5.4, 5.5, and 6.5 (settings for appearance), sections 7.2 and 10 of [compose-input.md](../design/compose-input.md), [0084](0084-session-and-threads.md), [0016](0016-public-api.md), [0019](0019-extensibility.md), [ime-contract.md](../design/ime-contract.md) section 6.3
 
 ## Background
 

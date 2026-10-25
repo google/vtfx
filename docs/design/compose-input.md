@@ -4,7 +4,7 @@ This document describes how the `Terminal` composable of `vtfx-compose` handles 
 
 ## 1. Terms and routing of pointers
 
-- **The display**: what one `Terminal` shows of its session, held by `TerminalDisplay` (one per `Terminal`): the scroll position in the scrollback, the selection, and when it redraws ([decisions/0026](../decisions/0026-session-module.md)). Positions on the display are cells of the display, not of the screen.
+- **The display**: what one `Terminal` shows of its session, held by `TerminalDisplay` (one per `Terminal`): the scroll position in the scrollback, the selection, and when it redraws ([decisions/0084](../decisions/0084-session-and-threads.md)). Positions on the display are cells of the display, not of the screen.
 - **The host asks for the mouse**: the mouse tracking mode is not off (modes 9, 1000, 1002, 1003).
 - **Scrolled back**: the display shows lines of the scrollback, that is, its scroll offset is above 0 and the session has scrollback (`TerminalDisplay.isScrolledBack`). The alternate screen has no scrollback, so the offset that the main screen kept does not count there.
 - **Reporting**: the host gets a pointer's input as mouse reports. It does when the host asks for the mouse and the display is not scrolled back, and, for a mouse, Shift is not held (`isReportingTouches` in `TerminalGestures.kt`, `isReporting` in `TerminalMouse.kt`). A report carries a row of the screen, so it cannot name a row of the scrollback ([decisions/0031](../decisions/0031-desktop-pointer-and-terminal-state.md)).
@@ -148,7 +148,7 @@ Hardware keys go to the focused terminal. `TerminalInputView` passes the keys th
 `Terminal` prefers 80 × 24 cells (xterm's default, and `TerminalSession`'s), the way `Text` prefers the size of its text: the size is clamped to the incoming constraints, so fixed constraints (`size`, `fillMaxSize`, `weight`) decide it, loose ones give 80 × 24 cells or their maximum, and unbounded ones (inside a scrolling container) give 80 × 24 cells (`preferredGridSize` in `Terminal.kt`) ([decisions/0032](../decisions/0032-keys-and-layout.md)).
 
 - A grid with no width or height: `Terminal` logs a warning with `android.util.Log` (tag `vtfx`) and does not resize the session, which keeps its size. A size that is not zero but holds less than one cell gives one column or row.
-- How the session follows the size, after a delay, is in section 3.5 of [architecture.md](architecture.md) ([decisions/0013](../decisions/0013-resize-and-lifecycle.md)).
+- How the session follows the size, after a delay, is in section 3.5 of [architecture.md](architecture.md) ([decisions/0084](../decisions/0084-session-and-threads.md)).
 
 ### 10.2 Inner padding
 

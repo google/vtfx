@@ -1158,7 +1158,7 @@ internal class Emulator(
     /**
      * Changes the size. The main screen and the scrollback are reflowed to the new width, and when
      * the height changes, lines move between the screen and the scrollback so that the cursor stays
-     * on the screen (docs/decisions/0013). The alternate screen is cut or padded: the app on it
+     * on the screen (docs/decisions/0084). The alternate screen is cut or padded: the app on it
      * redraws after the host learns the new size.
      */
     fun resize(newColumns: Int, newRows: Int) {

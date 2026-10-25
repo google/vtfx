@@ -1,8 +1,8 @@
 # Scope of the public API and the compatibility policy
 
-- Status: Approved (2026-10-13, approved by a human in the final review); the opt-in through compiler settings superseded by [0029](0029-import-without-gradle.md), and the public constructor of `HostWriter` by [0027](0027-session-takes-connection.md); the source links of the reference always pointing at the tag `v<version>` superseded by [0074](0074-api-reference-of-the-default-branch.md), which lets `vtfx.sourceRef` set them
+- Status: Approved (2026-10-13, approved by a human in the final review); the opt-in through compiler settings superseded by [0029](0029-import-without-gradle.md), and the public constructor of `HostWriter` by [0084](0084-session-and-threads.md); the source links of the reference always pointing at the tag `v<version>` superseded by [0074](0074-api-reference-of-the-default-branch.md), which lets `vtfx.sourceRef` set them
 - Date: 2026-10-12
-- Related: Requirement 6.5 (public API) and section 8 (the compatibility policy of the public API, and when to start guaranteeing stability), [0007](0007-compose-session.md), [0036](0036-adding-parameters.md), [0037](0037-api-shape-before-1.0.md), [0083](0083-gate.md)
+- Related: Requirement 6.5 (public API) and section 8 (the compatibility policy of the public API, and when to start guaranteeing stability), [0084](0084-session-and-threads.md), [0036](0036-adding-parameters.md), [0037](0037-api-shape-before-1.0.md), [0083](0083-gate.md)
 
 ## Background
 
@@ -17,7 +17,7 @@ Requirement 6.5 asks for keeping the public API to the minimum needed, mechanica
 - The public API is the `public` declarations of the nine library modules that are not marked `@InternalVtfxApi`.
 - `@InternalVtfxApi` (`vtfx-core`) is an opt-in marker at error level. The vtfx modules opt in, and apps are assumed not to. How the modules opt in is decided in [0029](0029-import-without-gradle.md) (each file that uses a marked declaration). The sample app compiles without opting in, which confirms that vtfx can be embedded with the public API alone.
 - Marked are the declarations shared only between modules: for example `Terminal`, `TerminalEvent`, and `TerminalEventListener` (core), `ImeEditor` and `HostInput` (input), `TerminalGate` and `HostWriter` (gate). The current set is what the sources mark. Nested declarations are marked too, because the compatibility check does not exclude nested classes based only on the marker of the outer class.
-- `HostWriter` was public to apps only through its constructor; since [0027](0027-session-takes-connection.md), `TerminalSession` creates it, and the whole class is marked.
+- `HostWriter` was public to apps only through its constructor; since [0084](0084-session-and-threads.md), `TerminalSession` creates it, and the whole class is marked.
 - `TerminalSnapshot` and its parts (`LineSnapshot`, `CellStyle`, `TerminalColor`, `TerminalModes`, and so on) are included in the public API as the result of `TerminalSession.snapshot()`.
 
 ### Compatibility policy

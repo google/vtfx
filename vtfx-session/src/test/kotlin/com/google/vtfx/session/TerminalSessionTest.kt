@@ -1064,7 +1064,7 @@ class TerminalSessionTest {
     fun hostRequestsReachTheAppWithoutTheSessionLock() {
         // An app that waits for another thread using the session, while vtfx calls its code, used
         // to deadlock: the replies and OSC 52 were handled with the session's lock held
-        // (docs/decisions/0024).
+        // (docs/decisions/0084).
         lateinit var session: TerminalSession
         val unblocked = mutableListOf<String>()
         fun snapshotOnAnotherThread(caller: String) {
@@ -1317,7 +1317,7 @@ class TerminalSessionTest {
     @Test
     fun feedingFromTheHostConnectionFails() {
         // It would re-enter the session, and it fails even when the output asks for no reply, so
-        // that the mistake does not depend on what the host sends (docs/decisions/0024).
+        // that the mistake does not depend on what the host sends (docs/decisions/0084).
         lateinit var session: TerminalSession
         session = TerminalSession({ session.feed("x".toByteArray()) })
         assertFailsWith<IllegalStateException> { session.sendText("a") }
@@ -1328,7 +1328,7 @@ class TerminalSessionTest {
 
     @Test
     fun sendingFromTheHostConnectionFailsBeforeTheEditorRecordsTheInput() {
-        // The editor would take the input for received by the host (docs/decisions/0024).
+        // The editor would take the input for received by the host (docs/decisions/0084).
         lateinit var session: TerminalSession
         var failure: Throwable? = null
         session =

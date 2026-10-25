@@ -38,7 +38,7 @@ import java.util.concurrent.Executors
 
 /**
  * Holds the session, so that it survives configuration changes, as the library expects apps to do
- * (docs/decisions/0007).
+ * (docs/decisions/0084).
  */
 class SampleViewModel(application: Application) : AndroidViewModel(application) {
     private val mainHandler = Handler(Looper.getMainLooper())

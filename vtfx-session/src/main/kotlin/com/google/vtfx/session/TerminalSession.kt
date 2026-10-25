@@ -104,7 +104,7 @@ public interface TerminalSessionListener {
     public fun onStickyModifiersChanged(modifiers: KeyModifiers) {}
 }
 
-// The threads follow docs/decisions/0024 and 0026.
+// The threads follow docs/decisions/0084.
 /**
  * A terminal session: the terminal state and the input from the user, connected to a host.
  *
@@ -155,7 +155,7 @@ public class TerminalSession(
     private val listener: TerminalSessionListener = object : TerminalSessionListener {},
 ) {
     // Only vtfx-gate builds what is sent to the host: the session hands the connection over at once
-    // (docs/decisions/0027).
+    // (docs/decisions/0084).
     private val writer = HostWriter(connection)
 
     /**
@@ -163,7 +163,7 @@ public class TerminalSession(
      * so that a thread that waits for it, such as the main thread taking the screen for a frame,
      * gets it when the holder releases it: while output floods, [feed] takes it again for each
      * chunk at once, and an intrinsic lock may hand it back to [feed] for hundreds of milliseconds
-     * (docs/decisions/0065).
+     * (docs/decisions/0084).
      */
     private val lock = ReentrantLock(/* fair= */ true)
 
@@ -248,7 +248,7 @@ public class TerminalSession(
     /**
      * The requests to the gate (replies and OSC 52) during the current [feed], in order. Guarded by
      * [lock]. They are handled after the lock is released, since the gate calls the app's code
-     * (docs/decisions/0024).
+     * (docs/decisions/0084).
      */
     private val gateRequests = ArrayList<TerminalEvent>()
 
@@ -424,7 +424,7 @@ public class TerminalSession(
     private fun <T> input(notifySent: Boolean = false, operation: (ImeEditor) -> T): T {
         // Checked before the locks, which are reentrant: a nested call would change the IME
         // editing model before HostWriter refused to send what it made, and the model would take
-        // it for received by the host (docs/decisions/0024).
+        // it for received by the host (docs/decisions/0084).
         check(!writer.isWritingOnCurrentThread()) {
             "input must not be sent while sending to the host; post it instead"
         }

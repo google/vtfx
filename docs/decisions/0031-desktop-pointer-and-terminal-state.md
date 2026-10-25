@@ -38,7 +38,7 @@ A pointer whose `PointerType` is `Mouse` gets desktop behavior; touch, stylus, a
 
 ## Alternatives considered
 
-- **Methods on `TerminalSession` (`session.copySelection()`)**: The selection belongs to one display of the session ([0007](0007-compose-session.md)); a session shown twice has two selections, and a session without a UI has none.
+- **Methods on `TerminalSession` (`session.copySelection()`)**: The selection belongs to one display of the session ([0084](0084-session-and-threads.md)); a session shown twice has two selections, and a session without a UI has none.
 - **`selectAll()` selecting only what the display shows**: Simpler, and it would need no new access to the scrollback, but it is not what Select all means in desktop terminals.
 - **No limit on copying all the text**: With a large scrollback, the clip fails on the device (`TransactionTooLargeException`), and the text is built on the main thread.
 - **Using the snapshot that the display drew for copies and link clicks, or ignoring them while a redraw is deferred**: Not taken; see the synchronized output above.

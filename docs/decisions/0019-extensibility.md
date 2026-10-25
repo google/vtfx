@@ -2,7 +2,7 @@
 
 - Status: Approved (2026-10-13, approved by a human in the final review; the limit on matching effort and the links over concealed text were decided by a human afterwards); key interception with `onPreviewKeyEvent` superseded by [0032](0032-keys-and-layout.md), the parameter of `onLinkClick` by [0031](0031-desktop-pointer-and-terminal-state.md), and `TerminalLink` as a sealed type by [0037](0037-api-shape-before-1.0.md)
 - Date: 2026-10-12
-- Related: Requirements 4.1, 4.2, 6.1, and 6.5 (customizability, minimal surface), section 6 of [compose-input.md](../design/compose-input.md), "Links" in [usage.md](../usage.md), [0083](0083-gate.md), [0007](0007-compose-session.md), [0012](0012-touch-and-selection.md), [0016](0016-public-api.md)
+- Related: Requirements 4.1, 4.2, 6.1, and 6.5 (customizability, minimal surface), section 6 of [compose-input.md](../design/compose-input.md), "Links" in [usage.md](../usage.md), [0083](0083-gate.md), [0084](0084-session-and-threads.md), [0012](0012-touch-and-selection.md), [0016](0016-public-api.md)
 
 ## Background
 
@@ -34,7 +34,7 @@ The addon mechanism itself is thin: it just receives a `Terminal` and uses the p
 | Confirmation before pasting | The app's implementation | Like hyperlinks, consider a shape that notifies the app and lets the app confirm. Clipboard suggestions of the IME arrive through `commitText`, so not every path can be covered. Those of several lines are sent as pastes, bracketed if the host enabled bracketed paste ([0082](0082-ime-editing-model.md)) |
 | Progress (OSC 9;4) | ProgressAddon | If needed, exposed as state like `title` |
 | Shell integration (OSC 633, 133, 7) | OSC handlers, markers, decorations | Not supported |
-| Saving and restoring sessions | SerializeAddon | Not supported. For multiple tabs, it is enough for the app to have a `TerminalSession` per tab ([0007](0007-compose-session.md)). When the process ends, the connection to the host is also cut, and if the connection is kept in a service, the session lives there too |
+| Saving and restoring sessions | SerializeAddon | Not supported. For multiple tabs, it is enough for the app to have a `TerminalSession` per tab ([0084](0084-session-and-threads.md)). When the process ends, the connection to the host is also cut, and if the connection is kept in a service, the session lives there too |
 | Link actions decided by the app (opening paths and so on), a selection API, items of the long-press menu | link provider, `getSelection`, and so on | Not made until a use appears |
 | Typeahead (VS Code's typeahead) | An addon that depends on internal APIs | Deferred because of its size |
 | Images, ligatures | ImageAddon, LigaturesAddon | Ligatures are out of scope, as in requirement 4.2. Images: the kitty graphics protocol is built in ([0080](0080-kitty-graphics.md)) |

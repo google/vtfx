@@ -26,7 +26,7 @@ The behavior is described in section 13 of [compose-input.md](../design/compose-
 
 ## Alternatives considered
 
-- **Hold the search in `TerminalSession`**: one search for every display, and one for JVM programs without a UI, but the session holds no display state ([0026](0026-session-module.md)), and a search scrolls a display. A JVM program can read the lines with `TerminalSession.snapshot`.
+- **Hold the search in `TerminalSession`**: one search for every display, and one for JVM programs without a UI, but the session holds no display state ([0084](0084-session-and-threads.md)), and a search scrolls a display. A JVM program can read the lines with `TerminalSession.snapshot`.
 - **Drop the search on output, as the selection**: no line numbers needed, but a flowing log could not be searched.
 - **Read and lay out every line at each change of the query**: no memory kept, but several times the work, all of it on the main thread, with the session's lock held while the lines are copied.
 - **Search on another thread**: the main thread would stay free, but stale results would have to be dropped as the query and the output change, and the modules that do not depend on Android have no executor to run it on. Not needed at the measured cost.

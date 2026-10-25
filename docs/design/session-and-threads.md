@@ -6,11 +6,11 @@ This document describes the thread conventions of all modules, the terminal sess
 
 ### 1.1 Modules that do not depend on Android do not assume a thread
 
-`vtfx-core`, `vtfx-input`, `vtfx-gate`, `vtfx-session`, `vtfx-font`, and `vtfx-font-gate` do not assume a particular thread (the main thread or the like) and have nothing equivalent to a `Looper`. They can be used from any thread, and outside Android (JVM tests, JVM programs). Only the Android modules, `vtfx-gate-android`, `vtfx-compose`, and `vtfx-font-gate-android`, deal with the main thread ([decisions/0024](../decisions/0024-thread-conventions.md), [decisions/0026](../decisions/0026-session-module.md)).
+`vtfx-core`, `vtfx-input`, `vtfx-gate`, `vtfx-session`, `vtfx-font`, and `vtfx-font-gate` do not assume a particular thread (the main thread or the like) and have nothing equivalent to a `Looper`. They can be used from any thread, and outside Android (JVM tests, JVM programs). Only the Android modules, `vtfx-gate-android`, `vtfx-compose`, and `vtfx-font-gate-android`, deal with the main thread ([decisions/0084](../decisions/0084-session-and-threads.md)).
 
 ### 1.2 Thread categories
 
-The KDoc of each public type says which of the following it is ([decisions/0024](../decisions/0024-thread-conventions.md)). Annotations are not used for this in the JVM modules.
+The KDoc of each public type says which of the following it is ([decisions/0084](../decisions/0084-session-and-threads.md)). Annotations are not used for this in the JVM modules.
 
 | Category | Meaning |
 |---|---|
@@ -21,7 +21,7 @@ The KDoc of each public type says which of the following it is ([decisions/0024]
 
 ### 1.3 Calling the app's code
 
-Rules common to calls of callbacks, listeners, and interfaces the app implements (`HostConnection` and so on) ([decisions/0024](../decisions/0024-thread-conventions.md)):
+Rules common to calls of callbacks, listeners, and interfaces the app implements (`HostConnection` and so on) ([decisions/0084](../decisions/0084-session-and-threads.md)):
 
 1. **Thread**: Unless stated otherwise, the app's code is called synchronously on the same thread as, and within, the call that triggered it. Anything called on another thread says so explicitly.
 2. **Locks**: The app's code is not called while holding the library's internal locks. Only locks for serializing calls are an exception, and holding them is stated explicitly (`HostWriter`, the input lock and the output lock of `TerminalSession`).
@@ -52,9 +52,9 @@ Rules common to calls of callbacks, listeners, and interfaces the app implements
 
 ### 2.1 Responsibility
 
-`TerminalSession` ties together the terminal of `vtfx-core`, the IME editing model of `vtfx-input`, and the `TerminalGate` of `vtfx-gate`: it interprets host output, sends user input, and handles host requests (requirements 3 and 4.1). It does not depend on Android, Compose, or kotlinx-coroutines, so JVM programs can emulate a terminal without a UI, and app tests can use the same session as production, synchronously, without Robolectric or virtual time ([decisions/0026](../decisions/0026-session-module.md)). There is no separate headless type.
+`TerminalSession` ties together the terminal of `vtfx-core`, the IME editing model of `vtfx-input`, and the `TerminalGate` of `vtfx-gate`: it interprets host output, sends user input, and handles host requests (requirements 3 and 4.1). It does not depend on Android, Compose, or kotlinx-coroutines, so JVM programs can emulate a terminal without a UI, and app tests can use the same session as production, synchronously, without Robolectric or virtual time ([decisions/0084](../decisions/0084-session-and-threads.md)). There is no separate headless type.
 
-The session takes the app's `HostConnection` as its first argument and hands it at once to the `HostWriter` it creates; it does not keep the connection ([decisions/0027](../decisions/0027-session-takes-connection.md)). Likewise it hands `ClipboardAccess` and `UrlOpener` to the `TerminalGate` without calling them ([decisions/0083](../decisions/0083-gate.md)). Which modules may use the members of these types is checked by the boundary check (section 5 of [architecture.md](architecture.md)).
+The session takes the app's `HostConnection` as its first argument and hands it at once to the `HostWriter` it creates; it does not keep the connection ([decisions/0084](../decisions/0084-session-and-threads.md)). Likewise it hands `ClipboardAccess` and `UrlOpener` to the `TerminalGate` without calling them ([decisions/0083](../decisions/0083-gate.md)). Which modules may use the members of these types is checked by the boundary check (section 5 of [architecture.md](architecture.md)).
 
 The session holds only the state of the terminal session. The state of a display is held by a `TerminalDisplay` per `Terminal` composable in `vtfx-compose`:
 
@@ -76,8 +76,8 @@ The display receives screen changes, sent input, and requests to restart the IME
 
 `TerminalSession` is thread-safe: any operation may be called from any thread, and the calls are serialized internally. It has three locks:
 
-- **The state lock** guards the terminal, the IME editing model, and the fields. It is fair (`ReentrantLock(true)`), so that a thread waiting for it, such as the main thread taking the screen for a frame or handling a key, gets it when the holder releases it. While output floods, `feed` takes it again for each chunk at once, and an intrinsic lock may hand it back to the feeding thread for hundreds of milliseconds ([decisions/0065](../decisions/0065-fair-state-lock.md)). A reader waits for at most the `feed` that holds the lock, which interprets one chunk of the app's.
-- **The output lock** serializes `feed` from the interpretation of the output to the end of the gate's handling of its requests, so that the replies and OSC 52 clipboard writes of separate `feed` calls are not reordered. It guards no state. It is taken before the state lock, and held while `HostConnection.write`, `ClipboardAccess`, and `ReportedColors` run for the gate's requests, which is the exception for locks that serialize calls (rule 2 of section 1.3), but not while the session tells the observers or the listener. It is fair (`ReentrantLock(true)`), like the input lock ([decisions/0077](../decisions/0077-output-lock.md)).
+- **The state lock** guards the terminal, the IME editing model, and the fields. It is fair (`ReentrantLock(true)`), so that a thread waiting for it, such as the main thread taking the screen for a frame or handling a key, gets it when the holder releases it. While output floods, `feed` takes it again for each chunk at once, and an intrinsic lock may hand it back to the feeding thread for hundreds of milliseconds ([decisions/0084](../decisions/0084-session-and-threads.md)). A reader waits for at most the `feed` that holds the lock, which interprets one chunk of the app's.
+- **The output lock** serializes `feed` from the interpretation of the output to the end of the gate's handling of its requests, so that the replies and OSC 52 clipboard writes of separate `feed` calls are not reordered. It guards no state. It is taken before the state lock, and held while `HostConnection.write`, `ClipboardAccess`, and `ReportedColors` run for the gate's requests, which is the exception for locks that serialize calls (rule 2 of section 1.3), but not while the session tells the observers or the listener. It is fair (`ReentrantLock(true)`), like the input lock ([decisions/0084](../decisions/0084-session-and-threads.md)).
 - **The input lock** serializes user input up to sending, so that the host receives it in the order the IME editing model produced it, also from several threads. It is taken before the state lock and held while `HostConnection.write` runs for the input, which is the exception for locks that serialize calls (rule 2 of section 1.3). It is fair (`ReentrantLock(true)`): while one thread is inside `HostConnection.write`, the threads with input take it in the order they came.
 
 An input operation (keys, text, pastes, sticky modifiers, direct input, mouse and focus reports, and IME operations through `edit`) takes the input lock, then runs on the editing model inside the state lock, collecting what to send; it sends after releasing the state lock, holding only the input lock; then, without either lock, it notifies the observers and the listener.
@@ -113,7 +113,7 @@ The session holds no resources besides memory and schedules no timers, so there 
 
 ### 3.1 The session
 
-`TerminalSession.resize(columns, rows, cellWidth, cellHeight)` resizes the terminal at once, and calls `TerminalSessionListener.onResize` if the size changed, if the size of a cell in pixels changed, or if it is the first `resize` of the session, even when the size is the one the session was created with ([decisions/0013](../decisions/0013-resize-and-lifecycle.md)). The app can therefore wait for the first `onResize` before starting the host (for example, before requesting the PTY), instead of starting it with the constructor's size and resizing it right away. The first report is per session, not per `Terminal`: a `Terminal` recreated after a configuration change does not report the same size again. A `resize` that fails its argument checks does not count as the first.
+`TerminalSession.resize(columns, rows, cellWidth, cellHeight)` resizes the terminal at once, and calls `TerminalSessionListener.onResize` if the size changed, if the size of a cell in pixels changed, or if it is the first `resize` of the session, even when the size is the one the session was created with ([decisions/0084](../decisions/0084-session-and-threads.md)). The app can therefore wait for the first `onResize` before starting the host (for example, before requesting the PTY), instead of starting it with the constructor's size and resizing it right away. The first report is per session, not per `Terminal`: a `Terminal` recreated after a configuration change does not report the same size again. A `resize` that fails its argument checks does not count as the first.
 
 `onResize` has two overloads: `(columns, rows)`, and `(columns, rows, widthPixels, heightPixels)`, which calls the first by default. The pixels are the size of a cell that a display gave times the number of cells, or 0 by 0 if none was given ([decisions/0080](../decisions/0080-kitty-graphics.md)). Notifying the host (an SSH window-change request, TIOCSWINSZ on a PTY) depends on the connection, so the app does it from `onResize`.
 
@@ -121,7 +121,7 @@ The size is from 1 to `TerminalLimits.MAX_DIMENSION` in each direction, and a ce
 
 ### 3.2 The display
 
-`Terminal` computes the number of columns and rows from its size inside the padding of `TerminalStyle`, and gives them, with the size of a cell in pixels, to its `TerminalDisplay` on every layout ([decisions/0013](../decisions/0013-resize-and-lifecycle.md), [decisions/0026](../decisions/0026-session-module.md)):
+`Terminal` computes the number of columns and rows from its size inside the padding of `TerminalStyle`, and gives them, with the size of a cell in pixels, to its `TerminalDisplay` on every layout ([decisions/0084](../decisions/0084-session-and-threads.md)):
 
 - The first size of a `TerminalDisplay` is applied to the session at once, also for a `Terminal` recreated after a configuration change.
 - Later sizes are applied only after the size has stayed the same for 150 ms (`RESIZE_DELAY_MILLIS` in `TerminalDisplay`), so that during the animation of showing the keyboard or rotating, the reflow and the notification to the host (SIGWINCH) happen once. The same mechanism covers rotation, multi-window, and foldables; the state of the IME animation (`WindowInsetsAnimation`) is not used.
@@ -130,7 +130,7 @@ The size is from 1 to `TerminalLimits.MAX_DIMENSION` in each direction, and a ce
 
 ### 3.3 Reflow
 
-`vtfx-core` (`Emulator.resize`, `Reflow`) handles a size change as follows ([decisions/0013](../decisions/0013-resize-and-lifecycle.md)):
+`vtfx-core` (`Emulator.resize`, `Reflow`) handles a size change as follows ([decisions/0084](../decisions/0084-session-and-threads.md)):
 
 - When the width changes, the main screen and the scrollback are reflowed. The cells of a run of rows joined by autowrap (a logical line) are laid out again at the new width, and a wide character that does not fit at the end of a row goes to the next row. The blank that autowrap left at the end of a row before such a character is not a character, so it is not laid out again, unless the cursor is on it. A space the host wrote there remains as a character; a cell the host erased cannot be told from an empty one and is treated as empty. Link detection and copying a selection use the same judgment (`Line.endsWithWidePadding`). Trailing blanks of a logical line are dropped, except up to the cursor.
 - The cursor moves along with the character it was on. It is reflowed as an insertion point: a cursor waiting to wrap (right after writing in the last column) is treated as the position where the next character will be written, so it stays right after the character just written; if that position is exactly the end of a new row, it stays waiting to wrap.
@@ -142,8 +142,8 @@ The size is from 1 to `TerminalLimits.MAX_DIMENSION` in each direction, and a ce
 
 ## 4. Lifecycle
 
-The app owns the `TerminalSession` and keeps it outside the composable, for example in a `ViewModel` as the sample app does. When the composable goes away and is recreated, for example after a configuration change, the content and the modes are kept in the session, and the input `View` reconnects to the session when focus returns to the recreated composable ([decisions/0007](../decisions/0007-compose-session.md), [decisions/0013](../decisions/0013-resize-and-lifecycle.md)). The IME input history is not kept: the session loses focus when the `View` leaves the screen or the window loses focus, which resets it (section 5.1 of [ime-contract.md](ime-contract.md)).
+The app owns the `TerminalSession` and keeps it outside the composable, for example in a `ViewModel` as the sample app does. When the composable goes away and is recreated, for example after a configuration change, the content and the modes are kept in the session, and the input `View` reconnects to the session when focus returns to the recreated composable ([decisions/0084](../decisions/0084-session-and-threads.md)). The IME input history is not kept: the session loses focus when the `View` leaves the screen or the window loses focus, which resets it (section 5.1 of [ime-contract.md](ime-contract.md)).
 
-The display state goes away with the composable. The scrollback position is not kept: a recreated `Terminal` shows the bottom, since a rotation resizes and reflows the screen and the same lines may not be visible anyway ([decisions/0026](../decisions/0026-session-module.md)).
+The display state goes away with the composable. The scrollback position is not kept: a recreated `Terminal` shows the bottom, since a rotation resizes and reflows the screen and the same lines may not be visible anyway ([decisions/0084](../decisions/0084-session-and-threads.md)).
 
 Rotation, multi-window, and foldables are all treated as combinations of "the display size changes" and "the Activity is recreated", with no handling specific to each. They are tested through reflow and height changes (`TerminalTest` in vtfx-core), batching sizes (`TerminalDisplayTest`), the first report (`TerminalSessionTest`), and recreating the composable (`TerminalSemanticsTest.sessionOutlivesTheComposable`).
