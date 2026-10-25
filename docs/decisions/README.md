@@ -59,7 +59,7 @@ What was decided. Link to the sections of the design documents that describe the
 **Impact of reversing.** What would need to change.
 ```
 
-Code and documents cite such a decision as a whole, or by topic (`topic 2 of [NNNN](...)`). A new topic is added at the end, so that the numbers of the topics stay.
+A topic leaves out the alternatives or the impact of reversing when none was recorded. Code and documents cite such a decision as a whole, or by topic (`topic 2 of [NNNN](...)`). A new topic is added at the end, so that the numbers of the topics stay.
 
 The status is for the whole decision. The status of every decision written by an agent is "Provisional". Only a human sets it to "Approved", except that a merge or a rewrite that keeps the meaning of everything it carries over keeps "Approved" when every decision it carries over was approved ([0078](0078-decisions-hold-current-reasons.md)).
 
