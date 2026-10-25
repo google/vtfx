@@ -15,7 +15,7 @@
  */
 
 // SECURITY REVIEW REQUIRED. Checks that bytes are a font in the canonical form, which is all that
-// reaches the platform's native font code, and holds them as SanitizedFont (docs/decisions/0040,
+// reaches the platform's native font code, and holds them as SanitizedFont (docs/decisions/0086,
 // 0041). Depends on nothing, not even in its tests: they take the canonical fonts that vtfx-font
 // writes from src/fuzz/resources, where CanonicalFixturesTest in vtfx-font keeps them current.
 plugins {

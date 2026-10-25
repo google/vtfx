@@ -20,7 +20,7 @@ import com.google.vtfx.font.gate.FontLimits
 import com.google.vtfx.font.gate.WidthClass
 
 /**
- * Writes the canonical form of a face (docs/decisions/0040) from its [FaceParts]: every value is
+ * Writes the canonical form of a face (docs/decisions/0086) from its [FaceParts]: every value is
  * either one of those, which [FaceParts.read] checked, or computed here from the outlines. The
  * verifier of vtfx-font-gate (`CanonicalVerifier`) checks the result; this writer does not need to
  * be trusted.

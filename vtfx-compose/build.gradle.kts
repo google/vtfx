@@ -36,7 +36,7 @@ dependencies {
     // AndroidUrlOpener to the session, so that an app depends on vtfx-compose alone.
     api(project(":vtfx-gate-android"))
     // TerminalFont.Sanitized takes the SanitizedFamilies of vtfx-font-gate, of the SanitizedFonts
-    // that apps make with vtfx-font from the fonts that users choose (docs/decisions/0040).
+    // that apps make with vtfx-font from the fonts that users choose (docs/decisions/0086).
     api(project(":vtfx-font"))
     api(project(":vtfx-font-gate"))
     // Makes the typefaces of TerminalFont.Sanitized (docs/decisions/0041).

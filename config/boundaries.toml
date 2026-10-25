@@ -496,7 +496,7 @@ allowed_modules = []
 
 [[restricted_classes]]
 # vtfx-font-gate-android makes typefaces from SanitizedFont alone, whose bytes passed the verifier of
-# vtfx-font-gate (docs/decisions/0040, 0041); the module is under security review.
+# vtfx-font-gate (docs/decisions/0086, 0041); the module is under security review.
 packages = ["android/graphics/fonts", "androidx/compose/ui/text/googlefonts"]
 classes = [
     "android/graphics/Typeface$Builder",
@@ -511,7 +511,7 @@ members = [
     "android/graphics/Typeface.createFromFile",
     "androidx/compose/ui/text/font/AndroidTypeface_androidKt.FontFamily",
 ]
-reason = "vtfx draws only fonts of the system, of the app's package, or sanitized by vtfx-font (TerminalFont); font files from elsewhere may be malicious (docs/decisions/0020, 0040)."
+reason = "vtfx draws only fonts of the system, of the app's package, or sanitized by vtfx-font (TerminalFont); font files from elsewhere may be malicious (docs/decisions/0086)."
 allowed_modules = ["vtfx-font-gate-android"]
 
 [[restricted_classes]]

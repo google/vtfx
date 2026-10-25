@@ -44,7 +44,7 @@ public object FontFile {
         }
     }
 
-    // The canonical form and why only it is drawn are in docs/decisions/0040.
+    // The canonical form and why only it is drawn are in docs/decisions/0086.
     /**
      * Reads face [faceIndex] of a font file, TrueType or OpenType with TrueType or CFF outlines
      * (CFF2 is not read), or a collection of them, and writes it again in the canonical form that

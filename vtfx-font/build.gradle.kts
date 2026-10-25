@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// Reads fonts that users choose and writes them again in one canonical form (docs/decisions/0040).
+// Reads fonts that users choose and writes them again in one canonical form (docs/decisions/0086).
 // What reaches native code is decided by the verifier of vtfx-font-gate, so this module is not
 // under
 // security review (docs/decisions/0041).
@@ -30,7 +30,7 @@ dependencies {
 }
 
 // Real fonts under the SIL Open Font License, which ThirdPartyFontsTest sanitizes
-// (docs/decisions/0071): one of each kind of font file, TrueType, CID-keyed CFF, and a collection.
+// (docs/decisions/0086): one of each kind of font file, TrueType, CID-keyed CFF, and a collection.
 // They are on no classpath, so that no artifact can contain them, and the test reads them as files.
 // gradle/verification-metadata.xml pins their checksums.
 val thirdPartyFonts: Configuration =

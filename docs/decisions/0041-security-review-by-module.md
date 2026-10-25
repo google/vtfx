@@ -2,11 +2,11 @@
 
 - Status: Approved (2026-10-20, approved by a human in a review of the review queue; review by whole modules and the names `vtfx-font-gate` and `vtfx-font-gate-android` had been decided by a human on 2026-10-19)
 - Date: 2026-10-19
-- Related: Requirement 6.1, section 2 of [architecture.md](../design/architecture.md), section 2 of [fonts.md](../design/fonts.md), [0016](0016-public-api.md), [0037](0037-api-shape-before-1.0.md), [0040](0040-sanitized-user-fonts.md), `config/protected-paths.toml`, `config/boundaries.toml`
+- Related: Requirement 6.1, section 2 of [architecture.md](../design/architecture.md), section 2 of [fonts.md](../design/fonts.md), [0016](0016-public-api.md), [0037](0037-api-shape-before-1.0.md), [0086](0086-fonts.md), `config/protected-paths.toml`, `config/boundaries.toml`
 
 ## Background
 
-`config/protected-paths.toml` put two single files under security review: `CanonicalVerifier.kt` in `vtfx-font` and `SanitizedTypefaces.kt` in `vtfx-compose` ([0040](0040-sanitized-user-fonts.md)). Every other entry was a whole module or build configuration.
+`config/protected-paths.toml` put two single files under security review: `CanonicalVerifier.kt` in `vtfx-font` and `SanitizedTypefaces.kt` in `vtfx-compose` ([0086](0086-fonts.md)). Every other entry was a whole module or build configuration.
 
 A review of `vtfx-font` from this point of view found that what the verifier's guarantee relies on was not all in those files:
 

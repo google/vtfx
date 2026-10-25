@@ -25,7 +25,7 @@ import kotlin.test.assertEquals
 import org.junit.Test
 
 /**
- * Sanitizes real fonts, which Gradle downloads at pinned commits (docs/decisions/0071): one of each
+ * Sanitizes real fonts, which Gradle downloads at pinned commits (docs/decisions/0086): one of each
  * kind of font file, a TrueType font, a CID-keyed CFF font, and a collection of CID-keyed CFF
  * faces. The fonts that the other tests build cover the structures that the readers know; these
  * cover the sizes and the combinations of real CJK fonts. Each sanitized font must be one that the

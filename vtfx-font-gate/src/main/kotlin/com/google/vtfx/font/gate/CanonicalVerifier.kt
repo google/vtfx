@@ -20,7 +20,7 @@ package com.google.vtfx.font.gate
 internal class Verified(val widthClass: WidthClass)
 
 /**
- * Checks that bytes are a font in the canonical form of docs/decisions/0040, exactly: every byte of
+ * Checks that bytes are a font in the canonical form of docs/decisions/0086, exactly: every byte of
  * the file is either checked against a fixed value, checked against a value computed from other
  * parts of the file, or a number within a checked range. Only bytes that pass reach the platform's
  * native font code, so this module is under security review; the readers and the writer, in

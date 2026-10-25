@@ -28,7 +28,7 @@ import java.io.IOException
 // This is the only file of vtfx that makes typefaces from font data (config/boundaries.toml), and
 // its module is under security review (config/protected-paths.toml). It takes only SanitizedFont,
 // whose bytes passed the verifier of vtfx-font-gate, so the platform's native font code reads no
-// font file from outside the app as it is (docs/decisions/0040).
+// font file from outside the app as it is (docs/decisions/0086).
 
 /**
  * Makes the typefaces of sanitized fonts for vtfx-compose. An object rather than a top-level

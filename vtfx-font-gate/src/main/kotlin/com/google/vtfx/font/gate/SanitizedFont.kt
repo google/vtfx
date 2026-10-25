@@ -20,7 +20,7 @@ import java.nio.Buffer
 import java.nio.ByteBuffer
 import java.security.MessageDigest
 
-// The canonical form and why only it is drawn are in docs/decisions/0040.
+// The canonical form and why only it is drawn are in docs/decisions/0086.
 /**
  * A font that vtfx wrote itself from a font file, in a simple form that it has checked, and that
  * the platform's font code can therefore read without trusting the original file.

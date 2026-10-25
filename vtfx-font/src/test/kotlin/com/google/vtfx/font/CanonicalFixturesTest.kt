@@ -28,7 +28,7 @@ import org.junit.Test
  * from files, and this test keeps the files what this module writes. The files are also a golden of
  * the canonical form: apps save sanitized fonts and load them later with
  * [SanitizedFont.fromCanonical], so a change to these bytes is a change that fonts saved before it
- * may no longer load after (docs/decisions/0040).
+ * may no longer load after (docs/decisions/0086).
  *
  * The fonts are built by the test code of this module, so no third party holds rights to them.
  *

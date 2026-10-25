@@ -21,7 +21,7 @@ import kotlin.math.abs
 
 /**
  * What the canonical form keeps of a face, read and checked against the ranges of the canonical
- * form (docs/decisions/0040). Values outside them make the font unsupported rather than being
+ * form (docs/decisions/0086). Values outside them make the font unsupported rather than being
  * clamped, so that no font is drawn differently from what its maker meant without a word.
  */
 internal class FaceParts(

@@ -29,7 +29,7 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         // Fonts under the SIL Open Font License that the tests of vtfx-font read, as files of
-        // their GitHub repositories at pinned commits (docs/decisions/0071). The group is the
+        // their GitHub repositories at pinned commits (docs/decisions/0086). The group is the
         // owner, the module the repository, the version the commit, and the artifact the path.
         exclusiveContent {
             forRepository {

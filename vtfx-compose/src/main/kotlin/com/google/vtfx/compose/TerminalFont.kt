@@ -35,7 +35,7 @@ import com.google.vtfx.font.gate.SanitizedFamily
 import com.google.vtfx.font.gate.SanitizedFont
 import com.google.vtfx.font.gate.android.SanitizedTypefaces
 
-// The fonts that are accepted are chosen in docs/decisions/0020 and 0040.
+// The fonts that are accepted are chosen in docs/decisions/0086.
 /**
  * The font of a terminal: a font family of the system, fonts bundled in the app's resources, or
  * fonts that users chose, sanitized. It should be monospaced: the cell size is measured from it.

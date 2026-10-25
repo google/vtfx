@@ -16,7 +16,7 @@
 
 package com.google.vtfx.font.gate
 
-// The defaults are chosen in docs/decisions/0040.
+// The defaults are chosen in docs/decisions/0086.
 /**
  * Bounds on the resources that reading a font may use. A font beyond a limit is rejected with
  * [InvalidFontException.Kind.TooLarge] or [InvalidFontException.Kind.TooComplex]. Immutable.

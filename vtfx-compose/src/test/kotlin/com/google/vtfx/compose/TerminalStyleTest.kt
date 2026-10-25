@@ -260,7 +260,7 @@ class TerminalStyleTest {
     fun typefacesFollowAFontThatLoadsAsynchronously() {
         // Terminal makes its paints and cell size from these typefaces, keyed by them, so it
         // switches to the font once it has loaded. Apps cannot give such a font
-        // (docs/decisions/0020), but a font family may still resolve asynchronously.
+        // (docs/decisions/0086), but a font family may still resolve asynchronously.
         val loaded = CompletableDeferred<Typeface>()
         val family = FontFamily(SlowFont(loaded))
         var typefaces: TextTypefaces? = null

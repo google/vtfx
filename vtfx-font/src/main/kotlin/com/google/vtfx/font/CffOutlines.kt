@@ -22,7 +22,7 @@ import kotlin.math.roundToInt
 
 /**
  * Converts the CFF outlines of a `CFF ` table to TrueType's: the charstrings are run, and their
- * cubic curves are approximated with quadratic ones within 1/1000 of the em (docs/decisions/0040).
+ * cubic curves are approximated with quadratic ones within 1/1000 of the em (docs/decisions/0086).
  *
  * The outlines are not moved: CFF draws them relative to the origin, with no left side bearing to
  * apply. Contours are reversed, since CFF draws outer contours counter-clockwise and TrueType

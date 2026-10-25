@@ -35,7 +35,7 @@ import org.junit.runner.RunWith
 
 /**
  * Sanitizes the fonts of the device and draws with them through the platform's font code
- * (docs/decisions/0040): real fonts, TrueType and CFF, including the Noto Sans CJK collection,
+ * (docs/decisions/0086): real fonts, TrueType and CFF, including the Noto Sans CJK collection,
  * which the gating tests cannot carry. Each sanitized face must load and draw, and the CJK faces
  * must draw their own glyphs rather than the system's fallback. The time that each face takes is
  * logged, for the item "Imported fonts" of docs/review-queue.md.

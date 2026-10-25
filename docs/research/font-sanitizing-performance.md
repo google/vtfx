@@ -1,6 +1,6 @@
 # Research: the cost of sanitizing and verifying fonts
 
-Measurements taken on 2026-10-19 while `vtfx-font` was written ([decisions/0040](../decisions/0040-sanitized-user-fonts.md)). They record what was measured at that date and are not kept up to date; the rules that they led to are in sections 4 and 6 of [fonts.md](../design/fonts.md).
+Measurements taken on 2026-10-19 while `vtfx-font` was written ([decisions/0086](../decisions/0086-fonts.md)). They record what was measured at that date and are not kept up to date; the rules that they led to are in sections 4 and 6 of [fonts.md](../design/fonts.md).
 
 ## 1. Building messages of checks
 
