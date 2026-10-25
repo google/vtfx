@@ -1,6 +1,6 @@
 # Results of calls are used
 
-- Status: Provisional
+- Status: Approved (2026-10-25, approved by a human)
 - Date: 2026-10-24
 - Related: [0029](0029-import-without-gradle.md) (sources that build without Gradle), [0023](0023-code-style.md), section 7 of [architecture.md](../design/architecture.md), section 9 of [testing.md](../design/testing.md), the conventions `vtfx.jvm-library`, `vtfx.android-library`, and `vtfx.android-application` in `build-logic`
 

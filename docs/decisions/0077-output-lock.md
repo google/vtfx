@@ -1,6 +1,6 @@
 # An output lock serializes the feeds of the session
 
-- Status: Provisional
+- Status: Approved (2026-10-25, approved by a human)
 - Date: 2026-10-24
 - Related: Requirement 6.1, sections 1.3 and 2.2 of [session-and-threads.md](../design/session-and-threads.md), item 3 of [0026](0026-session-module.md) (the locks replaced), [0024](0024-thread-conventions.md), [0065](0065-fair-state-lock.md), R5 of [reviews/2026-10-22-gate.md](../reviews/2026-10-22-gate.md), `TerminalSession.feed`
 

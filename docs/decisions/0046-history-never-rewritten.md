@@ -1,6 +1,6 @@
 # The git history is never rewritten after publication
 
-- Status: Provisional
+- Status: Approved (2026-10-25, approved by a human)
 - Date: 2026-10-20
 - Related: [AGENTS.md](../../AGENTS.md) ("History", "Situations in which to stop and consult"), [0018](0018-distribution.md), [0023](0023-code-style.md), `.git-blame-ignore-revs`
 

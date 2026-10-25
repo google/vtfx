@@ -1,6 +1,6 @@
 # Placements whose top row scrolls off the top
 
-- Status: Provisional
+- Status: Approved (2026-10-25, approved by a human)
 - Date: 2026-10-23
 - Related: sections 9.5 and 10 of [emulation.md](../design/emulation.md), [0038](0038-kitty-graphics.md), `Placement.rowsAbove` in `vtfx-core`
 
