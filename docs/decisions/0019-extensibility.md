@@ -24,7 +24,7 @@ The addon mechanism itself is thin: it just receives a `Terminal` and uses the p
 |---|---|---|
 | OSC 52 clipboard | ClipboardAddon | Built in (`ClipboardAccess`, `GatePolicy`) |
 | Following the display size | FitAddon | Built in (`Terminal`) |
-| Unicode widths and graphemes | Unicode11, UnicodeGraphemes | Built in ([0011](0011-unicode.md)) |
+| Unicode widths and graphemes | Unicode11, UnicodeGraphemes | Built in ([0079](0079-emulation-scope.md)) |
 | Connection with the host | AttachAddon | Built in (`HostConnection`, `feed`) |
 | Rendering method | WebGL, Canvas | Not needed ([0014](0014-performance.md)) |
 | Automatic URL links | WebLinksAddon, link provider | Built in. In addition, the app can give text patterns and rules for converting them to URLs (below) |

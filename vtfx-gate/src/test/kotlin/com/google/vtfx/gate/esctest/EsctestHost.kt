@@ -33,7 +33,7 @@ import java.io.ByteArrayOutputStream
  * stdin, interprets it with vtfx-core, and writes the replies vtfx-gate builds to stdout.
  *
  * Three sequences are handled by this harness only, since vtfx does not support them on purpose
- * (docs/decisions/0009): DECRQCRA, through which esctest reads the screen one cell at a time,
+ * (docs/decisions/0079): DECRQCRA, through which esctest reads the screen one cell at a time,
  * XTWINOPS 8, with which it sets the size to 80 x 25 before each test, and XTWINOPS 21, with which
  * it reads the window title that vtfx reports in TitleChanged events.
  */

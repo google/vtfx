@@ -39,7 +39,7 @@ internal class Line(columns: Int, style: CellStyle = CellStyle.Default) {
 
     /**
      * The underline color of each cell (SGR 58) as [TerminalColor.bits], 0 for the text's color,
-     * allocated when the first color is written (docs/decisions/0030).
+     * allocated when the first color is written (docs/decisions/0079).
      */
     private var underlineColors: IntArray? = null
 

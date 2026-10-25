@@ -135,7 +135,7 @@ internal class GridFill {
  * (CJK, for example) does not have the cell width.
  *
  * Box drawing characters and block elements are drawn as shapes ([BoxDrawing]), and so are
- * underlines and overlines, over whole cells (docs/decisions/0030).
+ * underlines and overlines, over whole cells (docs/decisions/0079).
  */
 internal class TerminalRenderer(
     private val paints: TextPaints,

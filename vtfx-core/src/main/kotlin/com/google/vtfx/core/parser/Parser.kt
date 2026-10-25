@@ -61,7 +61,7 @@ internal interface ParserHandler {
  * Splits host output into control functions and graphic characters.
  *
  * The state machine is Paul Williams' DEC ANSI parser (https://vt100.net/emu/dec_ansi_parser),
- * applied to code points after UTF-8 decoding, with these deviations (docs/decisions/0001):
+ * applied to code points after UTF-8 decoding, with these deviations (docs/decisions/0079):
  * - C1 controls (U+0080 to U+009F) are ignored, since in UTF-8 they can only arrive as two-byte
  *   sequences that legacy software does not produce.
  * - ':' in parameters separates sub-parameters instead of invalidating the sequence.

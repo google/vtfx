@@ -27,7 +27,7 @@ import org.junit.Test
 import org.junit.experimental.runners.Enclosed
 import org.junit.runner.RunWith
 
-/** Tests for the features in the scope of docs/decisions/0009, grouped by feature. */
+/** Tests for the features in the scope of docs/decisions/0079, grouped by feature. */
 @RunWith(Enclosed::class)
 class EmulationCoverageTest {
     class CharacterSets : EventRecorder by TerminalEvents() {

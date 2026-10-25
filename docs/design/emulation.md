@@ -4,7 +4,7 @@ This document describes how `vtfx-core` interprets host output, as it is now: th
 
 ## 1. References
 
-The references are divided into layers. Layers with smaller numbers take precedence. When the interpretation of a reference is unclear, vtfx matches the behavior of Thomas Dickey's xterm ([decisions/0009](../decisions/0009-emulation-scope.md)).
+The references are divided into layers. Layers with smaller numbers take precedence. When the interpretation of a reference is unclear, vtfx matches the behavior of Thomas Dickey's xterm ([decisions/0079](../decisions/0079-emulation-scope.md)).
 
 | Layer | Target | Reference |
 |---|---|---|
@@ -17,7 +17,7 @@ The lower bound of the supported scope is the features of the terminfo entry `xt
 
 ## 2. Parsing
 
-`Parser` applies Williams's state machine to code points after UTF-8 decoding ([decisions/0001](../decisions/0001-parser.md)), with these deviations:
+`Parser` applies Williams's state machine to code points after UTF-8 decoding ([decisions/0079](../decisions/0079-emulation-scope.md)), with these deviations:
 
 | Item | State machine | vtfx |
 |---|---|---|
@@ -36,7 +36,7 @@ The lower bound of the supported scope is the features of the terminfo entry `xt
 
 ## 3. Supported control functions
 
-`Emulator` implements the following ([decisions/0009](../decisions/0009-emulation-scope.md)).
+`Emulator` implements the following ([decisions/0079](../decisions/0079-emulation-scope.md)).
 
 | Category | Supported | Tests |
 |---|---|---|
@@ -81,25 +81,25 @@ The replies to queries are built by `vtfx-gate` from the state, never from the r
 | Setting the modes KAM, SRM, DECBKM, DECHEBM, DECNRCM, DECPEX, DECPFF, DECSCLM, DECCOLM, DECLRMM | Ignored. DECRQM reports them as reset, and DECHCCM and some ANSI modes as permanently reset, as xterm does |
 | The mouse pointer shape (OSC 22), the cursor shape by OSC 50 (`CursorShape=`; the font in xterm), urgency hints (DECSET 1042) | Ignored |
 
-The reasons for each are in [decisions/0009](../decisions/0009-emulation-scope.md), and for the last row in [decisions/0068](../decisions/0068-features-of-alacritty-terminal.md). The esctest2 cases that fail because of these are listed with their reasons in `tools/esctest/reasons.toml`.
+The reasons for each are in [decisions/0079](../decisions/0079-emulation-scope.md). The esctest2 cases that fail because of these are listed with their reasons in `tools/esctest/reasons.toml`.
 
 ## 5. Deviations from the references
 
 | Item | Reference | vtfx | Reason |
 |---|---|---|---|
-| OSC 52 data that is not base64 | xterm clears the selection | Ignored | [decisions/0009](../decisions/0009-emulation-scope.md) |
+| OSC 52 data that is not base64 | xterm clears the selection | Ignored | [decisions/0079](../decisions/0079-emulation-scope.md) |
 | REP count | No limit | Up to the number of cells on the screen | [decisions/0002](../decisions/0002-resource-limits.md) |
 | OSC, DCS, and APC beyond the string limit | Not specified | The whole string is dropped | [decisions/0002](../decisions/0002-resource-limits.md) |
-| 1 of XTWINOPS 22, 23 (icon name only) | Pushes an entry with only the icon name. Pop takes the top entry and fills missing values from the entries below | Does nothing, as in VTE. 0 and 2 push only the title. With usage like vim's, which saves and restores the title and the icon name separately, the resulting title is the same as in xterm | [decisions/0009](../decisions/0009-emulation-scope.md) |
+| 1 of XTWINOPS 22, 23 (icon name only) | Pushes an entry with only the icon name. Pop takes the top entry and fills missing values from the entries below | Does nothing, as in VTE. 0 and 2 push only the title. With usage like vim's, which saves and restores the title and the icon name separately, the resulting title is the same as in xterm | [decisions/0079](../decisions/0079-emulation-scope.md) |
 | Limit of the title stack | A ring of 10 | 10, and a total length up to the string limit; beyond that, the oldest are dropped | [decisions/0002](../decisions/0002-resource-limits.md) |
-| DECSCUSR 0 | Blinking block (ctlseqs) | Returns to the app's default (`TerminalStyle.cursorShape`, `cursorBlinking`), as in VTE, kitty, and Windows Terminal. RIS does the same. The app's default is shown until the host sets DECSCUSR 1–6 or mode 12 | [decisions/0009](../decisions/0009-emulation-scope.md) |
+| DECSCUSR 0 | Blinking block (ctlseqs) | Returns to the app's default (`TerminalStyle.cursorShape`, `cursorBlinking`), as in VTE, kitty, and Windows Terminal. RIS does the same. The app's default is shown until the host sets DECSCUSR 1–6 or mode 12 | [decisions/0079](../decisions/0079-emulation-scope.md) |
 | Window title (OSC 0, 2) | Passed as sent | Cut to 1024 UTF-16 units, without C0 and C1 controls, DEL, U+2028, U+2029, and the bidirectional formatting characters, so that an app can show it outside the terminal | [decisions/0063](../decisions/0063-window-title-limits.md) |
 
 The deviations of the syntax are in section 2.
 
 ## 6. TERM and terminfo
 
-vtfx has no connection to the host, so the app sets `TERM` (SSH pty-req, the environment of a PTY). The recommended values are `TERM=xterm-256color` and `COLORTERM=truecolor`. vtfx does not distribute a terminfo entry of its own ([decisions/0010](../decisions/0010-term-terminfo.md)).
+vtfx has no connection to the host, so the app sets `TERM` (SSH pty-req, the environment of a PTY). The recommended values are `TERM=xterm-256color` and `COLORTERM=truecolor`. vtfx does not distribute a terminfo entry of its own ([decisions/0079](../decisions/0079-emulation-scope.md)).
 
 The support for the features of `xterm-256color` (Debian, ncurses 6.5) is as follows.
 
@@ -126,7 +126,7 @@ The support for the features of `xterm-256color` (Debian, ncurses 6.5) is as fol
 
 ## 7. Unicode and character width
 
-The policy is in [decisions/0011](../decisions/0011-unicode.md).
+The policy is in [decisions/0079](../decisions/0079-emulation-scope.md).
 
 ### 7.1 Width rules
 
@@ -153,7 +153,7 @@ The policy is in [decisions/0011](../decisions/0011-unicode.md).
 
 ## 8. Character attributes and decorations
 
-The underline color, the drawing of underlines and overlines, and the cursor's text color are explained in [decisions/0030](../decisions/0030-underline-color-and-decorations.md).
+The underline color, the drawing of underlines and overlines, and the cursor's text color are explained in [decisions/0079](../decisions/0079-emulation-scope.md).
 
 ### 8.1 The rendition and the cells
 

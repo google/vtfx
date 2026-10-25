@@ -21,7 +21,7 @@ import com.google.vtfx.core.parser.Params
 /**
  * The rendition that SGR sets. The underline color is kept apart from [style], whose 64 bits have
  * no room for it, and is written to the cells' side storage only while the style underlines
- * (docs/decisions/0030).
+ * (docs/decisions/0079).
  */
 internal data class Rendition(val style: CellStyle, val underlineColor: TerminalColor) {
     /**

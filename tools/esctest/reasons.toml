@@ -16,7 +16,7 @@
 #
 # Each [[reason]] matches failing tests by a regular expression on "<Class>.<test>" ("tests"), or on
 # the source of the test method ("source"). The first match wins. The kind is Unsupported (see
-# docs/decisions/0009), Deliberate deviation, or Assumption of esctest (what esctest assumes of a
+# docs/decisions/0079), Deliberate deviation, or Assumption of esctest (what esctest assumes of a
 # terminal in a desktop window).
 
 [[reason]]
@@ -24,37 +24,37 @@ tests = "LRM|LeftRight"
 source = "DECSLRM|DECLRMM"
 summary = "Uses left and right margins (DECLRMM, DECSLRM)"
 kind = "Unsupported"
-detail = "Left and right margins are not supported (decisions/0009). Even when the test is about another feature, it fails because it includes a step that sets margins."
+detail = "Left and right margins are not supported (decisions/0079). Even when the test is about another feature, it fails because it includes a step that sets margins."
 
 [[reason]]
 tests = "^(DECCRA|DECERA|DECFRA|DECSERA|DECIC|DECDC|DECBI|DECFI)Tests\\."
 summary = "Rectangle editing and column operations (DECCRA, DECERA, DECFRA, DECSERA, DECIC, DECDC, DECBI, DECFI)"
 kind = "Unsupported"
-detail = "VT400 and later features that major apps do not use (decisions/0009)."
+detail = "VT400 and later features that major apps do not use (decisions/0079)."
 
 [[reason]]
 tests = "^(ChangeColor|ChangeDynamicColor|ChangeSpecialColor|ResetColor|ResetSpecialColor)Tests\\."
 summary = "Setting colors (OSC 4, 5, 10–19, 104–119)"
 kind = "Unsupported"
-detail = "Colors are decided by the app's style. Queries are answered (decisions/0009)."
+detail = "Colors are decided by the app's style. Queries are answered (decisions/0079)."
 
 [[reason]]
 tests = "^XtermWinopsTests\\."
 summary = "Window operations (XTWINOPS)"
 kind = "Assumption of esctest"
-detail = "Changing and reporting the window size and position, iconifying, and icon names do not exist for a terminal embedded in an Android screen. Title reports are not made, because they become an injection path through replies (decisions/0006). Only the report for esctest to read the title (XTWINOPS 21) is answered by the harness's EsctestHost, so the stack cases that use only titles and ReportWindowLabel pass. ReportWindowLabel passing does not mean that vtfx reports it. The cases that read the icon name (XTWINOPS 20) fail (decisions/0009)."
+detail = "Changing and reporting the window size and position, iconifying, and icon names do not exist for a terminal embedded in an Android screen. Title reports are not made, because they become an injection path through replies (decisions/0006). Only the report for esctest to read the title (XTWINOPS 21) is answered by the harness's EsctestHost, so the stack cases that use only titles and ReportWindowLabel pass. ReportWindowLabel passing does not mean that vtfx reports it. The cases that read the icon name (XTWINOPS 20) fail (decisions/0079)."
 
 [[reason]]
 tests = "Protection|DECSCA|ISOProtect"
 summary = "Protection attributes (DECSCA, SPA, EPA)"
 kind = "Unsupported"
-detail = "Major apps do not use them. Selective erase is treated as normal erase (decisions/0009)."
+detail = "Major apps do not use them. Selective erase is treated as normal erase (decisions/0079)."
 
 [[reason]]
 tests = "DECCOLM|Allow80To132"
 summary = "132-column mode (DECCOLM)"
 kind = "Unsupported"
-detail = "The terminal size is determined by the display size (decisions/0009)."
+detail = "The terminal size is determined by the display size (decisions/0079)."
 
 [[reason]]
 tests = "ReverseWrap|AfterNoWrappedInlines|AfterOneWrappedInline|WrapsInWraparoundMode"
@@ -72,7 +72,7 @@ detail = "Reports of the state of VT400 and later devices, which have no counter
 tests = "^DECRQSSTests\\.test_DECRQSS_(DECSACE|DECSASD|DECSCA|DECSCL|DECSLPP|DECSLRM|DECSNLS|DECSSDT)$"
 summary = "Unsupported settings of DECRQSS"
 kind = "Unsupported"
-detail = "These are settings of unsupported features, so they are answered as invalid requests. The supported settings are SGR, DECSTBM, and DECSCUSR (decisions/0009)."
+detail = "These are settings of unsupported features, so they are answered as invalid requests. The supported settings are SGR, DECSTBM, and DECSCUSR (decisions/0079)."
 
 [[reason]]
 tests = "^DECSCLTests\\."
@@ -108,4 +108,4 @@ detail = "Major apps do not use them."
 tests = "^DECRQMTests\\.test_DECRQM_(ANSI_KAM|ANSI_SRM|DEC_DECBKM|DEC_DECHEBM|DEC_DECNRCM|DEC_DECPEX|DEC_DECPFF|DEC_DECSCLM)$"
 summary = "Modes that cannot be set (KAM, SRM, DECBKM, DECHEBM, DECNRCM, DECPEX, DECPFF, DECSCLM)"
 kind = "Unsupported"
-detail = "These tests set the mode and then check with DECRQM. vtfx recognizes these modes but does not set them, so it reports them as reset (decisions/0009)."
+detail = "These tests set the mode and then check with DECRQM. vtfx recognizes these modes but does not set them, so it reports them as reset (decisions/0079)."

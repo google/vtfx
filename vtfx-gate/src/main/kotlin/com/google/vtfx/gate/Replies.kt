@@ -43,7 +43,8 @@ public fun interface ReportedColors {
 }
 
 /**
- * Builds the replies to the host's queries and requests (docs/decisions/0006 and 0009).
+ * Builds the replies to the host's queries and requests (docs/decisions/0006 and
+ * docs/decisions/0079).
  *
  * Every reply is built from constants and numbers from the terminal state, except that the reply to
  * an OSC 52 read also carries the clipboard text, encoded in base64. No text from the host is ever

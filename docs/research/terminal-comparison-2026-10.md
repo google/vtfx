@@ -42,7 +42,7 @@ In the tables, "Yes" means supported, "No" not supported, and "Partial" supporte
 | Any-event mouse (1003) | Yes | Yes | No | Yes | Yes | Yes | Yes | Yes |
 | Synchronized output (2026) | Yes, 200 ms | Yes, 150 ms | No | Yes, 500 ms (without a timeout if output stops, from the source) | Yes, 1000 ms | Yes, 1000 ms in the app | Partial (in the multiplexer, without a timeout) | No |
 | Focus events (1004) | Yes | Yes | Partial (mode kept, nothing sent) | Partial (mode kept, nothing sent) | Yes | Yes | Yes | Yes |
-| Alternate scroll (1007) | To be supported ([0068](../decisions/0068-features-of-alacritty-terminal.md)) | Yes | No | Partial (an app setting) | No | Yes | No | Yes |
+| Alternate scroll (1007) | To be supported ([0079](../decisions/0079-emulation-scope.md)) | Yes | No | Partial (an app setting) | No | Yes | No | Yes |
 | Reverse wraparound (45) | No | No | No | Partial | Yes | Yes | Yes | No |
 | Left and right margins (DECLRMM) | No | No | Yes | No | No | Yes | Yes | Yes |
 | DECSCA with DECSED, DECSEL | Partial (normal erases) | No | Yes | No | Yes | Yes | No (although DA1 claims selective erase) | Partial (normal erases) |
@@ -51,9 +51,9 @@ In the tables, "Yes" means supported, "No" not supported, and "Partial" supporte
 | DECSTR | Yes | No | Yes | Yes | Yes | Yes | Yes | Yes |
 | DECRQM, DECRQSS, XTVERSION | Yes, yes, yes | Yes, no, no | Partial, partial, no | No, no, no | Yes, yes (SGR always `0m`), yes | Yes, yes, yes | Yes, partial, yes | Yes, yes, yes |
 | DA3, XTGETTCAP | No, no | No, no | No, yes | No, no | No, no | Yes, yes | Yes, yes | Yes, yes |
-| Setting colors (OSC 4, 10–12, 104, 110–112) | No ([0009](../decisions/0009-emulation-scope.md)) | Yes | Yes | No | Yes | Yes (also OSC 21) | Yes | Yes |
+| Setting colors (OSC 4, 10–12, 104, 110–112) | No ([0079](../decisions/0079-emulation-scope.md)) | Yes | Yes | No | Yes | Yes (also OSC 21) | Yes | Yes |
 | Color scheme reports (mode 2031, `CSI ? 996 n`) | No | No | No | No | Yes | Yes | No | Yes |
-| OSC 22, OSC 50 | No, no ([0068](../decisions/0068-features-of-alacritty-terminal.md)) | Yes, yes | No, no | No, no | No, no | Yes, no | No, no | No, no |
+| OSC 22, OSC 50 | No, no ([0079](../decisions/0079-emulation-scope.md)) | Yes, yes | No, no | No, no | No, no | Yes, no | No, no | No, no |
 | Title stack | 10, with a limit on the total length; titles cleaned | 4096 | 20; titles not cleaned | No limit | 10 (off by default) | No | No | 8; titles up to 1024 bytes |
 | OSC 7 (working directory) | No | No | No | Partial (accepted and ignored) | No | Yes | Yes | Yes |
 | OSC 8 | Yes, with limits | Yes | No | Partial (only if the embedder's filter accepts the URI) | Yes, without limits | Yes | Yes, without limits | Yes, with limits; off by default |
@@ -86,11 +86,11 @@ In the tables, "Yes" means supported, "No" not supported, and "Partial" supporte
 
 | | vtfx | alacritty | Termux | JediTerm | xterm.js | Ghostty | WezTerm | VTE |
 |---|---|---|---|---|---|---|---|---|
-| kitty keyboard protocol | No (a decision of its own, [0068](../decisions/0068-features-of-alacritty-terminal.md)) | Partial (modes; encoding in the app) | No | No | Yes (off by default) | Yes | Yes (off by default) | No |
+| kitty keyboard protocol | No (a decision of its own, [0079](../decisions/0079-emulation-scope.md)) | Partial (modes; encoding in the app) | No | No | Yes (off by default) | Yes | Yes (off by default) | No |
 | modifyOtherKeys | No | No | No | No | No (win32-input-mode instead) | Yes | Yes | No |
 | IME | An editing model ([ime-contract.md](../design/ime-contract.md)) | No | Commits only (`TYPE_NULL` by default) | Composing text drawn over the cursor | Composing text drawn over the cursor | In the app, composing text drawn | In the app | Composing text drawn; no surrounding text |
-| Block selection | No ([0068](../decisions/0068-features-of-alacritty-terminal.md)) | Yes | No | No | Yes | Yes | Yes (app) | Yes |
-| Word delimiters | To be supported ([0068](../decisions/0068-features-of-alacritty-terminal.md)) | Yes, configurable | No (blanks only) | A fixed list | Yes, configurable | Yes, configurable | Yes, configurable | Yes, configurable |
+| Block selection | No ([0079](../decisions/0079-emulation-scope.md)) | Yes | No | No | Yes | Yes | Yes (app) | Yes |
+| Word delimiters | To be supported ([0079](../decisions/0079-emulation-scope.md)) | Yes, configurable | No (blanks only) | A fixed list | Yes, configurable | Yes, configurable | Yes, configurable | Yes, configurable |
 | Search | Plain text ([0047](../decisions/0047-search.md)) | Regular expressions | No | Plain text | Regular expressions (addon) | Plain text, on its own thread | Regular expressions (app) | Regular expressions (PCRE2) |
 | Keyboard mode for selecting (vi, copy mode) | No | Yes | No | No | No | Partial (key tables) | Yes (app) | No |
 | Link detection | OSC 8 and regular expressions | OSC 8 | Regular expressions in the app | Asynchronous filters | OSC 8 and regular expressions (addon) | OSC 8 and regular expressions (app) | OSC 8 and regular expressions (app) | OSC 8 and regular expressions |
@@ -101,15 +101,15 @@ In the tables, "Yes" means supported, "No" not supported, and "Partial" supporte
 
 | Feature | Terminals with it, of the seven | Where vtfx records it |
 |---|---|---|
-| Setting colors | 6: all but JediTerm | Left out, [0009](../decisions/0009-emulation-scope.md) |
-| Block selection | 5: alacritty, xterm.js, Ghostty, WezTerm, VTE | Left out for now, [0068](../decisions/0068-features-of-alacritty-terminal.md) |
-| XTGETTCAP | 4: Termux, Ghostty, WezTerm, VTE | Not answered, [0006](../decisions/0006-gate-defaults.md), [0009](../decisions/0009-emulation-scope.md) |
+| Setting colors | 6: all but JediTerm | Left out, [0079](../decisions/0079-emulation-scope.md) |
+| Block selection | 5: alacritty, xterm.js, Ghostty, WezTerm, VTE | Left out for now, [0079](../decisions/0079-emulation-scope.md) |
+| XTGETTCAP | 4: Termux, Ghostty, WezTerm, VTE | Not answered, [0006](../decisions/0006-gate-defaults.md), [0079](../decisions/0079-emulation-scope.md) |
 | DA3 | 3: Ghostty, WezTerm, VTE | Not recorded |
-| Left and right margins | 4: Termux, Ghostty, WezTerm, VTE | Left out, [0009](../decisions/0009-emulation-scope.md) |
+| Left and right margins | 4: Termux, Ghostty, WezTerm, VTE | Left out, [0079](../decisions/0079-emulation-scope.md) |
 | Search with regular expressions | 4: alacritty, xterm.js, WezTerm, VTE | Left out, [0047](../decisions/0047-search.md) |
 | sixel | 4: Termux, xterm.js, WezTerm, VTE (off by default) | Left out, section 4 of [emulation.md](../design/emulation.md) |
 | Notifications and progress (OSC 9, 777, 9;4) | 4: xterm.js (progress), Ghostty, WezTerm, VTE | Not recorded |
-| kitty keyboard protocol | 3: xterm.js, Ghostty, WezTerm | A decision of its own, [0068](../decisions/0068-features-of-alacritty-terminal.md) |
+| kitty keyboard protocol | 3: xterm.js, Ghostty, WezTerm | A decision of its own, [0079](../decisions/0079-emulation-scope.md) |
 | Shell integration (OSC 133) | 3: Ghostty, WezTerm, VTE | Not recorded |
 | Working directory (OSC 7) | 3: Ghostty, WezTerm, VTE | Not recorded |
 | Grapheme clusters, mode 2027 | 3: Ghostty, WezTerm, xterm.js (experimental) | Not supported, section 7 of [emulation.md](../design/emulation.md) |

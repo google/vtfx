@@ -147,7 +147,7 @@ public class TerminalSession(
     columns: Int = DEFAULT_COLUMNS,
     rows: Int = DEFAULT_ROWS,
     limits: TerminalLimits = TerminalLimits(),
-    // The width of ambiguous characters follows docs/decisions/0011.
+    // The width of ambiguous characters follows docs/decisions/0079.
     ambiguousWidth: AmbiguousWidth = AmbiguousWidth.Narrow,
     policy: GatePolicy = GatePolicy(),
     clipboard: ClipboardAccess? = null,

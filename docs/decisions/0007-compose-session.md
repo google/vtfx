@@ -30,7 +30,7 @@
 
 ### Rendering
 
-- Runs of ASCII with the same style are drawn at once, and other characters per cell; characters not in the monospace font (CJK and so on) are drawn with a fallback font. The details and the optimization are in [0011](0011-unicode.md) and [0014](0014-performance.md).
+- Runs of ASCII with the same style are drawn at once, and other characters per cell; characters not in the monospace font (CJK and so on) are drawn with a fallback font. The details and the optimization are in [0079](0079-emulation-scope.md) and [0014](0014-performance.md).
 - Composing text is drawn overlaid from the terminal's cursor cell, wrapping at the right edge. An underline shows that it has not been sent.
 - In reverse video (DECSCNM), the foreground color is used for the cursor color, because the default cursor color becomes the same as the background.
 

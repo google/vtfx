@@ -264,7 +264,7 @@ internal class Emulator(
 
     /**
      * Joins [codePoint] to an unpaired regional indicator just before the cursor, making a flag
-     * that occupies the two cells the pair takes anyway (docs/decisions/0011). Returns false if
+     * that occupies the two cells the pair takes anyway (docs/decisions/0079). Returns false if
      * there is no such indicator.
      */
     private fun pairRegionalIndicator(codePoint: Int): Boolean {
@@ -548,7 +548,7 @@ internal class Emulator(
     /**
      * XTWINOPS 22 saves the window title and 23 restores it, for 0 (the title and the icon name)
      * and 2 (the title). vtfx has no icon name, so 1 (the icon name alone) does nothing, as in VTE;
-     * xterm saves the icon name in its own entry (docs/decisions/0009). xterm's third parameter, an
+     * xterm saves the icon name in its own entry (docs/decisions/0079). xterm's third parameter, an
      * index into the stack, is not supported: the sequence is ignored.
      */
     private fun saveOrRestoreTitle(params: Params) {
@@ -619,7 +619,7 @@ internal class Emulator(
     /**
      * DECSCUSR: 1 is a blinking block, then steady block, underline, and bar in pairs. 0 returns to
      * the app's default, as in VTE and Windows Terminal; xterm documents 0 as a blinking block
-     * (docs/decisions/0009).
+     * (docs/decisions/0079).
      */
     private fun setCursorStyle(ps: Int) {
         if (ps == 0) {
@@ -657,7 +657,7 @@ internal class Emulator(
 
     /**
      * DECRQM. The modes that vtfx implements report their state. Modes that vtfx recognizes but
-     * keeps off report reset, or permanently reset, as xterm does (docs/decisions/0009).
+     * keeps off report reset, or permanently reset, as xterm does (docs/decisions/0079).
      */
     private fun reportMode(mode: Int, isDecPrivate: Boolean) {
         val state =
@@ -683,7 +683,7 @@ internal class Emulator(
                     1015 -> modeState(modes.mouseEncoding == MouseEncoding.Urxvt)
                     2004 -> modeState(modes.bracketedPaste)
                     2026 -> modeState(modes.synchronizedOutput)
-                    // DEC modes that vtfx recognizes but never sets (docs/decisions/0009): DECCOLM,
+                    // DEC modes that vtfx recognizes but never sets (docs/decisions/0079): DECCOLM,
                     // DECSCLM, DECPFF, DECPEX, DECHEBM, DECNRCM, DECBKM, DECLRMM.
                     3,
                     4,

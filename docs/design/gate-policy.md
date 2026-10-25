@@ -59,7 +59,7 @@ The code of a character key is `KeyStroke.Character.unshiftedCodePoint`, the cha
 
 ## 3. Replies
 
-`vtfx-core` emits `ReplyRequested` with a `TerminalQuery`, a type that holds no text from the host, and `Replies` builds the reply. The queries that are recognized at all are decided in [decisions/0009](../decisions/0009-emulation-scope.md).
+`vtfx-core` emits `ReplyRequested` with a `TerminalQuery`, a type that holds no text from the host, and `Replies` builds the reply. The queries that are recognized at all are decided in [decisions/0079](../decisions/0079-emulation-scope.md).
 
 | Query | Reply |
 |---|---|
@@ -81,8 +81,8 @@ Every number in a reply is checked against its range before the reply is built (
 The following queries are not answered (the model does not emit `ReplyRequested`):
 
 - Reports of the window title and icon name (XTWINOPS 20, 21), a classic path for command injection.
-- Checksums of the screen contents (DECRQCRA), a means of guessing the screen contents. The esctest harness computes them in the test code ([decisions/0009](../decisions/0009-emulation-scope.md)).
-- XTGETTCAP, whose replies would carry terminfo strings ([decisions/0009](../decisions/0009-emulation-scope.md)).
+- Checksums of the screen contents (DECRQCRA), a means of guessing the screen contents. The esctest harness computes them in the test code ([decisions/0079](../decisions/0079-emulation-scope.md)).
+- XTGETTCAP, whose replies would carry terminfo strings ([decisions/0079](../decisions/0079-emulation-scope.md)).
 
 ## 4. Clipboard
 

@@ -18,7 +18,7 @@ the Unicode placeholders of the kitty graphics protocol in vtfx-core (Placeholde
 the table of default-ignorable code points of vtfx-gate (UnicodeDefaultIgnorables.kt).
 
 The tables come from the copy of the Unicode Character Database in third_party/unicode
-(docs/decisions/0011), and the generated sources are checked in (docs/decisions/0029). Run this
+(docs/decisions/0079), and the generated sources are checked in (docs/decisions/0029). Run this
 script after updating the UCD files, and commit the result. With --check, it writes nothing and
 exits with status 1 if a checked-in file is not what it would generate; scripts/check.sh runs
 it that way.

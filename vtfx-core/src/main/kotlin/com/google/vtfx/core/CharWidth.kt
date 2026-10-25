@@ -20,7 +20,7 @@ import com.google.vtfx.core.graphics.Placeholders
 
 // The tables (UnicodeWidthTables) are generated from the Unicode Character Database in
 // third_party/unicode by scripts/generate_unicode_tables.py. The policy is in
-// docs/decisions/0011.
+// docs/decisions/0079.
 /**
  * The number of cells that a code point occupies. The terminal model uses it for host output, and
  * the display uses it for text that is not in the model, such as the IME's composing text.

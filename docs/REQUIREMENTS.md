@@ -244,9 +244,9 @@ Every release in phases 4 to 6 requires that humans have reviewed the changes to
 
 ## 8. Open questions to decide at design time
 
-- The references to conform to, and the range of supported sequences (Resolved: [0001](decisions/0001-parser.md), [0009](decisions/0009-emulation-scope.md))
-- Handling of TERM / terminfo (Resolved: [0010](decisions/0010-term-terminfo.md))
-- The policy on the Unicode version, Ambiguous width, and grapheme clusters (Resolved: [0011](decisions/0011-unicode.md))
+- The references to conform to, and the range of supported sequences (Resolved: [0079](decisions/0079-emulation-scope.md))
+- Handling of TERM / terminfo (Resolved: [0079](decisions/0079-emulation-scope.md))
+- The policy on the Unicode version, Ambiguous width, and grapheme clusters (Resolved: [0079](decisions/0079-emulation-scope.md))
 - The matrix of target IMEs (Resolved: [0017](decisions/0017-ime-scope.md))
 - The range of surrounding text disclosed to the IME (Resolved: [0017](decisions/0017-ime-scope.md))
 - Handling of requests to rewrite committed text (Resolved: [0017](decisions/0017-ime-scope.md))
