@@ -1,6 +1,6 @@
 # Decisions hold the current reasons; the history holds the past ones
 
-- Status: Provisional
+- Status: Approved (2026-10-25, approved by a human)
 - Date: 2026-10-25
 - Related: [decisions/README.md](README.md), [AGENTS.md](../../AGENTS.md) ("Decisions"), [0045](0045-decisions-and-design-documents.md), [0046](0046-history-never-rewritten.md), section 3.4 of [reviews/README.md](../reviews/README.md)
 
