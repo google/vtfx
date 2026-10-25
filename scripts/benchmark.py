@@ -33,6 +33,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 import tempfile
 import time
 
@@ -46,6 +47,7 @@ THROUGHPUT_RATIO_TARGET = 2.0  # times xterm.js on the same machine
 SCROLLBACK_TYPICAL_TARGET = 5.0  # MiB, for the ascii, sgr, and cjk workloads
 SCROLLBACK_WORST_TARGET = 16.0  # MiB
 DRAW_TARGETS = {"full": 25.0, "scroll": 10.0}  # ms, p50 of the UI thread's drawing
+RENDER_SCENARIOS = ["full", "scroll", "flood"]
 
 
 def parse_table(text):
@@ -84,18 +86,35 @@ def render(serial):
     adb("install", "-r", os.path.join(ROOT, "vtfx-sample", "build", "outputs", "apk", "benchmark", "vtfx-sample-benchmark.apk"))
     adb("shell", "svc", "power", "stayon", "true")
     adb("shell", "input", "keyevent", "KEYCODE_WAKEUP")
+    # Behind the lock screen the activity draws no frames. This dismisses a lock screen without a
+    # credential; a device with one has to be unlocked by hand.
+    adb("shell", "wm", "dismiss-keyguard")
     adb("logcat", "-c")
     adb("shell", "am", "start", "-S", "-W", "-n", "com.google.vtfx.sample/.MainActivity", "--ez", "benchmark", "true")
     deadline = time.time() + 300
     results = {}
-    while time.time() < deadline and len(results) < 3:
+    while time.time() < deadline and len(results) < len(RENDER_SCENARIOS):
         time.sleep(5)
         for line in adb("logcat", "-d", "-s", "VtfxRenderBenchmark:I", "-v", "raw").splitlines():
             if line.startswith("{"):
                 data = json.loads(line)
                 results[data["scenario"]] = data
+    check_renders(results)
     release = adb("shell", "getprop", "ro.build.version.release").strip()
-    return results, release
+    emulator = adb("shell", "getprop", "ro.kernel.qemu").strip() == "1"
+    device = "emulator" if emulator else adb("shell", "getprop", "ro.product.model").strip()
+    return results, f"{device}, Android {release}", emulator
+
+
+def check_renders(results):
+    """Fails unless RenderBenchmark reported every scene with frames, so that no result is marked
+    against a target without a measurement."""
+    missing = [scenario for scenario in RENDER_SCENARIOS if scenario not in results]
+    if missing:
+        sys.exit(f"RenderBenchmark reported no result for {', '.join(missing)}")
+    empty = [scenario for scenario in RENDER_SCENARIOS if results[scenario]["frames"] == 0]
+    if empty:
+        sys.exit(f"RenderBenchmark drew no frames in {', '.join(empty)}: is the screen on and unlocked?")
 
 
 def mark(ok):
@@ -111,7 +130,7 @@ def main():
 
     vtfx = vtfx_throughput()
     xterm = xterm_throughput(args.node) if args.node else {}
-    renders, release = ({}, None) if args.skip_emulator else render(args.serial)
+    renders, device, emulator = ({}, None, False) if args.skip_emulator else render(args.serial)
 
     commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip()
     cpu = re.search(r"model name\s*:\s*(.*)", open("/proc/cpuinfo").read())
@@ -142,7 +161,7 @@ def main():
         lines.append(f"| {name} | {mib:.1f} | ≤ {SCROLLBACK_TYPICAL_TARGET:.0f} | {mark(mib <= SCROLLBACK_TYPICAL_TARGET)} |")
     worst = float(vtfx["worst"][1])
     lines.append(f"| worst (every cell a different color) | {worst:.1f} | ≤ {SCROLLBACK_WORST_TARGET:.0f} | {mark(worst <= SCROLLBACK_WORST_TARGET)} |")
-    lines += ["", f"## Rendering (emulator, Android {release or '-'}, updates equivalent to 120 × 50 every 16 ms)", ""]
+    lines += ["", f"## Rendering ({device or '-'}, updates equivalent to 120 × 50 every 16 ms)", ""]
     if renders:
         lines += ["| Scene | UI thread drawing p50 (ms) | Whole frame p50 / p90 (ms) | Target (drawing p50) | Result |", "|---|---|---|---|---|"]
         for scenario, target in DRAW_TARGETS.items():
@@ -151,9 +170,10 @@ def main():
                 continue
             draw = float(data["drawP50"])
             lines.append(f"| {scenario} | {draw:.1f} | {data['p50']} / {data['p90']} | ≤ {target:.0f} | {mark(draw <= target)} |")
-        lines += ["", "The time of the whole frame includes rasterization on the emulator's software GPU (swiftshader), so it is not a guide for real devices."]
+        if emulator:
+            lines += ["", "The time of the whole frame includes rasterization on the emulator's software GPU (swiftshader), so it is not a guide for real devices."]
     else:
-        lines.append("Not measured on the emulator.")
+        lines.append("Not measured.")
     lines += ["", "## Output without a break (flood, docs/decisions/0089)", ""]
     flood = renders.get("flood")
     if flood:
