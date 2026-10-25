@@ -41,7 +41,7 @@ internal class LaunchOptions(
          * Reads the extras with [booleanExtra] and [stringExtra]. The activity is exported, so any
          * app can start it with them: only a [debuggable] build takes the one that logs what the
          * user types, and only a debuggable build or one [profileable] by the shell, as the
-         * benchmark build is, takes the one that runs the benchmark (docs/decisions/0067).
+         * benchmark build is, takes the one that runs the benchmark (docs/decisions/0089).
          */
         fun read(
             debuggable: Boolean,

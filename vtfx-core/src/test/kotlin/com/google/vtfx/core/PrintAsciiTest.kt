@@ -27,7 +27,7 @@ import org.junit.Test
 
 /**
  * Checks that [Emulator.printAscii], which writes plain text directly into the cells
- * (docs/decisions/0014), leaves the same state as printing each character with [Emulator.print].
+ * (docs/decisions/0089), leaves the same state as printing each character with [Emulator.print].
  */
 class PrintAsciiTest {
     /** Passes everything to [emulator], but prints ASCII one character at a time. */

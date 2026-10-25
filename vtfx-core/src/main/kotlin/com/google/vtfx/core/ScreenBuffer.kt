@@ -151,7 +151,7 @@ internal class Scrollback(val capacity: Int) {
         /**
          * The memory budget per line and per cell, by [CompactLine.estimatedBytes]: 15.8 MiB for
          * the default 10,000 lines of 120 columns, within the worst-case target of 16 MiB of
-         * docs/decisions/0014. Lines with a different color in every cell take about 1490 bytes at
+         * docs/decisions/0089. Lines with a different color in every cell take about 1490 bytes at
          * 120 columns, and text with a two-unit cluster in every cell about 1540, within the 1656
          * of the budget, so only lines with more (long clusters, or hyperlinks and colors in every
          * cell) make the scrollback keep fewer lines.

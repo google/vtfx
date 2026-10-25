@@ -16,7 +16,7 @@
 -->
 
 <!-- The benchmark build: profileable by the shell, which is how it takes the benchmark extra
-     without being debuggable (docs/decisions/0067). -->
+     without being debuggable (docs/decisions/0089). -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application>

@@ -54,7 +54,7 @@ import org.junit.runner.RunWith
 /**
  * Checks on a device that what the display shows matches the terminal state (docs/design/testing.md
  * section 8). The display draws with hardware acceleration, which caches the drawing of lines
- * (docs/decisions/0014); the reference draws the same snapshot on a software canvas, which does
+ * (docs/decisions/0089); the reference draws the same snapshot on a software canvas, which does
  * not. Each cell must have ink in both or in neither. Exact pixels are not compared, since the two
  * pipelines antialias text differently.
  *

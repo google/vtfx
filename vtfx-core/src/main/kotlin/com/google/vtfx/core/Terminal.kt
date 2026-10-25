@@ -324,7 +324,7 @@ public class Terminal(
         emulator.graphics.setCellSize(width, height)
     }
 
-    /** An estimate of the memory the scrollback takes, for benchmarks (docs/decisions/0014). */
+    /** An estimate of the memory the scrollback takes, for benchmarks (docs/decisions/0089). */
     internal fun estimatedScrollbackBytes(): Long = emulator.scrollback.estimatedBytes()
 
     /** The number of placements that the lines of the scrollback hold, for tests. */

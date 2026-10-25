@@ -32,7 +32,7 @@ android {
     buildTypes {
         // For scripts/benchmark.py: built as a release build, so that ART runs the app at the speed
         // of an app that users install, but signed with the debug key and profileable by the shell,
-        // which takes the benchmark extra (docs/decisions/0067).
+        // which takes the benchmark extra (docs/decisions/0089).
         create("benchmark") {
             initWith(getByName("release"))
             signingConfig = signingConfigs.getByName("debug")

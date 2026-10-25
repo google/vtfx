@@ -15,7 +15,7 @@
  */
 
 // Measures @xterm/headless with the workloads of vtfx-core's TerminalBenchmark, for comparing
-// vtfx with xterm.js on the same machine (docs/decisions/0014). xterm.js in a WebView parses
+// vtfx with xterm.js on the same machine (docs/decisions/0089). xterm.js in a WebView parses
 // with the same code, without the cost of the WebView.
 //
 // Usage: node xterm-headless.mjs RECORDINGS_DIR [SECONDS]

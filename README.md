@@ -46,7 +46,7 @@ The references (ctlseqs, DEC STD 070, and others) are stated explicitly, and the
 ### Native and lightweight
 
 - **No WebView.** Rendering and input are plain Compose and Android views, so there is no browser engine to start or to keep in sync with the IME.
-- **Measured performance.** Throughput, scrollback memory, and rendering time have explicit targets ([decisions/0014](docs/decisions/0014-performance.md)), and `scripts/benchmark.py` measures them, including a comparison with xterm.js on the same loads.
+- **Measured performance.** Throughput, scrollback memory, and rendering time have explicit targets ([decisions/0089](docs/decisions/0089-performance.md)), and `scripts/benchmark.py` measures them, including a comparison with xterm.js on the same loads.
 - **Any screen.** Rotation, multi-window, and foldables are handled as size changes: the screen reflows, and the host is notified once, not on every frame of the keyboard animation. Mice and touchpads work too.
 - **Accessible.** TalkBack reads the terminal row by row, and the rows are marked as sensitive data so that, on Android 14 and later, only accessibility tools see them.
 

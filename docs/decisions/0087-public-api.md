@@ -151,7 +151,7 @@ In xterm.js, addons (automatic links, search, shell integration, saving sessions
 | Following the display size | FitAddon | Built in (`Terminal`; section 3 of [session-and-threads.md](../design/session-and-threads.md)) |
 | Unicode widths and graphemes | Unicode11, UnicodeGraphemes | Built in (section 7 of [emulation.md](../design/emulation.md)) |
 | Connection with the host | AttachAddon | Built in (`HostConnection`, `feed`) |
-| Rendering method | WebGL, Canvas | Not needed ([0014](0014-performance.md)) |
+| Rendering method | WebGL, Canvas | Not needed ([0089](0089-performance.md)) |
 | Automatic URL links | WebLinksAddon, link provider | Built in; the app can also give text patterns and rules for converting them to URLs (topic 9) |
 | Link hover | link decorations, hover | Built in, for the mouse: the pointer icon changes over a link (section 3 of [compose-input.md](../design/compose-input.md)) |
 | Key interception by the app | `attachCustomKeyEventHandler` | A per-terminal means, `onPreImeKeyEvent` of `Terminal` (section 7.2 of [compose-input.md](../design/compose-input.md), [0085](0085-compose-interaction.md)) |

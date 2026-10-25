@@ -29,8 +29,8 @@ import java.util.Locale
 /**
  * Measures how long frames take while the terminal shows full-screen updates, as htop or a
  * scrolling build log does, and while the host prints output without a break, as `cat` of a large
- * file does (docs/decisions/0014, docs/decisions/0066). Started with the "benchmark" extra; the
- * results are logged with [TAG] for scripts/benchmark.py.
+ * file does (docs/decisions/0089). Started with the "benchmark" extra; the results are logged with
+ * [TAG] for scripts/benchmark.py.
  */
 class RenderBenchmark(private val activity: Activity, private val session: TerminalSession) {
     private val handler = Handler(Looper.getMainLooper())

@@ -38,7 +38,7 @@ tasks.test {
     systemProperty("vtfx.recordingsDir", "../recordings")
 }
 
-// Measures the throughput of the terminal model (docs/decisions/0014). Not part of the check:
+// Measures the throughput of the terminal model (docs/decisions/0089). Not part of the check:
 // timing depends on the machine. scripts/benchmark.py records the result.
 tasks.register<JavaExec>("benchmark") {
     description = "Measures how fast the terminal model interprets host output."

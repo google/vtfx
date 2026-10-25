@@ -23,7 +23,7 @@ import com.google.vtfx.core.Terminal
 import java.io.File
 
 /**
- * Measures how fast the terminal model interprets host output (docs/decisions/0014). Run with
+ * Measures how fast the terminal model interprets host output (docs/decisions/0089). Run with
  * `./gradlew :vtfx-core:benchmark`; not part of the check, since timing depends on the machine.
  *
  * Each workload is generated deterministically, written in chunks of 4 KiB as a host would deliver

@@ -338,7 +338,7 @@ class TerminalTest {
     fun scrollbackOfCombiningCharactersStaysWithinItsMemoryBudget() {
         // Every cell with as many combining characters as it keeps: the oldest lines go before
         // the line limit, so that the memory stays within 16 MiB for 10,000 lines of 120 columns
-        // (docs/decisions/0014).
+        // (docs/decisions/0089).
         val t = terminal(120, 24)
         val cell = "e" + "\u0301".repeat(Line.MAX_CLUSTER_LENGTH - 1)
         for (i in 0 until 10_024) t.write(cell.repeat(119) + "${i % 10}\r\n")
@@ -351,7 +351,7 @@ class TerminalTest {
 
     @Test
     fun scrollbackOfColorsInEveryCellKeepsAllItsLines() {
-        // The worst case of docs/decisions/0014 before clusters, which the budget leaves whole.
+        // The worst case of docs/decisions/0089 before clusters, which the budget leaves whole.
         val t = terminal(120, 24)
         val line = buildString {
             for (column in 0 until 120) append("\u001b[38;2;$column;1;2mx")

@@ -357,7 +357,7 @@ internal class Line(columns: Int, style: CellStyle = CellStyle.Default) {
     /**
      * Returns a compact, immutable copy for the scrollback: without the blank cells at the end,
      * with one style if all cells have the same, and with the clusters joined into one string
-     * (docs/decisions/0014). It keeps [anchors], which the caller took from this line.
+     * (docs/decisions/0089). It keeps [anchors], which the caller took from this line.
      */
     fun compact(anchors: Array<Placement>? = null): CompactLine {
         val end = contentEnd()

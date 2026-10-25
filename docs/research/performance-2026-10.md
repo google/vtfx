@@ -1,6 +1,6 @@
 # Performance optimizations and their effects (2026-10)
 
-A record of the optimizations made in 2026-10 to reach the performance targets of [decisions/0014](../decisions/0014-performance.md), and of what each gained when it was made. It is not kept up to date: `scripts/benchmark.py` measures the current values.
+A record of the optimizations made in 2026-10 to reach the performance targets of [decisions/0089](../decisions/0089-performance.md), and of what each gained when it was made. It is not kept up to date: `scripts/benchmark.py` measures the current values.
 
 ## Setup
 

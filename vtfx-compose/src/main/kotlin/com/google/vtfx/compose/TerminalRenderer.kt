@@ -70,7 +70,7 @@ internal class CellMetrics(val width: Float, val height: Float, val baseline: Fl
 /**
  * The paints for each combination of bold and italic, with the style's font, size, and locale. Text
  * is drawn with `Canvas.drawText`, without a text layout per run, which made frames slow
- * (docs/decisions/0014). The paints are mutated per run, so they are used on one thread.
+ * (docs/decisions/0089). The paints are mutated per run, so they are used on one thread.
  */
 internal class TextPaints(
     private val terminalStyle: TerminalStyle,
@@ -804,7 +804,7 @@ internal class TerminalRenderer(
 /**
  * The drawing of lines, recorded in `RenderNode`s and keyed by the lines' content, so that a frame
  * draws again only the lines that changed, even when they moved to another row by scrolling
- * (docs/decisions/0014). Nodes not used in the last two frames are released, and kept for reuse by
+ * (docs/decisions/0089). Nodes not used in the last two frames are released, and kept for reuse by
  * later lines, since a screen that changes entirely replaces every node on every frame.
  *
  * The renderer discards the display list of a node that a frame did not draw, so a node is recorded

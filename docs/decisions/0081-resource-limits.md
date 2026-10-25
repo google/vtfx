@@ -2,7 +2,7 @@
 
 - Status: Approved
 - Date: 2026-10-25
-- Related: Requirement 6.1 (resource exhaustion, unauthorized reading of the clipboard), Requirement 6.5 (safe defaults), section 8 of [REQUIREMENTS.md](../REQUIREMENTS.md) (the acceptable range and limits for resource exhaustion), sections 5 and 10 of [emulation.md](../design/emulation.md), section 4.1 of [gate-policy.md](../design/gate-policy.md), section 13 of [compose-input.md](../design/compose-input.md), [0083](0083-gate.md), [0079](0079-emulation-scope.md), [0014](0014-performance.md), [0087](0087-public-api.md), [0080](0080-kitty-graphics.md), [0088](0088-build-boundaries-and-tests.md), [0085](0085-compose-interaction.md)
+- Related: Requirement 6.1 (resource exhaustion, unauthorized reading of the clipboard), Requirement 6.5 (safe defaults), section 8 of [REQUIREMENTS.md](../REQUIREMENTS.md) (the acceptable range and limits for resource exhaustion), sections 5 and 10 of [emulation.md](../design/emulation.md), section 4.1 of [gate-policy.md](../design/gate-policy.md), section 13 of [compose-input.md](../design/compose-input.md), [0083](0083-gate.md), [0079](0079-emulation-scope.md), [0089](0089-performance.md), [0087](0087-public-api.md), [0080](0080-kitty-graphics.md), [0088](0088-build-boundaries-and-tests.md), [0085](0085-compose-interaction.md)
 
 ## Background
 
@@ -57,12 +57,12 @@ The id of OSC 8 is limited as well as the URI, and a link with a longer id is no
 
 The scrollback has a memory budget besides its number of lines, which scales with the number of lines and the width (section 10.2 of [emulation.md](../design/emulation.md)).
 
-**Why.** A cell can hold 32 UTF-16 units, so lines full of combining characters take about 7 times the memory of lines with a color in every cell, and more on a wide display: the number of lines and the columns alone do not bound the memory to the target of [0014](0014-performance.md). The budget is set so that lines with a color in every cell, and text with a two-unit cluster in every cell as in Indic scripts, keep all their lines; output with long clusters, or with a hyperlink and a color in every cell, keeps fewer.
+**Why.** A cell can hold 32 UTF-16 units, so lines full of combining characters take about 7 times the memory of lines with a color in every cell, and more on a wide display: the number of lines and the columns alone do not bound the memory to the target of [0089](0089-performance.md). The budget is set so that lines with a color in every cell, and text with a two-unit cluster in every cell as in Indic scripts, keep all their lines; output with long clusters, or with a hyperlink and a color in every cell, keeps fewer.
 
 **Alternatives considered.**
 - **Lower the 32 units per cell**: would break long emoji sequences and still exceed the target.
 - **Drop the combining characters of old lines over the budget**: would keep the count of lines but lose their content.
-- **Revise the target of [0014](0014-performance.md)**: would leave wide displays with hundreds of MiB.
+- **Revise the target of [0089](0089-performance.md)**: would leave wide displays with hundreds of MiB.
 
 **Impact of reversing.** As in topic 1.
 
