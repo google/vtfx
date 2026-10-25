@@ -111,7 +111,7 @@ internal class Emulator(
 
     /** The window title that the host set last (OSC 0 and 2). Untrusted text. */
     private var title = ""
-    private val savedTitles = TitleStack(MAX_SAVED_TITLES, limits.maxStringLength)
+    private val savedTitles = TitleStack(MAX_SAVED_TITLES)
 
     /** Images of the kitty graphics protocol (docs/decisions/0080), one layer per screen. */
     val graphics = Graphics(limits.maxImageBytes.toLong()) { reply(it) }

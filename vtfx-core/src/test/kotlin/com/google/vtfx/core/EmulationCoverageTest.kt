@@ -630,8 +630,8 @@ class EmulationCoverageTest {
         }
 
         @Test
-        fun theSavedTitlesTogetherAreNoLongerThanAString() {
-            // Each title fits in the string limit, but the two of them together do not.
+        fun theSavedTitlesTogetherMayBeLongerThanAString() {
+            // Each title fits in the string limit, and the two of them together do not.
             val t = terminal(limits = TerminalLimits(maxStringLength = 100))
             t.setTitle("a".repeat(60))
             t.write("\u001b[22;2t")
@@ -640,7 +640,7 @@ class EmulationCoverageTest {
             t.setTitle("z")
             events.clear()
             t.write("\u001b[23;2t\u001b[23;2t")
-            assertEquals(listOf("b".repeat(60)), titles())
+            assertEquals(listOf("b".repeat(60), "a".repeat(60)), titles())
         }
     }
 

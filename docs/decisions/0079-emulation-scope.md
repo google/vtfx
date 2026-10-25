@@ -74,7 +74,7 @@ The deviations are in section 5 of [emulation.md](../design/emulation.md).
 
 **Why.**
 - **OSC 52 data that is not base64 is ignored** rather than clearing the selection: it is safer not to act on malformed input.
-- **The REP count, the string limit, and the depth and length of the title stack** follow the resource limits ([0081](0081-resource-limits.md)).
+- **The REP count and the string limit** follow the resource limits ([0081](0081-resource-limits.md)).
 - **1 of XTWINOPS 22 and 23 does nothing**, as in VTE: vtfx has no icon name, so it does not add invisible state. With usage like vim's, the resulting title is the same as in xterm.
 - **DECSCUSR 0 returns to the app's default** rather than a blinking block, for the customizability of requirement 6.5. VTE, kitty, and Windows Terminal also take 0 as "return to the default".
 

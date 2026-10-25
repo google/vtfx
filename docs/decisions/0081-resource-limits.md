@@ -27,7 +27,7 @@ Section 10.1 of [emulation.md](../design/emulation.md) describes the policy, and
 
 ## 2. Strings
 
-OSC, DCS, and APC strings beyond the string limit are dropped whole, and string lengths are counted in UTF-16 units. The saved titles (XTWINOPS 22) are limited in their total length as well as in their count. Section 10.2 of [emulation.md](../design/emulation.md) gives the limits, and section 5 the deviations from the references.
+OSC, DCS, and APC strings beyond the string limit are dropped whole, and string lengths are counted in UTF-16 units. Section 10.2 of [emulation.md](../design/emulation.md) gives the limits, and section 5 the deviations from the references.
 
 **Why.**
 - Dropping a string whole keeps it from being executed with a meaning that the host did not send.
@@ -79,12 +79,14 @@ Sections 5 and 10.2 of [emulation.md](../design/emulation.md) describe the resul
 - Cutting rather than dropping keeps the start of a long title, such as a long working directory, which is the part a user reads.
 - Bidirectional controls and line breaks let the host make the title read differently from its characters, for example to spoof a file name or the host name that a user checks in the title. C1 controls are removed in the title whatever the parser does with OSC strings. Otherwise each app would have to know to clean the title up, against requirement 6.5 (safe defaults).
 - The characters are removed rather than replaced, since a replacement character shows nothing more to the user. ZWJ and variation selectors are part of emoji, and the zero-width characters do not reorder or break the text, so they stay.
+- Since every title is cut, the 10 saved titles (XTWINOPS 22, as in xterm) hold at most 10 Ki UTF-16 units, and need no limit of their own on their total length.
 
 **Alternatives considered.**
 - **Document the length and the characters, and leave the cleaning to the app**: the smallest change, but every app that shows the title would need the same code, and the default would still be unsafe.
 - **Drop a title over the limit**, as for strings over the string limit: a long title would leave the previous one in place, which is more confusing than a cut one. The string limit drops the whole string because a cut control string could do something else (topic 2); a cut title is still a title.
 - **A limit in `TerminalLimits`**: no app has needed another value, and a parameter can be added later ([0087](0087-public-api.md)).
 - **Remove all format characters (Cf)**: would break emoji sequences with ZWJ in titles, which some prompts use.
+- **Also limit the total length of the saved titles to the string limit**: it would matter only to an app that sets `maxStringLength` below 10240, and would drop saved titles that vim restores at exit, while the memory it saves is at most 20 KiB.
 
 **Impact of reversing.** Remove the cleaning in `Emulator.setTitle` (or its caller for OSC 0 and 2), the row of the table in section 10.2 of emulation.md, the line in section 5, and the tests in `EmulationCoverageTest`. Apps that rely on the cleaned title would need their own.
 
