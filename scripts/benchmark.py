@@ -47,6 +47,10 @@ THROUGHPUT_RATIO_TARGET = 2.0  # times xterm.js on the same machine
 SCROLLBACK_TYPICAL_TARGET = 5.0  # MiB, for the ascii, sgr, and cjk workloads
 SCROLLBACK_WORST_TARGET = 16.0  # MiB
 DRAW_TARGETS = {"full": 25.0, "scroll": 10.0}  # ms, p50 of the UI thread's drawing
+# Targets of the flood scene on the reference device, a Pixel XL (docs/decisions/0089).
+FLOOD_FPS_TARGET = 0.8  # frames per second, as a share of the refresh rate
+FLOOD_JANKY_TARGET = 35.0  # %
+FLOOD_THROUGHPUT_TARGET = 0.75  # the throughput with the display, as a share of that without one
 RENDER_SCENARIOS = ["full", "scroll", "flood"]
 
 
@@ -181,13 +185,25 @@ def main():
             "Colored log lines fed from another thread in writes of 16 KiB for 5 s. Every frame shows new rows, so a frame is",
             "due at every vsync. Janky: the share of frames longer than the refresh interval. Without a display: the same",
             "output into a session that no display shows, on the same device.",
-            "No target yet (docs/review-queue.md).",
+            "The targets are for the reference device, a Pixel XL; on other devices, the results are for reference.",
             "",
             "| Refresh (Hz) | Frames per second | Janky | Whole frame p50 / p90 / p99 (ms) | UI thread drawing p50 / p90 (ms) | "
             "Throughput (MB/s) | Without a display (MB/s) |",
             "|---|---|---|---|---|---|---|",
             f"| {flood['refreshRate']} | {flood['fps']} | {flood['janky']} % | {flood['p50']} / {flood['p90']} / "
             f"{flood['p99']} | {flood['drawP50']} / {flood['drawP90']} | {flood['mbps']} | {flood['headlessMbps']} |",
+            "",
+            "| Value | Measured | Target | Result |",
+            "|---|---|---|---|",
+        ]
+        fps = float(flood["fps"]) / float(flood["refreshRate"])
+        janky = float(flood["janky"])
+        throughput = float(flood["mbps"]) / float(flood["headlessMbps"])
+        lines += [
+            f"| Frames per second / refresh rate | {fps:.0%} | ≥ {FLOOD_FPS_TARGET:.0%} | {mark(fps >= FLOOD_FPS_TARGET)} |",
+            f"| Janky | {janky:.1f} % | ≤ {FLOOD_JANKY_TARGET:.0f} % | {mark(janky <= FLOOD_JANKY_TARGET)} |",
+            f"| Throughput / without a display | {throughput:.0%} | ≥ {FLOOD_THROUGHPUT_TARGET:.0%} | "
+            f"{mark(throughput >= FLOOD_THROUGHPUT_TARGET)} |",
         ]
     else:
         lines.append("Not measured.")

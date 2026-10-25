@@ -140,9 +140,11 @@ One line of JSON appears per `scenario` (`full`: the whole screen changes every 
 | `drawP50` of `full` (UI thread drawing) | ≤ 25 ms |
 | `drawP50` of `scroll` | ≤ 10 ms |
 | `p50` (whole frame) | Around 16 ms (on a 60 Hz device). Not a target; look at it for reference |
-| `fps` and `janky` of `flood` (frames per second, and the share of frames longer than the refresh interval), and `mbps` against `headlessMbps` | No target yet; look at them for reference |
+| `fps` and `janky` of `flood` (frames per second, and the share of frames longer than the refresh interval), and `mbps` against `headlessMbps` | On a Pixel XL, the reference device: `fps` ≥ 80 % of the refresh rate, `janky` ≤ 35 %, `mbps` ≥ 75 % of `headlessMbps`. On other devices, for reference |
 
 What to tell us: the device model and Android version, and the JSON lines output.
+
+Checked on a Pixel XL (Android 10, 60 Hz) on 2026-10-25, in two runs: `drawP50` of `full` 6.6 and 6.9 ms, of `scroll` 1.7 and 1.6 ms, with `p50` of the whole frame 14.5 and 15.3 ms in `full`; `flood` at 52.4 and 51.2 frames per second, with 27.5 % and 29.7 % janky frames, and 85 % and 88 % of the throughput without a display. Printing a large file over SSH, below, was not checked.
 
 The `flood` scene measures the frames while output comes without a break, but not input. Also have the host print a large file without a break (for example `cat` of a file of several MB over SSH), and tell us whether the display keeps scrolling smoothly and keys typed meanwhile reach the host without a long delay ([decisions/0084](decisions/0084-session-and-threads.md)).
 
