@@ -34,6 +34,33 @@ The options not taken, and why.
 What would need to change if this decision were reversed.
 ```
 
+A decision that covers an area holds several numbered topics, each with what was decided, why, the alternatives, and the impact of reversing:
+
+```markdown
+# <Title naming the area>
+
+- Status: Provisional | Approved
+- Date: YYYY-MM-DD
+- Related: <links to requirement sections, documents, other decisions>
+
+## Background
+
+What the area needed to decide, and its constraints.
+
+## 1. <Topic>
+
+What was decided. Link to the sections of the design documents that describe the result.
+
+**Why.** The reasons.
+
+**Alternatives considered.**
+- **<Option>**: why not.
+
+**Impact of reversing.** What would need to change.
+```
+
+Code and documents cite such a decision as a whole, or by topic (`topic 2 of [NNNN](...)`). A new topic is added at the end, so that the numbers of the topics stay.
+
 The status is for the whole decision. The status of every decision written by an agent is "Provisional". Only a human sets it to "Approved", except that a merge or a rewrite that keeps the meaning of everything it carries over keeps "Approved" when every decision it carries over was approved ([0078](0078-decisions-hold-current-reasons.md)).
 
 ## Changing a decision
