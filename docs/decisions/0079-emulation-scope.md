@@ -2,7 +2,7 @@
 
 - Status: Approved
 - Date: 2026-10-25
-- Related: Requirements 4.2, 5.1, 5.2, 5.4, 6.1, 6.2, 6.5, and section 8 of [REQUIREMENTS.md](../REQUIREMENTS.md), sections 1 to 8 and 9.7 of [emulation.md](../design/emulation.md), sections 2 to 4 of [compose-input.md](../design/compose-input.md), section 3 of [gate-policy.md](../design/gate-policy.md), [fonts.md](../design/fonts.md), [conformance-references.md](../research/conformance-references.md), [terminal-comparison-2026-10.md](../research/terminal-comparison-2026-10.md), [0002](0002-resource-limits.md), [0005](0005-key-bytes-through-gate.md), [0014](0014-performance.md), [0029](0029-import-without-gradle.md), [0031](0031-desktop-pointer-and-terminal-state.md), [0032](0032-keys-and-layout.md), [0080](0080-kitty-graphics.md), [0047](0047-search.md), [0070](0070-kitty-keyboard-protocol.md)
+- Related: Requirements 4.2, 5.1, 5.2, 5.4, 6.1, 6.2, 6.5, and section 8 of [REQUIREMENTS.md](../REQUIREMENTS.md), sections 1 to 8 and 9.7 of [emulation.md](../design/emulation.md), sections 2 to 4 of [compose-input.md](../design/compose-input.md), section 3 of [gate-policy.md](../design/gate-policy.md), [fonts.md](../design/fonts.md), [conformance-references.md](../research/conformance-references.md), [terminal-comparison-2026-10.md](../research/terminal-comparison-2026-10.md), [0081](0081-resource-limits.md), [0005](0005-key-bytes-through-gate.md), [0014](0014-performance.md), [0029](0029-import-without-gradle.md), [0031](0031-desktop-pointer-and-terminal-state.md), [0032](0032-keys-and-layout.md), [0080](0080-kitty-graphics.md), [0047](0047-search.md), [0070](0070-kitty-keyboard-protocol.md)
 
 ## Background
 
@@ -74,7 +74,7 @@ The deviations are in section 5 of [emulation.md](../design/emulation.md).
 
 **Why.**
 - **OSC 52 data that is not base64 is ignored** rather than clearing the selection: it is safer not to act on malformed input.
-- **The REP count, the string limit, and the depth and length of the title stack** follow the resource limits ([0002](0002-resource-limits.md)).
+- **The REP count, the string limit, and the depth and length of the title stack** follow the resource limits ([0081](0081-resource-limits.md)).
 - **1 of XTWINOPS 22 and 23 does nothing**, as in VTE: vtfx has no icon name, so it does not add invisible state. With usage like vim's, the resulting title is the same as in xterm.
 - **DECSCUSR 0 returns to the app's default** rather than a blinking block, for the customizability of requirement 6.5. VTE, kitty, and Windows Terminal also take 0 as "return to the default".
 
@@ -126,7 +126,7 @@ The resulting behavior is in section 8 of [emulation.md](../design/emulation.md)
 3. **The cursor's text color**: `TerminalColors.cursorText` sets the color of the text under a focused block cursor, and its default keeps the earlier behavior (the default background color). The host cannot set it.
 
 **Why.**
-1. The 64 bits of `CellStyle` are full: 26 bits for each of the two colors, 3 for the underline style, and 8 flags leave one bit, while a color takes 26. The side array costs 4 bytes per cell, only in lines that use the color; the scrollback's budget ([0002](0002-resource-limits.md)) counts it, so the worst case stays within the budget, and such lines keep fewer lines, as lines with hyperlinks do. Output without SGR 58 pays one null check per written cell, and nothing in the comparison of lines without arrays, so the speed of plain text ([0014](0014-performance.md)) is unaffected beyond that check. Storing the color only while the rendition underlines means that a color left set after the underline ends (common, since `SGR 24` does not reset it) takes no memory, and a cell does not carry a color it does not show.
+1. The 64 bits of `CellStyle` are full: 26 bits for each of the two colors, 3 for the underline style, and 8 flags leave one bit, while a color takes 26. The side array costs 4 bytes per cell, only in lines that use the color; the scrollback's budget ([0081](0081-resource-limits.md)) counts it, so the worst case stays within the budget, and such lines keep fewer lines, as lines with hyperlinks do. Output without SGR 58 pays one null check per written cell, and nothing in the comparison of lines without arrays, so the speed of plain text ([0014](0014-performance.md)) is unaffected beyond that check. Storing the color only while the rendition underlines means that a color left set after the underline ends (common, since `SGR 24` does not reset it) takes no memory, and a cell does not carry a color it does not show.
 2. Apps that underline a whole row (vim's `cursorline`, status lines) show it to the end, and runs of different styles line up.
 3. The text under a block cursor was always drawn in the default background color, which an app could not change. Setting colors with OSC 10 to 12 remains unsupported (topic 3).
 

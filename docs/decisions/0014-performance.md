@@ -1,6 +1,6 @@
 # Performance targets
 
-- Status: Approved (2026-10-13, approved by a human in the final review. On 2026-10-14, the worst case of scrollback memory was extended to all output, with the budget of [0002](0002-resource-limits.md))
+- Status: Approved (2026-10-13, approved by a human in the final review. On 2026-10-14, the worst case of scrollback memory was extended to all output, with the budget of [0081](0081-resource-limits.md))
 - Date: 2026-10-12
 - Related: Requirement 6.2, section 8 (performance targets), `scripts/benchmark.py`
 
@@ -22,7 +22,7 @@ Requirement 6.2 asks for being more efficient than WebView with xterm.js, and fo
 | Item | Target |
 |---|---|
 | Throughput | ASCII ≥ 120 MB/s, SGR ≥ 40 MB/s, Japanese ≥ 70 MB/s, recordings of real apps ≥ 30 MB/s. And each at least 2 times xterm.js (headless) |
-| Scrollback memory | 10,000 lines ≤ 5 MiB for typical output, and ≤ 16 MiB even in the worst case: any output, kept within it by the memory budget of the scrollback ([0002](0002-resource-limits.md)); with a different color in every one of 120 cells, all 10,000 lines are kept |
+| Scrollback memory | 10,000 lines ≤ 5 MiB for typical output, and ≤ 16 MiB even in the worst case: any output, kept within it by the memory budget of the scrollback ([0081](0081-resource-limits.md)); with a different color in every one of 120 cells, all 10,000 lines are kept |
 | Rendering (UI thread, p50) | ≤ 25 ms in the scene where the whole screen changes every time, ≤ 10 ms in the scene where a log flows |
 
 `scripts/benchmark.py` measures all of them and compares them with these targets; the targets are its constants. The targets were set from measurements on the development machine's JVM and on the emulator. They have not been checked on real devices (ART); checking the rendering on a real device is in section 5 of [device-checks.md](../device-checks.md). The optimizations made to reach the targets, and what each gained, are recorded in [research/performance-2026-10.md](../research/performance-2026-10.md).

@@ -36,7 +36,7 @@ public sealed interface TerminalEvent {
     /**
      * OSC 0 or 2 set the window title, or XTWINOPS 23 restored a saved one. [title] is untrusted
      * text from the host, at most 1024 UTF-16 units long, without control, line separator, and
-     * bidirectional formatting characters (docs/decisions/0063).
+     * bidirectional formatting characters (docs/decisions/0081).
      */
     @InternalVtfxApi public data class TitleChanged(val title: String) : TerminalEvent
 

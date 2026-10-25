@@ -472,7 +472,7 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
  * Each read holds the session's lock only for a part of the scrollback, so output may scroll the
  * terminal between two reads, and faster than they go. So that a redraw ends, it reads at most
  * about twice the lines that the terminal kept at the first read, and leaves the rest to the next
- * redraw, which the output brings (docs/decisions/0062).
+ * redraw, which the output brings (docs/decisions/0081).
  */
 internal fun readSearchLines(
     index: SearchIndex,

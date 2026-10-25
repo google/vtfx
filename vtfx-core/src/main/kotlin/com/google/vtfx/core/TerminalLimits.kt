@@ -16,7 +16,7 @@
 
 package com.google.vtfx.core
 
-// The defaults are chosen in docs/decisions/0002.
+// The defaults are chosen in docs/decisions/0081.
 /**
  * Bounds on the resources that host output can make the terminal use. Input beyond a limit is
  * dropped. Immutable.

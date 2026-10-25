@@ -43,7 +43,7 @@ public class TerminalGate(
      * replies to queries and decides on clipboard requests. Events without external effects (title,
      * bell) are ignored. Of the clipboard writes, only the last that is allowed is performed, so
      * that the host cannot make the system clipboard change, and show its preview, many times at
-     * once (docs/decisions/0059). A read after an allowed write is answered with the text of the
+     * once (docs/decisions/0081). A read after an allowed write is answered with the text of the
      * latest allowed write before it, as if each write had been performed, rather than with the
      * clipboard from before the events.
      */
@@ -84,7 +84,7 @@ public class TerminalGate(
     /**
      * Returns whether [c] must not be in text that the host puts on the clipboard: a control other
      * than HT, LF, and CR, which pasted into another app could run commands there, or a bidi
-     * control, which reorders the text that the clipboard preview shows (docs/decisions/0059).
+     * control, which reorders the text that the clipboard preview shows (docs/decisions/0081).
      */
     private fun isHidingInClipboard(c: Char): Boolean =
         (c < ' ' && c != '\t' && c != '\n' && c != '\r') ||
@@ -95,7 +95,7 @@ public class TerminalGate(
      * Replies with OSC 52, built by [Replies], and returns whether it replied. The reply carries
      * text only if [withText], for the first read of a write of host output, and the text is no
      * longer than [GatePolicy.maxClipboardReadLength]; otherwise it is empty, so that what the gate
-     * sends stays proportional to the host's output (docs/decisions/0059). The text is [written],
+     * sends stays proportional to the host's output (docs/decisions/0081). The text is [written],
      * that of an allowed write before the read in the same write of host output, if there is one,
      * and otherwise the clipboard's.
      */

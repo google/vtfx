@@ -553,7 +553,7 @@ internal class Graphics(
         const val DEFAULT_CELL_WIDTH = 10
         const val DEFAULT_CELL_HEIGHT = 20
 
-        /** The largest width or height of an image, as in kitty (docs/decisions/0002). */
+        /** The largest width or height of an image, as in kitty (docs/decisions/0081). */
         const val MAX_SIDE = 10000L
 
         /**
@@ -562,7 +562,7 @@ internal class Graphics(
          */
         const val MAX_BYTES_PER_IMAGE = 64L * 1024 * 1024
 
-        /** The most images and placements of a screen (docs/decisions/0002). */
+        /** The most images and placements of a screen (docs/decisions/0081). */
         const val MAX_IMAGES = 1024
         const val MAX_PLACEMENTS = 1024
 

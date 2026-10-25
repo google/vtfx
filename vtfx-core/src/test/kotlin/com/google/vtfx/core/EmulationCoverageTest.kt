@@ -644,7 +644,7 @@ class EmulationCoverageTest {
         }
     }
 
-    /** The length and the characters of the window title (docs/decisions/0063). */
+    /** The length and the characters of the window title (docs/decisions/0081). */
     class Titles : EventRecorder by TerminalEvents() {
         private fun titles() =
             events.filterIsInstance<TerminalEvent.TitleChanged>().map { it.title }

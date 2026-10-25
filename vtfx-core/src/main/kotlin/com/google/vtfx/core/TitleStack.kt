@@ -20,7 +20,7 @@ package com.google.vtfx.core
  * The window titles saved by XTWINOPS 22, for XTWINOPS 23 to restore. Holds at most [maxDepth]
  * titles, at most [maxLength] UTF-16 code units in all, dropping the oldest to make room. The total
  * bounds the memory to one string of the longest OSC, which a title alone can already use; the
- * depth alone would let the host keep [maxDepth] of them (docs/decisions/0002).
+ * depth alone would let the host keep [maxDepth] of them (docs/decisions/0081).
  */
 internal class TitleStack(private val maxDepth: Int, private val maxLength: Int) {
     private val titles = ArrayDeque<String>()

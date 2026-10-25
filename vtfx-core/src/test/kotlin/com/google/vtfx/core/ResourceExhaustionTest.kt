@@ -29,7 +29,7 @@ import org.junit.runner.RunWith
 
 /**
  * Resource exhaustion by host output, an attack class of requirement 6.1, with the limits of
- * docs/decisions/0002: hostile output must take time linear in its length, with work per byte
+ * docs/decisions/0081: hostile output must take time linear in its length, with work per byte
  * bounded by the screen size, and memory within the limits.
  *
  * Each case repeats a hostile sequence up to [INPUT_BYTES]. The limit on the CPU time is far above

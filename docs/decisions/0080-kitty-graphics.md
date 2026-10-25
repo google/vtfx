@@ -2,7 +2,7 @@
 
 - Status: Approved
 - Date: 2026-10-25
-- Related: Requirements 4.1, 4.2, 5.1, 6.1, 6.2, and 6.5, sections 9 and 10 of [emulation.md](../design/emulation.md), section 3 of [gate-policy.md](../design/gate-policy.md), section 4.5 of [boundaries.md](../design/boundaries.md), section 3.1 of [session-and-threads.md](../design/session-and-threads.md), [0079](0079-emulation-scope.md), [0002](0002-resource-limits.md), [0006](0006-gate-defaults.md), [0079](0079-emulation-scope.md), [0013](0013-resize-and-lifecycle.md), [0014](0014-performance.md), [0036](0036-adding-parameters.md), the kitty documentation (`graphics-protocol.rst`, kitty 0.48), [research/kitty-graphics-programs.md](../research/kitty-graphics-programs.md)
+- Related: Requirements 4.1, 4.2, 5.1, 6.1, 6.2, and 6.5, sections 9 and 10 of [emulation.md](../design/emulation.md), section 3 of [gate-policy.md](../design/gate-policy.md), section 4.5 of [boundaries.md](../design/boundaries.md), section 3.1 of [session-and-threads.md](../design/session-and-threads.md), [0079](0079-emulation-scope.md), [0081](0081-resource-limits.md), [0006](0006-gate-defaults.md), [0079](0079-emulation-scope.md), [0013](0013-resize-and-lifecycle.md), [0014](0014-performance.md), [0036](0036-adding-parameters.md), the kitty documentation (`graphics-protocol.rst`, kitty 0.48), [research/kitty-graphics-programs.md](../research/kitty-graphics-programs.md)
 
 ## Background
 
@@ -45,7 +45,7 @@ PNG is decoded in Kotlin by vtfx-core, not by Android's decoders, and its colors
 
 `TerminalLimits.maxImageBytes` bounds the images of both screens together (sections 9.4 and 10.2 of [emulation.md](../design/emulation.md)).
 
-**Why.** The memory of images is then bounded by one value; kitty has one quota per screen. Commands that look at every placement do work up to the number of placements, 1024, for a few bytes of output, below the size of a screen of cells that [0002](0002-resource-limits.md) allows.
+**Why.** The memory of images is then bounded by one value; kitty has one quota per screen. Commands that look at every placement do work up to the number of placements, 1024, for a few bytes of output, below the size of a screen of cells that [0081](0081-resource-limits.md) allows.
 
 **Alternatives considered.**
 - **One quota per screen, as kitty**: the memory would be bounded by twice the setting, which is harder to explain.

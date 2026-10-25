@@ -88,12 +88,12 @@ The reasons for each are in [decisions/0079](../decisions/0079-emulation-scope.m
 | Item | Reference | vtfx | Reason |
 |---|---|---|---|
 | OSC 52 data that is not base64 | xterm clears the selection | Ignored | [decisions/0079](../decisions/0079-emulation-scope.md) |
-| REP count | No limit | Up to the number of cells on the screen | [decisions/0002](../decisions/0002-resource-limits.md) |
-| OSC, DCS, and APC beyond the string limit | Not specified | The whole string is dropped | [decisions/0002](../decisions/0002-resource-limits.md) |
+| REP count | No limit | Up to the number of cells on the screen | [decisions/0081](../decisions/0081-resource-limits.md) |
+| OSC, DCS, and APC beyond the string limit | Not specified | The whole string is dropped | [decisions/0081](../decisions/0081-resource-limits.md) |
 | 1 of XTWINOPS 22, 23 (icon name only) | Pushes an entry with only the icon name. Pop takes the top entry and fills missing values from the entries below | Does nothing, as in VTE. 0 and 2 push only the title. With usage like vim's, which saves and restores the title and the icon name separately, the resulting title is the same as in xterm | [decisions/0079](../decisions/0079-emulation-scope.md) |
-| Limit of the title stack | A ring of 10 | 10, and a total length up to the string limit; beyond that, the oldest are dropped | [decisions/0002](../decisions/0002-resource-limits.md) |
+| Limit of the title stack | A ring of 10 | 10, and a total length up to the string limit; beyond that, the oldest are dropped | [decisions/0081](../decisions/0081-resource-limits.md) |
 | DECSCUSR 0 | Blinking block (ctlseqs) | Returns to the app's default (`TerminalStyle.cursorShape`, `cursorBlinking`), as in VTE, kitty, and Windows Terminal. RIS does the same. The app's default is shown until the host sets DECSCUSR 1–6 or mode 12 | [decisions/0079](../decisions/0079-emulation-scope.md) |
-| Window title (OSC 0, 2) | Passed as sent | Cut to 1024 UTF-16 units, without C0 and C1 controls, DEL, U+2028, U+2029, and the bidirectional formatting characters, so that an app can show it outside the terminal | [decisions/0063](../decisions/0063-window-title-limits.md) |
+| Window title (OSC 0, 2) | Passed as sent | Cut to 1024 UTF-16 units, without C0 and C1 controls, DEL, U+2028, U+2029, and the bidirectional formatting characters, so that an app can show it outside the terminal | [decisions/0081](../decisions/0081-resource-limits.md) |
 
 The deviations of the syntax are in section 2.
 
@@ -245,7 +245,7 @@ vtfx implements the kitty graphics protocol (kitty 0.48) with direct transmissio
 
 ## 10. Resource limits
 
-Host output is untrusted (requirement 6.1). The policy and the reasons for each limit are in [decisions/0002](../decisions/0002-resource-limits.md); the limits of images are explained in [decisions/0080](../decisions/0080-kitty-graphics.md).
+Host output is untrusted (requirement 6.1). The policy and the reasons for each limit are in [decisions/0081](../decisions/0081-resource-limits.md); the limits of images are explained in [decisions/0080](../decisions/0080-kitty-graphics.md).
 
 ### 10.1 Policy
 

@@ -45,7 +45,7 @@ internal constructor(
  *
  * Finding the links in use visits every cell of the screens and the scrollback, so it is done at
  * most once per [capacity] / 2 requests for new links. Otherwise a host could make every short OSC
- * 8 sequence visit the whole scrollback (docs/decisions/0002).
+ * 8 sequence visit the whole scrollback (docs/decisions/0081).
  */
 internal class HyperlinkTable(private val capacity: Int) {
     private val byId = HashMap<Int, Hyperlink>()

@@ -23,7 +23,7 @@ import com.google.vtfx.core.graphics.Placement
  * memory budget for [capacity] lines of the current width: [BYTES_PER_LINE] for each line and
  * [BYTES_PER_CELL] for each of its cells. Lines whose cells take more, such as cells full of
  * combining characters, make the oldest lines go before the scrollback has [capacity] of them
- * (docs/decisions/0002).
+ * (docs/decisions/0081).
  */
 internal class Scrollback(val capacity: Int) {
     private val lines = ArrayDeque<CompactLine>()

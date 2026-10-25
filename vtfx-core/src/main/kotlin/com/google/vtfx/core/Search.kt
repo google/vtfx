@@ -282,7 +282,7 @@ private constructor(
  * The most rows that a search joins into one text. A line that autowrap joins through more rows is
  * searched in parts of this many rows from where the search started reading it, and a match does
  * not go from one part to the next. So a line that wraps through the whole scrollback, which the
- * host decides, does not make each update read and search all of it again (docs/decisions/0062).
+ * host decides, does not make each update read and search all of it again (docs/decisions/0081).
  */
 internal const val MAX_SEARCH_TEXT_ROWS = 100
 

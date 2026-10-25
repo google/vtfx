@@ -31,7 +31,7 @@ internal class PngSize(val width: Int, val height: Int)
 /**
  * Decodes PNG images (ISO/IEC 15948, the W3C PNG specification) in pure Kotlin.
  *
- * The images come from the host and are untrusted (docs/decisions/0002). The platform's image
+ * The images come from the host and are untrusted (docs/decisions/0081). The platform's image
  * decoders are not used, so that no native code parses them and decoding is deterministic and can
  * be fuzzed on the JVM. No input throws: anything wrong is [Result.Malformed]. The size is checked
  * against the caller's limit from the IHDR chunk before anything large is allocated, and the only

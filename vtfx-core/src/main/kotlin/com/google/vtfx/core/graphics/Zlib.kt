@@ -22,7 +22,7 @@ import java.util.zip.Inflater
 /**
  * Inflates zlib data (RFC 1950) from the host with a limit on the output.
  *
- * The data is untrusted (docs/decisions/0002): a few kilobytes can inflate to gigabytes. The output
+ * The data is untrusted (docs/decisions/0081): a few kilobytes can inflate to gigabytes. The output
  * buffer starts small and grows geometrically up to the limit, so that a large limit costs nothing
  * for small data, and inflating stops as soon as the output would exceed the limit. The largest
  * buffer is the limit itself.

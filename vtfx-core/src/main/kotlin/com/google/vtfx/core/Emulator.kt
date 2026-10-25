@@ -513,7 +513,7 @@ internal class Emulator(
             }
             'Z' -> backwardTab(n)
             // Repeating more than a screenful only scrolls, so the count is bounded to keep a few
-            // bytes from costing unbounded work (docs/decisions/0002).
+            // bytes from costing unbounded work (docs/decisions/0081).
             'b' -> if (lastPrinted >= 0) repeatLastPrinted(minOf(n, columns * rows))
             'c' -> if (params[0] == 0) reply(TerminalQuery.PrimaryDeviceAttributes)
             'd' -> cursorPosition(n, cursorX + 1)
@@ -562,7 +562,7 @@ internal class Emulator(
 
     /**
      * The title in [data] from [start], without control and reordering characters, cut to
-     * [MAX_TITLE_LENGTH] (docs/decisions/0063).
+     * [MAX_TITLE_LENGTH] (docs/decisions/0081).
      */
     private fun cleanTitle(data: CharSequence, start: Int): String {
         val title = StringBuilder(minOf(data.length - start, MAX_TITLE_LENGTH))
@@ -1229,20 +1229,20 @@ internal class Emulator(
         const val MAX_URI_LENGTH = 2083
 
         /**
-         * The longest OSC 8 id kept, in UTF-16 units, as VTE limits it (docs/decisions/0002). A
+         * The longest OSC 8 id kept, in UTF-16 units, as VTE limits it (docs/decisions/0081). A
          * link with a longer id is not made.
          */
         const val MAX_LINK_ID_LENGTH = 250
 
-        /** The number of distinct hyperlinks kept at a time (docs/decisions/0002). */
+        /** The number of distinct hyperlinks kept at a time (docs/decisions/0081). */
         const val MAX_HYPERLINKS = 4096
 
         /**
-         * The number of window titles that XTWINOPS 22 saves, as in xterm (docs/decisions/0002).
+         * The number of window titles that XTWINOPS 22 saves, as in xterm (docs/decisions/0081).
          */
         const val MAX_SAVED_TITLES = 10
 
-        /** The length of the window title, in UTF-16 units (docs/decisions/0063). */
+        /** The length of the window title, in UTF-16 units (docs/decisions/0081). */
         const val MAX_TITLE_LENGTH = 1024
 
         private fun defaultTabStops(columns: Int) =
