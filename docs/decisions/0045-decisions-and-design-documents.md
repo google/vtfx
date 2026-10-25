@@ -1,6 +1,6 @@
 # Decisions record reasons; design documents describe the current design
 
-- Status: Approved (2026-10-20, approved by a human in a review of the review queue)
+- Status: Approved (2026-10-20, approved by a human in a review of the review queue); in item 2, keeping changed decisions with the status `Superseded`, and in item 4, the check of that status, superseded by [0078](0078-decisions-hold-current-reasons.md)
 - Date: 2026-10-20
 - Related: [decisions/README.md](README.md), [AGENTS.md](../../AGENTS.md) ("Decisions", "Updating documents"), `scripts/check_doc_links.py`, section 9 of [testing.md](../design/testing.md)
 
