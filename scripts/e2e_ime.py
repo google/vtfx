@@ -53,13 +53,14 @@ GBOARD = "com.google.android.inputmethod.latin/com.android.inputmethod.latin.Lat
 GBOARD_SETTINGS = "com.google.android.inputmethod.latin/com.google.android.apps.inputmethod.latin.preference.SettingsActivity"
 DEFAULT_SERIAL = "emulator-5580"
 
-# The keyboards to add: (search term, language name in the list, layout to select, subtype hash).
+# The keyboards to add: (search term, names of the language in the list, layout to select,
+# subtype hash). Older Gboard versions list the languages by their English names.
 KEYBOARDS = [
-    ("Japanese", "日本語", "QWERTY", "-1318396357"),
-    ("Korean", "한국어", "두벌식", "-1906255757"),
+    ("Japanese", ("日本語", "Japanese"), "QWERTY", "-1318396357"),
+    ("Korean", ("한국어", "Korean"), "두벌식", "-1906255757"),
 ]
 ENGLISH_SUBTYPE = "1594443099"
-ENGLISH_NAME = "English (US)"
+ENGLISH_NAMES = ("English (US)",)
 # The screen of the AVD that the coordinates of run_scenarios.py were measured on.
 AVD_SCREEN = "1080x2400"
 # Where run_case taps to focus the terminal, and how it switches the keyboard's language; on a
@@ -95,16 +96,21 @@ class Ui:
         x1, y1, x2, y2 = (int(v) for v in re.findall(r"\d+", node.get("bounds")))
         adb(self.serial, "shell", "input", "tap", str((x1 + x2) // 2), str((y1 + y2) // 2))
 
-    def tap(self, text, timeout=10):
+    def tap(self, *texts, timeout=10, field=False):
+        """Taps the first view whose text is one of `texts`, in any case (older Gboard versions
+        write some labels in capitals, or with other words). Text fields count only if `field`,
+        so that a list item is not mistaken for a search field that holds the same text."""
+        wanted = {text.casefold() for text in texts}
         deadline = time.time() + timeout
         while time.time() < deadline:
             for label, node in self.nodes():
-                if label == text:
+                is_field = node.get("class", "").endswith(("EditText", "AutoCompleteTextView", "SearchAutoComplete"))
+                if label.casefold() in wanted and (field or not is_field):
                     self.tap_node(node)
                     time.sleep(1.5)
                     return
             time.sleep(1)
-        raise RuntimeError(f"no view with text {text!r}")
+        raise RuntimeError(f"no view with text {texts!r}")
 
 
 def enabled_subtypes(serial):
@@ -140,21 +146,24 @@ def set_up_gboard(serial):
     # screen says which keyboards it has.
     by_settings = bool(enabled_subtypes(serial))
 
-    def enabled(name, subtype):
-        return subtype in enabled_subtypes(serial) if by_settings else name in gboard_languages(serial, ui)
+    def enabled(names, subtype):
+        if by_settings:
+            return subtype in enabled_subtypes(serial)
+        text = gboard_languages(serial, ui)
+        return any(name in text for name in names)
 
-    for search, name, layout, subtype in KEYBOARDS:
-        if enabled(name, subtype):
+    for search, names, layout, subtype in KEYBOARDS:
+        if enabled(names, subtype):
             continue
         print(f"Adding the {search} keyboard to Gboard")
-        adb(serial, "shell", "am", "start", "-W", "-n", GBOARD_SETTINGS)
+        adb(serial, "shell", "am", "start", "-S", "-W", "-n", GBOARD_SETTINGS)
         time.sleep(2)
         ui.tap("Languages")
         ui.tap("Add keyboard")
-        ui.tap("Search language")
+        ui.tap("Search language", "Search", "Search for a language", field=True)
         adb(serial, "shell", "input", "text", search)
         time.sleep(2)
-        ui.tap(name)
+        ui.tap(*names)
         # Select exactly the wanted layout.
         for label, node in ui.nodes():
             is_layout = node.get("class") == "android.widget.LinearLayout" and node.get("clickable") == "true"
@@ -163,10 +172,10 @@ def set_up_gboard(serial):
                 time.sleep(1)
         ui.tap("Done")
         adb(serial, "shell", "am", "force-stop", GBOARD_SETTINGS.split("/")[0])
-        if not enabled(name, subtype):
+        if not enabled(names, subtype):
             raise RuntimeError(f"Gboard did not enable the {search} keyboard")
-    missing = [name for name, subtype in [(ENGLISH_NAME, ENGLISH_SUBTYPE), *((k[1], k[3]) for k in KEYBOARDS)]
-               if not enabled(name, subtype)]
+    missing = [names[0] for names, subtype in [(ENGLISH_NAMES, ENGLISH_SUBTYPE), *((k[1], k[3]) for k in KEYBOARDS)]
+               if not enabled(names, subtype)]
     if missing:
         raise RuntimeError(f"Gboard keyboards missing: {missing}")
 
@@ -214,12 +223,27 @@ def adapt_to_device(serial, scenarios):
         sent = collect_bytes(serial).decode("utf-8", errors="replace")
         return {"a": "en", "あ": "ja", "ㅁ": "ko"}.get(sent[:1])
 
+    names = {"en": ENGLISH_NAMES, **{subtype_lang: k[1] for subtype_lang, k in zip(("ja", "ko"), KEYBOARDS)}}
+    ui = Ui(serial)
+
     def switch(lang):
-        for _ in range(4):
+        # A tap on the language key moves to the next language on some Gboard versions, and back to
+        # the previous one on others; holding the key opens Gboard's list of its keyboards on some
+        # versions, where the language is chosen by name. Taps are tried first, then the list.
+        for attempt in range(6):
             current = language()
             if current == lang:
                 break
-            scenarios.tap(scenarios.LAYOUTS[current or "en"]["GLOBE"])
+            x, y = scenarios.LAYOUTS[current or "en"]["GLOBE"]
+            if attempt < 3:
+                scenarios.tap((x, y))
+            else:
+                adb(serial, "shell", "input", "swipe", str(x), str(y), str(x), str(y), "1200")
+                time.sleep(1.5)
+                try:
+                    ui.tap(*names[lang], timeout=5)
+                except RuntimeError:
+                    adb(serial, "shell", "input", "keyevent", "KEYCODE_BACK")
             time.sleep(1.5)
         else:
             return False

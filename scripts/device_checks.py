@@ -82,13 +82,18 @@ class VirtualKeyboard:
 
     def __init__(self, serial, identity):
         self.serial = serial
-        self.name, product = identity
-        self.process = subprocess.Popen([e2e_ime.ADB_PATH, "-s", serial, "shell", "hid", "-"], stdin=subprocess.PIPE,
-                                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, text=True)
-        self._send({"id": 1, "command": "register", "name": self.name, "vid": KEYBOARD_VENDOR, "pid": product,
+        self.name, self.product = identity
+        self.open()
+
+    def open(self):
+        """Adds the keyboard to the device, after close() too."""
+        self.process = subprocess.Popen([e2e_ime.ADB_PATH, "-s", self.serial, "shell", "hid", "-"],
+                                        stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                        text=True)
+        self._send({"id": 1, "command": "register", "name": self.name, "vid": KEYBOARD_VENDOR, "pid": self.product,
                     "bus": "usb", "descriptor": KEYBOARD_DESCRIPTOR})
         deadline = time.time() + 10
-        while self.name not in adb(serial, "shell", "dumpsys", "input"):
+        while self.name not in adb(self.serial, "shell", "dumpsys", "input"):
             if time.time() > deadline:
                 self.close()
                 raise RuntimeError("the virtual keyboard did not appear in dumpsys input")
@@ -148,6 +153,14 @@ class Device:
         if process.returncode != 0 or "Success" not in output:
             raise RuntimeError(f"installing {apk} failed: {output}")
 
+    def switch_gboard_language(self, lang):
+        """Switches the language of Gboard's software keyboard as scripts/e2e_ime.py does."""
+        os.environ["ANDROID_SERIAL"] = self.serial  # run_scenarios.py calls adb without a serial.
+        scenarios = e2e_ime.load_scenarios()
+        e2e_ime.adapt_to_device(self.serial, scenarios)
+        if not (e2e_ime.switch_language or scenarios.ensure_language)(lang):
+            raise RuntimeError(f"could not switch Gboard to {lang}")
+
     def start_sample(self):
         """Starts the sample app with the terminal focused, and clears the log of host input."""
         self.shell("am", "start", "-S", "-W", "-n", ACTIVITY, "--ez", "logHostInput", "true")
@@ -167,7 +180,9 @@ class Device:
         while time.time() < deadline:
             out = self.shell("dumpsys", "notification")
             queue = out[out.find("Toast Queue"):][:2000] if "Toast Queue" in out else ""
-            if "pkg=com.google.vtfx.sample" in queue:
+            # "ToastRecord{... pkg=com.google.vtfx.sample ..." up to Android 10, and
+            # "TextToastRecord{... 1234:com.google.vtfx.sample/u0a1 ..." later.
+            if "com.google.vtfx.sample" in queue:
                 return True
             time.sleep(0.2)
         return False
@@ -225,15 +240,23 @@ def gboard_mode(device, keyboard):
 
 
 def ensure_gboard_mode(device, keyboard, mode):
-    """Puts Gboard in `mode` ("latin" or "japanese") for physical keys. Gboard's Japanese keyboard
-    switches between kana and Latin input on Shift+Space; neither Ctrl+Space nor the subtype in the
-    settings changes it. Raises if it cannot."""
-    for _ in range(3):
-        if gboard_mode(device, keyboard) == mode:
-            return
-        device.start_sample()
-        keyboard.press("shift+space")
-        time.sleep(1)
+    """Puts Gboard in `mode` ("latin" or "japanese") for physical keys. Physical keys follow the
+    language of Gboard's software keyboard, and its Japanese keyboard switches between kana and
+    Latin input on Shift+Space; neither Ctrl+Space nor the subtype in the settings changes them. So
+    the keyboard is first switched by Shift+Space, and if that does not do, the software keyboard is
+    switched to Japanese or English, without the virtual keyboard, which would hide it. Raises if it
+    cannot."""
+    for attempt in range(2):
+        for _ in range(3):
+            if gboard_mode(device, keyboard) == mode:
+                return
+            device.start_sample()
+            keyboard.press("shift+space")
+            time.sleep(1)
+        if attempt == 0:
+            keyboard.close()
+            device.switch_gboard_language("ja" if mode == "japanese" else "en")
+            keyboard.open()
     raise RuntimeError(f"could not put Gboard in the {mode} mode for physical keys")
 
 
@@ -337,7 +360,12 @@ def main():
         for name, check in CHECKS.items():
             if any(fnmatch.fnmatch(name, p) for p in args.patterns):
                 print(f"Running {name}")
-                results += check(device, keyboard)
+                try:
+                    results += check(device, keyboard)
+                except RuntimeError as e:
+                    # A check that the device cannot run (e.g. Settings without the screens that it
+                    # uses) is reported, and the others still run.
+                    results.append((name, check.__doc__.splitlines()[0], "", f"could not run: {e}", "error"))
     finally:
         for other in keyboards.values():
             other.close()
@@ -349,7 +377,8 @@ def main():
               ("sdk", "ro.build.version.sdk"), ("build", "ro.build.type"))}
     gboard = re.search(r"versionName=(\S+)", device.shell("dumpsys", "package", "com.google.android.inputmethod.latin"))
     commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip()
-    failed = sum(1 for r in results if r[4] != "pass")
+    failed = sum(1 for r in results if r[4] == "fail")
+    errors = sum(1 for r in results if r[4] == "error")
     lines = [
         "# Device check results",
         "",
@@ -362,7 +391,7 @@ def main():
         f"| Commit | {commit} |",
         f"| Device | {props['model']}, Android {props['release']} (API {props['sdk']}), {props['build']} build |",
         f"| Gboard | {gboard.group(1) if gboard else 'unknown'} |",
-        f"| Result | {len(results) - failed} passed, {failed} failed |",
+        f"| Result | {len(results) - failed - errors} passed, {failed} failed, {errors} could not run |",
         "",
         "| Row | Action | Expected | Actual | Result |",
         "|---|---|---|---|---|",
@@ -371,8 +400,8 @@ def main():
     os.makedirs(os.path.dirname(args.report), exist_ok=True)
     with open(args.report, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
-    print(f"{len(results) - failed} passed, {failed} failed -> {args.report}")
-    return 1 if failed else 0
+    print(f"{len(results) - failed - errors} passed, {failed} failed, {errors} could not run -> {args.report}")
+    return 1 if failed or errors else 0
 
 
 if __name__ == "__main__":
