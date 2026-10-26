@@ -5,7 +5,7 @@ The steps of a release, for version `X.Y.Z`. Why each step is there is in [decis
 ## 1. Before a release
 
 1. No report is open in section 4 of [reviews/README.md](reviews/README.md), or a human has decided that the release does not wait for the open ones.
-2. The changes to the protected paths since the last security review have been reviewed: `scripts/report_protected_changes.py <BASE>`, with the base of "Changes to protected paths" in [review-queue.md](review-queue.md), shows nothing that a human has not reviewed.
+2. The changes to the protected paths since the last security review have been reviewed: `scripts/report_protected_changes.py <BASE>`, with the base of "Changes to protected paths" in [review-queue.md](review-queue.md), shows nothing that a human has not reviewed. The release commit and the commit after it (sections 3 and 5) change `version` in `gradle.properties`, a protected path, and nothing else there; the human reviews that line when tagging.
 3. The version follows topic 1 of [decisions/0093](decisions/0093-releases.md): the minor version when the public API (the differences in `api/` since the previous tag) or behavior that apps can notice changed, otherwise the patch version.
 
 ## 2. Checks
