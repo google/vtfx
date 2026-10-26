@@ -78,6 +78,8 @@ On the emulator (Pixel 9 Pro AVD, API 36 Google Play image, the preinstalled Gbo
 
 If `0b` appears in 3.1.1 and no toast appears, the IME received the key before `TerminalInputView.dispatchKeyEventPreIme`. Tell us the IME and the device.
 
+`scripts/device_checks.py` runs these rows with a virtual USB keyboard made through uhid, whose keys take the path of a physical keyboard. On a Pixel XL (Android 10, Gboard 18.4), on 2026-10-26, all three rows were as expected: the toast appeared and nothing reached the host in English and in Japanese (romaji input), and `Ctrl+C` reached it as `03`. Gboard's Japanese keyboard switches between kana and Latin input for physical keys on `Shift+Space`, which the script uses to choose the mode.
+
 ### 3.2 AltGr
 
 `KeyEventHandler` sends Alt as an ESC prefix and does not distinguish right Alt. Characters typed with AltGr (right Alt) may be sent as ESC and a character instead of the character. If they are, the fix is to prefer the character when the layout produces one with right Alt.
@@ -89,6 +91,8 @@ In Settings → System → Keyboard → Physical keyboard, set the layout to Ger
 | 3.2.1 | `AltGr+Q` | `40` (`@`) | `1b71` (ESC q) |
 | 3.2.2 | `AltGr+7` | `7b` (`{`) | `1b37` or similar |
 | 3.2.3 | Left `Alt+Q` | `1b71` (ESC q; the default behavior of Alt) | — |
+
+`scripts/device_checks.py` runs these rows with a virtual USB keyboard whose layout it sets to German. On a Pixel XL (Android 10, Gboard 18.4), on 2026-10-26, all three rows were as expected, but not through `KeyEventHandler`: with Latin input, Gboard takes the keys of AltGr and commits the characters of the layout itself (`@`, `{`, and `€` for `AltGr+E`). With Japanese input, Gboard takes them too, and nothing reaches the host before it commits. With a US layout, `AltGr+Q` reaches the app and is sent as `1b71`, as Alt is. What remains is an IME that passes the keys of AltGr to the app, where `KeyEventHandler` would send ESC and the key without AltGr; no such IME was available.
 
 ## 4. TalkBack
 
@@ -293,6 +297,8 @@ Connect a USB or Bluetooth keyboard, set the IME to Gboard, and start the sample
 
 What to tell us: the Gboard version, the device and Android version, and each row's logcat output.
 
+`scripts/device_checks.py` runs 15.2 with a virtual USB keyboard. On a Pixel XL (Android 10, Gboard 18.4), on 2026-10-26, every key reached the host. 15.1 needs taps on the software keyboard, which the script does not make yet.
+
 ## 16. Who runs each check
 
 [decisions/0092](decisions/0092-device-checks-by-agents.md). Agents run every check that they can drive, and give a human only the judgment. A check moves to a human, in section 3 of [review-queue.md](review-queue.md), once the agent has the evidence for the judgment, or finds that it cannot drive the hardware. The column "Human" says what is expected to stay with a human.
@@ -301,7 +307,7 @@ What to tell us: the Gboard version, the device and Android version, and each ro
 |---|---|---|
 | 2.1 to 2.6: IMEs other than Gboard, voice input | Nobody for now; left for later, with no date set | — |
 | 2.7, 2.8: handwriting input | Agents | — |
-| 3: physical keyboards | Agents, with a virtual keyboard made through `uhid` | Only if the virtual keyboard does not take the path of a physical one |
+| 3: physical keyboards | Agents, with a virtual keyboard made through `uhid` (`scripts/device_checks.py`) | — |
 | 4: TalkBack | Agents, with touches from a virtual touchscreen | Only if explore by touch cannot be driven |
 | 5: rendering performance | Agents | Whether the scrolling of a large output looks smooth, judged from a recording |
 | 6: Han glyphs | Agents | The glyphs, judged from screenshots, if the agent cannot tell them apart |
@@ -313,4 +319,4 @@ What to tell us: the Gboard version, the device and Android version, and each ro
 | 12: copying all the text | Agents | — |
 | 13: IMEs on API 29 to 33 | Agents | — |
 | 14: searching | Agents | — |
-| 15: restarts of the IME | Agents, with a virtual keyboard | Whether the restart when Ctrl is armed feels disruptive (15.3) |
+| 15: restarts of the IME | Agents, with a virtual keyboard (`scripts/device_checks.py` for 15.2) | Whether the restart when Ctrl is armed feels disruptive (15.3) |
