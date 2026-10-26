@@ -244,6 +244,8 @@ private class MouseHandler(
         modifiers: PointerKeyboardModifiers,
     ) {
         if (isReporting(modifiers)) {
+            // A click that the host gets drops the selection, as a tap that it gets does.
+            if (button == Button.Primary) display.selection = null
             reported += button
             report(
                 button.report,

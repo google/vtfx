@@ -419,6 +419,27 @@ class TerminalMouseTest {
     }
 
     @Test
+    fun aClickThatTheHostGetsDropsTheSelection() {
+        show("hello world\u001b[?1000h\u001b[?1006h")
+        withKey(Key.ShiftLeft) {
+            moveTo(cell(1, 0))
+            press()
+            moveTo(cell(7, 0))
+            release()
+        }
+        assertEquals(TerminalSelection(Cell(1, 0), Cell(7, 0)), display.selection)
+        // At the press, which the host gets as input, as a tap drops it.
+        mouse {
+            moveTo(cell(2, 0))
+            press()
+        }
+        assertNull(display.selection)
+        mouse { release() }
+        assertEquals("\u001b[<0;3;1M\u001b[<0;3;1m", sent.toString())
+        assertNull(display.selection)
+    }
+
+    @Test
     fun shiftLeavesTheMouseToTheTerminalWhileTheHostAsks() {
         show("hello world\u001b[?1000h\u001b[?1006h")
         withKey(Key.ShiftLeft) {
