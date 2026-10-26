@@ -109,9 +109,10 @@ internal constructor(
  * Read the lines from [nextLine] with [Terminal.searchLines] and give them to [update] until it
  * returns false. Lines that have entered the scrollback do not change until the lines are numbered
  * again, so later updates search only the lines that entered it since, and the screen, with the
- * text that goes on into the screen. The text of those lines is kept, so that [withQuery] searches
- * it for another query without reading the lines again: a few bytes for each character of the
- * scrollback, which ends with no trailing blanks.
+ * text that goes on into the screen. When the first rows of a text that autowrap joins leave the
+ * scrollback, the rows of it left are searched again, as a new index would search them. The text of
+ * those lines is kept, so that [withQuery] searches it for another query without reading the lines
+ * again: a few bytes for each character of the scrollback, which ends with no trailing blanks.
  *
  * Rows that autowrap joins are searched as one text, as [LinkFinder] reads them, without the blanks
  * at its end, which copying leaves out too, in parts of [MAX_SEARCH_TEXT_ROWS] rows when there are
@@ -171,7 +172,7 @@ private constructor(
         private set
 
     init {
-        for (text in texts) find(text, closing = true)
+        for (text in texts) find(text) { add(closing = true, it) }
         updateNewest()
     }
 
@@ -208,10 +209,13 @@ private constructor(
             return true
         }
         generation = read.generation
+        val linesLeft = read.oldestLine > oldestLine
         oldestLine = read.oldestLine
         screenLine = read.screenLine
         while (texts.isNotEmpty() && texts.first().lastLine < oldestLine) texts.removeFirst()
         while (closed.isNotEmpty() && closed.first().firstLine < oldestLine) closed.removeFirst()
+        val oldest = texts.firstOrNull()
+        if (linesLeft && oldest != null && oldest.firstLine < oldestLine) searchAgain(oldest)
         // The screen may have changed since.
         open.clear()
         droppedOpen = false
@@ -229,7 +233,7 @@ private constructor(
             val text = SearchText(read.firstLine + first, lines.subList(first, row + 1))
             // A line that ends in the scrollback does not change; the next reads start after it.
             val closing = text.lastLine < read.screenLine
-            find(text, closing)
+            find(text) { add(closing, it) }
             if (closing) {
                 texts.addLast(text)
                 nextLine = text.lastLine + 1
@@ -249,25 +253,51 @@ private constructor(
             }
     }
 
-    /** Adds the matches in [line], which goes into [texts] if [closing]. */
-    private fun find(line: SearchText, closing: Boolean) {
+    /**
+     * Passes the matches in [line] to [onMatch], in order. Those that start on rows before
+     * [oldestLine], which left the scrollback, are not matches, so that they do not hide matches on
+     * the rows kept that overlap them, as a new index, which reads from [oldestLine], finds.
+     */
+    private fun find(line: SearchText, onMatch: (SearchMatch) -> Unit) {
         val text = line.text
         finder.find(text.text) { start, end ->
-            val visible = !text.isConcealed(start, end)
-            if (visible) {
-                val spans = text.spans(start, end)
-                add(
-                    closing,
-                    SearchMatch(
-                        line.firstLine + spans.first().row,
-                        spans.first().start,
-                        line.firstLine + spans.last().row,
-                        spans.last().end,
-                    ),
+            if (text.isConcealed(start, end)) return@find false
+            val spans = text.spans(start, end)
+            val firstLine = line.firstLine + spans.first().row
+            if (firstLine < oldestLine) return@find false
+            onMatch(
+                SearchMatch(
+                    firstLine,
+                    spans.first().start,
+                    line.firstLine + spans.last().row,
+                    spans.last().end,
                 )
-            }
-            visible
+            )
+            true
         }
+    }
+
+    /**
+     * Finds the matches of [text], the oldest of [texts], again in its rows after [oldestLine], now
+     * that the rows before have left the scrollback: a match that started on one of them may have
+     * hidden a match on the rows kept.
+     */
+    private fun searchAgain(text: SearchText) {
+        while (closed.isNotEmpty() && closed.first().firstLine <= text.lastLine) closed
+            .removeFirst()
+        // The matches dropped so far are older than any kept, so if the newest of them is in
+        // text, all of them are in text or before it, and those of text are found again here.
+        if (droppedClosedLine <= text.lastLine) droppedClosedLine = Long.MIN_VALUE
+        val room = MAX_MATCHES - closed.size
+        val found = ArrayDeque<SearchMatch>()
+        find(text) { match ->
+            found.addLast(match)
+            if (found.size > room) {
+                droppedClosedLine = maxOf(droppedClosedLine, found.removeFirst().firstLine)
+            }
+        }
+        // They are older than the matches kept.
+        for (index in found.indices.reversed()) closed.addFirst(found[index])
     }
 
     /** Adds [match], of a line that goes into [texts] if [closing]. */

@@ -260,6 +260,42 @@ class SearchTest {
     }
 
     @Test
+    fun aMatchHiddenByOneFromARowThatLeftTheScrollbackIsFound() {
+        // "xxfo" and "fofo", rows that autowrap joins: "fofo" at 0:2 hides the one at 1:0.
+        val terminal = terminal(4, 1, "xxfofofo\r\n1", TerminalLimits(scrollbackLines = 2))
+        val index = search(terminal, "fofo")
+        assertEquals(listOf("0:2-1:2"), found(index))
+        terminal.write("\r\n2")
+        // An index of another query made before the update, and one made after it.
+        val before = index.withQuery(SearchQuery("fofo", ignoreCase = false))
+
+        index.update(terminal)
+        before.update(terminal)
+        val after = index.withQuery(SearchQuery("fofo", ignoreCase = false))
+        after.update(terminal)
+
+        assertEquals(listOf("1:0-1:4"), found(search(terminal, "fofo")))
+        assertEquals(listOf("1:0-1:4"), found(index))
+        assertEquals(listOf("1:0-1:4"), found(before))
+        assertEquals(listOf("1:0-1:4"), found(after))
+    }
+
+    @Test
+    fun aLineLeavingTheScrollbackRowByRowKeepsTheMatchesOfItsRowsLeft() {
+        // A line of 30 rows of "ab", which leaves the scrollback of 20 lines a row at a time, with
+        // more matches than the limit.
+        val terminal = terminal(100, 2, "ab".repeat(1500), TerminalLimits(scrollbackLines = 20))
+        val index = search(terminal, "ab")
+        repeat(15) {
+            terminal.write("\r\nx")
+            index.update(terminal)
+            val fresh = search(terminal, "ab")
+            assertEquals(found(fresh), found(index))
+            assertEquals(fresh.isCapped, index.isCapped)
+        }
+    }
+
+    @Test
     fun clearingTheScrollbackDropsItsMatches() {
         val terminal = terminal(20, 2, "match 1\r\nmatch 2\r\nmatch 3")
         val index = search(terminal, "match")
