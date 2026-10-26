@@ -535,11 +535,18 @@ private fun linkAt(snapshot: TerminalSnapshot, cell: Cell, finder: LinkFinder): 
 
 /**
  * Returns the text of the cells around [cell] of [snapshot] that have [link], in reading order,
- * across the rows that autowrap joins.
+ * across the rows that autowrap joins, within the display. The blank that autowrap leaves before a
+ * wide character that did not fit, which has no link, does not end the link.
  */
 private fun hyperlinkText(snapshot: TerminalSnapshot, cell: Cell, link: Hyperlink): String {
-    val columns = snapshot.columns
     fun hasLink(row: Int, column: Int) = snapshot.line(row).hyperlinkAt(column) == link
+    // The last cell of the row's text, if autowrap joins the next row to it, else -1.
+    fun wrapEnd(row: Int): Int {
+        val line = snapshot.line(row)
+        if (!line.isWrapped || row >= snapshot.rows - 1) return -1
+        return if (line.endsWithWidePadding(snapshot.line(row + 1))) line.columns - 2
+        else line.columns - 1
+    }
     // The first cell of the link, going back over the rows that wrap into the next.
     var row = cell.row
     var column = cell.column
@@ -547,13 +554,10 @@ private fun hyperlinkText(snapshot: TerminalSnapshot, cell: Cell, link: Hyperlin
         if (column > 0 && hasLink(row, column - 1)) {
             column--
         } else if (
-            column == 0 &&
-                row > 0 &&
-                snapshot.line(row - 1).isWrapped &&
-                hasLink(row - 1, columns - 1)
+            column == 0 && row > 0 && wrapEnd(row - 1).let { it >= 0 && hasLink(row - 1, it) }
         ) {
             row--
-            column = columns - 1
+            column = wrapEnd(row)
         } else {
             break
         }
@@ -563,11 +567,11 @@ private fun hyperlinkText(snapshot: TerminalSnapshot, cell: Cell, link: Hyperlin
             val line = snapshot.line(row)
             // The right half of a wide character adds nothing; a blank cell is a space.
             if (line.widthAt(column) > 0) append(line.visibleTextAt(column) ?: " ")
-            if (column < columns - 1) {
-                column++
-            } else if (line.isWrapped && row < snapshot.rows - 1) {
+            if (column == wrapEnd(row)) {
                 row++
                 column = 0
+            } else if (column < line.columns - 1) {
+                column++
             } else {
                 break
             }

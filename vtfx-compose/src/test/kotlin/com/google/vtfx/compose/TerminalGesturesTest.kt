@@ -365,6 +365,28 @@ class TerminalGesturesTest {
     }
 
     @Test
+    fun aHyperlinkThatWrapsBeforeAWideCharacterIsReportedWithAllOfItsText() {
+        show("")
+        val columns = session.snapshot().columns
+        // "あ" does not fit in the last column, which autowrap leaves blank, without the link.
+        val text = "x".repeat(columns - 3) + "あい"
+        session.feed(
+            "ab\u001b]8;id=1;https://example.com/b\u001b\\$text\u001b]8;;\u001b\\ c".toByteArray()
+        )
+        composeRule.waitForIdle()
+        val rows = session.snapshot().rows
+        // On the first row of the link, and on the second.
+        composeRule.onRoot().performTouchInput {
+            click(Offset(width / columns * 2.5f, height / rows * 0.5f))
+        }
+        composeRule.waitForIdle()
+        composeRule.onRoot().performTouchInput { click(Offset(1f, height / rows * 1.5f)) }
+        composeRule.waitForIdle()
+        val link = TerminalLink.Explicit(text, hyperlink("https://example.com/b", "1"))
+        assertEquals(listOf<TerminalLink>(link, link), clickedLinks)
+    }
+
+    @Test
     fun tapOnAHyperlinkCallsTheLatestCallback() {
         show("\u001b]8;;https://example.com/a\u001b\\link")
         val latest = mutableListOf<String>()
