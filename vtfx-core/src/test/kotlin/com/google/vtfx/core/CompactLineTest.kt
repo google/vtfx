@@ -68,6 +68,34 @@ class CompactLineTest {
     }
 
     @Test
+    fun blankCellsErasedWithAnotherBackgroundThanTheLastCellKeepIt() {
+        val redBackground = CellStyle.Default.withBackground(TerminalColor.indexed(1))
+        // A blank line erased at its start, text followed by erased cells before the end, and two
+        // backgrounds erased at the end, with uniform text and with mixed styles.
+        val erasedAtTheStart = Line(10)
+        erasedAtTheStart.erase(0, 4, blueBackground.erased())
+        val erasedBeforeTheEnd = Line(10)
+        erasedBeforeTheEnd.write(0, "ab")
+        erasedBeforeTheEnd.erase(3, 6, blueBackground.erased())
+        val twoBackgrounds = Line(10)
+        twoBackgrounds.write(0, "ab", red)
+        twoBackgrounds.erase(2, 10, blueBackground.erased())
+        twoBackgrounds.erase(8, 10, redBackground.erased())
+        val uniformTextAndAnotherBackground = Line(10)
+        uniformTextAndAnotherBackground.write(0, "ab")
+        uniformTextAndAnotherBackground.erase(2, 9, blueBackground.erased())
+        for (line in
+            listOf(
+                erasedAtTheStart,
+                erasedBeforeTheEnd,
+                twoBackgrounds,
+                uniformTextAndAnotherBackground,
+            )) {
+            assertRoundTrip(line)
+        }
+    }
+
+    @Test
     fun clustersWideCharactersAndLinks() {
         val line = Line(10)
         line.write(0, "e")

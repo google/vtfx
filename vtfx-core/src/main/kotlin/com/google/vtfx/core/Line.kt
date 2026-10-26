@@ -357,13 +357,18 @@ internal class Line(columns: Int, style: CellStyle = CellStyle.Default) {
 
     /**
      * Returns a compact, immutable copy for the scrollback: without the blank cells at the end,
-     * with one style if all cells have the same, and with the clusters joined into one string
-     * (docs/decisions/0089). It keeps [anchors], which the caller took from this line.
+     * except for the styles of those that differ from the last cell's, with one style if all cells
+     * have the same, and with the clusters joined into one string (docs/decisions/0089). It keeps
+     * [anchors], which the caller took from this line.
      */
     fun compact(anchors: Array<Placement>? = null): CompactLine {
         val end = contentEnd()
+        val trailingStyle = if (codes.isEmpty()) 0L else styles[codes.size - 1]
+        // Blank cells erased with another background than the last cell's keep their styles.
+        var styleEnd = codes.size
+        while (styleEnd > end && styles[styleEnd - 1] == trailingStyle) styleEnd--
         var uniform = true
-        for (column in 1 until end) {
+        for (column in 1 until styleEnd) {
             if (styles[column] != styles[0]) {
                 uniform = false
                 break
@@ -388,8 +393,11 @@ internal class Line(columns: Int, style: CellStyle = CellStyle.Default) {
         return CompactLine(
             columns = codes.size,
             codes = codes.copyOf(end),
-            styles = if (uniform) LongArray(minOf(end, 1)) { styles[0] } else styles.copyOf(end),
-            trailingStyle = if (codes.isEmpty()) 0L else styles[codes.size - 1],
+            styles =
+                if (uniform) LongArray(minOf(styleEnd, 1)) { styles[0] }
+                else styles.copyOf(styleEnd),
+            styledCells = styleEnd,
+            trailingStyle = trailingStyle,
             clusterText = clusterText,
             clusterIndex = clusterIndex,
             links = links?.copyOf(end)?.takeIf { array -> array.any { it != 0 } },
@@ -473,9 +481,15 @@ internal class Line(columns: Int, style: CellStyle = CellStyle.Default) {
 internal class CompactLine(
     private val columns: Int,
     private val codes: IntArray,
-    /** One style per cell of [codes], or one for all of them. */
+    /**
+     * One style for each of the first [styledCells] cells, or one for all of them. These are the
+     * cells of [codes], and the blank cells after them up to the last whose style is not
+     * [trailingStyle].
+     */
     private val styles: LongArray,
-    /** The style of the blank cells after [codes]: the background they were erased with. */
+    /** The number of cells, from the first, whose style [styles] gives. */
+    private val styledCells: Int,
+    /** The style of the blank cells after [styledCells]: the background they were erased with. */
     private val trailingStyle: Long,
     /**
      * The clusters of the cells that have one, joined in column order, or null if none: one string
@@ -521,10 +535,10 @@ internal class CompactLine(
     fun expand(): Line {
         val line = Line(columns, CellStyle(trailingStyle))
         codes.copyInto(line.codes)
-        if (styles.size == codes.size) {
+        if (styles.size == styledCells) {
             styles.copyInto(line.styles)
         } else {
-            line.styles.fill(styles[0], 0, codes.size)
+            line.styles.fill(styles[0], 0, styledCells)
         }
         line.restore(
             expandClusters(),

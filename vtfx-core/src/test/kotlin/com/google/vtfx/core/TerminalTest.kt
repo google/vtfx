@@ -254,6 +254,25 @@ class TerminalTest {
         assertEquals("2  ", t.scrollbackLine(1).text())
     }
 
+    @Test
+    fun theScrollbackKeepsTheBackgroundOfCellsErasedBeforeTheEndOfALine() {
+        val t = terminal(10, 1)
+        // ECH with a blue background, and EL with red after text, leaving the last cells default.
+        t.write("\u001b[44m\u001b[4X\u001b[0m\r\n")
+        t.write("ab\u001b[41m\u001b[K\u001b[0m\u001b[8G\u001b[K\r\n")
+        val erased = t.scrollbackLine(0)
+        assertEquals(
+            List(4) { TerminalColor.indexed(4) },
+            List(4) { erased.styleAt(it).background },
+        )
+        assertEquals(TerminalColor.Default, erased.styleAt(4).background)
+        val afterText = t.scrollbackLine(1)
+        assertEquals(
+            List(5) { TerminalColor.indexed(1) } + List(3) { TerminalColor.Default },
+            List(8) { afterText.styleAt(it + 2).background },
+        )
+    }
+
     private fun Terminal.lineChangesOf(text: String): Long {
         val before = lineChanges
         write(text)
