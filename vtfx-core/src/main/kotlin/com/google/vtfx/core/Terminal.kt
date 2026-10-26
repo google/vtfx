@@ -72,10 +72,11 @@ public class Terminal(
 
     /**
      * The number of times the cursor went to another line: to a row that autowrap does not join
-     * with its own, onto a line that a line feed or a reverse index scrolled in, or onto a line of
-     * the other screen; a reset (RIS) also counts. Following long text over rows by autowrap does
-     * not count. Its change across [write] tells whether the host went to another line, even when
-     * the cursor ends up on the row and the screen it started on.
+     * with its own, onto a line that scrolling brought to its row (a line feed or a reverse index
+     * at a margin, SU, SD, IL, DL, or the cursor moving after an image), or onto a line of the
+     * other screen; a reset (RIS) also counts. Following long text over rows by autowrap does not
+     * count. Its change across [write] tells whether the host went to another line, even when the
+     * cursor ends up on the row and the screen it started on.
      */
     public val lineChanges: Long
         get() = emulator.lineChanges

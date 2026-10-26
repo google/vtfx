@@ -349,6 +349,26 @@ class TerminalTest {
     }
 
     @Test
+    fun scrollingTheCursorsRowWithSuSdIlOrDlChangesTheLine() {
+        for (scroll in listOf("\u001b[S", "\u001b[T", "\u001b[L", "\u001b[M")) {
+            val t = terminal(10, 4)
+            t.write("line1\r\nline2")
+            assertEquals(1L, t.lineChangesOf(scroll), scroll)
+            assertEquals(1, t.cursor.row, scroll)
+        }
+    }
+
+    @Test
+    fun scrollingARegionWithoutTheCursorDoesNotChangeTheLine() {
+        val t = terminal(10, 4)
+        // The region is rows 3 and 4, and DECSTBM puts the cursor on the first row.
+        t.write("\u001b[3;4r")
+        for (scroll in listOf("\u001b[S", "\u001b[T", "\u001b[L", "\u001b[M")) {
+            assertEquals(0L, t.lineChangesOf(scroll), scroll)
+        }
+    }
+
+    @Test
     fun aReverseIndexChangesTheLine() {
         val t = terminal(4, 2)
         assertEquals(1L, t.lineChangesOf("\u001bM"))

@@ -65,8 +65,9 @@ internal class Emulator(
 
     /**
      * The number of times the cursor went to another logical line: to a row that autowrap does not
-     * join with its own, or onto a line that a line feed or a reverse index scrolled in. Autowrap,
-     * and moves between rows that autowrap joined, do not count.
+     * join with its own, or onto a line that scrolling brought to its row (a line feed or a reverse
+     * index at a margin, SU, SD, IL, DL, or the cursor moving after an image). Autowrap, and moves
+     * between rows that autowrap joined, do not count.
      */
     var lineChanges: Long = 0L
         private set
@@ -504,9 +505,16 @@ internal class Emulator(
                 pendingWrap = false
                 screen[cursorY].deleteChars(cursorX, n, style.erased())
             }
-            'S' -> screen.scrollUp(scrollTop, scrollBottom, n, style, saveToScrollback = true)
+            'S' -> {
+                scrolledOverTheCursor()
+                screen.scrollUp(scrollTop, scrollBottom, n, style, saveToScrollback = true)
+            }
             // With more parameters, CSI T is mouse highlight tracking, which is not supported.
-            'T' -> if (params.size <= 1) screen.scrollDown(scrollTop, scrollBottom, n, style)
+            'T' ->
+                if (params.size <= 1) {
+                    scrolledOverTheCursor()
+                    screen.scrollDown(scrollTop, scrollBottom, n, style)
+                }
             'X' -> {
                 pendingWrap = false
                 screen[cursorY].erase(cursorX, cursorX + n, style.erased())
@@ -817,14 +825,26 @@ internal class Emulator(
         }
     }
 
+    /**
+     * Counts a line change for SU or SD, which scroll the region: another line comes to the
+     * cursor's row if the region has it.
+     */
+    private fun scrolledOverTheCursor() {
+        if (cursorY in scrollTop..scrollBottom) lineChanges++
+    }
+
     private fun insertLines(n: Int) {
         if (cursorY !in scrollTop..scrollBottom) return
+        // The cursor's row gets a new blank line.
+        lineChanges++
         screen.scrollDown(cursorY, scrollBottom, n, style)
         moveTo(0, cursorY)
     }
 
     private fun deleteLines(n: Int) {
         if (cursorY !in scrollTop..scrollBottom) return
+        // The cursor's row gets the line below, or a blank one.
+        lineChanges++
         screen.scrollUp(cursorY, scrollBottom, n, style, saveToScrollback = false)
         moveTo(0, cursorY)
     }
