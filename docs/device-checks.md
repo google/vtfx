@@ -1,12 +1,12 @@
-# Steps for checking on real devices
+# Checks on real devices
 
-These are steps for humans to check on real devices the items in section 3 of [review-queue.md](review-queue.md). Tell an agent, for each item, "what was used and what happened", and the agent records the result in the related decisions and documents and removes the item from review-queue.md. Results different from the expectation are handled as bugs following the procedure in [reviews/README.md](reviews/README.md).
+These are the checks that the emulator and the JVM cannot cover, with their steps. Agents run them on real devices that they reach over adb, record the results in the related decisions and documents, and handle results different from the expectation as bugs following the procedure in [reviews/README.md](reviews/README.md) ([decisions/0092](decisions/0092-device-checks-by-agents.md)). A check that needs a human, for a judgment of how something looks or feels or for hardware that an agent cannot drive, goes to section 3 of [review-queue.md](review-queue.md) with the evidence that the agent prepared. Section 16 says who runs each check. "What to tell us" at the end of a section lists what the result records, whoever ran it.
 
-This file is the only description of what remains to be checked on real devices: what to check, the steps, and what was already checked on the emulator, on the JVM, and on devices. review-queue.md lists the items, and the design documents link here.
+This file is the only description of what remains to be checked on real devices: what to check, the steps, and what was already checked on the emulator, on the JVM, and on devices. The design documents link here.
 
 ## 1. Preparation
 
-Connect the device to the development machine over USB and enable USB debugging. Below, the device's serial is `SERIAL` (shown by `adb devices`).
+The device is reachable over adb, for example connected to the development machine over USB with USB debugging enabled. Below, the device's serial is `SERIAL` (shown by `adb devices`).
 
 ```bash
 ./gradlew :vtfx-sample:assembleDebug
@@ -38,7 +38,7 @@ adb -s SERIAL shell am start -S -n com.google.vtfx.sample/.MainActivity --ez log
 
 ## 2. IMEs other than Gboard, voice input, handwriting input
 
-Section 13 of [ime-contract.md](design/ime-contract.md). Gboard (English, Japanese, Korean) was checked with the emulator e2e (`scripts/e2e_ime.py`).
+Section 13 of [ime-contract.md](design/ime-contract.md). Gboard (English, Japanese, Korean) was checked with the emulator e2e (`scripts/e2e_ime.py`). Rows 2.1 to 2.6 are left for later, with no date set; rows 2.7 and 2.8 are run with the other checks ([decisions/0092](decisions/0092-device-checks-by-agents.md)).
 
 The targets are three: Samsung Keyboard, SwiftKey, and Simeji. For each, start the app with logHostInput enabled, and tap the terminal to show the keyboard.
 
@@ -292,3 +292,25 @@ Connect a USB or Bluetooth keyboard, set the IME to Gboard, and start the sample
 | 15.3 | Type a word on the software keyboard, then tap Ctrl on the key bar and a letter | Ctrl and the letter are sent. Note whether the restart of the keyboard when Ctrl is armed feels disruptive |
 
 What to tell us: the Gboard version, the device and Android version, and each row's logcat output.
+
+## 16. Who runs each check
+
+[decisions/0092](decisions/0092-device-checks-by-agents.md). Agents run every check that they can drive, and give a human only the judgment. A check moves to a human, in section 3 of [review-queue.md](review-queue.md), once the agent has the evidence for the judgment, or finds that it cannot drive the hardware. The column "Human" says what is expected to stay with a human.
+
+| Section | Run by | Human |
+|---|---|---|
+| 2.1 to 2.6: IMEs other than Gboard, voice input | Nobody for now; left for later, with no date set | — |
+| 2.7, 2.8: handwriting input | Agents | — |
+| 3: physical keyboards | Agents, with a virtual keyboard made through `uhid` | Only if the virtual keyboard does not take the path of a physical one |
+| 4: TalkBack | Agents, with touches from a virtual touchscreen | Only if explore by touch cannot be driven |
+| 5: rendering performance | Agents | Whether the scrolling of a large output looks smooth, judged from a recording |
+| 6: Han glyphs | Agents | The glyphs, judged from screenshots, if the agent cannot tell them apart |
+| 7: mouse and touchpad | Agents, with a virtual mouse and touchpad | Whether the scrolling of 7.2 feels proportional |
+| 8: images | Agents | The images, judged from screenshots |
+| 9: the input history on switching IMEs | Agents, with an IME written for the check | — |
+| 10: links taken by a protected activity | Agents, with an app written for the check | — |
+| 11: imported fonts | Agents | Whether text without hinting looks acceptable (11.3), judged from screenshots |
+| 12: copying all the text | Agents | — |
+| 13: IMEs on API 29 to 33 | Agents | — |
+| 14: searching | Agents | — |
+| 15: restarts of the IME | Agents, with a virtual keyboard | Whether the restart when Ctrl is armed feels disruptive (15.3) |

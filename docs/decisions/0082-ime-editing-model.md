@@ -10,7 +10,7 @@ Requirement 5.3 asks for Japanese input that works, for a way to send Latin lett
 
 ## 1. Target IMEs and the text shown to the IME
 
-1. Gboard's Japanese (QWERTY) and English are required, and checked by the spec tests (`spec/ime`); Gboard's Korean (두벌식) is for reports; Gboard's voice and handwriting input and other IMEs (Samsung Keyboard, SwiftKey, Simeji) are unverified, and checked by humans on real devices (section 13 of [ime-contract.md](../design/ime-contract.md)).
+1. Gboard's Japanese (QWERTY) and English are required, and checked by the spec tests (`spec/ime`); Gboard's Korean (두벌식) is for reports; Gboard's voice and handwriting input and other IMEs (Samsung Keyboard, SwiftKey, Simeji) are unverified, and checked on real devices (section 13 of [ime-contract.md](../design/ime-contract.md); who runs the checks, and when, is [0092](0092-device-checks-by-agents.md)).
 2. The IME is shown only the input history (up to its limit) and the composing text, not the screen contents: option B of section 6 of [research/ime-languages.md](../research/ime-languages.md) (invariant 4 and section 13 of [ime-contract.md](../design/ime-contract.md)). Personalized learning is always disabled (section 3).
 3. The input history is limited to 1024 code points, an argument of `ImeEditor`, and reset when it exceeds the limit (invariant 5 and section 11).
 

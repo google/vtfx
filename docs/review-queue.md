@@ -1,6 +1,6 @@
 # Review queue
 
-Items that need a human: decisions, work only humans can do, and checks on real devices. Agents add an item when they run into one, and remove it once it is resolved, after writing the outcome in the related decision or document. This file lists only open items; the outcomes live in [decisions/](decisions/README.md) and the design documents.
+Items that need a human: decisions, work only humans can do, and the judgments that checks on real devices leave to a human. Agents add an item when they run into one, and remove it once it is resolved, after writing the outcome in the related decision or document. This file lists only open items; the outcomes live in [decisions/](decisions/README.md) and the design documents.
 
 For each item, write what is needed, why the agent cannot do it, and links to the related decisions, documents, or code. Keep items short: point to commits by full SHA or range instead of retelling their changes, which their messages and the decisions explain.
 
@@ -20,22 +20,7 @@ Until decided, the provisional decision is implemented. The impact of reversing 
 
 ## 3. Checks on real devices
 
-Things that cannot be checked on the emulator and the JVM. What to check, the steps, and what was already checked are in the linked section of [device-checks.md](device-checks.md).
+Checks that need a human: a judgment of how something looks or feels, or hardware that an agent cannot drive. Agents run the other checks of [device-checks.md](device-checks.md) themselves, and add an item here with the evidence for the judgment (screenshots, recordings, measurements), so that the human only judges ([decisions/0092](decisions/0092-device-checks-by-agents.md)). Section 16 of device-checks.md says what each check is expected to leave to a human.
 
-| Item | Section of [device-checks.md](device-checks.md) |
-|---|---|
-| IMEs other than Gboard, voice and handwriting input | 2 |
-| Key interception | 3.1 |
-| AltGr on physical keyboards | 3.2 |
-| TalkBack | 4 |
-| Rendering performance | 5 |
-| Han glyphs and locale | 6 |
-| Mouse and touchpad | 7 |
-| Images, and the largest image | 8 |
-| The input history on switching IMEs | 9 |
-| Links taken by a protected activity | 10 |
-| Imported fonts | 11 |
-| Copying all the text | 12 |
-| IMEs on API 29 to 33 | 13 |
-| Searching | 14 |
-| Restarts of the IME | 15 |
+| Item | Section of [device-checks.md](device-checks.md) | Evidence |
+|---|---|---|

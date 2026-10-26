@@ -234,8 +234,9 @@ The IMEs that vtfx is checked with ([decisions/0082](../decisions/0082-ime-editi
 |---|---|---|---|
 | Gboard | Japanese (QWERTY), English | Required | Replay of the traces in `spec/ime` (gate), emulator e2e (report) |
 | Gboard | Korean (두벌식) | For reports | Replay of the Korean traces in `spec/ime` (gate), emulator e2e (report) |
-| Gboard | Voice input, handwriting input | Unverified. Handwriting gestures are not accepted (6.4) | Humans check on real devices |
-| Samsung Keyboard, SwiftKey, Simeji | Japanese, English | Unverified. Working is the goal but not guaranteed | Humans check on real devices ([device-checks.md](../device-checks.md)) |
+| Gboard | Handwriting input | Unverified. Handwriting gestures are not accepted (6.4) | Checks on real devices ([device-checks.md](../device-checks.md), section 2) |
+| Gboard | Voice input | Unverified | Checks on real devices, left for later ([decisions/0092](../decisions/0092-device-checks-by-agents.md)) |
+| Samsung Keyboard, SwiftKey, Simeji | Japanese, English | Unverified. Working is the goal but not guaranteed | Checks on real devices, left for later ([device-checks.md](../device-checks.md), [decisions/0092](../decisions/0092-device-checks-by-agents.md)) |
 
 The IME sees only the input history and the composing text (invariant 4, at most the limit of the input history), and personalized learning is always off (section 3). Rewrites of committed text within the input history are accepted and sent as differences (4.1), and take effect as intended only while the host edits a line (4.3).
 
