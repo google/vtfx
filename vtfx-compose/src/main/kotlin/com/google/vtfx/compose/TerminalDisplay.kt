@@ -100,12 +100,21 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
         session.addObserver(this)
     }
 
-    /** Stops receiving the session's notifications, and drops what waits for the main thread. */
+    /**
+     * Stops receiving the session's notifications, and drops what waits for the main thread.
+     *
+     * The flags that say a task is posted are cleared after the tasks are removed, so that
+     * notifications after [attach] post them again. A notification already running on another
+     * thread may still post its task after this; the task then runs once, as it would have before.
+     */
     fun detach() {
         session.removeObserver(this)
         mainHandler.removeCallbacksAndMessages(null)
         synchronized(followLock) { linesToFollow = -1L }
         restartPending.set(false)
+        invalidationPending.set(false)
+        synchronizationTimeoutPending.set(false)
+        pendingSize = null
     }
 
     /** Returns what the display shows: the screen, scrolled back by [scrollOffset]. */

@@ -116,6 +116,37 @@ class TerminalDisplayTest {
     }
 
     @Test
+    fun aDisplayAttachedAgainRedrawsAfterARedrawWaitingAtDetachWasDropped() {
+        val other = Thread { feed("first") }
+        other.start()
+        other.join()
+        // The redraw that the output posted is dropped before it runs.
+        display.detach()
+        display.attach()
+        val start = display.observeVersion()
+
+        feed("second")
+        shadowOf(Looper.getMainLooper()).idle()
+
+        assertEquals(start + 1, display.observeVersion())
+    }
+
+    @Test
+    fun aDisplayAttachedAgainDrawsSynchronizedOutputAfterATimeoutDroppedAtDetach() {
+        val looper = shadowOf(Looper.getMainLooper())
+        feed("\u001b[?2026habc")
+        // The timeout of the synchronized update is dropped before it runs.
+        display.detach()
+        display.attach()
+        val start = display.observeVersion()
+
+        feed("def")
+        looper.idleFor(Duration.ofMillis(200))
+
+        assertEquals(start + 1, display.observeVersion())
+    }
+
+    @Test
     fun outputFromAnotherThreadWaitsForTheMainThreadOnceForEachKind() {
         // Emulation.md section 10.1: the main thread's queue does not grow with host output.
         val reader = Thread { repeat(10_000) { feed("x\n") } }
