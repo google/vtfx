@@ -936,13 +936,17 @@ internal class Emulator(
             y++
         }
         if (cursorY in scrollTop..scrollBottom && y > scrollBottom) {
-            screen.scrollUp(
-                scrollTop,
-                scrollBottom,
-                y - scrollBottom,
-                style,
-                saveToScrollback = true,
-            )
+            // Every row past the bottom margin scrolls, as in kitty, also when the image is taller
+            // than the region, so that its last row ends on the margin. A scroll takes at most the
+            // region, so a taller image scrolls a region at a time; the rows of a placement are at
+            // most TerminalLimits.MAX_DIMENSION, which bounds the work.
+            val height = scrollBottom - scrollTop + 1
+            var left = y - scrollBottom
+            while (left > 0) {
+                val count = minOf(left, height)
+                screen.scrollUp(scrollTop, scrollBottom, count, style, saveToScrollback = true)
+                left -= count
+            }
             y = scrollBottom
             lineChanges++
         }

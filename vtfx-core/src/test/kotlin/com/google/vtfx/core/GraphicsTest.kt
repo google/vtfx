@@ -303,6 +303,31 @@ class GraphicsTest {
         }
 
         @Test
+        fun anImageTallerThanTheScreenScrollsUntilItsLastRowIsOnTheBottom() {
+            // 12 rows from the top of 5: 7 rows past the bottom, more than the screen's height.
+            for (alternate in listOf(false, true)) {
+                val terminal = terminal(columns = 10, rows = 5)
+                if (alternate) terminal.write("\u001b[?1049h\u001b[H")
+                terminal.place("c=2,r=12")
+                assertEquals(Pair(2, 4), terminal.cursorAt(), "alternate: $alternate")
+                assertEquals(if (alternate) 0 else 7, terminal.scrollbackSize)
+                assertEquals(-7, terminal.snapshot().imagePlacements.single().row)
+                terminal.checkPlacements()
+            }
+        }
+
+        @Test
+        fun anImageTallerThanARegionAtTheTopScrollsItUntilItsLastRowIsOnTheBottomMargin() {
+            val terminal = terminal(columns = 10, rows = 5)
+            terminal.write("\u001b[1;3r")
+            terminal.place("c=2,r=8")
+            assertEquals(Pair(2, 2), terminal.cursorAt())
+            assertEquals(5, terminal.scrollbackSize)
+            assertEquals(-5, terminal.snapshot().imagePlacements.single().row)
+            terminal.checkPlacements()
+        }
+
+        @Test
         fun aPendingWrapIsIgnored() {
             val terminal = terminal()
             terminal.write("\u001b[1;80HX")
