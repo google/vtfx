@@ -16,6 +16,7 @@
 
 package com.google.vtfx.sample
 
+import com.google.vtfx.compose.TerminalFont
 import com.google.vtfx.font.FontFile
 import com.google.vtfx.font.gate.FontLimits
 import com.google.vtfx.font.gate.InvalidFontException
@@ -29,7 +30,9 @@ import java.io.InputStream
 /**
  * The fonts that the user imported, sanitized and saved in [directory], as vtfx expects apps to
  * keep them: a font file is sanitized once, when it is imported, and only the sanitized font is
- * saved, to be checked again when it is loaded (section 3 of docs/design/fonts.md).
+ * saved, to be checked again when it is loaded (section 3 of docs/design/fonts.md). It keeps at
+ * most the families that [TerminalFont.Sanitized] takes, so that the app can always make its font
+ * of them.
  *
  * Its functions block, taking seconds to sanitize a CJK font: call them on one background thread.
  * Not thread-safe.
@@ -57,14 +60,18 @@ class FontStore(private val directory: File, private val limits: FontLimits) {
     class Loaded(val fonts: List<SanitizedFont>, val problems: List<String>)
 
     /**
-     * Loads the fonts saved before, checking them again. The files of the fonts left out are
-     * deleted at the next save.
+     * Loads the fonts saved before, checking them again, at most [TerminalFont.Sanitized]'s
+     * families. The files of the fonts left out are deleted at the next save.
      */
     fun load(): Loaded {
         val files = directory.listFiles().orEmpty().sortedBy { it.name }
         val fonts = mutableListOf<SanitizedFont>()
         val problems = mutableListOf<String>()
         for (file in files) {
+            if (fonts.size == MAX_FONTS) {
+                problems += "Saved font ${file.name} not loaded: more than $MAX_FONTS fonts"
+                continue
+            }
             try {
                 val bytes = file.inputStream().use { readAtMost(it, limits.maxOutputBytes) }
                 fonts += SanitizedFont.fromCanonical(bytes, limits)
@@ -80,11 +87,15 @@ class FontStore(private val directory: File, private val limits: FontLimits) {
 
     /**
      * Imports face [face] of the font file that [open] opens, or the first face that vtfx reads if
-     * [face] is null, adding it to the saved fonts. Every failure, of the file, of reading it, or
-     * of an interrupt, is a result: an exception on the font thread would end the app.
+     * [face] is null, adding it to the saved fonts, unless they are already as many as
+     * [TerminalFont.Sanitized] takes. Every failure, of the file, of reading it, or of an
+     * interrupt, is a result: an exception on the font thread would end the app.
      */
-    fun import(open: () -> InputStream?, face: Int?): ImportResult =
-        try {
+    fun import(open: () -> InputStream?, face: Int?): ImportResult {
+        if (saved.size >= MAX_FONTS) {
+            return ImportResult.Failed("Not imported: already $MAX_FONTS fonts, the most kept")
+        }
+        return try {
             val input = open() ?: throw FileNotFoundException("cannot open the file")
             val bytes = input.use { readAtMost(it, limits.maxInputBytes) }
             val faces = FontFile.inspect(bytes, limits)
@@ -117,6 +128,7 @@ class FontStore(private val directory: File, private val limits: FontLimits) {
             Thread.currentThread().interrupt()
             ImportResult.Cancelled
         }
+    }
 
     /**
      * Reads [input] to its end, failing as too large once it holds more than [limit] bytes, so that
@@ -152,5 +164,8 @@ class FontStore(private val directory: File, private val limits: FontLimits) {
 
     private companion object {
         const val BUFFER_SIZE = 64 * 1024
+
+        /** The most fonts kept: the families that the app's [TerminalFont.Sanitized] takes. */
+        val MAX_FONTS = TerminalFont.Sanitized.MAX_FAMILIES
     }
 }

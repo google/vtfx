@@ -16,6 +16,7 @@
 
 package com.google.vtfx.sample
 
+import com.google.vtfx.compose.TerminalFont
 import com.google.vtfx.font.gate.FontLimits
 import com.google.vtfx.font.gate.SanitizedFont
 import java.io.ByteArrayInputStream
@@ -113,7 +114,35 @@ class FontStoreTest {
         assertTrue(loaded.problems.single().contains("001.ttf"))
     }
 
+    @Test
+    fun noFontIsImportedBeyondTheFamiliesThatTheTerminalTakes() {
+        val sanitized = SanitizedFont.fromCanonical(font, limits)
+        val store = store()
+        store.save(List(MAX_FAMILIES) { sanitized })
+
+        val result = store.import({ ByteArrayInputStream(font) }, null)
+
+        assertTrue((result as FontStore.ImportResult.Failed).message.startsWith("Not imported"))
+        assertEquals(MAX_FAMILIES, store().load().fonts.size)
+    }
+
+    @Test
+    fun savedFontsBeyondTheFamiliesThatTheTerminalTakesAreLeftOutAndReported() {
+        // Saved by a version that did not check the number.
+        val sanitized = SanitizedFont.fromCanonical(font, limits)
+        store().save(List(MAX_FAMILIES + 1) { sanitized })
+
+        val loaded = store().load()
+
+        assertEquals(MAX_FAMILIES, loaded.fonts.size)
+        assertEquals(1, loaded.problems.size)
+        assertTrue(loaded.problems.single().contains("%03d.ttf".format(MAX_FAMILIES)))
+    }
+
     private companion object {
+        /** The most families that TerminalFont.Sanitized takes. */
+        val MAX_FAMILIES = TerminalFont.Sanitized.MAX_FAMILIES
+
         const val FONT = "/com/google/vtfx/font/gate/canonical/variations.ttf"
     }
 }
