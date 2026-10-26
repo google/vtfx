@@ -78,7 +78,7 @@ Terminal(session, Modifier.fillMaxSize())
 
 JVM programs without a UI, and app tests, can depend on `vtfx-session` alone and use the same `TerminalSession`.
 
-See the [embedding guide](docs/usage.md) for the details, and `vtfx-sample` for a working app. The [API reference](https://google.github.io/vtfx/) of the default branch is published on GitHub Pages, and can be generated into `build/dokka/html` with `./gradlew :dokkaGenerate`.
+See the [embedding guide](docs/usage.md) for the details, and `vtfx-sample` for a working app. The [API reference](https://google.github.io/vtfx/) of the default branch is published on GitHub Pages, and can be generated into `build/dokka/html` with `./gradlew :dokkaGenerate`. The changes of each release are in [CHANGELOG.md](CHANGELOG.md), and the API reference of a release is attached to its [GitHub release](https://github.com/google/vtfx/releases).
 
 ## Modules
 
