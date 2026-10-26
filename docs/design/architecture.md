@@ -198,7 +198,7 @@ The tests of each module are listed below. Where the oracles live, the gate rule
 | `vtfx-font` | Unit tests with fonts that test code builds, a golden of the canonical form, and cross-checks with the verifier of `vtfx-font-gate` (section 2 of [testing.md](testing.md)). | Yes |
 | `vtfx-font-gate` | Unit tests of the verifier with canonical fonts kept as files, and with changes to them. | Yes |
 | `vtfx-font-gate-android` | No unit tests of its own; `SystemFontsTest` in the rendering e2e loads sanitized fonts through it. | No (reports only) |
-| `vtfx-sample` | Unit tests of the fake host. | Yes |
+| `vtfx-sample` | Unit tests of the fake host and of the font store, and unit tests with Robolectric of the view model. | Yes |
 | Whole | e2e on the emulator (IME e2e with a real IME, and rendering e2e with hardware acceleration; section 8 of [testing.md](testing.md)), esctest2 (section 11 of [testing.md](testing.md)). | No (reports only) |
 
 ## 7. Toolchain

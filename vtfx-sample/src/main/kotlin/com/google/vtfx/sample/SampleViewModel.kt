@@ -68,13 +68,24 @@ class SampleViewModel(application: Application) : AndroidViewModel(application) 
         private set
 
     /**
-     * The face to import from the file that the user picks next, or null for the first one that
-     * vtfx reads, set by `font import`. [MainActivity] shows the picker when it changes.
+     * The request of `font import` whose picker [MainActivity] is to show, or null. It shows the
+     * picker when this changes and takes the request with [onFontPickerShown], so that an activity
+     * recreated later, on a rotation for example, does not show the picker again.
      */
     var fontRequest: FontRequest? by mutableStateOf(null)
         private set
 
-    /** A request to pick a font file, distinct from the one before. */
+    /**
+     * The request whose picker is shown, until the picker returns: the result may come to an
+     * activity recreated meanwhile, which did not show the picker. Lost if the process dies, and
+     * the file picked is then not imported.
+     */
+    private var shownFontRequest: FontRequest? = null
+
+    /**
+     * A request to pick a font file, distinct from the one before, to import face [face] of it, or
+     * the first face that vtfx reads if null.
+     */
     class FontRequest(val face: Int?)
 
     /** Reads and sanitizes fonts, which takes seconds for a CJK font, off the main thread. */
@@ -158,11 +169,29 @@ class SampleViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    /** Takes [request], whose picker [MainActivity] shows, so that it is shown once. */
+    fun onFontPickerShown(request: FontRequest) {
+        if (fontRequest === request) fontRequest = null
+        shownFontRequest = request
+    }
+
+    /**
+     * Takes what the picker shown for a request returned: the file that the user picked, which is
+     * imported for that request, or null if the user picked none.
+     */
+    fun onFontPicked(uri: Uri?) {
+        val request = shownFontRequest ?: return
+        shownFontRequest = null
+        if (uri != null) importFont(request, uri)
+    }
+
     /**
      * Imports the font file at [uri], which the user picked for [request], on the font thread, and
-     * reports how it went to the terminal. Only the sanitized font is kept, never the file.
+     * reports how it went to the terminal. Only the sanitized font is kept, never the file. The
+     * request is then done, and its picker is not shown again.
      */
     fun importFont(request: FontRequest, uri: Uri) {
+        if (fontRequest === request) fontRequest = null
         val resolver = getApplication<Application>().contentResolver
         fontExecutor.execute {
             when (val result = fontStore.import({ resolver.openInputStream(uri) }, request.face)) {

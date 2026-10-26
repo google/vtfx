@@ -86,9 +86,14 @@ class MainActivity : ComponentActivity() {
             val fontRequest = viewModel.fontRequest
             val pickFont =
                 rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-                    if (uri != null && fontRequest != null) viewModel.importFont(fontRequest, uri)
+                    viewModel.onFontPicked(uri)
                 }
-            LaunchedEffect(fontRequest) { if (fontRequest != null) pickFont.launch(arrayOf("*/*")) }
+            LaunchedEffect(fontRequest) {
+                if (fontRequest != null) {
+                    viewModel.onFontPickerShown(fontRequest)
+                    pickFont.launch(arrayOf("*/*"))
+                }
+            }
             val fonts = viewModel.fonts
             val font =
                 if (fonts.isEmpty()) TerminalFont.System()
