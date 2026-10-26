@@ -16,7 +16,11 @@
 
 package com.google.vtfx.sample
 
+import com.google.vtfx.session.TerminalSession
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class EchoHostTest {
@@ -88,9 +92,41 @@ class EchoHostTest {
         assertEquals("", output.toString())
         receive("q")
         assertEquals(
-            "\u001b[r\u001b[?1049l\u001b[0m\u001b[?25h\u001b(B\r\n\u001b[32m$\u001b[0m ",
+            "\u001b[?1049l\u001b[!p\u001b[?5;9;1000;1002;1003;1004;1005;1006;1015;2004;2026l" +
+                "\u001b[0 q\r\n\u001b[32m$\u001b[0m ",
             output.toString(),
         )
+    }
+
+    @Test
+    fun leavingAReplayRestoresTheModesThatTheRecordingSet() {
+        lateinit var session: TerminalSession
+        val modes =
+            // As the recordings set them: vim's mouse, focus, paste, and keys, icat's reverse
+            // video,
+            // and a cursor style, autowrap, insert mode, keyboard flags, and synchronized output.
+            "\u001b[?1049h\u001b[?1h\u001b=\u001b[?2004h\u001b[?1004h\u001b[?1002h\u001b[?1006h" +
+                "\u001b[?5h\u001b[5 q\u001b[?12h\u001b[?7l\u001b[4h\u001b[>1u\u001b[?2026h"
+        val replaying =
+            EchoHost(
+                output = { session.feed(it) },
+                recording = { (modes + "VIM").toByteArray() },
+                font = {},
+            )
+        session = TerminalSession({ replaying.receive(it) })
+        replaying.start()
+        replaying.receive("replay vim\r".toByteArray())
+        val start = TerminalSession({}).snapshot().modes
+        assertNotEquals(start, session.snapshot().modes)
+
+        replaying.receive("q".toByteArray())
+
+        assertEquals(start, session.snapshot().modes)
+        assertFalse(session.snapshot().isAlternateScreen)
+        // Autowrap, which the modes do not show: the line after the prompt wraps.
+        session.feed("y".repeat(80).toByteArray())
+        val snapshot = session.snapshot()
+        assertTrue(snapshot.line(snapshot.cursor.row - 1).isWrapped)
     }
 
     @Test

@@ -85,7 +85,7 @@ class EchoHost(
             // Another key leaves the recording and returns to the shell.
             if (bytes.isEmpty() || bytes[0].toInt() == ESC) return
             showingReplay = false
-            output("\u001b[r\u001b[?1049l\u001b[0m\u001b[?25h\u001b(B\r\n")
+            output(LEAVE_REPLAY)
             prompt()
             return
         }
@@ -275,6 +275,19 @@ class EchoHost(
         const val DEL = 0x7F
         const val CTRL_C = 0x03
         const val CTRL_L = 0x0C
+
+        /**
+         * Leaves a replay for the shell, undoing what the recording may have set: the alternate
+         * screen, whose leaving restores the cursor; then DECSTR, which resets the scroll region,
+         * the attributes, the cursor's visibility, the charsets, autowrap, the cursor and keypad
+         * keys, and the keyboard flags; then the modes that DECSTR leaves: reverse video, the mouse
+         * (tracking and encodings), focus events, bracketed paste, and synchronized output; and the
+         * cursor style, back to the app's. Otherwise taps after `replay vim` would go to this host
+         * as mouse reports.
+         */
+        const val LEAVE_REPLAY =
+            "\u001b[?1049l\u001b[!p" +
+                "\u001b[?5;9;1000;1002;1003;1004;1005;1006;1015;2004;2026l\u001b[0 q\r\n"
 
         /** The size the recordings were made at (tools/recordings/record.py). */
         const val REPLAY_COLUMNS = 80
