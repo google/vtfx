@@ -23,7 +23,9 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.changedToUp
@@ -70,24 +72,7 @@ internal fun Modifier.terminalGestures(
                 val down = awaitFirstDown(requireUnconsumed = false)
                 // A mouse, which terminalMouse handled and consumed.
                 if (down.isConsumed) return@awaitEachGesture
-                val pressed =
-                    withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
-                        while (true) {
-                            val change =
-                                awaitPointerEvent().changes.firstOrNull { it.id == down.id }
-                                    ?: return@withTimeoutOrNull Press.Moved
-                            if (change.changedToUp()) return@withTimeoutOrNull Press.Tap
-                            if (
-                                change.isConsumed ||
-                                    (change.position - down.position).getDistance() >
-                                        viewConfiguration.touchSlop
-                            ) {
-                                return@withTimeoutOrNull Press.Moved
-                            }
-                        }
-                        @Suppress("UNREACHABLE_CODE") Press.Moved
-                    }
-                when (pressed) {
+                when (awaitPress(down)) {
                     Press.Tap -> {
                         display.selection = null
                         val linkTapped =
@@ -184,10 +169,35 @@ internal fun Modifier.terminalGestures(
 internal fun isReportingTouches(display: TerminalDisplay): Boolean =
     !display.isScrolledBack && display.session.modes().mouseTracking != MouseTracking.None
 
-private enum class Press {
+/** How a touch that went down ended, before the long-press timeout. */
+internal enum class Press {
+    /** Lifted without moving beyond the touch slop. */
     Tap,
+
+    /** Moved beyond the touch slop, consumed by another handler, or gone. */
     Moved,
 }
+
+/**
+ * Follows the touch that went down with [down] until it is lifted or moves, and returns how it
+ * ended, or null if it was held for the long-press timeout without either: a long press.
+ */
+internal suspend fun AwaitPointerEventScope.awaitPress(down: PointerInputChange): Press? =
+    withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
+        while (true) {
+            val change =
+                awaitPointerEvent().changes.firstOrNull { it.id == down.id }
+                    ?: return@withTimeoutOrNull Press.Moved
+            if (change.changedToUp()) return@withTimeoutOrNull Press.Tap
+            if (
+                change.isConsumed ||
+                    (change.position - down.position).getDistance() > viewConfiguration.touchSlop
+            ) {
+                return@withTimeoutOrNull Press.Moved
+            }
+        }
+        @Suppress("UNREACHABLE_CODE") Press.Moved
+    }
 
 /** Returns the 0-based cell of [snapshot] at [position]. */
 internal fun displayCell(position: Offset, metrics: CellMetrics, snapshot: TerminalSnapshot): Cell =
