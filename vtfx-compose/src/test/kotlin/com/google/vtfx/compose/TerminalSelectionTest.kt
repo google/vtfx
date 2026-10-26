@@ -113,6 +113,31 @@ class TerminalSelectionTest {
         assertEquals("", TerminalSelection.word(s, Cell(2, 0)).text(s))
     }
 
+    @Test
+    fun aBlankOrConcealedWideCharacterEndsAWord() {
+        // An ideographic space (U+3000) at 0 and 1, "foo" at 2 to 4, concealed "秘密" at 6 to 9.
+        val s = snapshot(20, 1, "\u3000foo \u001b[8m秘密\u001b[28mbar")
+        assertEquals(
+            TerminalSelection(Cell(2, 0), Cell(4, 0)),
+            TerminalSelection.word(s, Cell(3, 0)),
+        )
+        assertEquals(
+            TerminalSelection(Cell(10, 0), Cell(12, 0)),
+            TerminalSelection.word(s, Cell(11, 0)),
+        )
+        // Either half of a blank wide character selects both of its halves alone.
+        for (column in 0..1) {
+            assertEquals(
+                TerminalSelection(Cell(0, 0), Cell(1, 0)),
+                TerminalSelection.word(s, Cell(column, 0)),
+            )
+        }
+        assertEquals(
+            TerminalSelection(Cell(8, 0), Cell(9, 0)),
+            TerminalSelection.word(s, Cell(9, 0)),
+        )
+    }
+
     private companion object {
         const val ROWS = 200
     }

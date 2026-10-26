@@ -81,13 +81,18 @@ internal data class TerminalSelection(
                 isAll = true,
             )
 
-        /** The word at [cell]: the run of non-blank characters around it, or the cell alone. */
+        /**
+         * The word at [cell]: the run of non-blank characters around it, or the cell alone, both
+         * halves of it if it is wide.
+         */
         fun word(snapshot: TerminalSnapshot, cell: Cell): TerminalSelection {
             val line = snapshot.line(cell.row)
             var column = cell.column
             if (column > 0 && line.widthAt(column) == 0) column--
-            if (isBlank(line, column))
-                return TerminalSelection(Cell(column, cell.row), Cell(column, cell.row))
+            if (isBlank(line, column)) {
+                val last = if (line.widthAt(column) == 2) column + 1 else column
+                return TerminalSelection(Cell(column, cell.row), Cell(last, cell.row))
+            }
             var from = column
             while (from > 0 && !isBlank(line, from - 1)) from--
             var to = column
@@ -135,9 +140,14 @@ internal data class TerminalSelection(
             }
         }
 
+        /**
+         * Whether the character at [column] is blank or concealed. The right half of a wide
+         * character is blank if its left half is, so that a blank or concealed wide character ends
+         * a word on both of its sides.
+         */
         private fun isBlank(line: LineSnapshot, column: Int): Boolean {
-            if (line.widthAt(column) == 0) return false
-            val text = line.visibleTextAt(column)
+            val lead = if (column > 0 && line.widthAt(column) == 0) column - 1 else column
+            val text = line.visibleTextAt(lead)
             return text == null || text.isBlank()
         }
     }
