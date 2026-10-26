@@ -89,14 +89,20 @@ private val OPERATORS: Map<String, List<Int>> =
     )
 
 /**
- * The CID-keyed parts of a test CFF font: the local subroutines of each Font DICT, and the Font
- * DICT of each glyph as ranges of FDSelect format 3, each a first glyph and a Font DICT.
+ * The CID-keyed parts of a test CFF font: the local subroutines of each Font DICT, the Font DICT of
+ * each glyph as ranges of FDSelect format 3, each a first glyph and a Font DICT, and the FontMatrix
+ * of each Font DICT, null for none.
  */
 class TestCid(
     val fontDictSubrs: List<List<String>>,
     val fdSelectRanges: List<Pair<Int, Int>>,
     val fdSelectFormat: Int = 3,
-)
+    val fontMatrices: List<List<String>?> = fontDictSubrs.map { null },
+) {
+    init {
+        require(fontMatrices.size == fontDictSubrs.size)
+    }
+}
 
 /**
  * Builds OpenType fonts with CFF outlines for tests, from charstrings written as text (see
@@ -184,9 +190,10 @@ class TestCffFont(
             top = topDict(charStringsOffset, size, privateOffset, 0, 0)
         } else {
             val fontDicts =
-                cid.fontDictSubrs.map { subrs ->
+                cid.fontDictSubrs.zip(cid.fontMatrices) { subrs, matrix ->
                     val (size, privateOffset) = privateDict(subrs)
                     bytes {
+                        writeFontMatrix(matrix)
                         u8(29)
                         u32(size)
                         u8(29)
@@ -225,10 +232,7 @@ class TestCffFont(
             u32(it)
             u8(12, 6)
         }
-        fontMatrix?.let { matrix ->
-            matrix.forEach { bytes(real(it)) }
-            u8(12, 7)
-        }
+        writeFontMatrix(fontMatrix)
         u8(29)
         u32(charStrings)
         u8(17)
@@ -254,6 +258,13 @@ class TestCffFont(
             u32(fdSelect)
             u8(12, 37)
         }
+    }
+
+    /** Writes the FontMatrix operator with [matrix], if not null. */
+    private fun TestBytes.writeFontMatrix(matrix: List<String>?) {
+        if (matrix == null) return
+        matrix.forEach { bytes(real(it)) }
+        u8(12, 7)
     }
 
     private fun fdSelect(cid: TestCid): ByteArray = bytes {

@@ -427,6 +427,79 @@ class SanitizedCffFontTest {
     }
 
     @Test
+    fun identityFontMatrixOfANameKeyedFontIsUnsupported() {
+        val font = TestCffFont(fontMatrix = identityMatrix)
+
+        assertEquals(Kind.Unsupported, failure(font))
+    }
+
+    @Test
+    fun defaultFontMatrixIsUnsupportedForAnotherEm() {
+        // Without a FontMatrix, the charstrings are in thousandths of the em.
+        assertEquals(Kind.Unsupported, failure(TestCffFont(unitsPerEm = 2048)))
+    }
+
+    @Test
+    fun cidKeyedFontMayGiveTheScaleOfTheEmInEitherDict() {
+        // The Top DICT's matrix and the Font DICT's are concatenated, one left out counting as the
+        // identity.
+        val matrices =
+            listOf(
+                identityMatrix to emMatrix,
+                emMatrix to identityMatrix,
+                null to emMatrix,
+                emMatrix to null,
+            )
+        for ((top, fontDict) in matrices) {
+            val font = TestCffFont(unitsPerEm = 2048, fontMatrix = top, cid = cid(fontDict))
+
+            assertEquals(listOf(square(100, 0, 300)), contents(font).contours(1), "$top $fontDict")
+        }
+    }
+
+    @Test
+    fun cidKeyedFontWithoutAFontMatrixIsInThousandthsOfTheEm() {
+        val font = TestCffFont(cid = cid(null))
+
+        assertEquals(listOf(square(100, 0, 300)), contents(font).contours(1))
+        font.unitsPerEm = 2048
+        assertEquals(Kind.Unsupported, failure(font))
+    }
+
+    @Test
+    fun cidKeyedFontWithoutTheScaleOfTheEmIsUnsupported() {
+        val matrices =
+            listOf(
+                identityMatrix to null,
+                null to identityMatrix,
+                identityMatrix to identityMatrix,
+                // Concatenated, the scale of the em twice.
+                emMatrix to emMatrix,
+            )
+        for ((top, fontDict) in matrices) {
+            val font = TestCffFont(unitsPerEm = 2048, fontMatrix = top, cid = cid(fontDict))
+
+            assertEquals(Kind.Unsupported, failure(font), "$top $fontDict")
+        }
+    }
+
+    @Test
+    fun everyFontDictOfACidKeyedFontNeedsTheScaleOfTheEm() {
+        val call = "100 0 rmoveto -107 callsubr endchar"
+        val font = TestCffFont(glyphs = listOf("endchar", call, call))
+        font.unitsPerEm = 2048
+        font.fontMatrix = identityMatrix
+        font.cid =
+            TestCid(
+                fontDictSubrs = List(2) { listOf("$squareSides return") },
+                fdSelectRanges = listOf(0 to 0, 2 to 1),
+                fontMatrices = listOf(emMatrix, null),
+            )
+
+        assertEquals(Kind.Unsupported, failure(font))
+    }
+
+    @Test
     fun indexOffsetsOfEverySizeAreRead() {
         val contours = (1..3).map { contents(TestCffFont(offSize = it)).contours(1) }
 
@@ -612,6 +685,20 @@ class SanitizedCffFontTest {
 
         assertEquals(Kind.Malformed, failure(TestSfnt.font(font.tables(cff), Tag.OPEN_TYPE_CFF)))
     }
+
+    /** The FontMatrix that leaves charstring units as they are. */
+    private val identityMatrix = listOf("1", "0", "0", "1", "0", "0")
+
+    /** The FontMatrix of an em of 2048 units. */
+    private val emMatrix = (1.0 / 2048).toString().let { listOf(it, "0", "0", it, "0", "0") }
+
+    /** The CID-keyed parts of a font of one Font DICT, whose FontMatrix is [fontMatrix]. */
+    private fun cid(fontMatrix: List<String>?) =
+        TestCid(
+            fontDictSubrs = listOf(emptyList()),
+            fdSelectRanges = listOf(0 to 0),
+            fontMatrices = listOf(fontMatrix),
+        )
 
     /** A point with coordinates that are not rounded. */
     private data class D(val x: Double, val y: Double) {

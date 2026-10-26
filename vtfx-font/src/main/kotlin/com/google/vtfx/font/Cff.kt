@@ -221,14 +221,16 @@ private constructor(
 
             val charstringType = top.int(CffDict.CHARSTRING_TYPE) ?: 2
             if (charstringType != 2) unsupported("charstring type $charstringType")
-            checkFontMatrix(top, unitsPerEm)
+            val topScale = fontMatrixScale(top, unitsPerEm)
+            val isCidKeyed = top.has(CffDict.ROS)
+            if (!isCidKeyed) checkEmScale(topScale, null, unitsPerEm)
             val charStringsOffset = top.int(CffDict.CHAR_STRINGS) ?: malformed("no CharStrings")
             val charStrings = CffIndex(table, charStringsOffset)
             if (charStrings.count != numGlyphs) {
                 malformed("${charStrings.count} charstrings for $numGlyphs glyphs")
             }
 
-            if (!top.has(CffDict.ROS)) {
+            if (!isCidKeyed) {
                 return CffFont(charStrings, globalSubrs, listOf(localSubrs(table, top)), null)
             }
             val fdArrayOffset = top.int(CffDict.FD_ARRAY) ?: malformed("CID font without FDArray")
@@ -240,7 +242,7 @@ private constructor(
             val localSubrs =
                 List(fontDicts.count) {
                     val fontDict = CffDict(fontDicts.item(it))
-                    checkFontMatrix(fontDict, unitsPerEm)
+                    checkEmScale(topScale, fontMatrixScale(fontDict, unitsPerEm), unitsPerEm)
                     localSubrs(table, fontDict)
                 }
             val fdSelect = fdSelect(table.from(fdSelectOffset), numGlyphs, fontDicts.count)
@@ -296,14 +298,14 @@ private constructor(
         }
 
         /**
-         * Rejects a FontMatrix that does not map charstring units to font units one to one. The
-         * charstrings are taken in font units of `head`, so only the matrices that real fonts use
-         * are accepted: a scale of 1/unitsPerEm (the default for 1000 units), or the identity,
-         * which CID-keyed fonts may give in either the Top DICT or the Font DICTs, the other one
-         * holding the scale. Skewed, offset, or otherwise scaled outlines are not converted.
+         * The scale of [dict]'s FontMatrix, or null if it has none. The charstrings are taken in
+         * font units of `head`, so only the matrices that real fonts use are accepted: a scale of
+         * 1/unitsPerEm, or the identity, which CID-keyed fonts may give in either the Top DICT or
+         * the Font DICTs, the other one holding the scale. Skewed, offset, or otherwise scaled
+         * outlines are not converted. [checkEmScale] checks the matrices of a glyph together.
          */
-        private fun checkFontMatrix(dict: CffDict, unitsPerEm: Int) {
-            val matrix = dict.operands(CffDict.FONT_MATRIX, 6) ?: return
+        private fun fontMatrixScale(dict: CffDict, unitsPerEm: Int): Double? {
+            val matrix = dict.operands(CffDict.FONT_MATRIX, 6) ?: return null
             val scale = matrix[0]
             val ok =
                 matrix[1] == 0.0 &&
@@ -314,7 +316,28 @@ private constructor(
                     (abs(scale * unitsPerEm - 1) < MATRIX_TOLERANCE ||
                         abs(scale - 1) < MATRIX_TOLERANCE)
             if (!ok) unsupported("FontMatrix ${matrix.joinToString(" ")}")
+            return scale
         }
+
+        /**
+         * Rejects the FontMatrix scales of the Top DICT, [top], and of a Font DICT of a CID-keyed
+         * font, [fontDict] (null for a name-keyed font), null where a DICT has none, unless
+         * together they map charstring units to font units one to one. The matrices are
+         * concatenated, one left out counting as the identity; with neither, CFF's default of 0.001
+         * applies, once, as FreeType applies it: CID-keyed fonts such as Noto Sans CJK give no
+         * FontMatrix at all, and are drawn in thousandths of the em.
+         */
+        private fun checkEmScale(top: Double?, fontDict: Double?, unitsPerEm: Int) {
+            val scale =
+                if (top == null && fontDict == null) DEFAULT_FONT_MATRIX_SCALE
+                else (top ?: 1.0) * (fontDict ?: 1.0)
+            if (abs(scale * unitsPerEm - 1) >= MATRIX_TOLERANCE) {
+                unsupported("FontMatrix scale $scale for $unitsPerEm units per em")
+            }
+        }
+
+        /** The scale of the FontMatrix of a font that gives none. */
+        private const val DEFAULT_FONT_MATRIX_SCALE = 0.001
 
         /** How far a FontMatrix's scale may be from the expected one, relatively. */
         private const val MATRIX_TOLERANCE = 1e-4

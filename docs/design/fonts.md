@@ -79,7 +79,7 @@ public sealed interface TerminalFont { ...; public class Sanitized(public val fa
 | sfnt with `glyf` (`0x00010000`, `true`), and one face of a TTC | Accepted |
 | sfnt with CFF (`OTTO`), name-keyed or CID-keyed, and one face of an OTC | Accepted, converted to `glyf` |
 | Variable fonts with `glyf` | Accepted as the default instance: `glyf` holds the default outlines, so the variation tables are dropped |
-| CFF outlines that real fonts no longer use: charstring type other than 2, the deprecated arithmetic and storage operators of Type 2 charstrings, `endchar` drawing an accented character (seac), a `FontMatrix` other than a scale of 1/`unitsPerEm` or the identity (which CID-keyed fonts give in the Top DICT or the Font DICTs, the other holding the scale), and a `CFF ` table of more than one font | Rejected as unsupported |
+| CFF outlines that real fonts no longer use: charstring type other than 2, the deprecated arithmetic and storage operators of Type 2 charstrings, `endchar` drawing an accented character (seac), a `FontMatrix` other than a scale of 1/`unitsPerEm` or the identity (which CID-keyed fonts give in the Top DICT or the Font DICTs, the other holding the scale), matrices that together do not scale by 1/`unitsPerEm` (the Top DICT's and, in a CID-keyed font, each Font DICT's, concatenated, one left out counting as the identity, and CFF's default of 0.001 when neither is given), and a `CFF ` table of more than one font | Rejected as unsupported |
 | CFF2 | Rejected as unsupported |
 | WOFF, WOFF2, fonts without outlines (bitmap only), fonts with both `glyf` and CFF | Rejected as unsupported |
 
