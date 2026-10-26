@@ -118,9 +118,15 @@ public class Terminal(
     public fun setDefaultCursorStyle(shape: CursorShape, blinking: Boolean): Boolean =
         emulator.setDefaultCursorStyle(shape, blinking)
 
-    /** Resets the terminal to its initial state, as RIS does. The scrollback is kept. */
+    /**
+     * Resets the terminal to its initial state, as RIS does. The scrollback is kept. A sequence or
+     * a string that the output written so far left unfinished is dropped, without acting on it.
+     */
     public fun reset() {
-        runGuarded { emulator.reset() }
+        runGuarded {
+            parser.reset()
+            emulator.reset()
+        }
     }
 
     /**

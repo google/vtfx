@@ -701,6 +701,36 @@ class TerminalTest {
     }
 
     @Test
+    fun resetDropsAnUnfinishedStringWithoutActingOnIt() {
+        // OSC, DCS, APC, and SOS strings, each followed by text and its terminator.
+        for (start in
+            listOf("\u001b]0;Before", "\u001bP\$qm", "\u001b_Ga=q,i=1;AAAA", "\u001bXx")) {
+            val t = terminal(10, 1)
+            t.write(start)
+            t.reset()
+            t.write("Hello\u0007\u001b\\")
+            assertEquals("Hello     ", t.lines()[0], start)
+        }
+        assertEquals(emptyList(), events.filter { it !is TerminalEvent.Bell })
+    }
+
+    @Test
+    fun resetDropsAnUnfinishedSequence() {
+        val t = terminal(10, 1)
+        // A control sequence.
+        t.write("\u001b[3")
+        t.reset()
+        t.write("1mA")
+        assertEquals("1mA       ", t.lines()[0])
+        assertEquals(CellStyle.Default, t.snapshot().line(0).styleAt(2))
+        // The first byte of a two-byte UTF-8 character.
+        t.write(byteArrayOf(0xC3.toByte()))
+        t.reset()
+        t.write(byteArrayOf(0xA9.toByte()) + "B".toByteArray())
+        assertEquals("\uFFFDB        ", t.lines()[0])
+    }
+
+    @Test
     fun narrowingRewrapsLinesAndKeepsTheCursorOnItsCharacter() {
         val t = terminal(6, 3)
         t.write("abcdef\r\n$ ls")

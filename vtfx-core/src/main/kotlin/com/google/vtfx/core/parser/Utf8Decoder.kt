@@ -87,7 +87,8 @@ internal class Utf8Decoder {
         codePoint = initialBits
     }
 
-    private fun reset() {
+    /** Drops a sequence in progress, so that the next byte starts a character. */
+    fun reset() {
         codePoint = 0
         bytesNeeded = 0
         lowerBoundary = 0x80

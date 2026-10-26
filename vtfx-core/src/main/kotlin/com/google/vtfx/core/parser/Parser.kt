@@ -137,6 +137,18 @@ internal class Parser(
         }
     }
 
+    /**
+     * Returns to the ground state, dropping a sequence, a string, or a UTF-8 sequence in progress
+     * without dispatching it.
+     */
+    fun reset() {
+        decoder.reset()
+        clear()
+        string.setLength(0)
+        stringOverflowed = false
+        state = GROUND
+    }
+
     override fun accept(codePoint: Int) {
         // In the ground state, a non-ASCII graphic character is printed whatever else holds.
         if (state == GROUND && codePoint >= 0xA0) {
