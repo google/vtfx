@@ -697,6 +697,42 @@ class GraphicsTest {
         }
 
         @Test
+        fun anImageThatReplacesAnotherTakesItsPlaceWithoutMakingOthersGo() {
+            // Room for two images of 10 by 10.
+            val terminal = terminal(limits = TerminalLimits(maxImageBytes = 800))
+            terminal.place("i=1,C=1", 10, 10)
+            terminal.write("\u001b[1;5H")
+            terminal.place("i=2,C=1", 10, 10)
+            terminal.place("i=2,C=1", 10, 10)
+            assertEquals(listOf(1L, 2L), terminal.graphicsLayer.images().map { it.id })
+            assertEquals(2, terminal.snapshot().imagePlacements.size)
+            assertEquals(800L, terminal.imageBytes)
+            terminal.checkPlacements()
+        }
+
+        @Test
+        fun anImageThatReplacesAnotherDoesNotMakeTheOldestGoAtTheLimitOnImages() {
+            val terminal = terminal()
+            for (id in 1..Graphics.MAX_IMAGES) {
+                terminal.write(apc("a=t,i=$id,f=24,s=1,v=1,q=2", byteArrayOf(0, 0, 0)))
+            }
+            terminal.write(apc("a=t,i=2,f=24,s=1,v=1,q=2", byteArrayOf(0, 0, 0)))
+            val ids = terminal.graphicsLayer.images().map { it.id }
+            assertEquals(Graphics.MAX_IMAGES, ids.size)
+            assertEquals(listOf(1L, 3L), ids.take(2))
+            assertEquals(2L, ids.last())
+        }
+
+        @Test
+        fun anImageTooLargeToReplaceAnotherLeavesIt() {
+            val terminal = terminal(limits = TerminalLimits(maxImageBytes = 399))
+            terminal.place("i=1,C=1", 5, 5)
+            terminal.write(apc("a=t,i=1,f=32,s=10,v=10", rgba(10, 10)))
+            assertEquals(listOf(reply(1, GraphicsStatus.TooLarge)), replies())
+            assertEquals(1, terminal.snapshot().imagePlacements.size)
+        }
+
+        @Test
         fun oneImageIsAtMost64MiBWhateverTheLimit() {
             val terminal =
                 terminal(limits = TerminalLimits(maxImageBytes = TerminalLimits.MAX_IMAGE_BYTES))

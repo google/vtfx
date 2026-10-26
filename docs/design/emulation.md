@@ -211,6 +211,7 @@ vtfx implements the kitty graphics protocol (kitty 0.48) with direct transmissio
 
 - Each screen has its own images and placements, so the images of the main screen stay while a program runs on the alternate screen. The memory limit counts both screens together (section 10).
 - When a new image does not fit, the oldest images go first, those without placements before those with them. An image larger than the limit by itself, or larger than 64 MiB of decoded pixels whatever the limit ([decisions/0080](../decisions/0080-kitty-graphics.md)), is refused with `EFBIG`. Beyond 1024 images on a screen, the oldest goes; beyond 1024 placements, the oldest placement goes.
+- An image with the id of an image of the screen replaces it, with its placements. The image replaced goes before the others are evicted for room, so that it does not make them go; an image refused with `EFBIG` replaces nothing.
 - An image without an id or number goes with its last placement.
 - A transmission that is still in chunks when the screen changes (entering or leaving the alternate screen) is refused with `EINVAL` when it ends.
 

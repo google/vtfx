@@ -169,10 +169,16 @@ internal class Graphics(
             return
         }
         val bytes = image.width.toLong() * image.height * 4
-        if (!makeRoom(screen.layer, bytes)) {
+        if (bytes > maxBytes) {
             respond(command, GraphicsStatus.TooLarge)
             return
         }
+        // The image that this one replaces goes first, so that it does not count against the
+        // limits and make other images go.
+        if (command.imageId != 0L) {
+            screen.layer.imageById(command.imageId)?.let { screen.layer.delete(it) }
+        }
+        makeRoom(screen.layer, bytes)
         val id =
             when {
                 command.imageId != 0L -> command.imageId
@@ -266,15 +272,12 @@ internal class Graphics(
     }
 
     /**
-     * Deletes images until [bytes] more fit, and [layer] has room for one more image: the oldest
-     * first, those without placements before the others, as kitty does. Returns false if the image
-     * cannot fit at all.
+     * Deletes images until [bytes], at most [maxBytes], more fit, and [layer] has room for one more
+     * image: the oldest first, those without placements before the others, as kitty does.
      */
-    private fun makeRoom(layer: GraphicsLayer, bytes: Long): Boolean {
-        if (bytes > maxBytes) return false
+    private fun makeRoom(layer: GraphicsLayer, bytes: Long) {
         while (layer.imageCount >= MAX_IMAGES) evict(listOf(layer))
         while (this.bytes + bytes > maxBytes) evict(layers)
-        return true
     }
 
     private fun evict(from: List<GraphicsLayer>) {
