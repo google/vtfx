@@ -195,6 +195,56 @@ class TerminalTest {
         assertEquals(List(5) { 1 }, t.widths(0))
     }
 
+    /**
+     * Writes "あ" at columns 2 and 3 with a hyperlink, a curly underline, an underline color, and a
+     * red background, then runs [operation] with a blue background, and erases the last column with
+     * it for comparison.
+     */
+    private fun splitAWideCharacter(operation: String): LineSnapshot {
+        val t = terminal(8, 1)
+        t.write(
+            "\u001b[3G\u001b]8;;https://example.com\u001b\\" +
+                "\u001b[4:3;58;5;2;41mあ\u001b[0m\u001b]8;;\u001b\\"
+        )
+        t.write("\u001b[44m$operation\u001b[8G\u001b[X\u001b[0m")
+        return t.snapshot().line(0)
+    }
+
+    /** Asserts that [column] of [line] is erased, as the last column, which ECH erased. */
+    private fun assertErasedLikeTheLastColumn(line: LineSnapshot, column: Int, message: String) {
+        assertNull(line.textAt(column), message)
+        assertEquals(1, line.widthAt(column), message)
+        assertNull(line.hyperlinkAt(column), message)
+        assertEquals(TerminalColor.Default, line.underlineColorAt(column), message)
+        assertEquals(line.styleAt(7), line.styleAt(column), message)
+    }
+
+    @Test
+    fun theOtherHalfOfASplitWideCharacterIsErasedWithTheBackgroundOfTheOperation() {
+        // Printing over either half, erasing either half, and deleting cells up to the left half,
+        // with the column where the other half is left.
+        val cases =
+            listOf(
+                "\u001b[3Gx" to 3,
+                "\u001b[4Gx" to 2,
+                "\u001b[3G\u001b[X" to 3,
+                "\u001b[4G\u001b[X" to 2,
+                "\u001b[4G\u001b[K" to 2,
+                "\u001b[3G\u001b[1K" to 3,
+                "\u001b[2G\u001b[2P" to 1,
+            )
+        for ((operation, otherHalf) in cases) {
+            assertErasedLikeTheLastColumn(splitAWideCharacter(operation), otherHalf, operation)
+        }
+    }
+
+    @Test
+    fun insertingCellsInTheRightHalfOfAWideCharacterErasesBothHalvesWithTheBackground() {
+        val line = splitAWideCharacter("\u001b[4G\u001b[2@")
+        // Both halves, and the cells inserted after the left half.
+        for (column in 2..5) assertErasedLikeTheLastColumn(line, column, "column $column")
+    }
+
     @Test
     fun linesScrolledOffTheTopGoToTheScrollback() {
         val t = terminal(3, 2)

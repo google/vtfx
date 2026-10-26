@@ -136,8 +136,9 @@ internal class Line(columns: Int, style: CellStyle = CellStyle.Default) {
         link: Int = 0,
         underlineColor: Int = 0,
     ) {
-        breakWide(column)
-        if (width == 2) breakWide(column + 1)
+        val erased = style.erased()
+        breakWide(column, erased)
+        if (width == 2) breakWide(column + 1, erased)
         codes[column] = codePoint
         styles[column] = style.bits
         clusters?.set(column, null)
@@ -162,7 +163,7 @@ internal class Line(columns: Int, style: CellStyle = CellStyle.Default) {
     fun setNarrow(column: Int, codePoint: Int, style: Long, link: Int, underlineColor: Int) {
         val code = codes[column]
         if (code == WIDE_TAIL || (column + 1 < codes.size && codes[column + 1] == WIDE_TAIL))
-            breakWide(column)
+            breakWide(column, CellStyle(style).erased())
         codes[column] = codePoint
         styles[column] = style
         clusters?.set(column, null)
@@ -192,7 +193,7 @@ internal class Line(columns: Int, style: CellStyle = CellStyle.Default) {
      * after it, which the caller ensures exists.
      */
     fun makeWide(column: Int, codePoint: Int) {
-        breakWide(column + 1)
+        breakWide(column + 1, CellStyle(styles[column]).erased())
         val text = textAt(column) ?: return
         val array = clusters ?: arrayOfNulls<String>(codes.size).also { clusters = it }
         array[column] = text + String(Character.toChars(codePoint))
@@ -277,8 +278,8 @@ internal class Line(columns: Int, style: CellStyle = CellStyle.Default) {
     fun erase(from: Int, to: Int, style: CellStyle) {
         val end = minOf(to, codes.size)
         if (from >= end) return
-        breakWide(from)
-        breakWide(end - 1)
+        breakWide(from, style)
+        breakWide(end - 1, style)
         fillBlank(from, end, style)
     }
 
@@ -291,8 +292,8 @@ internal class Line(columns: Int, style: CellStyle = CellStyle.Default) {
         if (n <= 0) return
         if (codes[column] == WIDE_TAIL) {
             // Both halves, so that the right half does not shift alone.
-            breakWide(column)
-            codes[column] = BLANK
+            breakWide(column, style)
+            fillBlank(column, column + 1, style)
         }
         // A wide character split by the right edge is dropped.
         val lastKept = codes.size - n - 1
@@ -309,8 +310,8 @@ internal class Line(columns: Int, style: CellStyle = CellStyle.Default) {
     fun deleteChars(column: Int, count: Int, style: CellStyle) {
         val n = minOf(count, codes.size - column)
         if (n <= 0) return
-        breakWide(column)
-        breakWide(column + n - 1)
+        breakWide(column, style)
+        breakWide(column + n - 1, style)
         shift(column + n, column, codes.size - column - n)
         // As in insertBlanks: the cells to fill still hold their values from before the shift.
         fillBlank(codes.size - n, codes.size, style)
@@ -438,15 +439,15 @@ internal class Line(columns: Int, style: CellStyle = CellStyle.Default) {
     }
 
     /**
-     * If [column] is half of a wide character, erases the other half so that it is not orphaned.
+     * If [column] is half of a wide character, erases the other half with [style] so that it is not
+     * orphaned: without its character, hyperlink, or underline color, as erasing leaves a cell.
      */
-    private fun breakWide(column: Int) {
+    private fun breakWide(column: Int, style: CellStyle) {
         if (column < 0 || column >= codes.size) return
         if (codes[column] == WIDE_TAIL && column > 0) {
-            codes[column - 1] = BLANK
-            clusters?.set(column - 1, null)
+            fillBlank(column - 1, column, style)
         } else if (isWideHead(column)) {
-            codes[column + 1] = BLANK
+            fillBlank(column + 1, column + 2, style)
         }
     }
 
