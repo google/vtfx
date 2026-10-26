@@ -21,7 +21,7 @@
 # Changes to this file require security review.
 
 [security_review]
-description = "Code with external effects, the check of fonts before native code reads them, and build and dependency configuration."
+description = "Code with external effects, the check of fonts before native code reads them, build and dependency configuration, and the scripts that run the checks."
 # Code is listed by whole modules, never by single files (docs/decisions/0091): what a module's code
 # relies on is then reviewed with it.
 paths = [
@@ -45,9 +45,9 @@ paths = [
     "build-logic/**",
     ".github/**",
     "config/**",
-    "scripts/report_protected_changes.py",
-    "scripts/tests/test_report_protected_changes.py",
-    "scripts/check.sh",
+    # scripts/check.sh runs the scripts next to it and every test that unittest discovers in
+    # scripts/tests, so any of them, or a new one, can change what the checks do.
+    "scripts/**",
     "tools/addlicense/**",
 ]
 

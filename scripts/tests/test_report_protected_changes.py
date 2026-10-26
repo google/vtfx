@@ -215,6 +215,33 @@ class ReportProtectedChangesTest(unittest.TestCase):
         for path in paths:
             self.assertIn(f"  - `{path}`\n", security_review)
 
+    def test_repository_config_reports_every_script(self):
+        # scripts/check.sh runs the scripts next to it and every test that unittest discovers in
+        # scripts/tests, so a change to any of them, or a new one, changes what the gate runs.
+        repository = SCRIPT.parents[1]
+        config = (repository / "config/protected-paths.toml").read_text(encoding="utf-8")
+        self.write("config/protected-paths.toml", config)
+        base = self.commit("Use the repository's config")
+        tracked = subprocess.run(
+            ["git", "ls-files", "-z", "scripts"],
+            cwd=repository,
+            env=GIT_ENV,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.split("\0")
+        paths = [path for path in tracked if path]
+        paths += ["scripts/new.py", "scripts/tests/test_new.py"]
+        for path in paths:
+            self.write(path, "\n")
+        self.commit("Change the scripts")
+
+        output = self.report(base)
+
+        security_review = output.split("## security_review")[1].split("\n## ")[0]
+        for path in paths:
+            self.assertIn(f"  - `{path}`\n", security_review)
+
 
 if __name__ == "__main__":
     unittest.main()
