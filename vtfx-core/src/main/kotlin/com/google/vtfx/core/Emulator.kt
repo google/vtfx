@@ -200,9 +200,11 @@ internal class Emulator(
             combine(codePoint)
             return
         }
+        // A wide character does not fit on a screen of one column; it is dropped before a pending
+        // wrap would scroll for it.
+        if (width == 2 && columns < 2) return
         if (pendingWrap && autowrap) wrap()
         if (width == 2 && cursorX == columns - 1) {
-            if (columns < 2) return
             if (autowrap) {
                 screen[cursorY].erase(cursorX, columns, style.erased())
                 wrap()
@@ -243,6 +245,8 @@ internal class Emulator(
     private fun repeatLastPrinted(count: Int) {
         val mapped = if (lastPrinted < 0x7F) charsets.map(lastPrinted) else lastPrinted
         val width = CharWidth.of(mapped, ambiguousWidth)
+        // As printMapped drops it, without wrapping first.
+        if (width == 2 && columns < 2) return
         if (!insertMode || width == 0) {
             repeat(count) { print(lastPrinted) }
             return

@@ -122,6 +122,18 @@ class TerminalTest {
     }
 
     @Test
+    fun aWideCharacterOnAScreenOfOneColumnIsDroppedWithoutWrapping() {
+        // Printed, repeated, and repeated in insert mode, each after a pending wrap.
+        for (output in listOf("bあ", "bあ\u001b[3b", "b\u001b[4hあ\u001b[3b")) {
+            val t = terminal(1, 2)
+            t.write("a\r\n")
+            t.write(output)
+            assertEquals(0, t.scrollbackSize, output)
+            assertEquals(listOf("a", "b"), t.lines(), output)
+        }
+    }
+
+    @Test
     fun wrappedLinesAreMarked() {
         val t = terminal(3, 2)
         t.write("abcd")
