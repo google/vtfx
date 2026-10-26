@@ -18,6 +18,8 @@
 // replay of recorded output. The emulator end-to-end tests drive it (scripts/e2e_ime.py).
 plugins {
     id("vtfx.android-application")
+    // The view model, which needs Android, is tested on Robolectric.
+    id("vtfx.robolectric")
 }
 
 android {
@@ -55,6 +57,4 @@ dependencies {
     implementation(libs.compose.foundation)
     implementation(libs.compose.ui)
     implementation(libs.activity.compose)
-
-    testImplementation(libs.junit4)
 }

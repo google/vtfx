@@ -14,19 +14,15 @@
  * limitations under the License.
  */
 
-// Conventions for Android library modules with unit tests on Robolectric.
+// Conventions for Android modules, libraries and the sample app, with unit tests on Robolectric.
 
-import com.android.build.api.dsl.LibraryExtension
+import com.android.build.api.dsl.CommonExtension
 
 val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
 
-extensions.configure<LibraryExtension> {
-    testOptions {
-        unitTests {
-            // Robolectric needs the merged resources and manifest.
-            isIncludeAndroidResources = true
-        }
-    }
+extensions.configure<CommonExtension> {
+    // Robolectric needs the merged resources and manifest.
+    testOptions.unitTests.isIncludeAndroidResources = true
 }
 
 // The Android jars that Robolectric runs the tests on, one for each SDK that the tests use. Gradle
