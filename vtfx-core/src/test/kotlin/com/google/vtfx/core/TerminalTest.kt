@@ -65,6 +65,21 @@ class TerminalTest {
     }
 
     @Test
+    fun aRangeOutsideTheBytesIsAProgrammingError() {
+        val t = terminal(4, 1)
+        val bytes = "abcd".toByteArray()
+        // The last two would overflow as offset + length.
+        for ((offset, length) in
+            listOf(-1 to 1, 0 to -1, 2 to 3, 1 to Int.MAX_VALUE, Int.MAX_VALUE to 1)) {
+            assertFailsWith<IllegalArgumentException>("$offset, $length") {
+                t.write(bytes, offset, length)
+            }
+        }
+        t.write(bytes, 1, 3)
+        assertEquals("bcd ", t.lines()[0])
+    }
+
+    @Test
     fun wideCharacterReportsWidths() {
         val t = terminal(4, 1)
         t.write("aあ")

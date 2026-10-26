@@ -96,7 +96,8 @@ public class Terminal(
      * Interprets [length] bytes of host output from [offset]. Sequences may be split across calls.
      */
     public fun write(bytes: ByteArray, offset: Int = 0, length: Int = bytes.size - offset) {
-        require(offset >= 0 && length >= 0 && offset + length <= bytes.size) {
+        // Not offset + length, which overflows past Int.MAX_VALUE.
+        require(offset >= 0 && length >= 0 && offset <= bytes.size - length) {
             "range out of bounds"
         }
         runGuarded { parser.parse(bytes, offset, length) }
