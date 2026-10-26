@@ -900,6 +900,29 @@ class TerminalSessionTest {
     }
 
     @Test
+    fun switchingDirectInputRestartsTheImeEvenIfItSawNoEdit() {
+        // The IME reads the input type only when its input starts.
+        session.directInput = true
+        assertEquals(1, restarts)
+        session.edit { it.commitText("ab") }
+        session.sendKey(KeyStroke.Special(TerminalKey.Enter))
+        assertEquals(2, restarts)
+        session.directInput = false
+        assertEquals(3, restarts)
+        session.directInput = false
+        assertEquals(3, restarts)
+    }
+
+    @Test
+    fun switchingDirectInputDuringABatchEditRestartsTheImeAtItsEnd() {
+        session.edit { it.beginBatchEdit() }
+        session.directInput = true
+        assertEquals(0, restarts)
+        assertFalse(session.edit { it.endBatchEdit() })
+        assertEquals(1, restarts)
+    }
+
+    @Test
     fun everyOperationWorksOnAnyThread() {
         val failure = runOnAnotherThread {
             val other = TerminalSession({ sent.append(String(it, Charsets.UTF_8)) })

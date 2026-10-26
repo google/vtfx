@@ -482,6 +482,18 @@ public class ImeEditor(
         restartIfReady()
     }
 
+    /**
+     * Commits the composing text and resets as [requestReset] does, and restarts the IME's input
+     * even if its edit buffer has not changed since the last restart, for a change that the IME
+     * reads only when its input starts, such as the input type of direct input (section 3). The
+     * restart waits for the end of the batch edit, as any restart does.
+     */
+    public fun requestRestart() {
+        commitComposingText()
+        changedSinceRestart = true
+        requestReset()
+    }
+
     private fun endOperation() {
         // The edit buffer is empty after a restart until an edit puts something in it, so an edit
         // that leaves it empty changed nothing the IME sees. Android calls finishComposingText

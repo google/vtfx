@@ -329,8 +329,9 @@ public class TerminalSession(
             input(userAction = false) { editor ->
                 if (value == directInputState) return@input
                 directInputState = value
-                editor.finishComposingText()
-                editor.requestReset()
+                // The IME reads the input type only when its input starts, so it restarts even if
+                // its edit buffer is empty (docs/design/ime-contract.md section 3).
+                editor.requestRestart()
             }
         }
 

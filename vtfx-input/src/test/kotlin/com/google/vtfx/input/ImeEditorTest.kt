@@ -350,6 +350,29 @@ class ImeEditorTest {
     }
 
     @Test
+    fun aRestartRequestRestartsTheImeEvenIfNothingChangedSinceTheLastRestart() {
+        editor.requestRestart()
+        assertEquals(1, restarts)
+        editor.requestRestart()
+        assertEquals(2, restarts)
+        assertEquals(emptyList<HostInput>(), sent)
+    }
+
+    @Test
+    fun aRestartRequestCommitsTheComposingTextAndWaitsForTheBatchEdit() {
+        editor.commitText("a")
+        editor.beginBatchEdit()
+        editor.commitText("b")
+        editor.setComposingText("か")
+        editor.requestRestart()
+        assertEquals(listOf<HostInput>(text("a"), text("bか")), sent)
+        assertEquals("", editor.text)
+        assertEquals(0, restarts)
+        assertFalse(editor.endBatchEdit())
+        assertEquals(1, restarts)
+    }
+
+    @Test
     fun aResetRestartsTheImeAfterAnEditThatLeftNothing() {
         editor.setComposingText("か")
         editor.setComposingText("")
