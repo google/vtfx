@@ -144,6 +144,22 @@ class TerminalInputViewTest {
         assertEquals("\u001b[O", first.take())
     }
 
+    @Test
+    fun aViewAttachedAgainKeepsItsSession() {
+        val unused = focusAndType(first)
+        // Moved within the window, as Compose may move the view, without binding it again.
+        val parent = view.parent as LinearLayout
+        parent.removeView(view)
+        assertEquals("\u001b[O", first.take())
+        parent.addView(view, 0)
+        assertTrue(view.requestFocus())
+        view.dispatchWindowFocusChanged(true)
+        assertEquals("\u001b[I", first.take())
+        val input = view.onCreateInputConnection(EditorInfo())!!
+        input.commitText("new", 1)
+        assertEquals("new", first.take())
+    }
+
     /** Selects text on [host]'s display, as a drag would. */
     private fun select(host: Host) {
         host.display.selection = TerminalSelection(Cell(0, 0), Cell(2, 0))

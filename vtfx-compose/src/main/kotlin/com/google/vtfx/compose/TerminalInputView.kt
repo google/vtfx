@@ -166,8 +166,14 @@ internal class TerminalInputView(context: Context) : View(context), InputHost {
         updateSessionFocus()
     }
 
+    /**
+     * Leaving the window takes the session's focus away, but keeps the view bound: Compose may move
+     * the view to another place in the window without binding it again, and unbinds it itself when
+     * it leaves the composition.
+     */
     override fun onDetachedFromWindow() {
-        bind(null)
+        windowFocused = false
+        updateSessionFocus()
         super.onDetachedFromWindow()
     }
 
