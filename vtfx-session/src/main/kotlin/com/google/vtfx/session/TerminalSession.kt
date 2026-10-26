@@ -447,6 +447,7 @@ public class TerminalSession(
         val result: T
         val restart: Boolean
         val sent: Boolean
+        val stickyModifiersChanged: Boolean
         inputLock.withLock {
             val sends: List<() -> Unit>
             lock.withLock {
@@ -473,14 +474,16 @@ public class TerminalSession(
                     restartRequested = false
                     resetRequested = false
                 }
-                if (stickyModifiersState != stickyModifiersBefore) {
-                    stickyModifiersNotifier.record(stickyModifiersState)
-                }
+                stickyModifiersChanged = stickyModifiersState != stickyModifiersBefore
+                if (stickyModifiersChanged) stickyModifiersNotifier.record(stickyModifiersState)
             }
             for (send in sends) send()
         }
         if (restart) for (observer in observers) observer.onRestartInput()
-        stickyModifiersNotifier.tell()
+        // Only the thread that changed them tells them, so that an operation that changed nothing,
+        // such as the reset of a feed, does not tell another thread's change on its own thread
+        // (docs/design/session-and-threads.md section 2.5).
+        if (stickyModifiersChanged) stickyModifiersNotifier.tell()
         if (userAction || sent) notifyUserInput()
         return result
     }
@@ -530,6 +533,7 @@ public class TerminalSession(
         val scrolledLines: Long
         val scrollbackShrank: Boolean
         val rang: Boolean
+        val titleChanged: Boolean
         val moved: Boolean
         outputLock.withLock {
             val requests: List<TerminalEvent>
@@ -542,6 +546,7 @@ public class TerminalSession(
                 scrollbackShrank = terminal.scrollbackSize < scrollbackBefore
                 synchronizing = terminal.modes.synchronizedOutput
                 rang = bellRung
+                titleChanged = titleSet != null
                 titleSet?.let {
                     titleState = it
                     titleNotifier.record(it)
@@ -574,7 +579,8 @@ public class TerminalSession(
             synchronizing,
         )
         if (rang) listener.onBell()
-        titleNotifier.tell()
+        // As for the sticky modifiers, only a feed that set a title tells it.
+        if (titleChanged) titleNotifier.tell()
     }
 
     /**
