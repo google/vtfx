@@ -22,7 +22,6 @@ import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
@@ -265,7 +264,9 @@ internal fun Terminal(
     var origin by remember { mutableStateOf(Offset.Zero) }
     // The pointer icon: a hand over a link, the arrow while the host gets the mouse.
     var hoverIcon by remember { mutableStateOf(PointerIcon.Text) }
+    // A tap, on the grid or in the padding, or a click drops the selection (docs/decisions/0085).
     val onTap: () -> Unit = {
+        display.selection = null
         toolbar.hide()
         inputView?.showKeyboard()
     }
@@ -472,7 +473,8 @@ private fun Modifier.preferredGridSize(metrics: CellMetrics, padding: PaddingVal
 
 /**
  * Calls [onTap] for a tap in [padding], outside the grid, which handles its own touches; a tap
- * there focuses the terminal as one on the grid does. [keys] restart the detector when they change.
+ * there focuses the terminal as one on the grid does, while long presses and drags there do
+ * nothing. [keys] restart the detector when they change.
  */
 private fun Modifier.paddingTaps(
     padding: PaddingValues,
@@ -494,7 +496,7 @@ private fun Modifier.paddingTaps(
             if (grid.contains(down.position)) return@awaitEachGesture
             // terminalMouse handles a mouse in the padding too, and consumes its events.
             if (down.isConsumed) return@awaitEachGesture
-            if (waitForUpOrCancellation() != null) onTap()
+            if (awaitPress(down) == Press.Tap) onTap()
         }
     }
 

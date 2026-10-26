@@ -17,6 +17,7 @@
 package com.google.vtfx.compose
 
 import android.os.Looper
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -174,6 +175,46 @@ class TerminalGesturesTest {
         assertEquals(TextToolbarStatus.Shown, toolbar.status)
         composeRule.runOnIdle { menu.onCopyRequested!!() }
         assertEquals(listOf("hello"), copied)
+    }
+
+    @Test
+    fun onlyATapInThePaddingActsAndItDropsTheSelection() {
+        val toolbar = FakeTextToolbar()
+        composeRule.setContent {
+            CompositionLocalProvider(LocalTextToolbar provides toolbar) {
+                Terminal(
+                    display,
+                    Modifier.size(300.dp, 200.dp),
+                    style = TerminalStyle(padding = PaddingValues(30.dp)),
+                )
+            }
+        }
+        composeRule.waitForIdle()
+        session.feed("hello world".toByteArray())
+        composeRule.waitForIdle()
+        val padding = with(composeRule.density) { 30.dp.toPx() }
+        val inPadding = Offset(padding / 4, padding / 4)
+        pressAndHold(Offset(padding + 1f, padding + 5f))
+        moveAndLift(Offset(padding + 1f, padding + 5f))
+        val selection = TerminalSelection(Cell(0, 0), Cell(4, 0))
+        assertEquals(selection, display.selection)
+        assertEquals(TextToolbarStatus.Shown, toolbar.status)
+        // A drag and a long press in the padding do nothing.
+        composeRule.onRoot().performTouchInput {
+            down(inPadding)
+            moveTo(inPadding + Offset(3 * padding, 0f))
+            up()
+        }
+        composeRule.waitForIdle()
+        pressAndHold(inPadding)
+        moveAndLift(inPadding)
+        assertEquals(selection, display.selection)
+        assertEquals(TextToolbarStatus.Shown, toolbar.status)
+        // A tap there drops the selection, as a tap on the grid does.
+        composeRule.onRoot().performTouchInput { click(inPadding) }
+        composeRule.waitForIdle()
+        assertEquals(null, display.selection)
+        assertEquals(TextToolbarStatus.Hidden, toolbar.status)
     }
 
     @Test
