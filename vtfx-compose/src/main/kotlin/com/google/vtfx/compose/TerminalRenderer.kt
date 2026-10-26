@@ -700,15 +700,20 @@ internal class TerminalRenderer(
         val cellStyle = line.styleAt(column)
         if (cellStyle.isInvisible) return
         line.textAt(column)?.let { text ->
-            drawRun(
-                text,
-                column,
-                cursorRow,
-                cellStyle,
-                defaultForeground,
-                defaultBackground,
-                colorOverride = cursorTextColor,
-            )
+            // Drawn as drawText draws it, as geometry over the cell (both cells if wide).
+            if (text.length == 1 && BoxDrawing.isDrawn(text[0].code)) {
+                with(BoxDrawing) { drawBox(text[0].code, topLeft, size, cursorTextColor, fill) }
+            } else {
+                drawRun(
+                    text,
+                    column,
+                    cursorRow,
+                    cellStyle,
+                    defaultForeground,
+                    defaultBackground,
+                    colorOverride = cursorTextColor,
+                )
+            }
         }
         // The block hides the cell's underline and overline; they are drawn again over it.
         if (cellStyle.underline != UnderlineStyle.None || cellStyle.isOverlined) {

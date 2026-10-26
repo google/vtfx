@@ -19,10 +19,13 @@ package com.google.vtfx.compose
 import android.graphics.Bitmap
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
 import com.google.vtfx.core.AmbiguousWidth
 import com.google.vtfx.session.TerminalSession
@@ -93,6 +96,34 @@ class BoxDrawingTest {
         val (cells, block) = foregroundRuns(2, "\u2588")
 
         assertEquals(cells, block)
+    }
+
+    /**
+     * Shows [text] under the focused block cursor, which the default foreground fills, and returns
+     * how many pixels of the default foreground are left after the character is drawn over it in
+     * the default background.
+     */
+    private fun cursorPixelsLeftOver(ambiguousWidth: AmbiguousWidth, text: String): Int {
+        val session = TerminalSession({}, ambiguousWidth = ambiguousWidth)
+        composeRule.setContent { Terminal(session, Modifier.size(300.dp, 200.dp)) }
+        composeRule.waitForIdle()
+        composeRule.onRoot().performTouchInput { click(Offset(5f, 5f)) }
+        session.feed("$text\u001b[1;1H".toByteArray(Charsets.UTF_8))
+        composeRule.waitForIdle()
+        val bitmap = composeRule.onRoot().captureToImage().asAndroidBitmap()
+        return (0 until bitmap.height).sumOf { y ->
+            (0 until bitmap.width).count { x -> bitmap.getPixel(x, y) == FOREGROUND }
+        }
+    }
+
+    @Test
+    fun aWideFullBlockUnderTheCursorFillsBothCells() {
+        assertEquals(0, cursorPixelsLeftOver(AmbiguousWidth.Wide, "\u2588"))
+    }
+
+    @Test
+    fun aFullBlockUnderTheCursorFillsItsCell() {
+        assertEquals(0, cursorPixelsLeftOver(AmbiguousWidth.Narrow, "\u2588"))
     }
 
     private companion object {
