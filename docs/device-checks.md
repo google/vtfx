@@ -78,7 +78,7 @@ On the emulator (Pixel 9 Pro AVD, API 36 Google Play image, the preinstalled Gbo
 
 If `0b` appears in 3.1.1 and no toast appears, the IME received the key before `TerminalInputView.dispatchKeyEventPreIme`. Tell us the IME and the device.
 
-`scripts/device_checks.py` runs these rows with a virtual USB keyboard made through uhid, whose keys take the path of a physical keyboard. On a Pixel XL (Android 10, Gboard 18.4), on 2026-10-26, all three rows were as expected: the toast appeared and nothing reached the host in English and in Japanese (romaji input), and `Ctrl+C` reached it as `03`. Gboard's Japanese keyboard switches between kana and Latin input for physical keys on `Shift+Space`, which the script uses to choose the mode.
+`scripts/device_checks.py` runs these rows with a virtual USB keyboard made through uhid, whose keys take the path of a physical keyboard. On a Pixel XL (Android 10, Gboard 18.4), on 2026-10-26, all three rows were as expected: the toast appeared and nothing reached the host in English and in Japanese (romaji input), and `Ctrl+C` reached it as `03`. On a Pixel 8 (Android 15, Gboard 14.8), the same on 2026-10-26. Gboard's Japanese keyboard switches between kana and Latin input for physical keys on `Shift+Space`, which the script uses to choose the mode.
 
 ### 3.2 AltGr
 
@@ -92,7 +92,7 @@ In Settings → System → Keyboard → Physical keyboard, set the layout to Ger
 | 3.2.2 | `AltGr+7` | `7b` (`{`) | `1b37` or similar |
 | 3.2.3 | Left `Alt+Q` | `1b71` (ESC q; the default behavior of Alt) | — |
 
-`scripts/device_checks.py` runs these rows with a virtual USB keyboard whose layout it sets to German. On a Pixel XL (Android 10, Gboard 18.4), on 2026-10-26, all three rows were as expected, but not through `KeyEventHandler`: with Latin input, Gboard takes the keys of AltGr and commits the characters of the layout itself (`@`, `{`, and `€` for `AltGr+E`). With Japanese input, Gboard takes them too, and nothing reaches the host before it commits. With a US layout, `AltGr+Q` reaches the app and is sent as `1b71`, as Alt is. What remains is an IME that passes the keys of AltGr to the app, where `KeyEventHandler` would send ESC and the key without AltGr; no such IME was available.
+`scripts/device_checks.py` runs these rows with a virtual USB keyboard whose layout it sets to German. On a Pixel XL (Android 10, Gboard 18.4), on 2026-10-26, all three rows were as expected, but not through `KeyEventHandler`: with Latin input, Gboard takes the keys of AltGr and commits the characters of the layout itself (`@`, `{`, and `€` for `AltGr+E`). With Japanese input, Gboard takes them too, and nothing reaches the host before it commits. With a US layout, `AltGr+Q` reaches the app and is sent as `1b71`, as Alt is. From Android 14, the layout of a physical keyboard is chosen on other screens of Settings, which the script does not drive yet, so 3.2 was not run on the Pixel 8. What remains is an IME that passes the keys of AltGr to the app, where `KeyEventHandler` would send ESC and the key without AltGr; no such IME was available.
 
 ## 4. TalkBack
 
@@ -150,6 +150,8 @@ What to tell us: the device model and Android version, and the JSON lines output
 
 Checked on a Pixel XL (Android 10, 60 Hz) on 2026-10-25, in two runs: `drawP50` of `full` 6.6 and 6.9 ms, of `scroll` 1.7 and 1.6 ms, with `p50` of the whole frame 14.5 and 15.3 ms in `full`; `flood` at 52.4 and 51.2 frames per second, with 27.5 % and 29.7 % janky frames, and 85 % and 88 % of the throughput without a display. Printing a large file over SSH, below, was not checked.
 
+On 2026-10-26, with `scripts/benchmark.py`'s rendering scenes: a Galaxy A06 (Android 15, 60 Hz, a low-end phone) drew `full` in 7.2 ms and `scroll` in 3.5 ms (`drawP50`), and `flood` at 46.8 frames per second with 49.6 % janky frames and 87 % of the throughput without a display; a Galaxy S24 (Android 16, 120 Hz, Exynos 2400) drew `full` in 4.4 ms and `scroll` in 1.3 ms, and `flood` at 119.6 frames per second with no janky frames and 89 % of the throughput; a Pixel Tablet (Android 16, 60 Hz) drew `full` in 4.7 ms and `scroll` in 2.6 ms, and `flood` at 59.8 frames per second with no janky frames and 94 % of the throughput. The drawing targets hold on all three; the targets of `flood` are set for the Pixel XL only, and the Galaxy A06 is below them.
+
 The `flood` scene measures the frames while output comes without a break, but not input. Also have the host print a large file without a break (for example `cat` of a file of several MB over SSH), and tell us whether the display keeps scrolling smoothly and keys typed meanwhile reach the host without a long delay ([decisions/0084](decisions/0084-session-and-threads.md)).
 
 ## 6. Han glyphs
@@ -163,6 +165,8 @@ adb -s SERIAL shell am start -S -n com.google.vtfx.sample/.MainActivity --es loc
 ```
 
 Type `unicode` and check that the second line has Japanese glyphs (the bottom left of 直 connects into an L shape, the central vertical stroke of 角 does not pierce through the bottom, and the top right of 説 is shaped like ハ). Then start with `--es locale zh-CN` and check that the glyphs change.
+
+On a Galaxy S24 (Android 16, One UI, which ships Samsung's own CJK font `SECCJK`), on 2026-10-26, the second line had the Japanese glyphs above with `--es locale ja`, and the Chinese ones with `--es locale zh-CN` (the bottom left of 直 without the L shape, the central stroke of 角 through the bottom), judged by an agent from screenshots.
 
 ## 7. Mouse and touchpad
 
@@ -201,6 +205,8 @@ Section 9 of [emulation.md](design/emulation.md). Images of the kitty graphics p
 | 8.6 | Run `scripts/e2e_render.py --serial SERIAL`, whose `DeviceLimitsTest` draws an image of 64 MiB (4096 × 4096 pixels), the largest one image may be, with `maxImageBytes` of 256 MiB | `theLargestImageIsDrawn` and `anImageLargerThanAndroidDrawsIsNotDrawn` pass in `build/reports/e2e-render.md`. If one fails, note its message and the device's largest texture size |
 
 What to tell us: the device, the Android version, the programs, and each row's result, with the meminfo output of 8.5 and the report of 8.6.
+
+`scripts/e2e_render.py` ran 8.6 on 2026-10-26, with `RenderConsistencyTest` and `SystemFontsTest`: all 20 tests passed on a Pixel 5 (Android 11, 12, and 13), a Pixel 8 (Android 15), a Pixel 10 (Android 16), a Pixel Tablet (Android 16), a Galaxy S24 (Android 16, Exynos 2400 with an AMD-based GPU), and a Galaxy A06 (Android 15), so the largest image was drawn, and a larger one refused, with the GPUs of Qualcomm, ARM, Imagination, and AMD.
 
 ## 9. The input history on switching IMEs
 
@@ -241,6 +247,8 @@ Use a low-end phone and a device with a low density, and copy the font files to 
 
 What to tell us: the device, the Android version, the density, whether the build was debug or release, the reported times, and the memory.
 
+`SystemFontsTest` (in the debug build) sanitized the first face of every font in `/system/fonts` within the limits on the devices of section 8, on 2026-10-26. The first face of NotoSerifCJK-Regular.ttc (26 MB, CFF) took 4.4 to 5.3 s on a Pixel 5, 6.8 s on a Pixel 8, 7.9 s on a Pixel 10, 9.4 s on a Pixel Tablet, 6.4 s on a Galaxy S24, and 13.7 s on a Galaxy A06; that of NotoSansCJK-Regular.ttc 2.5 to 3.0 s on a Pixel 5. Samsung's own CJK font, SECCJK-Regular.ttc (19 MB, CFF), took 2.4 s on the Galaxy S24 and 6.3 s on the Galaxy A06, and drew its own glyphs. 11.1 to 11.3, the memory, and the release build were not run.
+
 ## 12. Copying all the text
 
 Section 4 of [compose-input.md](design/compose-input.md). Copying all the text copies at most the newest 10,000 lines, cut to 256 Ki characters (`TerminalDisplay.selectedText`), so that the system clipboard can take it. Robolectric's clipboard has no Binder limit; on the emulator and a Pixel XL (Android 10), `DeviceLimitsTest` in `vtfx-compose` checks that a copy of all the text, and a copy of a selection of a large display whose cells the host filled with combining marks, reach the system clipboard without `TransactionTooLargeException`. What is not known is how long the UI freezes on other devices.
@@ -253,6 +261,8 @@ Section 4 of [compose-input.md](design/compose-input.md). Copying all the text c
 | 12.4 | Make the host fill the screen with characters that each carry many combining marks (for example, paste such a text of many lines), select the whole screen, and copy | The app does not crash. Note how long the UI freezes |
 
 If the app crashes, tell us the exception in logcat.
+
+`DeviceLimitsTest` copied all the text, and a large selection of combining marks, to the system clipboard without a crash on the devices of section 8, on 2026-10-26. How long the UI freezes was not measured.
 
 ## 13. IMEs on API 29 to 33
 
@@ -268,6 +278,17 @@ Use Gboard on devices with Android 10, 11, 12, and 13, and start the sample app 
 | 13.4 | In Japanese, type and commit `にほんご`, then reconvert it (select it and choose a candidate, if Gboard offers it) | `7f`s for the committed text, then the new text on commit |
 
 What to tell us: the Gboard version, the device and Android version, and each row's logcat output.
+
+`scripts/e2e_ime.py --serial` now runs the `spec/ime` scenarios on devices, finding Gboard's keys from the keyboard's touchable region and its language from what reaches the host, on 2026-10-26:
+
+| Device | Gboard | Result |
+|---|---|---|
+| Pixel XL, Android 10 | 18.4 | All 12 scenarios that run on devices passed |
+| Pixel 8, Android 15 | 14.8 | 11 passed; `en-autocorrect` differs from `spec/ime/gboard.toml` because this Gboard corrects `teh`: it sent `teh`, two `7f`s, and `he `, which is right for the correction |
+| Pixel 5, Android 11 | 9.4, as the system shipped it | Korean and the hardware key scenario passed. This Gboard holds English words as composing text (`en-vim-j` sent nothing before a commit, so per-key apps need direct input), commits a corrected word whole, adds no period on two spaces, and kept its Japanese keyboard at 12 keys, which the scenarios do not type |
+| Pixel 5, Android 12 and 13 | 10.8 and 11.7, as the system shipped them | Not run: the keys are not where `layouts_for` puts them |
+
+So rows 13.1 to 13.3 are checked on Android 10 and 15, and on Android 11 with an old Gboard; Android 12 and 13, a current Gboard on Android 11 to 13, and 13.4 remain. The phones' layouts of `layouts_for` do not fit Gboard 15.1 on a Pixel 10, or a tablet.
 
 ## 14. Searching
 
@@ -297,7 +318,7 @@ Connect a USB or Bluetooth keyboard, set the IME to Gboard, and start the sample
 
 What to tell us: the Gboard version, the device and Android version, and each row's logcat output.
 
-`scripts/device_checks.py` runs 15.2 with a virtual USB keyboard. On a Pixel XL (Android 10, Gboard 18.4), on 2026-10-26, every key reached the host. 15.1 needs taps on the software keyboard, which the script does not make yet.
+`scripts/device_checks.py` runs 15.2 with a virtual USB keyboard. On a Pixel XL (Android 10, Gboard 18.4) and a Pixel 8 (Android 15, Gboard 14.8), on 2026-10-26, every key reached the host. 15.1 needs taps on the software keyboard, which the script does not make yet.
 
 ## 16. Who runs each check
 
@@ -310,13 +331,13 @@ What to tell us: the Gboard version, the device and Android version, and each ro
 | 3: physical keyboards | Agents, with a virtual keyboard made through `uhid` (`scripts/device_checks.py`) | — |
 | 4: TalkBack | Agents, with touches from a virtual touchscreen | Only if explore by touch cannot be driven |
 | 5: rendering performance | Agents | Whether the scrolling of a large output looks smooth, judged from a recording |
-| 6: Han glyphs | Agents | The glyphs, judged from screenshots, if the agent cannot tell them apart |
+| 6: Han glyphs | Agents, judging screenshots | Only if the agent cannot tell the glyphs apart |
 | 7: mouse and touchpad | Agents, with a virtual mouse and touchpad | Whether the scrolling of 7.2 feels proportional |
 | 8: images | Agents | The images, judged from screenshots |
 | 9: the input history on switching IMEs | Agents, with an IME written for the check | — |
 | 10: links taken by a protected activity | Agents, with an app written for the check | — |
 | 11: imported fonts | Agents | Whether text without hinting looks acceptable (11.3), judged from screenshots |
 | 12: copying all the text | Agents | — |
-| 13: IMEs on API 29 to 33 | Agents | — |
+| 13: IMEs on API 29 to 33 | Agents (`scripts/e2e_ime.py --serial`); the keys of more Gboard versions remain to be found | — |
 | 14: searching | Agents | — |
 | 15: restarts of the IME | Agents, with a virtual keyboard (`scripts/device_checks.py` for 15.2) | Whether the restart when Ctrl is armed feels disruptive (15.3) |
