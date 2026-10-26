@@ -10,7 +10,7 @@ The steps of a release, for version `X.Y.Z`. Why each step is there is in [decis
 
 ## 2. Checks
 
-Run the checks of section 14 of [testing.md](design/testing.md) on the tree to be released, or on a commit that differs from it only in documents and in `version`. The long fuzzing takes about 30 minutes per fuzz target; it can run in a separate worktree (`git worktree add --detach ../vtfx-fuzz <commit>`, with `local.properties` copied) while the e2e runs.
+Run the checks of section 14 of [testing.md](design/testing.md) on the tree to be released, or on a commit that differs from it only in documents and in `version`.
 
 ```bash
 scripts/check.sh
@@ -20,6 +20,19 @@ scripts/e2e_ime.py
 scripts/e2e_render.py
 scripts/emulator.sh stop
 ```
+
+`scripts/fuzz.sh` fuzzes the targets one after another, each on one core, so the long fuzzing alone takes about two and a half hours. The fuzz targets do not depend on each other, so running each in a worktree of its own at the same commit, at the same time as the others and the e2e, fuzzes each target as long and ends in a little over 30 minutes. Each fuzzing JVM takes up to 1 GiB of heap. Running one target on more cores for less time (libFuzzer's `-fork`) is not the same: coverage-guided fuzzing reaches deeper states over time, not only over runs.
+
+```bash
+for module in vtfx-core vtfx-gate vtfx-input vtfx-font vtfx-font-gate; do
+  git worktree add --detach "../vtfx-fuzz-$module" <commit>
+  cp local.properties "../vtfx-fuzz-$module/"
+  (cd "../vtfx-fuzz-$module" && scripts/fuzz.sh 30m "$module") &
+done
+wait
+```
+
+Stopping `scripts/fuzz.sh` midway can leave an input named `crash-*` in the corpus, written at the moment the fuzzing JVM was stopped. Replay it with the corpus test of the module before taking it for a finding.
 
 Recommended, with a device reached over adb ([device-checks.md](device-checks.md)):
 
