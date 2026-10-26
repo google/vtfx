@@ -336,6 +336,24 @@ class SearchTest {
     }
 
     @Test
+    fun matchesOfTheScreenBeyondTheLimitHideThoseOfTheScrollbackOnlyWhileTheyAreThere() {
+        // A match in the scrollback, then 1000 on the screen.
+        val terminal = terminal(100, 11, "x" + "\r\n".repeat(11))
+        val index = search(terminal, "x")
+        terminal.write("\u001b[H" + (1..10).joinToString("\r\n") { "x".repeat(100) })
+        index.update(terminal)
+        assertEquals(SearchIndex.MAX_MATCHES, index.matches.size)
+        assertEquals("1:0-1:1", found(index).first())
+        assertTrue(index.isCapped)
+
+        terminal.write("\u001b[2J")
+        index.update(terminal)
+
+        assertEquals(listOf("0:0-0:1"), found(index))
+        assertFalse(index.isCapped)
+    }
+
+    @Test
     fun theTextToSearchForMustNotBeEmpty() {
         assertFailsWith<IllegalArgumentException> { SearchQuery("", ignoreCase = false) }
     }

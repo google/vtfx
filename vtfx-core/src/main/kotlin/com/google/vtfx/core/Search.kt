@@ -143,17 +143,24 @@ private constructor(
 
     private val finder = LiteralFinder(query)
 
-    /** The matches, oldest first. */
-    private val kept = ArrayDeque<SearchMatch>()
+    /** The newest [MAX_MATCHES] matches of [texts], which do not change, oldest first. */
+    private val closed = ArrayDeque<SearchMatch>()
 
-    /** How many of [kept], from the first, are in [texts], which do not change. */
-    private var closedCount = 0
+    /**
+     * The newest [MAX_MATCHES] matches of the lines after [texts], which may change, found in the
+     * last update, oldest first. They are kept apart from [closed], so that matches of the screen
+     * that go at the next update do not drop matches of [texts] for good.
+     */
+    private val open = ArrayDeque<SearchMatch>()
 
     /** The first line of the newest match of [texts] that [MAX_MATCHES] dropped. */
     private var droppedClosedLine = Long.MIN_VALUE
 
     /** Whether [MAX_MATCHES] dropped matches of the screen in the last update. */
     private var droppedOpen = false
+
+    /** The newest [MAX_MATCHES] of [closed] and [open]. */
+    private var newest: List<SearchMatch> = emptyList()
 
     /** The line to read from: the start of the first line that may still change. */
     public var nextLine: Long = nextLine
@@ -165,15 +172,17 @@ private constructor(
 
     init {
         for (text in texts) find(text, closing = true)
+        updateNewest()
     }
 
     /** The matches, oldest first, ordered by their first cell. */
     public val matches: List<SearchMatch>
-        get() = kept
+        get() = newest
 
     /** Whether there are more matches than [matches], which keeps only the newest. */
     public val isCapped: Boolean
-        get() = droppedOpen || droppedClosedLine >= oldestLine
+        get() =
+            droppedOpen || droppedClosedLine >= oldestLine || closed.size + open.size > MAX_MATCHES
 
     /**
      * Returns an index of [newQuery] over the lines this one read, without reading them again. It
@@ -190,8 +199,9 @@ private constructor(
         if (generation != null && read.generation != generation) {
             // The lines read are numbered differently from those kept.
             texts.clear()
-            kept.clear()
-            closedCount = 0
+            closed.clear()
+            open.clear()
+            newest = emptyList()
             droppedClosedLine = Long.MIN_VALUE
             nextLine = Long.MIN_VALUE
             generation = null
@@ -201,12 +211,9 @@ private constructor(
         oldestLine = read.oldestLine
         screenLine = read.screenLine
         while (texts.isNotEmpty() && texts.first().lastLine < oldestLine) texts.removeFirst()
-        while (kept.isNotEmpty() && kept.first().firstLine < oldestLine) {
-            kept.removeFirst()
-            if (closedCount > 0) closedCount--
-        }
+        while (closed.isNotEmpty() && closed.first().firstLine < oldestLine) closed.removeFirst()
         // The screen may have changed since.
-        while (kept.size > closedCount) kept.removeLast()
+        open.clear()
         droppedOpen = false
         val lines = read.lines
         var row = 0
@@ -229,7 +236,17 @@ private constructor(
             }
             row++
         }
+        updateNewest()
         return !read.isComplete
+    }
+
+    private fun updateNewest() {
+        val hidden = maxOf(0, closed.size + open.size - MAX_MATCHES)
+        newest =
+            ArrayList<SearchMatch>(closed.size - hidden + open.size).apply {
+                for (index in hidden until closed.size) add(closed[index])
+                addAll(open)
+            }
     }
 
     /** Adds the matches in [line], which goes into [texts] if [closing]. */
@@ -255,13 +272,11 @@ private constructor(
 
     /** Adds [match], of a line that goes into [texts] if [closing]. */
     private fun add(closing: Boolean, match: SearchMatch) {
-        kept.addLast(match)
-        if (closing) closedCount++
-        if (kept.size <= MAX_MATCHES) return
-        val dropped = kept.removeFirst()
-        // The oldest match is of a line in texts, or else of the line being searched.
-        if (closedCount > 0) {
-            closedCount--
+        val matches = if (closing) closed else open
+        matches.addLast(match)
+        if (matches.size <= MAX_MATCHES) return
+        val dropped = matches.removeFirst()
+        if (closing) {
             droppedClosedLine = maxOf(droppedClosedLine, dropped.firstLine)
         } else {
             droppedOpen = true
