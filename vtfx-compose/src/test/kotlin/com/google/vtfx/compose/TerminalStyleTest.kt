@@ -334,6 +334,16 @@ class TerminalStyleTest {
         }
     }
 
+    @Test
+    fun sanitizedFontKeepsItsFamiliesWhenTheCallerChangesItsList() {
+        val families = mutableListOf(sanitizedFamily("wide"))
+        val font = TerminalFont.Sanitized(families)
+
+        families.clear()
+
+        assertEquals(1, font.families.size)
+    }
+
     private fun textLocales(locale: LocaleList?): android.os.LocaleList {
         val typefaces =
             TextTypefaces(

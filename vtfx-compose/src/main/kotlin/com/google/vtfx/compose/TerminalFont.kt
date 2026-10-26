@@ -97,12 +97,16 @@ public sealed interface TerminalFont {
      *
      * The cell size is measured from the first family.
      *
-     * @property families The families, at least one and at most [MAX_FAMILIES].
+     * @param families The families, at least one and at most [MAX_FAMILIES].
      */
-    public class Sanitized(public val families: List<SanitizedFamily>) : TerminalFont {
+    public class Sanitized(families: List<SanitizedFamily>) : TerminalFont {
+        /** The families, at least one and at most [MAX_FAMILIES]. */
+        public val families: List<SanitizedFamily> = families.toList()
+
+        // The bounds are checked on the copy, which a caller that changes its list cannot break.
         init {
-            require(families.size in 1..MAX_FAMILIES) {
-                "${families.size} families out of 1..$MAX_FAMILIES"
+            require(this.families.size in 1..MAX_FAMILIES) {
+                "${this.families.size} families out of 1..$MAX_FAMILIES"
             }
         }
 
