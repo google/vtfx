@@ -162,3 +162,15 @@ The limits are in section 10 of [emulation.md](emulation.md), and the default po
 - Assertions use `kotlin.test`. Failures that carry an expected and an actual value, such as those of the spec runners, are `ComparisonFailure`, which IDEs show as a diff.
 - Groups of tests are nested classes run by `Enclosed`. JUnit 4 constructs each nested class on its own, so what the tests of a group share is an interface that each nested class implements by delegation to a fresh instance (such as `AttackTest` in `vtfx-gate`, and `EmulationCoverageTest` and `GraphicsTest` in `vtfx-core`).
 - A time limit on a part of a test is `assertCompletesWithin` in the tests of `vtfx-core`, which runs that part on a thread of its own; a limit on a whole test is `@Test(timeout = ...)`.
+
+## 14. Checks before a release
+
+A release needs more than the gates. These checks run on the tree to be released, or on a commit that differs from it only in documents (`*.md`) and in `version` in `gradle.properties`, and their results go in the `TEST=` line of the release commit ([releasing.md](../releasing.md), [decisions/0093](../decisions/0093-releases.md)). They are not gates in the sense of section 1: the e2e depends on a real IME, and none of them runs on every commit.
+
+| Check | Required | Passes when |
+|---|---|---|
+| `scripts/check.sh` (section 9) | Yes | It exits with 0 |
+| `scripts/fuzz.sh 30m` (section 7) | Yes | No fuzz target finds a crash. A crash is fixed with its input kept in the corpus, and the checks run again |
+| `scripts/e2e_ime.py` on the emulator (section 8) | Yes | No case fails after its rerun. The cases reported as flaky are named in the `TEST=` line |
+| `scripts/e2e_render.py` on the emulator (section 8) | Yes | Every test passes |
+| `scripts/device_checks.py --serial` and `scripts/e2e_ime.py --serial` on real devices ([device-checks.md](../device-checks.md)) | No; recommended when a device is at hand | Results that differ from the expectation are handled as bugs ([reviews/README.md](../reviews/README.md)); whether one holds up the release is decided by a human |
