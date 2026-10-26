@@ -16,8 +16,8 @@
 """Drives Gboard on an emulator through scripted scenarios and records IME probe traces.
 
 The key coordinates assume a 1080x2400 screen (Pixel 7 AVD) and Gboard 17.2 with the
-English (US), Japanese (QWERTY) and Korean (2-set) keyboards enabled in that order. They will
-need adjusting for other devices or Gboard versions.
+English (US), Japanese (QWERTY) and Korean (2-set) keyboards enabled in that order.
+layouts_for() computes them for other screens (scripts/e2e_ime.py uses it on devices).
 
 Usage: run_scenarios.py OUT_DIR [SCENARIO_GLOB ...]
 """
@@ -63,6 +63,39 @@ LAYOUTS = {
 }
 # The Korean 2-set layout shares the English geometry. Type it with the QWERTY letters.
 LAYOUTS["ko"] = LAYOUTS["en"]
+
+
+def layouts_for(left, top, right, bottom):
+    """The key coordinates of Gboard's keyboards on any screen, from the touchable region of the
+    keyboard (`touchable region` of the InputMethod window in `dumpsys window windows`).
+
+    The keys are at fixed fractions of the width, measured on the Pixel 7 AVD and on a Pixel XL
+    with Gboard 18.4: four rows of keys under a toolbar about 0.73 of a row high. On a device with
+    three-button navigation, Gboard shows a language switch key ("GLOBE") where the Japanese
+    keyboard has "?" and left of the English space bar."""
+    key = (right - left) / 10
+    row = (bottom - top) / (4 + 0.733)
+    rows = [round(bottom - (3.5 - k) * row) for k in range(4)]
+
+    def at(fraction, k):
+        return (round(left + fraction * 10 * key), rows[k])
+
+    def layout(home_row_offset, bottom_row):
+        keys = {ch: at((i + 0.5) / 10, 0) for i, ch in enumerate("qwertyuiop")}
+        keys.update({ch: at((i + home_row_offset) / 10, 1) for i, ch in enumerate("asdfghjkl")})
+        keys.update({ch: at((i + 2) / 10, 2) for i, ch in enumerate("zxcvbnm")})
+        keys["SHIFT"] = at(0.078, 2)
+        keys["BKSP"] = at(0.92, 2)
+        keys.update({name: at(fraction, 3) for name, fraction in bottom_row.items()})
+        return keys
+
+    layouts = {
+        "en": layout(1.0, {"SYM": 0.078, ",": 0.2, "GLOBE": 0.3, " ": 0.55, ".": 0.795, "ENTER": 0.92}),
+        "ja": layout(0.5, {"KANA": 0.078, "、": 0.2, "?": 0.3, "GLOBE": 0.3, " ": 0.45, "。": 0.6, "LEFT": 0.7,
+                           "RIGHT": 0.795, "ENTER": 0.92}),
+    }
+    layouts["ko"] = layouts["en"]
+    return layouts
 
 
 def adb(*args, check=True):

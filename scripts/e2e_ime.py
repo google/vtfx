@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Runs the IME end-to-end tests on an emulator and writes a report.
+"""Runs the IME end-to-end tests on an emulator or a device and writes a report.
 
 Types the scenarios of tools/ime-probe/scripts/run_scenarios.py on Gboard into the sample app
 (vtfx-sample), collects the bytes the app sent to its pseudo host, and compares them with the
@@ -23,9 +23,14 @@ human-owned expectations in spec/ime/gboard.toml. The result is for reporting, n
 Before the scenarios, Gboard is set up with the English (US), Japanese (QWERTY), and Korean (2-set)
 keyboards through its settings screen, since the emulator boots from a snapshot without them.
 
+On a screen other than the Pixel 7 AVD's (a device reached over adb), the keys are found from the
+keyboard's touchable region (layouts_for() in run_scenarios.py), and the keyboard's language is
+told by what reaches the host after typing "a" and Enter, since Gboard does not report it in the
+settings on every Android version.
+
 Usage: e2e_ime.py [--serial SERIAL] [--report PATH] [--skip-build] [CASE_GLOB ...]
 
-Start the emulator with scripts/emulator.sh start first.
+Start the emulator with scripts/emulator.sh start first, or pass the serial of a device.
 """
 
 import argparse
@@ -54,6 +59,13 @@ KEYBOARDS = [
     ("Korean", "한국어", "두벌식", "-1906255757"),
 ]
 ENGLISH_SUBTYPE = "1594443099"
+ENGLISH_NAME = "English (US)"
+# The screen of the AVD that the coordinates of run_scenarios.py were measured on.
+AVD_SCREEN = "1080x2400"
+# Where run_case taps to focus the terminal, and how it switches the keyboard's language; on a
+# device, adapt_to_device() replaces them.
+terminal_tap = (540, 900)
+switch_language = None
 
 
 def adb(serial, *args, check=True):
@@ -104,6 +116,19 @@ def enabled_subtypes(serial):
     return set()
 
 
+def gboard_languages(serial, ui):
+    """The text of Gboard's settings screen, whose summary of "Languages" names the keyboards
+    (e.g. "English (US) (QWERTY), 日本語（QWERTY）")."""
+    adb(serial, "shell", "am", "start", "-S", "-W", "-n", GBOARD_SETTINGS)
+    for _ in range(10):
+        labels = [label for label, _ in ui.nodes()]
+        if "Languages" in labels:
+            break
+        time.sleep(1)
+    adb(serial, "shell", "am", "force-stop", GBOARD_SETTINGS.split("/")[0])
+    return "\n".join(labels)
+
+
 def set_up_gboard(serial):
     """Enables Gboard with the English, Japanese, and Korean keyboards, if needed."""
     adb(serial, "shell", "ime", "enable", GBOARD)
@@ -111,8 +136,15 @@ def set_up_gboard(serial):
     # Show the software keyboard even if a hardware keyboard is reported.
     adb(serial, "shell", "settings", "put", "secure", "show_ime_with_hard_keyboard", "1")
     ui = Ui(serial)
+    # Some versions of Android or Gboard list no subtypes in the settings; then Gboard's settings
+    # screen says which keyboards it has.
+    by_settings = bool(enabled_subtypes(serial))
+
+    def enabled(name, subtype):
+        return subtype in enabled_subtypes(serial) if by_settings else name in gboard_languages(serial, ui)
+
     for search, name, layout, subtype in KEYBOARDS:
-        if subtype in enabled_subtypes(serial):
+        if enabled(name, subtype):
             continue
         print(f"Adding the {search} keyboard to Gboard")
         adb(serial, "shell", "am", "start", "-W", "-n", GBOARD_SETTINGS)
@@ -131,11 +163,74 @@ def set_up_gboard(serial):
                 time.sleep(1)
         ui.tap("Done")
         adb(serial, "shell", "am", "force-stop", GBOARD_SETTINGS.split("/")[0])
-        if subtype not in enabled_subtypes(serial):
+        if not enabled(name, subtype):
             raise RuntimeError(f"Gboard did not enable the {search} keyboard")
-    missing = {ENGLISH_SUBTYPE, *(k[3] for k in KEYBOARDS)} - enabled_subtypes(serial)
+    missing = [name for name, subtype in [(ENGLISH_NAME, ENGLISH_SUBTYPE), *((k[1], k[3]) for k in KEYBOARDS)]
+               if not enabled(name, subtype)]
     if missing:
         raise RuntimeError(f"Gboard keyboards missing: {missing}")
+
+
+def keyboard_region(serial):
+    """The touchable region of the software keyboard, (left, top, right, bottom), once it shows."""
+    for _ in range(10):
+        windows = adb(serial, "shell", "dumpsys", "window", "windows")
+        match = re.search(r"Window\{\S+ u0 InputMethod\}:.*?touchable region=SkRegion\(\((\d+),(\d+),(\d+),(\d+)\)\)",
+                          windows, re.S)
+        if match and int(match.group(4)) > int(match.group(2)):
+            return tuple(int(v) for v in match.groups())
+        time.sleep(1)
+    raise RuntimeError("the software keyboard did not show")
+
+
+def adapt_to_device(serial, scenarios):
+    """On a screen other than the AVD's, finds Gboard's keys from its touchable region, and
+    switches its language by typing, since the subtype in the settings may not follow it."""
+    global terminal_tap, switch_language
+    width, height = (int(v) for v in re.search(r"(\d+)x(\d+)", adb(serial, "shell", "wm", "size")).groups())
+    if f"{width}x{height}" == AVD_SCREEN:
+        return
+    terminal_tap = (width // 2, height // 3)
+    adb(serial, "shell", "am", "start", "-S", "-W", "-n", ACTIVITY, "--ez", "logHostInput", "true")
+    time.sleep(2)
+    scenarios.tap(terminal_tap)
+    region = keyboard_region(serial)
+    scenarios.LAYOUTS = scenarios.layouts_for(*region)
+    print(f"Keyboard region {region} on a {width}x{height} screen")
+
+    def language():
+        """Types "a" and Enter, and tells the language by what reaches the host."""
+        adb(serial, "shell", "am", "start", "-S", "-W", "-n", ACTIVITY, "--ez", "logHostInput", "true")
+        time.sleep(2)
+        scenarios.tap(terminal_tap)
+        time.sleep(1.5)
+        adb(serial, "logcat", "-c")
+        # "a" is at the same place on the English and the Japanese keyboards, and Enter too.
+        keys = scenarios.LAYOUTS["ja"]
+        scenarios.tap((round(keys["a"][0] * 1.5), keys["a"][1]))
+        time.sleep(0.6)
+        scenarios.tap(keys["ENTER"])
+        time.sleep(1.5)
+        sent = collect_bytes(serial).decode("utf-8", errors="replace")
+        return {"a": "en", "あ": "ja", "ㅁ": "ko"}.get(sent[:1])
+
+    def switch(lang):
+        for _ in range(4):
+            current = language()
+            if current == lang:
+                break
+            scenarios.tap(scenarios.LAYOUTS[current or "en"]["GLOBE"])
+            time.sleep(1.5)
+        else:
+            return False
+        # Start again, so that the probe leaves nothing in the input history.
+        adb(serial, "shell", "am", "start", "-S", "-W", "-n", ACTIVITY, "--ez", "logHostInput", "true")
+        time.sleep(2)
+        scenarios.tap(terminal_tap)
+        time.sleep(2)
+        return True
+
+    switch_language = switch
 
 
 def load_scenarios():
@@ -158,9 +253,9 @@ def run_case(serial, scenarios, lang, steps):
     adb(serial, "shell", "am", "start", "-S", "-W", "-n", ACTIVITY, "--ez", "logHostInput", "true")
     time.sleep(2)
     # The pseudo host prints a prompt; typing starts after it.
-    scenarios.tap((540, 900))
+    scenarios.tap(terminal_tap)
     time.sleep(2)
-    switched = scenarios.ensure_language(lang)
+    switched = (switch_language or scenarios.ensure_language)(lang)
     adb(serial, "logcat", "-c")
     keys = scenarios.LAYOUTS[lang]
     for step in steps:
@@ -201,6 +296,7 @@ def main():
     adb(args.serial, "install", "-r", apk)
     set_up_gboard(args.serial)
     scenarios = load_scenarios()
+    adapt_to_device(args.serial, scenarios)
 
     with open(os.path.join(ROOT, "spec", "ime", "gboard.toml"), "rb") as f:
         cases = tomllib.load(f)["case"]
@@ -232,6 +328,7 @@ def main():
     gboard = re.search(r"versionName=(\S+)", adb(args.serial, "shell", "dumpsys", "package",
                                                  "com.google.android.inputmethod.latin"))
     release = adb(args.serial, "shell", "getprop", "ro.build.version.release").strip()
+    model = adb(args.serial, "shell", "getprop", "ro.product.model").strip()
     commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip()
     counts = {s: sum(1 for r in results if r[1] == s) for s in ("pass", "flaky", "fail", "skipped")}
     lines = [
@@ -245,6 +342,7 @@ def main():
         f"| Date (UTC) | {datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M')} |",
         f"| Commit | {commit} |",
         f"| Android | {release} |",
+        f"| Device | {model} |",
         f"| Gboard | {gboard.group(1) if gboard else 'unknown'} |",
         f"| Result | {counts['pass']} passed, {counts['flaky']} passed on retry, {counts['fail']} failed, {counts['skipped']} skipped |",
         "",
