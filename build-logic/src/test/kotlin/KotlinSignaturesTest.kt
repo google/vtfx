@@ -87,7 +87,9 @@ class KotlinSignaturesTest {
             }
 
             file signatures.sample.SampleKt {
+                @Deprecated(WARNING) public typealias OldNames = kotlin.collections.List<kotlin.String>
                 public final fun count(vararg names: kotlin.String): kotlin.Int
+                public typealias Names = kotlin.collections.List<kotlin.String>
             }
 
             public sealed interface signatures.sample.Shape {

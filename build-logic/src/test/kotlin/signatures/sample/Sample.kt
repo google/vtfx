@@ -19,6 +19,13 @@
 package signatures.sample
 
 /** Stands for InternalVtfxApi: what it marks is left out. */
+@Target(
+    AnnotationTarget.CLASS,
+    AnnotationTarget.FUNCTION,
+    AnnotationTarget.PROPERTY,
+    AnnotationTarget.TYPEALIAS,
+    AnnotationTarget.FILE,
+)
 annotation class Internal
 
 sealed interface Shape
@@ -66,3 +73,11 @@ enum class Mode {
 }
 
 fun count(vararg names: String): Int = names.size
+
+typealias Names = List<String>
+
+@Deprecated("Use Names")
+typealias OldNames = List<String>
+
+@Internal
+typealias SharedNames = List<String>

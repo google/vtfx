@@ -15,6 +15,7 @@
  */
 
 import kotlin.metadata.ClassKind
+import kotlin.metadata.KmAnnotationArgument
 import kotlin.metadata.KmClass
 import kotlin.metadata.KmClassifier
 import kotlin.metadata.KmConstructor
@@ -74,7 +75,7 @@ import org.objectweb.asm.Opcodes
  * for default values and type arguments, apps compiled earlier.
  *
  * Declarations that are not public or protected, or that carry one of the excluded annotations (or
- * are nested in a class that does), are left out, like in the ABI dump.
+ * are nested in a class or are in a file that does), are left out, like in the ABI dump.
  */
 object KotlinSignatures {
     /** The rendered signatures, and the public `const val`s found (docs/decisions/0087). */
@@ -314,6 +315,8 @@ object KotlinSignatures {
         }
 
         private fun facadeSection(parsed: Parsed, pkg: KmPackage): Pair<String, String>? {
+            // `@file:` annotations are on the class of the file.
+            if (parsed.annotations.any { it in excluded }) return null
             val name = parsed.internalName.replace('/', '.')
             val members = ArrayList<String>()
             pkg.properties.forEach { property(parsed, name, it, emptyMap())?.let(members::add) }
@@ -411,8 +414,18 @@ object KotlinSignatures {
 
         private fun typeAlias(t: KmTypeAlias): String? {
             if (!isPublic(t.visibility)) return null
+            // The annotations of a type alias are in the metadata, since the alias has no class,
+            // method, or field to carry them.
+            val annotations = t.annotations.associateBy { "L${it.className};" }
+            if (annotations.keys.any { it in excluded }) return null
+            val level =
+                annotations[DEPRECATED]?.let {
+                    (it.arguments["level"] as? KmAnnotationArgument.EnumValue)?.enumEntryName
+                        ?: "WARNING"
+                }
             val types = t.typeParameters.associate { it.id to it.name }
-            return visibility(t.visibility) +
+            return deprecation(level) +
+                visibility(t.visibility) +
                 " typealias " +
                 t.name +
                 typeParameters(t.typeParameters, types) +
