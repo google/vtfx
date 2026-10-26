@@ -80,7 +80,7 @@ Nothing in vtfx can tell an accessibility tool from another service below 34; th
 ## 5. The API reference of the default branch on GitHub Pages
 
 1. The workflow `.github/workflows/api-reference.yml` publishes the HTML API reference ([0087](0087-public-api.md)) of the default branch to GitHub Pages of the repository, at https://google.github.io/vtfx/, on every push to it; it can also be run by hand. The site holds that reference only; release tags publish nothing.
-2. The source links of a reference point at the tag of the version by default, and at the commit or tag given by the Gradle property `vtfx.sourceRef` when it is set (`vtfx.dokka`). The workflow sets it to the commit it builds.
+2. The source links of a reference point at the tag of the version by default, at `main` for a snapshot version (`-SNAPSHOT`), which has no tag, and at the commit or tag given by the Gradle property `vtfx.sourceRef` when it is set (`vtfx.dokka`). The workflow sets it to the commit it builds.
 3. Before deploying, the workflow checks the generated reference with `scripts/check_api_reference.py`.
 4. The workflow runs only commands that also run locally (`./gradlew -Pvtfx.sourceRef=<commit> :dokkaGenerate` and the script), so that nothing but the deployment depends on CI (section 7 of [architecture.md](../design/architecture.md)).
 5. The job that builds has only `contents: read`; only the job that deploys, which runs no code from the repository, has `pages: write` and `id-token: write`. The site is deployed from the uploaded artifact, with no `gh-pages` branch.

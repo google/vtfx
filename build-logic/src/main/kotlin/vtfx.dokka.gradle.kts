@@ -28,14 +28,17 @@ dokka {
         // The descriptions of the module and its packages.
         includes.from("Module.md")
         // Links each declaration to its source in the published repository, at the tag of the
-        // version (docs/decisions/0090), or at the commit that -Pvtfx.sourceRef names, which the
-        // reference of the default branch is built from (docs/decisions/0090).
+        // version, at main for a snapshot version, which has no tag, or at the commit that
+        // -Pvtfx.sourceRef names, which the reference of the default branch is built from
+        // (docs/decisions/0090).
         sourceLink {
             // Read outside the lambda, which the configuration cache stores without the project.
             val sourceDirectory = "${project.name}/src/main/kotlin"
+            val versionRef =
+                version.toString().let { if (it.endsWith("-SNAPSHOT")) "main" else "v$it" }
             localDirectory.set(layout.projectDirectory.dir("src/main/kotlin"))
             remoteUrl(
-                providers.gradleProperty("vtfx.sourceRef").orElse("v$version").map {
+                providers.gradleProperty("vtfx.sourceRef").orElse(versionRef).map {
                     "https://github.com/google/vtfx/blob/$it/$sourceDirectory"
                 }
             )
