@@ -22,7 +22,7 @@ The defaults and the reasons for them are in [decisions/0083](../decisions/0083-
 | `sendDeletes(count)` | `count` DELs, which erase text already sent in IME editing. A count outside 1 to 65536 is a programming error. |
 | `sendPaste(text, bracketed)` | Pasted text, converted as in section 2.1, and wrapped in `ESC [ 200 ~` and `ESC [ 201 ~` when `bracketed`. Text of several lines that the IME commits, such as a clipboard suggestion, is a paste too (section 4.2 of [ime-contract.md](ime-contract.md), [decisions/0082](../decisions/0082-ime-editing-model.md)). |
 | `sendReply(query, colors)` | The reply to a query (section 3). |
-| `sendMouse(report, tracking, encoding)` | A mouse report, only if the host asked for this kind of event with the tracking mode. Positions that the encoding cannot express are not sent. |
+| `sendMouse(report, tracking, encoding)` | A mouse report, only if the host asked for this kind of event with the tracking mode. Positions that the encoding cannot express are not sent. `isMouseReported` with the same arguments sends nothing and tells whether `sendMouse` would send the report, so that `TerminalSession` commits the composing text only for a press that the host gets (section 5.1 of [ime-contract.md](ime-contract.md)). |
 | `sendFocus(focused)` | `CSI I` or `CSI O`. |
 | (internal) `write(bytes)` | Used inside the gate for the reply to an OSC 52 read (section 4.1). |
 

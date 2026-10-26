@@ -118,7 +118,7 @@ Only this module can create bytes to send to the host. What it sends, how it rep
   - `sendDeletes(count)`: DELs that erase already-sent text in IME editing. The count has a limit (65536).
   - `sendPaste(text, bracketed)`: A paste. Removes control characters so that the end sequence of bracketed paste cannot be formed, and then brackets it (requirement 6.1, "Escaping from bracketed paste").
   - `sendReply(query, colors)`: The reply to `ReplyRequested`. The reply string is built, for the corresponding query, only from constants and numbers from the terminal state. Strings sent by the host are not included in replies.
-  - `sendMouse(report, tracking, encoding)`, `sendFocus(focused)`: Mouse and focus reports, only when the host requested them.
+  - `sendMouse(report, tracking, encoding)`, `sendFocus(focused)`: Mouse and focus reports, only when the host requested them. `isMouseReported` tells, without sending, whether `sendMouse` would send a report.
 - **Policy**: Allows or denies requests such as reading and writing the clipboard and opening URLs according to the app's settings (`GatePolicy`). The default is the safe side (requirement 6.5).
   - Example: Reading and writing with OSC 52 are both denied by default; when the app allows writing, it has a length limit (section 4.1 of [gate-policy.md](gate-policy.md), [decisions/0083](../decisions/0083-gate.md)).
   - Example: Hyperlinks are opened only on an explicit action by the user. The actual URL is shown before opening, and URLs whose displayed form may differ from where they go are refused (section 5 of [gate-policy.md](gate-policy.md)).

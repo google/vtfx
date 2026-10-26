@@ -771,6 +771,20 @@ class TerminalSessionTest {
     }
 
     @Test
+    fun aMousePressThatTheHostDoesNotGetLeavesTheComposingText() {
+        // Such a press cannot move the host's cursor.
+        session.edit { it.commitText("ab") }
+        session.edit { it.setComposingText("か") }
+        session.sendMouse(MouseReport(MouseButton.Left, MouseAction.Press, 1, 1))
+        // The default encoding has no byte for a column beyond 223.
+        feed("\u001b[?1000h")
+        session.sendMouse(MouseReport(MouseButton.Left, MouseAction.Press, 224, 1))
+        assertEquals("ab", sent.toString())
+        assertEquals("abか", session.edit { it.text })
+        assertEquals(0, restarts)
+    }
+
+    @Test
     fun losingFocusResetsTheIme() {
         session.edit { it.commitText("abc") }
         session.onFocusChanged(false)

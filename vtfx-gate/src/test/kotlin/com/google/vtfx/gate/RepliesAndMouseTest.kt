@@ -30,6 +30,7 @@ import com.google.vtfx.core.Terminal
 import com.google.vtfx.core.TerminalEvent
 import com.google.vtfx.core.TerminalQuery
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import org.junit.Test
 import org.junit.experimental.runners.Enclosed
 import org.junit.runner.RunWith
@@ -243,6 +244,30 @@ class RepliesAndMouseTest {
             sent.clear()
             for (report in listOf(press, release, drag, move)) send(report, MouseTracking.AnyEvent)
             assertEquals(4, sent.size)
+        }
+
+        @Test
+        fun whetherAReportIsSentIsKnownBeforeSendingIt() {
+            for (tracking in MouseTracking.entries) {
+                for (encoding in MouseEncoding.entries) {
+                    for (action in MouseAction.entries) {
+                        for (button in MouseButton.entries) {
+                            for (column in listOf(1, 224, 2016)) {
+                                val report = MouseReport(button, action, column, 1)
+                                val reported = writer.isMouseReported(report, tracking, encoding)
+                                assertTrue(sent.isEmpty())
+                                send(report, tracking, encoding)
+                                assertEquals(
+                                    reported,
+                                    sent.isNotEmpty(),
+                                    "$report $tracking $encoding",
+                                )
+                                sent.clear()
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

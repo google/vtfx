@@ -134,6 +134,19 @@ public class HostWriter(private val connection: HostConnection) {
     }
 
     /**
+     * Returns whether [sendMouse] would send [report] with [tracking] and [encoding], so that a
+     * caller can act only on the reports that reach the host. Sends nothing.
+     *
+     * @suppress
+     */
+    @InternalVtfxApi
+    public fun isMouseReported(
+        report: MouseReport,
+        tracking: MouseTracking,
+        encoding: MouseEncoding,
+    ): Boolean = MouseReports.encode(report, tracking, encoding) != null
+
+    /**
      * Sends a focus report (mode 1004): CSI I when focused, CSI O otherwise.
      *
      * @suppress
