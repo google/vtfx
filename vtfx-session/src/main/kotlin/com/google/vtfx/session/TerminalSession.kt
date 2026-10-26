@@ -258,6 +258,13 @@ public class TerminalSession(
      */
     private val outbox = ArrayList<() -> Unit>()
 
+    /**
+     * Whether the IME editing model sent the user's input during the current operation, which the
+     * displays are then told of. Guarded by [lock]. The session's own reports, of the mouse and of
+     * the focus, are not the user's input.
+     */
+    private var inputSent = false
+
     /** Whether the IME editing model asked to restart the input during the current operation. */
     private var restartRequested = false
 
@@ -296,7 +303,7 @@ public class TerminalSession(
         get() = lock.withLock { stickyModifiersState }
         set(value) {
             // The modifiers are changed inside the input operation, which reports the change.
-            input(notifySent = true) { editor ->
+            input(userAction = false) { editor ->
                 if (value == stickyModifiersState) return@input
                 // Text typed before the modifiers must not take them, not even when the IME
                 // corrects it later (docs/decisions/0082).
@@ -319,14 +326,12 @@ public class TerminalSession(
     public var directInput: Boolean
         get() = lock.withLock { directInputState }
         set(value) {
-            val changed = input { editor ->
-                if (value == directInputState) return@input false
+            input(userAction = false) { editor ->
+                if (value == directInputState) return@input
                 directInputState = value
                 editor.finishComposingText()
                 editor.requestReset()
-                true
             }
-            if (changed) notifyUserInput()
         }
 
     /**
@@ -343,6 +348,7 @@ public class TerminalSession(
         ImeEditor(
             object : ImeEditor.Listener {
                 override fun send(input: HostInput) {
+                    inputSent = true
                     val modes = terminal.modes
                     when (input) {
                         is HostInput.Text ->
@@ -419,9 +425,11 @@ public class TerminalSession(
     /**
      * Runs [operation] on the IME editing model, sends what it made to the host, and then tells the
      * displays and the listener about its effects, without the locks held. Returns what [operation]
-     * returns. With [notifySent], the displays are also told of the user's input if it sent any.
+     * returns. The displays are told of the user's input if the editing model sent any, also when a
+     * reset sent the edits not sent yet, or with [userAction] even if it sent none, for an action
+     * of the user such as a key from an auxiliary key bar.
      */
-    private fun <T> input(notifySent: Boolean = false, operation: (ImeEditor) -> T): T {
+    private fun <T> input(userAction: Boolean, operation: (ImeEditor) -> T): T {
         // Checked before the locks, which are reentrant: a nested call would change the IME
         // editing model before HostWriter refused to send what it made, and the model would take
         // it for received by the host (docs/decisions/0084).
@@ -441,7 +449,7 @@ public class TerminalSession(
         inputLock.withLock {
             val sends: List<() -> Unit>
             lock.withLock {
-                check(outbox.isEmpty() && !restartRequested && !resetRequested)
+                check(outbox.isEmpty() && !inputSent && !restartRequested && !resetRequested)
                 val stickyModifiersBefore = stickyModifiersState
                 editingThread = Thread.currentThread()
                 try {
@@ -458,6 +466,8 @@ public class TerminalSession(
                     editingThread = null
                     sends = outbox.toList()
                     outbox.clear()
+                    sent = inputSent
+                    inputSent = false
                     restart = restartRequested
                     restartRequested = false
                     resetRequested = false
@@ -466,12 +476,11 @@ public class TerminalSession(
                     stickyModifiersNotifier.record(stickyModifiersState)
                 }
             }
-            sent = sends.isNotEmpty()
             for (send in sends) send()
         }
         if (restart) for (observer in observers) observer.onRestartInput()
         stickyModifiersNotifier.tell()
-        if (notifySent && sent) notifyUserInput()
+        if (userAction || sent) notifyUserInput()
         return result
     }
 
@@ -490,7 +499,7 @@ public class TerminalSession(
      * @suppress
      */
     @InternalVtfxApi
-    public fun <T> edit(operation: (ImeEditor) -> T): T = input(notifySent = true, operation)
+    public fun <T> edit(operation: (ImeEditor) -> T): T = input(userAction = false, operation)
 
     /**
      * Interprets output from the host: the [length] bytes of [bytes] from [offset]. Calls are
@@ -557,7 +566,7 @@ public class TerminalSession(
         // Applies the reset, unless an input operation on another thread already did. After the
         // output lock, since an input operation tells the observers and the listener, which may
         // call the session; any input operation applies the reset before its edit anyway.
-        if (moved) input {}
+        if (moved) input(userAction = false) {}
         for (observer in observers) observer.onOutput(
             scrolledLines,
             scrollbackShrank,
@@ -690,8 +699,7 @@ public class TerminalSession(
 
     /** Sends a key, for example from an auxiliary key bar. Composing text is committed first. */
     public fun sendKey(stroke: KeyStroke) {
-        input { it.onKeyDown(stroke) }
-        notifyUserInput()
+        input(userAction = true) { it.onKeyDown(stroke) }
     }
 
     // Sticky modifiers apply to the next typed key or character (docs/decisions/0085).
@@ -705,7 +713,7 @@ public class TerminalSession(
      */
     @InternalVtfxApi
     public fun sendScrollKey(key: TerminalKey) {
-        input { editor ->
+        input(userAction = true) { editor ->
             keepStickyModifiers = true
             try {
                 editor.onKeyDown(KeyStroke.Special(key))
@@ -713,7 +721,6 @@ public class TerminalSession(
                 keepStickyModifiers = false
             }
         }
-        notifyUserInput()
     }
 
     /**
@@ -724,8 +731,7 @@ public class TerminalSession(
      * a secret, such as a saved password.
      */
     public fun sendText(text: String) {
-        input { it.typeText(text) }
-        notifyUserInput()
+        input(userAction = true) { it.typeText(text) }
     }
 
     /**
@@ -733,8 +739,7 @@ public class TerminalSession(
      * sent first.
      */
     public fun paste(text: String) {
-        input { it.paste(text) }
-        notifyUserInput()
+        input(userAction = true) { it.paste(text) }
     }
 
     /** Pastes the text on the clipboard, if there is a clipboard and it has text. */
@@ -742,7 +747,7 @@ public class TerminalSession(
         // The session never sees the text: it goes from the gate to HostWriter as one paste
         // (docs/decisions/0091).
         val text = gate.readClipboardForPaste() ?: return
-        input { editor ->
+        input(userAction = true) { editor ->
             pastedClipboard = text
             try {
                 editor.pasteClipboard()
@@ -750,7 +755,6 @@ public class TerminalSession(
                 pastedClipboard = null
             }
         }
-        notifyUserInput()
     }
 
     /**
@@ -780,7 +784,7 @@ public class TerminalSession(
      */
     @InternalVtfxApi
     public fun sendMouse(report: MouseReport) {
-        input { editor ->
+        input(userAction = false) { editor ->
             // As a key would (docs/decisions/0082). Not motion, which comes in streams while the
             // user may be composing.
             if (report.action == MouseAction.Press) editor.sendPendingInput()
@@ -797,7 +801,7 @@ public class TerminalSession(
      */
     @InternalVtfxApi
     public fun onFocusChanged(focused: Boolean) {
-        input { editor ->
+        input(userAction = false) { editor ->
             // The edits not sent yet were made with the focus, so they go before the report of its
             // loss (docs/design/ime-contract.md section 5.2).
             if (!focused) editor.requestReset()

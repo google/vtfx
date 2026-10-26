@@ -829,6 +829,49 @@ class TerminalSessionTest {
     }
 
     @Test
+    fun aMousePressThatSendsTheComposingTextTellsTheDisplaysOfTheInput() {
+        // The display would otherwise keep drawing the composing text that the host received.
+        var inputs = 0
+        session.addObserver(InputCounter { inputs++ })
+        feed("\u001b[?1000h")
+        session.sendMouse(MouseReport(MouseButton.Left, MouseAction.Press, 1, 1))
+        session.sendMouse(MouseReport(MouseButton.Left, MouseAction.Release, 1, 1))
+        assertEquals(0, inputs)
+        session.edit { it.setComposingText("か") }
+        session.sendMouse(MouseReport(MouseButton.Left, MouseAction.Press, 1, 1))
+        assertEquals("\u001b[M !!\u001b[M#!!か\u001b[M !!", sent.toString())
+        assertEquals(1, inputs)
+    }
+
+    @Test
+    fun aFocusLossThatSendsTheEditsNotSentYetTellsTheDisplaysOfTheInput() {
+        var inputs = 0
+        session.addObserver(InputCounter { inputs++ })
+        feed("\u001b[?1004h")
+        session.onFocusChanged(false)
+        session.onFocusChanged(true)
+        assertEquals(0, inputs)
+        session.edit { it.beginBatchEdit() }
+        session.edit { it.commitText("abc") }
+        session.onFocusChanged(false)
+        assertFalse(session.edit { it.endBatchEdit() })
+        assertEquals("\u001b[O\u001b[Iabc\u001b[O", sent.toString())
+        assertEquals(1, inputs)
+    }
+
+    @Test
+    fun outputThatSendsTheEditsNotSentYetTellsTheDisplaysOfTheInput() {
+        var inputs = 0
+        session.addObserver(InputCounter { inputs++ })
+        session.edit { it.beginBatchEdit() }
+        session.edit { it.commitText("abc") }
+        feed("\r\n")
+        assertFalse(session.edit { it.endBatchEdit() })
+        assertEquals("abc", sent.toString())
+        assertEquals(1, inputs)
+    }
+
+    @Test
     fun switchingDirectInputCommitsTheComposingTextAndResets() {
         val restarts = mutableListOf<Unit>()
         session.addObserver(RestartCounter { restarts += Unit })
@@ -1461,6 +1504,21 @@ class TerminalSessionTest {
         override fun onUserInput() {}
 
         override fun onRestartInput() = onRestart()
+    }
+
+    /** Counts the times the session tells its displays of the user's input. */
+    private class InputCounter(private val onInput: () -> Unit) : SessionObserver {
+        override fun onOutput(
+            scrolledLines: Long,
+            scrollbackShrank: Boolean,
+            synchronizing: Boolean,
+        ) {}
+
+        override fun onScreenChanged() {}
+
+        override fun onUserInput() = onInput()
+
+        override fun onRestartInput() {}
     }
 
     private companion object {
