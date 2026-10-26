@@ -18,6 +18,8 @@
 
 package com.google.vtfx.gate
 
+import com.google.vtfx.core.ColorTarget
+import com.google.vtfx.core.GraphicsStatus
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.KeyModifiers
 import com.google.vtfx.core.KeyStroke
@@ -119,6 +121,37 @@ class HostWriterTest {
         assertFailsWith<IllegalArgumentException> {
             writer.sendReply(TerminalQuery.CursorPosition(0, 1, false))
         }
+    }
+
+    @Test
+    fun paletteIndexOutOfRangeIsAProgrammingError() {
+        // The index is checked before the display is asked for the color: a display that looks it
+        // up in its palette must not be given an index beyond it, and the check does not depend on
+        // whether the display has the color.
+        val palette = IntArray(256)
+        val fromPalette = ReportedColors { target ->
+            palette[(target as ColorTarget.Palette).index]
+        }
+        for (index in listOf(-1, 256)) {
+            for (colors in listOf(fromPalette, ReportedColors { null }, null)) {
+                assertFailsWith<IllegalArgumentException>("$index") {
+                    writer.sendReply(TerminalQuery.Color(ColorTarget.Palette(index)), colors)
+                }
+            }
+        }
+        assertEquals(emptyList(), sent)
+    }
+
+    @Test
+    fun graphicsReplyWithoutAnImageIdOrNumberIsAProgrammingError() {
+        // Only commands with an image id or number are answered (section 9.2 of emulation.md).
+        assertFailsWith<IllegalArgumentException> {
+            writer.sendReply(TerminalQuery.GraphicsReply(0, 0, 0, GraphicsStatus.Ok))
+        }
+        assertFailsWith<IllegalArgumentException> {
+            writer.sendReply(TerminalQuery.GraphicsReply(0, 0, 5, GraphicsStatus.NotFound))
+        }
+        assertEquals(emptyList(), sent)
     }
 
     @Test

@@ -151,8 +151,12 @@ internal object Replies {
     /**
      * The reply to a kitty graphics command: the numbers of the command and a fixed status string.
      * Unlike kitty's, the messages never carry anything from the request (docs/decisions/0080).
+     * Only commands with an image id or number are answered (section 9.2 of emulation.md).
      */
     private fun graphics(query: TerminalQuery.GraphicsReply): String {
+        require(query.imageId != 0L || query.imageNumber != 0L) {
+            "graphics reply without an image id or number"
+        }
         val ids = buildList {
             if (query.imageId != 0L) add("i=${checkId(query.imageId)}")
             if (query.imageNumber != 0L) add("I=${checkId(query.imageNumber)}")
@@ -167,6 +171,10 @@ internal object Replies {
     }
 
     private fun color(target: ColorTarget, colors: ReportedColors?): String? {
+        // Checked before the display is asked, which may look the index up in its palette.
+        if (target is ColorTarget.Palette) {
+            require(target.index in 0..255) { "index out of range: ${target.index}" }
+        }
         val rgb = colors?.rgb(target) ?: return null
         val spec =
             "rgb:%04x/%04x/%04x"
@@ -179,10 +187,7 @@ internal object Replies {
             ColorTarget.Foreground -> "${OSC}10;$spec$ST"
             ColorTarget.Background -> "${OSC}11;$spec$ST"
             ColorTarget.Cursor -> "${OSC}12;$spec$ST"
-            is ColorTarget.Palette -> {
-                require(target.index in 0..255) { "index out of range: ${target.index}" }
-                "${OSC}4;${target.index};$spec$ST"
-            }
+            is ColorTarget.Palette -> "${OSC}4;${target.index};$spec$ST"
         }
     }
 
