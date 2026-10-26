@@ -627,6 +627,18 @@ class TerminalSessionTest {
     }
 
     @Test
+    fun editsOfABatchOpenWhenTheFocusIsLostAreSentBeforeTheFocusReport() {
+        // The edits were made while the session had the focus.
+        feed("\u001b[?1004h")
+        session.edit { it.beginBatchEdit() }
+        session.edit { it.commitText("abc") }
+        session.edit { it.setComposingText("に") }
+        session.onFocusChanged(false)
+        assertEquals("abc\u001b[O", sent.toString())
+        assertEquals("に", session.edit { it.text })
+    }
+
+    @Test
     fun colorQueriesAreAnsweredOnlyWithTheDisplayColors() {
         feed("\u001b]11;?\u0007")
         assertEquals("", sent.toString())

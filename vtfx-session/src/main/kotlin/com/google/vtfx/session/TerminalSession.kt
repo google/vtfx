@@ -798,8 +798,10 @@ public class TerminalSession(
     @InternalVtfxApi
     public fun onFocusChanged(focused: Boolean) {
         input { editor ->
-            if (terminal.modes.focusEvents) outbox += { writer.sendFocus(focused) }
+            // The edits not sent yet were made with the focus, so they go before the report of its
+            // loss (docs/design/ime-contract.md section 5.2).
             if (!focused) editor.requestReset()
+            if (terminal.modes.focusEvents) outbox += { writer.sendFocus(focused) }
         }
     }
 
