@@ -84,7 +84,8 @@ internal constructor(
     /**
      * Returns the color of the underline of the cell at [column] (SGR 58), or
      * [TerminalColor.Default] if the underline has the color of the text. It is the default for a
-     * cell that is not underlined.
+     * cell that is not underlined, except for the placeholder of an image (U+10EEEE), which keeps
+     * the underline color without an underline, since the color gives the placement id.
      */
     public fun underlineColorAt(column: Int): TerminalColor {
         // Checked here, since a line without underline colors has no array to check it.
