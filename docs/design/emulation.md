@@ -26,7 +26,7 @@ The lower bound of the supported scope is the features of the terminfo entry `xt
 | OSC terminator | ST only | ST or BEL |
 | Aborting strings with CAN or SUB | Dispatches OSC and DCS, then aborts | Discards the string |
 | Three or more intermediate characters | Not specified | The sequence is ignored |
-| A character beyond ASCII where an escape or control sequence expects its final byte | Not specified (the state machine reads bytes) | Ends the sequence without dispatching it |
+| A character beyond ASCII where an escape or control sequence expects its final byte (also in an ignored control sequence and in the introducer of DCS) | Not specified (the state machine reads bytes) | Ends the sequence without dispatching it; the character goes with the sequence and is not printed |
 
 - Malformed UTF-8 is replaced with U+FFFD following section 3.9 of the Unicode Standard (maximal subpart) and the WHATWG Encoding standard. A malformed byte does not take the correct bytes after it along.
 - OSC, DCS, and APC strings are collected up to `TerminalLimits.maxStringLength` UTF-16 units; a longer string is discarded whole (section 10). APC is ended only by ST, not BEL, and the control characters in it are dropped. SOS and PM strings are ignored.

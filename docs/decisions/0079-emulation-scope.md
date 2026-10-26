@@ -22,7 +22,7 @@ Apply Williams's state machine to code points after UTF-8 decoding, replace malf
 - **BEL also ends OSC**, the convention of xterm and of the many apps that follow it.
 - **A string aborted with CAN or SUB is discarded**: it is safer not to execute an aborted string. Same as xterm.
 - **Sequences with three or more intermediate characters are ignored**: no supported sequence has three or more.
-- **A character beyond ASCII where a final byte is expected ends the sequence without dispatching it.** Final bytes are ASCII in ECMA-48. Dispatching such a character would let a code point above U+FFFF act as the ASCII character with the same low 16 bits (U+1006D as `m`, U+10063 after ESC as RIS), which a filter that checks final bytes as ASCII would not recognize.
+- **A character beyond ASCII where a final byte is expected ends the sequence without dispatching it.** Final bytes are ASCII in ECMA-48. Dispatching such a character would let a code point above U+FFFF act as the ASCII character with the same low 16 bits (U+1006D as `m`, U+10063 after ESC as RIS), which a filter that checks final bytes as ASCII would not recognize. This holds wherever a final byte can come, also in a control sequence being ignored and in the introducer of DCS, where taking the character would start a string that swallows the output after it. The character goes with the sequence, as a final byte would, and is not printed, as xterm takes a character above U+00FF outside the ground state back to the ground state.
 - **A malformed UTF-8 byte does not take the correct bytes after it along** (section 3.9 of the Unicode Standard, the WHATWG Encoding standard).
 
 **Alternatives considered.**

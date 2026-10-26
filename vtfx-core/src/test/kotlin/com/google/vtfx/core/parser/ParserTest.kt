@@ -154,6 +154,26 @@ class ParserTest {
     }
 
     @Test
+    fun aCharacterBeyondAsciiEndsAnIgnoredControlSequence() {
+        // The character ends the sequence in place of a final byte, and the text after it is
+        // printed.
+        assertEquals(listOf("print(いう)"), parse("\u001b[??あいう"))
+        assertEquals(listOf("print(x)"), parse("\u001b[1 0\u00e9x"))
+    }
+
+    @Test
+    fun aCharacterBeyondAsciiIsNotTheFinalByteOfADcs() {
+        assertEquals(listOf("print(Hello)"), parse("\u001bP\u00e9Hello"))
+        assertEquals(listOf("print(Hello)"), parse("\u001bP1;2\uD800\uDC71Hello"))
+        assertEquals(listOf("print(Hello)"), parse("\u001bP\$\u00e9Hello"))
+        // A truncated UTF-8 sequence, which is U+FFFD.
+        val recorder = Recorder()
+        val parser = Parser(recorder, 100)
+        parser.parse(byteArrayOf(0x1B, 'P'.code.toByte(), 0xC3.toByte()) + "Hello".toByteArray())
+        assertEquals(listOf("print(Hello)"), recorder.result())
+    }
+
+    @Test
     fun clampsParameterValues() {
         assertEquals(listOf("csi(65535C)"), parse("\u001b[99999999999999999999C"))
     }

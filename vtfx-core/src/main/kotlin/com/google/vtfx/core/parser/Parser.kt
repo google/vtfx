@@ -236,7 +236,8 @@ internal class Parser(
             CSI_IGNORE ->
                 when {
                     c < 0x20 -> handler.execute(c)
-                    c in 0x40..0x7E -> state = GROUND
+                    // A character beyond ASCII ends the sequence, as it does in the other states.
+                    c in 0x40..0x7E || c > DEL -> state = GROUND
                     else -> {}
                 }
             DCS_ENTRY ->
@@ -389,6 +390,12 @@ internal class Parser(
     }
 
     private fun dcsHook(final: Int) {
+        // As in escDispatch: without this, a character beyond ASCII (U+FFFD from a truncated UTF-8
+        // sequence) would start a string that takes the output after it.
+        if (final > ASCII_LAST) {
+            state = GROUND
+            return
+        }
         params.finish()
         dcsFinal = final
         enterString(DCS_PASSTHROUGH)
