@@ -3,6 +3,21 @@
 This file lists the notable changes of each release of vtfx, newest first.
 Versions follow Semantic Versioning; before 1.0, any release may break compatibility ([topic 2 of docs/decisions/0087](docs/decisions/0087-public-api.md)).
 
+## 0.3.0 - Unreleased
+
+### Changed
+
+- `vtfx-core`: Faster interpretation of host output on Android's runtime (plain-text runs, scrollback line compaction, UTF-8 decoding, SGR, and CSI and C0 parsing).
+- `vtfx-compose`: The selection now stays on its text across host output and scrolling into or through the scrollback, instead of being dropped whenever the display changes. It is dropped when the selected text itself changes, when lines are renumbered (resizing, clearing the scrollback, switching screens), when all of its lines leave the scrollback (cutting off only the leading lines that left otherwise), on user input, or on a tap or click.
+- `vtfx-compose`: Dragging after a double click or a long press now extends the selection by words, dragging after a triple click extends it by lines, and Shift+click (and dragging after it) extends by the unit that created the selection, instead of always extending cell by cell.
+
+### Fixed
+
+- `vtfx-core`: ED (0, 1, 2), EL (0, 1, 2), DECSED (0, 1, 2), and DECSEL (0, 1, 2) now cancel a pending wrap, so a character printed right after erasing at the right margin is written into the last column instead of wrapping to the next row.
+- `vtfx-core`: With autowrap (DECAWM) off, printing or repeating (`REP` in insert mode) a wide character at the last column now drops it instead of moving left and overwriting the preceding column.
+- `vtfx-compose`: A mouse drag or a drag after a long press no longer stops selecting after pointer moves within the same cell.
+- `vtfx-input`: Pressing a key that types no characters (such as an arrow key on a physical keyboard) when nothing has been typed since the last reset no longer restarts the IME, so Gboard's toolbar for physical keyboards no longer flickers on each press.
+
 ## 0.2.0 - 2026-10-26
 
 ### Changed
