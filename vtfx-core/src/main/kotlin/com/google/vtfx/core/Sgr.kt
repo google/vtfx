@@ -29,8 +29,7 @@ internal data class Rendition(val style: CellStyle, val underlineColor: Terminal
      * style underlines, so that a color left set after the underline ends takes no memory. Computed
      * once, since every character printed reads it.
      */
-    val cellUnderlineColor: Int =
-        if (style.underline == UnderlineStyle.None) 0 else underlineColor.bits
+    val cellUnderlineColor: Int = if (style.underlines) underlineColor.bits else 0
 
     companion object {
         val Default = Rendition(CellStyle.Default, TerminalColor.Default)
@@ -108,7 +107,14 @@ internal object Sgr {
             }
             i += 1 + subCount
         }
-        return Rendition(result, underlineColor)
+        // The renditions that SGR sets over and over, such as the default after SGR 0, are not
+        // made again.
+        return when {
+            result == rendition.style && underlineColor == rendition.underlineColor -> rendition
+            result == CellStyle.Default && underlineColor == TerminalColor.Default ->
+                Rendition.Default
+            else -> Rendition(result, underlineColor)
+        }
     }
 
     /**

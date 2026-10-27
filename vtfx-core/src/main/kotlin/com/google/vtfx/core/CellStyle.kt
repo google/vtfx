@@ -136,6 +136,10 @@ public value class CellStyle internal constructor(internal val bits: Long) {
     public val underline: UnderlineStyle
         get() = UnderlineStyle.entries[((bits ushr UNDERLINE_SHIFT) and UNDERLINE_MASK).toInt()]
 
+    /** Whether the style underlines: the same as [underline] other than None, without the enum. */
+    internal val underlines: Boolean
+        get() = (bits ushr UNDERLINE_SHIFT) and UNDERLINE_MASK != 0L
+
     internal fun withForeground(color: TerminalColor): CellStyle =
         CellStyle((bits and COLOR_MASK.inv()) or color.bits.toLong())
 

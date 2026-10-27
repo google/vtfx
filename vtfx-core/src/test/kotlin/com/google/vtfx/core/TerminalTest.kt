@@ -588,6 +588,19 @@ class TerminalTest {
     }
 
     @Test
+    fun everyStyleOfUnderlineKeepsTheUnderlineColor() {
+        val t = terminal(10, 1)
+        // 4:0 is no underline; 4:1 to 4:5 are the styles of UnderlineStyle after None.
+        t.write("\u001b[58;5;1m" + (0..5).joinToString("") { "\u001b[4:${it}mx" })
+        val line = t.snapshot().line(0)
+        assertEquals(TerminalColor.Default, line.underlineColorAt(0))
+        for (column in 1..5) {
+            assertEquals(UnderlineStyle.entries[column], line.styleAt(column).underline)
+            assertEquals(TerminalColor.indexed(1), line.underlineColorAt(column), "column $column")
+        }
+    }
+
+    @Test
     fun underlineColorFollowsTheCells() {
         val t = terminal(6, 2)
         t.write("\u001b[4;58;5;2mab\u001b[0mcd\r\u001b[2@")
