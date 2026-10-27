@@ -188,6 +188,7 @@ Section 3 of [compose-input.md](design/compose-input.md). Only Compose's injecte
 | 7.12 | With a hardware keyboard attached, click the terminal | The terminal gets focus; note whether the software keyboard appears |
 | 7.13 | Tap and drag on a touchpad (without pressing it down) | Note whether it acts as a mouse (7.3) or as a finger (a swipe scrolls) |
 | 7.14 | Type `mouse` again, Shift+turn the wheel up, then (without Shift) hover, drag, click, and turn the wheel down until the display is back at the bottom; then click | While scrolled back: the pointer is an I-beam, the drag selects, the wheel scrolls, and nothing appears in logcat. Back at the bottom: the wheel and the click appear in logcat again |
+| 7.15 | Double-click a word and keep the button down on the second click, then drag over the words before and after it; do the same with a triple click over lines | The selection grows and shrinks by whole words, then by whole lines; the word or line clicked stays selected |
 
 What to tell us: the device, the Android version, the mouse or touchpad, and each row's result. If the right button acts as Back, or the pointer does not change, tell us too.
 

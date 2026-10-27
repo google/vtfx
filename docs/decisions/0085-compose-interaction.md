@@ -221,3 +221,14 @@ The app has the search field; the terminal finds the matches, highlights them, a
 - **Regular expressions**: See the reasons above.
 
 **Impact of reversing.** Change `SearchIndex` in `vtfx-core`, the search of `TerminalDisplay` and its drawing in `vtfx-compose`, and section 13 of [compose-input.md](../design/compose-input.md).
+
+## 17. Selecting by words and lines
+
+1. A drag after a double click extends the selection by words, and after a triple click by lines: from the end of the pressed word or line farther from the pointer to the far end of the word or line under it. A blank is a word of its own, so over blanks the selection grows a cell at a time. A selection keeps the unit of the press that made it (`TerminalSelection.unit`).
+
+**Why.** Desktop terminals do so (xterm, VTE, kitty, Alacritty, macOS Terminal), as do text editors: the user who double-clicks wants whole words, and a drag that went on by cells would cut the word under the pointer. Keeping the unit in the selection lets the drag extend it in one way, whatever made it.
+
+**Alternatives considered.**
+- **Extending by cells from the pressed word or line**: Simpler, but unlike desktop terminals, and it needs a precise pointer to end on a word boundary.
+
+**Impact of reversing.** Change `TerminalSelection.extendedTo` and the callers in `TerminalMouse`, and section 3 of [compose-input.md](../design/compose-input.md).

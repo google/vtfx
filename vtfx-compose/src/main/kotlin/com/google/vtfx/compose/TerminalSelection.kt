@@ -58,6 +58,13 @@ internal data class TextPosition(val column: Int, val line: Long) : Comparable<T
 internal fun TerminalSnapshot.position(cell: Cell): TextPosition =
     TextPosition(cell.column, firstLine + cell.row)
 
+/** What a selection grows by when a drag extends it (docs/decisions/0085). */
+internal enum class SelectionUnit {
+    Cell,
+    Word,
+    Line,
+}
+
 /**
  * A selection of text, from [anchor] to [focus] inclusive, in either order. Its lines are numbered
  * as in snapshots of [generation], so that it stays on its text as the text scrolls; the display
@@ -65,12 +72,14 @@ internal fun TerminalSnapshot.position(cell: Cell): TextPosition =
  *
  * @property isAll Whether Select all made it, from the oldest line to the last row of the screen,
  *   so that the empty lines at its end are not copied (docs/decisions/0085).
+ * @property unit What [extendedTo] extends it by: the unit of the press that made it.
  */
 internal data class TerminalSelection(
     val anchor: TextPosition,
     val focus: TextPosition,
     val generation: Long,
     val isAll: Boolean = false,
+    val unit: SelectionUnit = SelectionUnit.Cell,
 ) {
     val start: TextPosition
         get() = minOf(anchor, focus)
@@ -110,18 +119,49 @@ internal data class TerminalSelection(
             else columns - 1)
     }
 
+    /**
+     * Returns this selection extended by its [unit] to [cell] of [snapshot]'s display, whose lines
+     * must be numbered as this selection's: from the end of this selection farther from [cell] to
+     * the far end of the unit at [cell], so that it covers both. A drag extends what its press
+     * selected this way at each move.
+     */
+    fun extendedTo(snapshot: TerminalSnapshot, cell: Cell): TerminalSelection {
+        val at = at(snapshot, cell, unit)
+        val from = minOf(start, at.start)
+        val to = maxOf(end, at.end)
+        return if (snapshot.position(cell) < start) {
+            TerminalSelection(to, from, generation, unit = unit)
+        } else {
+            TerminalSelection(from, to, generation, unit = unit)
+        }
+    }
+
     companion object {
-        /** Selects from [anchor] to [focus], cells of [snapshot]'s display. */
-        fun onDisplay(snapshot: TerminalSnapshot, anchor: Cell, focus: Cell): TerminalSelection =
+        /** Selects from [anchor] to [focus], cells of [snapshot]'s display, by [unit]. */
+        fun onDisplay(
+            snapshot: TerminalSnapshot,
+            anchor: Cell,
+            focus: Cell,
+            unit: SelectionUnit = SelectionUnit.Cell,
+        ): TerminalSelection =
             TerminalSelection(
                 snapshot.position(anchor),
                 snapshot.position(focus),
                 snapshot.generation,
+                unit = unit,
             )
 
+        /** The [unit] at [cell] of [snapshot]'s display: the cell, its [word], or its [line]. */
+        fun at(snapshot: TerminalSnapshot, cell: Cell, unit: SelectionUnit): TerminalSelection =
+            when (unit) {
+                SelectionUnit.Cell -> onDisplay(snapshot, cell, cell)
+                SelectionUnit.Word -> word(snapshot, cell)
+                SelectionUnit.Line -> line(snapshot, cell)
+            }
+
         /**
-         * The word at [cell]: the run of non-blank characters around it, or the cell alone, both
-         * halves of it if it is wide.
+         * The word at [cell], by words: the run of non-blank characters around it, or the cell
+         * alone, both halves of it if it is wide.
          */
         fun word(snapshot: TerminalSnapshot, cell: Cell): TerminalSelection {
             val line = snapshot.line(cell.row)
@@ -129,25 +169,35 @@ internal data class TerminalSelection(
             if (column > 0 && line.widthAt(column) == 0) column--
             if (isBlank(line, column)) {
                 val last = if (line.widthAt(column) == 2) column + 1 else column
-                return onDisplay(snapshot, Cell(column, cell.row), Cell(last, cell.row))
+                return onDisplay(
+                    snapshot,
+                    Cell(column, cell.row),
+                    Cell(last, cell.row),
+                    SelectionUnit.Word,
+                )
             }
             var from = column
             while (from > 0 && !isBlank(line, from - 1)) from--
             var to = column
             while (to < line.columns - 1 && !isBlank(line, to + 1)) to++
-            return onDisplay(snapshot, Cell(from, cell.row), Cell(to, cell.row))
+            return onDisplay(snapshot, Cell(from, cell.row), Cell(to, cell.row), SelectionUnit.Word)
         }
 
         /**
-         * The line at [cell]: its rows from the one that the previous row does not wrap into, to
-         * the one that does not wrap, within the display.
+         * The line at [cell], by lines: its rows from the one that the previous row does not wrap
+         * into, to the one that does not wrap, within the display.
          */
         fun line(snapshot: TerminalSnapshot, cell: Cell): TerminalSelection {
             var first = cell.row
             while (first > 0 && snapshot.line(first - 1).isWrapped) first--
             var last = cell.row
             while (last < snapshot.rows - 1 && snapshot.line(last).isWrapped) last++
-            return onDisplay(snapshot, Cell(0, first), Cell(snapshot.columns - 1, last))
+            return onDisplay(
+                snapshot,
+                Cell(0, first),
+                Cell(snapshot.columns - 1, last),
+                SelectionUnit.Line,
+            )
         }
 
         /**

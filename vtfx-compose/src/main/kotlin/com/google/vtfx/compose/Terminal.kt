@@ -121,13 +121,14 @@ import kotlinx.coroutines.flow.collectLatest
  * searches the text through it, for its own search field.
  *
  * With a mouse, the primary button selects: a drag selects the text it goes over, a double click a
- * word, and a triple click a line, and Shift+click extends the selection; a click without a drag is
- * a tap. The wheel scrolls as a swipe does. The secondary button calls [onContextClick], or shows
- * the menu of the long press. When the host asks for mouse reports, it gets the buttons, the wheel,
- * and the motion that it asked for, on links too, unless Shift is held: Shift leaves the mouse to
- * the terminal, as in xterm, so Shift+click on a link calls [onLinkClick]. While the display shows
- * the scrollback, the mouse and touches are the terminal's too, as a report could not tell its rows
- * from the screen's, until the display is back at the bottom.
+ * word, and a triple click a line, a drag after either going on by words or lines, and Shift+click
+ * extends the selection; a click without a drag is a tap. The wheel scrolls as a swipe does. The
+ * secondary button calls [onContextClick], or shows the menu of the long press. When the host asks
+ * for mouse reports, it gets the buttons, the wheel, and the motion that it asked for, on links
+ * too, unless Shift is held: Shift leaves the mouse to the terminal, as in xterm, so Shift+click on
+ * a link calls [onLinkClick]. While the display shows the scrollback, the mouse and touches are the
+ * terminal's too, as a report could not tell its rows from the screen's, until the display is back
+ * at the bottom.
  *
  * @param session The session to display, which may outlive this composable.
  * @param modifier The modifier to apply to the terminal. Its size sets the number of columns and

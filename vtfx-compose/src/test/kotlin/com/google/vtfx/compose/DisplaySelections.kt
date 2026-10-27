@@ -16,6 +16,9 @@
 
 package com.google.vtfx.compose
 
-/** The selection from [anchor] to [focus], cells of what the display shows now. */
-internal fun TerminalDisplay.selectionOf(anchor: Cell, focus: Cell): TerminalSelection =
-    TerminalSelection.onDisplay(displaySnapshot(), anchor, focus)
+/** The selection from [anchor] to [focus], cells of what the display shows now, by [unit]. */
+internal fun TerminalDisplay.selectionOf(
+    anchor: Cell,
+    focus: Cell,
+    unit: SelectionUnit = SelectionUnit.Cell,
+): TerminalSelection = TerminalSelection.onDisplay(displaySnapshot(), anchor, focus, unit)

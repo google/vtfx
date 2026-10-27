@@ -54,8 +54,9 @@ import kotlin.math.abs
  * the display shows the scrollback, whose rows the reports cannot tell from the screen's.
  * Otherwise:
  * - The primary button selects: a drag selects the cells it goes over, a double click selects a
- *   word and a triple click a line, and the drag that follows extends them; a click with Shift
- *   extends the selection. A click without a drag is a tap: [onLinkClick], else [onClick].
+ *   word and a triple click a line, and the drag that follows extends them by words or lines; a
+ *   click with Shift extends the selection. A click without a drag is a tap: [onLinkClick], else
+ *   [onClick].
  * - The secondary button calls [onContextClick].
  * - The wheel scrolls as a swipe does, in steps of [WHEEL_LINES] lines a notch.
  */
@@ -130,11 +131,12 @@ private enum class Button(val report: MouseButton) {
 }
 
 /**
- * A selection that the primary button makes: [unit] is what the press selected (a cell, a word, or
- * a line), and moving extends it from the far end of [unit] to the cell under the pointer.
+ * A selection that the primary button makes: [origin] is what the press selected (a cell, a word,
+ * or a line, or the end of the selection that a Shift+click extends), and moving extends it by its
+ * unit to the pointer ([TerminalSelection.extendedTo]).
  */
 private class SelectionDrag(
-    val unit: TerminalSelection,
+    val origin: TerminalSelection,
     /** The selection last made, which the display drops when its text changes; null before. */
     var selected: TerminalSelection?,
     val position: Offset,
@@ -277,7 +279,7 @@ private class MouseHandler(
         val generation = snapshot.generation
         // Not one made before the lines were numbered again, which the display is about to drop.
         val current = display.selection?.takeIf { it.generation == generation }
-        val (unit, selected) =
+        val (origin, selected) =
             if (clicks == 1 && modifiers.isShiftPressed && current != null) {
                 // Extends the selection from its end farther from the cell, which may have
                 // scrolled off the display.
@@ -287,14 +289,15 @@ private class MouseHandler(
             } else {
                 val unit =
                     when (clicks) {
-                        1 -> TerminalSelection(position, position, generation)
-                        2 -> TerminalSelection.word(snapshot, cell)
-                        else -> TerminalSelection.line(snapshot, cell)
+                        1 -> SelectionUnit.Cell
+                        2 -> SelectionUnit.Word
+                        else -> SelectionUnit.Line
                     }
-                unit to if (clicks == 1) null else unit
+                val origin = TerminalSelection.at(snapshot, cell, unit)
+                origin to if (clicks == 1) null else origin
             }
         display.selection = selected
-        drag = SelectionDrag(unit, selected, grid(change.position))
+        drag = SelectionDrag(origin, selected, grid(change.position))
     }
 
     private fun move(change: PointerInputChange, modifiers: PointerKeyboardModifiers) {
@@ -331,15 +334,15 @@ private class MouseHandler(
         // Output may have scrolled the text since the press: the pointer is over what the display
         // shows now.
         val snapshot = display.displaySnapshot()
-        val cell = snapshot.position(displayCell(position, metrics, snapshot))
-        val unit = drag.unit
-        if (!drag.started && cell == unit.start) return
+        val cell = displayCell(position, metrics, snapshot)
+        val origin = drag.origin
+        if (!drag.started && snapshot.position(cell) == origin.start) return
         // The display drops the selection when its text changes: the rest of the drag selects
         // nothing, as with a long press. A drag that has not moved yet has no selection to be
-        // dropped, but its unit is numbered as the lines were at the press.
+        // dropped, but its origin is numbered as the lines were at the press.
         if (
             drag.dropped ||
-                snapshot.generation != unit.generation ||
+                snapshot.generation != origin.generation ||
                 (drag.started && display.selection !== drag.selected)
         ) {
             drag.dropped = true
@@ -347,12 +350,7 @@ private class MouseHandler(
             drag.selected = null
             return
         }
-        val selected =
-            when {
-                cell in unit.start..unit.end -> unit
-                cell < unit.start -> TerminalSelection(unit.end, cell, unit.generation)
-                else -> TerminalSelection(unit.start, cell, unit.generation)
-            }
+        val selected = origin.extendedTo(snapshot, cell)
         drag.started = true
         drag.selected = selected
         display.selection = selected

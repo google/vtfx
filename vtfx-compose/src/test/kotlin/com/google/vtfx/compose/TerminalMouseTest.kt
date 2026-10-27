@@ -238,21 +238,95 @@ class TerminalMouseTest {
     fun doubleClickSelectsAWord() {
         show("hello world")
         mouse { doubleClick(cell(7, 0)) }
-        assertEquals(display.selectionOf(Cell(6, 0), Cell(10, 0)), display.selection)
+        assertEquals(
+            display.selectionOf(Cell(6, 0), Cell(10, 0), SelectionUnit.Word),
+            display.selection,
+        )
     }
 
     @Test
-    fun dragAfterADoubleClickExtendsByTheWord() {
+    fun dragAfterADoubleClickExtendsByWords() {
         show("hello big world")
         mouse {
             click(cell(7, 0))
             moveTo(cell(7, 0))
             press()
             moveTo(cell(1, 0))
+        }
+        // From the end of "big" to the start of the word under the pointer.
+        assertEquals(
+            display.selectionOf(Cell(8, 0), Cell(0, 0), SelectionUnit.Word),
+            display.selection,
+        )
+        mouse { moveTo(cell(11, 0)) }
+        assertEquals(
+            display.selectionOf(Cell(6, 0), Cell(14, 0), SelectionUnit.Word),
+            display.selection,
+        )
+        // A blank is a word of its own.
+        mouse { moveTo(cell(9, 0)) }
+        assertEquals(
+            display.selectionOf(Cell(6, 0), Cell(9, 0), SelectionUnit.Word),
+            display.selection,
+        )
+        // Back within the word, only the word.
+        mouse {
+            moveTo(cell(6, 0))
             release()
         }
-        // From the end of "big" to the cell under the pointer.
-        assertEquals(display.selectionOf(Cell(8, 0), Cell(1, 0)), display.selection)
+        assertEquals(
+            display.selectionOf(Cell(6, 0), Cell(8, 0), SelectionUnit.Word),
+            display.selection,
+        )
+    }
+
+    @Test
+    fun dragAfterADoubleClickTakesWideCharactersWhole() {
+        show("ab 日本語 cd")
+        mouse {
+            click(cell(0, 0))
+            moveTo(cell(0, 0))
+            press()
+            // The right half of "本".
+            moveTo(cell(6, 0))
+            release()
+        }
+        assertEquals(
+            display.selectionOf(Cell(0, 0), Cell(8, 0), SelectionUnit.Word),
+            display.selection,
+        )
+        composeRule.runOnIdle { display.copySelection() }
+        assertEquals(listOf("ab 日本語"), copied)
+    }
+
+    @Test
+    fun dragAfterATripleClickExtendsByLines() {
+        show("")
+        val columns = session.snapshot().columns
+        session.feed("first\r\n${"x".repeat(columns + 3)}\r\nlast\r\nend".toByteArray())
+        composeRule.waitForIdle()
+        mouse {
+            click(cell(1, 3))
+            click(cell(1, 3))
+            moveTo(cell(1, 3))
+            press()
+            // The second row of the line that autowrap joins.
+            moveTo(cell(1, 2))
+        }
+        assertEquals(
+            display.selectionOf(Cell(columns - 1, 3), Cell(0, 1), SelectionUnit.Line),
+            display.selection,
+        )
+        mouse {
+            moveTo(cell(1, 4))
+            release()
+        }
+        assertEquals(
+            display.selectionOf(Cell(0, 3), Cell(columns - 1, 4), SelectionUnit.Line),
+            display.selection,
+        )
+        composeRule.runOnIdle { display.copySelection() }
+        assertEquals(listOf("last\nend"), copied)
     }
 
     @Test
@@ -262,7 +336,10 @@ class TerminalMouseTest {
         session.feed("first\r\n${"x".repeat(columns + 3)}\r\nlast".toByteArray())
         composeRule.waitForIdle()
         mouse { tripleClick(cell(1, 2)) }
-        assertEquals(display.selectionOf(Cell(0, 1), Cell(columns - 1, 2)), display.selection)
+        assertEquals(
+            display.selectionOf(Cell(0, 1), Cell(columns - 1, 2), SelectionUnit.Line),
+            display.selection,
+        )
         composeRule.runOnIdle { display.copySelection() }
         assertEquals(listOf("x".repeat(columns + 3)), copied)
     }
@@ -271,7 +348,10 @@ class TerminalMouseTest {
     fun shiftClickExtendsTheSelection() {
         show("hello world")
         mouse { doubleClick(cell(1, 0)) }
-        assertEquals(display.selectionOf(Cell(0, 0), Cell(4, 0)), display.selection)
+        assertEquals(
+            display.selectionOf(Cell(0, 0), Cell(4, 0), SelectionUnit.Word),
+            display.selection,
+        )
         withKey(Key.ShiftLeft) { click(cell(8, 0)) }
         assertEquals(display.selectionOf(Cell(0, 0), Cell(8, 0)), display.selection)
     }

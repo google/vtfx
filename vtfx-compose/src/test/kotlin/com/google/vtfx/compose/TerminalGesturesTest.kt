@@ -139,7 +139,10 @@ class TerminalGesturesTest {
             longClick(androidx.compose.ui.geometry.Offset(1f, 5f))
         }
         composeRule.waitForIdle()
-        assertEquals(display.selectionOf(Cell(0, 0), Cell(4, 0)), display.selection)
+        assertEquals(
+            display.selectionOf(Cell(0, 0), Cell(4, 0), SelectionUnit.Word),
+            display.selection,
+        )
         assertTrue(display.copySelection())
         assertEquals(listOf("hello"), copied)
         assertEquals(null, display.selection)
@@ -224,7 +227,7 @@ class TerminalGesturesTest {
         val inPadding = Offset(padding / 4, padding / 4)
         pressAndHold(Offset(padding + 1f, padding + 5f))
         moveAndLift(Offset(padding + 1f, padding + 5f))
-        val selection = display.selectionOf(Cell(0, 0), Cell(4, 0))
+        val selection = display.selectionOf(Cell(0, 0), Cell(4, 0), SelectionUnit.Word)
         assertEquals(selection, display.selection)
         assertEquals(TextToolbarStatus.Shown, toolbar.status)
         // A drag and a long press in the padding do nothing.
@@ -249,7 +252,10 @@ class TerminalGesturesTest {
     fun overwritingTheWordDuringALongPressEndsTheSelection() {
         show("hello world")
         pressAndHold(Offset(1f, 5f))
-        assertEquals(display.selectionOf(Cell(0, 0), Cell(4, 0)), display.selection)
+        assertEquals(
+            display.selectionOf(Cell(0, 0), Cell(4, 0), SelectionUnit.Word),
+            display.selection,
+        )
         session.feed("\rjello".toByteArray())
         composeRule.waitForIdle()
         moveAndLift(Offset(299f, 5f))
