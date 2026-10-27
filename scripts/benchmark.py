@@ -61,6 +61,9 @@ DEVICE_WORKLOADS = f"/sdcard/Android/data/{PACKAGE}/files/workloads"
 # How the code runs in each measurement of the throughput on the device: after `adb install`, ART interprets the
 # app and compiles hot code with its JIT; `cmd package compile -m speed` compiles the whole app ahead of time.
 COMPILATIONS = {"jit": "After install (JIT)", "speed": "Compiled with speed (AOT)"}
+# Targets of the throughput on the reference device, after install (docs/decisions/0089).
+DEVICE_THROUGHPUT_REFERENCE = "Pixel 9"
+DEVICE_THROUGHPUT_TARGETS = {"ascii": 90.0, "sgr": 65.0, "cjk": 70.0, "recordings": 85.0}  # MB/s
 
 
 def parse_table(text):
@@ -111,7 +114,7 @@ def device(serial):
     release = adb("shell", "getprop", "ro.build.version.release").strip()
     emulator = adb("shell", "getprop", "ro.kernel.qemu").strip() == "1"
     name = "emulator" if emulator else adb("shell", "getprop", "ro.product.model").strip()
-    return renders, throughputs, f"{name}, Android {release}", emulator
+    return renders, throughputs, f"{name}, Android {release}", None if emulator else name, emulator
 
 
 def render(adb):
@@ -191,6 +194,14 @@ def check_renders(results):
         sys.exit(f"RenderBenchmark drew no frames in {', '.join(empty)}: is the screen on and unlocked?")
 
 
+def device_throughput_result(model, workload, rate):
+    """Returns the target and the result of the throughput of a workload after install on a device of the model,
+    which only the reference device is marked against."""
+    target = DEVICE_THROUGHPUT_TARGETS[workload]
+    result = mark(rate >= target) if model == DEVICE_THROUGHPUT_REFERENCE else "For reference"
+    return f"≥ {target:.0f} MB/s on a {DEVICE_THROUGHPUT_REFERENCE}", result
+
+
 def mark(ok):
     return "Met" if ok else "Not met"
 
@@ -204,7 +215,8 @@ def main():
 
     vtfx = vtfx_throughput()
     xterm = xterm_throughput(args.node) if args.node else {}
-    renders, throughputs, device_name, emulator = ({}, {}, None, False) if args.skip_emulator else device(args.serial)
+    renders, throughputs, device_name, model, emulator = (
+        ({}, {}, None, None, False) if args.skip_emulator else device(args.serial))
 
     commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip()
     cpu = re.search(r"model name\s*:\s*(.*)", open("/proc/cpuinfo").read())
@@ -280,15 +292,18 @@ def main():
     lines += ["", f"## Throughput on the device ({device_name or '-'}, 120 × 40, writes of 4 KiB)", ""]
     if throughputs:
         lines += [
-            "The workloads of the JVM's throughput, fed to a session in the sample app's benchmark build. There are no",
-            "targets on devices (docs/decisions/0089).",
+            "The workloads of the JVM's throughput, fed to a session in the sample app's benchmark build. The targets",
+            f"are for the throughput after install on the reference device, a {DEVICE_THROUGHPUT_REFERENCE}; on other "
+            "devices, the results are for reference.",
             "",
-            "| Load | " + " | ".join(f"{label} (MB/s)" for label in COMPILATIONS.values()) + " | JVM on this machine (MB/s) |",
-            "|---|" + "---|" * len(COMPILATIONS) + "---|",
+            "| Load | " + " | ".join(f"{label} (MB/s)" for label in COMPILATIONS.values()) +
+            " | JVM on this machine (MB/s) | Target | Result |",
+            "|---|" + "---|" * len(COMPILATIONS) + "---|---|---|",
         ]
         for name in THROUGHPUT_TARGETS:
             rates = " | ".join(f"{throughputs[compilation][name]:.1f}" for compilation in COMPILATIONS)
-            lines.append(f"| {name} | {rates} | {float(vtfx[name][0]):.1f} |")
+            target, result = device_throughput_result(model, name, throughputs["jit"][name])
+            lines.append(f"| {name} | {rates} | {float(vtfx[name][0]):.1f} | {target} | {result} |")
         if emulator:
             lines += ["", "The emulator runs on this machine's CPU, so it does not show the throughput of devices."]
     else:

@@ -80,5 +80,15 @@ class ThroughputTest(unittest.TestCase):
         benchmark.check_throughput("jit", {"ascii": 1.0, "sgr": 1.0, "cjk": 1.0, "recordings": 1.0})
 
 
+class DeviceThroughputResultTest(unittest.TestCase):
+    def test_the_reference_device_is_marked_against_the_target(self):
+        self.assertEqual(("≥ 90 MB/s on a Pixel 9", "Met"), benchmark.device_throughput_result("Pixel 9", "ascii", 100.2))
+        self.assertEqual("Not met", benchmark.device_throughput_result("Pixel 9", "ascii", 89.9)[1])
+
+    def test_other_devices_and_the_emulator_are_for_reference(self):
+        self.assertEqual("For reference", benchmark.device_throughput_result("Pixel 9 Pro", "ascii", 10.0)[1])
+        self.assertEqual("For reference", benchmark.device_throughput_result(None, "ascii", 10.0)[1])
+
+
 if __name__ == "__main__":
     unittest.main()

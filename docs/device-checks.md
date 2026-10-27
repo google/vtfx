@@ -382,3 +382,14 @@ adb -s SERIAL logcat -d -s VtfxThroughput:I -v raw
 ```
 
 To compare with code compiled ahead of time, run `adb -s SERIAL shell cmd package compile -m speed -f com.google.vtfx.sample` and start it again; `cmd package compile --reset com.google.vtfx.sample` returns to the state after install. To profile, measure one workload for longer (`--es workload ascii --es seconds 30`) and record the app meanwhile with `adb -s SERIAL shell simpleperf record --app com.google.vtfx.sample --duration 10 -o /data/local/tmp/perf.data`, which the benchmark build allows since it is profileable by the shell; `simpleperf report -i /data/local/tmp/perf.data --comms vtfx-benchmark- --sort symbol` on the device lists the hot methods of the benchmark's thread.
+
+| Value (after install) | Target on a Pixel 9 |
+|---|---|
+| ascii | ≥ 90 MB/s |
+| sgr | ≥ 65 MB/s |
+| cjk | ≥ 70 MB/s |
+| recordings | ≥ 85 MB/s |
+
+On other devices, and compiled with `speed`, the results are for reference.
+
+Checked on a Pixel 9 (Android 16) on 2026-10-27 with `scripts/benchmark.py`: after install, ascii 100.2, sgr 72.6, cjk 76.2, and recordings 96.8 MB/s; compiled with `speed`, 99.4, 67.7, 68.8, and 93.9 MB/s. The optimizations that got there are in [research/performance-art-2026-10.md](research/performance-art-2026-10.md).
