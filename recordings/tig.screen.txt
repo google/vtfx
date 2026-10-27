@@ -1,0 +1,24 @@
+2026-01-15 18:15 +0000 Alice o [main] <v1.0> Cancel pending wrap on erase in lin
+2026-01-12 14:30 +0000 Alice o Handle wide characters (全角文字) at the margin
+2026-01-10 09:00 +0000 Alice I Initial parser and screen buffer
+
+
+
+
+[main] 8afe4f9e1323a7bd652c7bcf61f018a1a59e4c82 - commit 1 of 3             100%
+commit 8afe4f9e1323a7bd652c7bcf61f018a1a59e4c82
+Refs: [main], <v1.0>
+Author:     Alice <alice@example.com>
+AuthorDate: Thu Jan 15 18:15:00 2026 +0000
+Commit:     Alice <alice@example.com>
+CommitDate: Thu Jan 15 18:15:00 2026 +0000
+
+    Cancel pending wrap on erase in line
+---
+ Emulator.kt | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/Emulator.kt b/Emulator.kt
+new file mode 100644
+[diff] 8afe4f9e1323a7bd652c7bcf61f018a1a59e4c82 - line 2 of 22               63%
+

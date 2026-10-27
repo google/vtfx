@@ -9,15 +9,33 @@ Made by `tools/recordings/record.py`. Owned by agents (not an oracle owned by hu
 | `<name>.screen.ansi` | A capture of the same screen with attributes (`tmux capture-pane -e`) |
 | `<name>.json` | The versions of the app and the reference, and the size |
 
-In the htop recording, to avoid keeping the process list of the development machine it was recorded on, the alphanumeric characters in the USER and Command columns of the process list are replaced with `x`, `X`, and `0` (`scrub_htop` in `record.py`). The layout, attributes, and tree lines are as recorded. Recording again does the same replacement automatically.
+| Name | Program |
+|---|---|
+| `vim` | `vim --clean` (line numbers, search highlight, insert mode with wide characters, horizontal split) |
+| `less` | `less -N` (scrolling, search highlight, status line) |
+| `htop` | `htop --no-mouse` (colors, meters, process tree) |
+| `tmux` | `tmux` (status line, split panes, borders, colored and wide text) |
+| `neovim` | `nvim --clean` (truecolor default scheme, vertical split, search highlight, wide characters) |
+| `emacs` | `emacs -nw -Q` (incremental search, horizontal split with mode-lines, CJK editing) |
+| `mc` | `mc --nosubshell` (Midnight Commander dual-pane directory view, box drawing, CJK filenames) |
+| `btop` | `btop --force-utf` (rounded borders, truecolor gradients, Braille graphs, synchronized output) |
+| `tig` | `tig` (commit log and split diff view on a synthetic Git repository) |
+| `fzf` | `fzf` (fuzzy finder with border, query highlight, and preview pane) |
+| `ncdu` | `ncdu --color dark` (disk usage browser with half-block usage bars on an imported JSON tree) |
+
+In the `htop` and `btop` recordings, to avoid keeping the process list of the development machine they were recorded on, the alphanumeric characters in the user and command columns of the process list are replaced with `x`, `X`, and `0` (`scrub_htop` and `scrub_btop` in `record.py`), and `btop` hides host disk, network, GPU, and hostname fields via its generated `btop.conf`. In the `mc` recording, `scrub_mc` replaces the user, host, and temporary directory in OSC 0 and OSC 7 strings. Recording again applies the same replacements automatically.
 
 To record again (example):
 
 ```
-# If htop and tmux are not on the system, extract the packages and add them to PATH.
-apt-get download htop tmux libevent-core-2.1-7t64 libjemalloc2
+# If the apps are not on the system, extract their packages and add them to PATH.
+apt-get download htop tmux neovim neovim-runtime emacs-nox emacs-common emacs-bin-common \
+  mc mc-data btop tig fzf ncdu
 for f in *.deb; do dpkg -x "$f" root; done
-PATH=$PWD/root/usr/bin:$PATH LD_LIBRARY_PATH=$PWD/root/usr/lib/x86_64-linux-gnu \
+PATH=$PWD/root/usr/bin:$PATH \
+  LD_LIBRARY_PATH=$PWD/root/usr/lib/x86_64-linux-gnu \
+  VIMRUNTIME=$PWD/root/usr/share/nvim/runtime \
+  MC_DATADIR=$PWD/root/usr/share/mc \
   tools/recordings/record.py recordings
 ```
 

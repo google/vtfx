@@ -1,0 +1,9 @@
+{
+  "command": "mc",
+  "columns": 80,
+  "rows": 24,
+  "term": "xterm-256color",
+  "app_version": "GNU Midnight Commander 4.8.33",
+  "reference": "tmux 3.6b",
+  "bytes": 3535
+}

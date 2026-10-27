@@ -15,8 +15,8 @@
 
 """Replays the recordings of real apps in the sample app on the emulator and takes screenshots.
 
-The sample app shows the recorded output of vim, less, htop, and tmux, and of programs that show
-images with the kitty graphics protocol (recordings/graphics). The screenshots go to
+The sample app shows the recorded output of real CLI apps (recordings/*.out), and of programs that
+show images with the kitty graphics protocol (recordings/graphics). The screenshots go to
 build/reports/sample-replay/, for a human to look at, with build/reports/sample-replay.md listing
 them. vtfx-core's RecordingReplayTest checks the same
 recordings against a reference terminal.
@@ -35,7 +35,23 @@ import time
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 ADB_PATH = os.path.join(os.environ.get("ANDROID_HOME", os.path.expanduser("~/Android/Sdk")), "platform-tools", "adb")
 ACTIVITY = "com.google.vtfx.sample/.MainActivity"
-RECORDINGS = ["vim", "less", "htop", "tmux", "timg", "icat", "icat-placeholder", "fastfetch"]
+RECORDINGS = [
+    "vim",
+    "less",
+    "htop",
+    "tmux",
+    "neovim",
+    "emacs",
+    "mc",
+    "btop",
+    "tig",
+    "fzf",
+    "ncdu",
+    "timg",
+    "icat",
+    "icat-placeholder",
+    "fastfetch",
+]
 
 
 def adb(serial, *args, binary=False):

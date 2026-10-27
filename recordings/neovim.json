@@ -1,0 +1,9 @@
+{
+  "command": "nvim",
+  "columns": 80,
+  "rows": 24,
+  "term": "xterm-256color",
+  "app_version": "NVIM v0.11.6",
+  "reference": "tmux 3.6b",
+  "bytes": 8854
+}

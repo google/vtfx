@@ -1,0 +1,24 @@
+ 24  24: The quick brown fox jumps over │  1   1: The quick brown fox jumps over
+    the lazy dog.                       │     the lazy dog.
+ 25  25: The quick brown fox jumps over │  2   2: The quick brown fox jumps over
+    the lazy dog.                       │     the lazy dog.
+ 26  26: The quick brown fox jumps over │  3   3: The quick brown fox jumps over
+    the lazy dog.                       │     the lazy dog.
+ 27  27: The quick brown fox jumps over │  4   4: The quick brown fox jumps over
+    the lazy dog.                       │     the lazy dog.
+ 28  28: The quick brown fox jumps over │  5   5: The quick brown fox jumps over
+    the lazy dog.                       │     the lazy dog.
+ 29  29: The quick brown fox jumps over │  6   6: The quick brown fox jumps over
+    the lazy dog.                       │     the lazy dog.
+ 30  30: The quick brown fox jumps over │  7   7: The quick brown fox jumps over
+    the lazy dog.                       │     the lazy dog.
+ 31  日本語を入力した行                 │  8   8: The quick brown fox jumps over
+ 32 日本語のテキスト。全角の文字が二つの│     the lazy dog.
+    セルを占める。                      │  9   9: The quick brown fox jumps over
+ 33 한국어 텍스트                       │     the lazy dog.
+ 34 混在 mixed テキスト                 │ 10  10: The quick brown fox jumps over
+ 35                                     │     the lazy dog.
+ 36 end                                 │ 11  11: The quick brown fox jumps over
+~                                       │     the lazy dog.
+sample.txt [+]        31,26-18       Bot sample.txt [+]       1,18           Top
+:vsplit

@@ -86,6 +86,20 @@ class RecordingScreenshotTest {
 
     @Test fun tmux() = replay("tmux")
 
+    @Test fun neovim() = replay("neovim")
+
+    @Test fun emacs() = replay("emacs")
+
+    @Test fun mc() = replay("mc")
+
+    @Test fun btop() = replay("btop")
+
+    @Test fun tig() = replay("tig")
+
+    @Test fun fzf() = replay("fzf")
+
+    @Test fun ncdu() = replay("ncdu")
+
     // Programs that show images with the kitty graphics protocol (docs/decisions/0080). They chose
     // the sizes of the images from cells of 10 by 20 pixels, and the display takes each image's
     // size in cells from its own cells, as on a device.

@@ -1,0 +1,9 @@
+{
+  "command": "fzf",
+  "columns": 80,
+  "rows": 24,
+  "term": "xterm-256color",
+  "app_version": "0.73.1 (debian)",
+  "reference": "tmux 3.6b",
+  "bytes": 14499
+}

@@ -1,0 +1,24 @@
+  Left     File     Command     Options     Right
+┌<─ ~/mc/src ─────────────────────.[^]>┐┌<─ ~/mc/docs ────────────────────.[^]>┐
+│.n     Name      │ Size  │Modify time ││.n     Name      │ Size  │Modify time │
+│/..              │UP--DIR│Jan  1  2026││/..              │UP--DIR│Jan  1  2026│
+│ Emulator.kt     │   4820│Jan  1  2026││ README.md       │    920│Jan  1  2026│
+│ Parser.kt       │   3410│Jan  1  2026││ emulation.md    │   6140│Jan  1  2026│
+│ Reflow.kt       │   2190│Jan  1  2026││ 仕様.md         │   1536│Jan  1  2026│
+│ 日本語.txt      │    256│Jan  1  2026││                 │       │            │
+│                 │       │            ││                 │       │            │
+│                 │       │            ││                 │       │            │
+│                 │       │            ││                 │       │            │
+│                 │       │            ││                 │       │            │
+│                 │       │            ││                 │       │            │
+│                 │       │            ││                 │       │            │
+│                 │       │            ││                 │       │            │
+│                 │       │            ││                 │       │            │
+│                 │       │            ││                 │       │            │
+│                 │       │            ││                 │       │            │
+├──────────────────────────────────────┤├──────────────────────────────────────┤
+│UP--DIR                               ││UP--DIR                               │
+└──────────────────── 51G / 51G (99%) ─┘└──────────────────── 51G / 51G (99%) ─┘
+GNU Midnight Commander 4.8.33
+$
+ 1Help   2Menu   3View   4Edit   5Copy   6RenMov 7Mkdir  8Delete 9PullDn10Quit

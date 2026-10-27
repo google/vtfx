@@ -1,0 +1,87 @@
+[?1049h[22;0;0t[?1h=[H[2J[?2004h[?2026$p[?2027$p[?2031$p[?2048$p[0m[4:3mP$qm\[?u[c[?25h]11;?P+q5463;524742;73657472676266;73657472676262\[0m[48;2;1;2;3mP$qm\P+q4D73\[?25l(B[m[H                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                [H(B[m  1   1: The quick brown fox jumps over the lazy dog.[K
+  2   2: The quick brown fox jumps over the lazy dog.[K
+  3   3: The quick brown fox jumps over the lazy dog.[K
+  4   4: The quick brown fox jumps over the lazy dog.[K
+  5   5: The quick brown fox jumps over the lazy dog.[K
+  6   6: The quick brown fox jumps over the lazy dog.[K
+  7   7: The quick brown fox jumps over the lazy dog.[K
+  8   8: The quick brown fox jumps over the lazy dog.[K
+  9   9: The quick brown fox jumps over the lazy dog.[K
+ 10  10: The quick brown fox jumps over the lazy dog.[K
+ 11  11: The quick brown fox jumps over the lazy dog.[K
+ 12  12: The quick brown fox jumps over the lazy dog.[K
+ 13  13: The quick brown fox jumps over the lazy dog.[K
+ 14  14: The quick brown fox jumps over the lazy dog.[K
+ 15  15: The quick brown fox jumps over the lazy dog.[K
+ 16  16: The quick brown fox jumps over the lazy dog.[K
+ 17  17: The quick brown fox jumps over the lazy dog.[K
+ 18  18: The quick brown fox jumps over the lazy dog.[K
+ 19  19: The quick brown fox jumps over the lazy dog.[K
+ 20  20: The quick brown fox jumps over the lazy dog.[K
+ 21  21: The quick brown fox jumps over the lazy dog.[K
+ 22  22: The quick brown fox jumps over the lazy dog.[K
+(B[0;7msample.txt                                                    1,1            Top(B[m
+[J[2 q[2 q[?1002h[?1006h[H  1   1: The quick brown fox jumps over the lazy dog.[K
+  2   2: The quick brown fox jumps over the lazy dog.[K
+  3   3: The quick brown fox jumps over the lazy dog.[K
+  4   4: The quick brown fox jumps over the lazy dog.[K
+  5   5: The quick brown fox jumps over the lazy dog.[K
+  6   6: The quick brown fox jumps over the lazy dog.[K
+  7   7: The quick brown fox jumps over the lazy dog.[K
+  8   8: The quick brown fox jumps over the lazy dog.[K
+  9   9: The quick brown fox jumps over the lazy dog.[K
+ 10  10: The quick brown fox jumps over the lazy dog.[K
+ 11  11: The quick brown fox jumps over the lazy dog.[K
+ 12  12: The quick brown fox jumps over the lazy dog.[K
+ 13  13: The quick brown fox jumps over the lazy dog.[K
+ 14  14: The quick brown fox jumps over the lazy dog.[K
+ 15  15: The quick brown fox jumps over the lazy dog.[K
+ 16  16: The quick brown fox jumps over the lazy dog.[K
+ 17  17: The quick brown fox jumps over the lazy dog.[K
+ 18  18: The quick brown fox jumps over the lazy dog.[K
+ 19  19: The quick brown fox jumps over the lazy dog.[K
+ 20  20: The quick brown fox jumps over the lazy dog.[K
+ 21  21: The quick brown fox jumps over the lazy dog.[K
+ 22  22: The quick brown fox jumps over the lazy dog.[K
+(B[0;7msample.txt                                                    1,1            Top(B[m
+[J[1;5H[?25h[?25l[?1004h[?25h[?25l[23B:30[2 q[?1002l[?1006l[24;1H[?25h[?25l[1;22r[H[8M[r[15;1H 23  23: The quick brown fox jumps over the lazy dog.[K
+ 24  24: The quick brown fox jumps over the lazy dog.[K
+ 25  25: The quick brown fox jumps over the lazy dog.[K
+ 26  26: The quick brown fox jumps over the lazy dog.[K
+ 27  27: The quick brown fox jumps over the lazy dog.[K
+ 28  28: The quick brown fox jumps over the lazy dog.[K
+ 29  29: The quick brown fox jumps over the lazy dog.[K
+ 30  30: The quick brown fox jumps over the lazy dog.[K[23;63H(B[0;7m30,1           61%[2 q[?1002h[?1006h[22;5H[?25h[?25l(B[m
+
+   [24;1H/fox[2 q[?1002l[?1006l[24;1H[?25h[?25l[2 q[?1002h[?1006h[?25h[?25l[60C[30/30][1;26H[30m[103mfox[2;26Hfox[3;26Hfox[4;26Hfox[5;26Hfox[6;26Hfox[7;26Hfox[8;26Hfox[9;26Hfox[10;26Hfox[11;26Hfox[12;26Hfox[13;26Hfox[14;26Hfox[15;26Hfox[16;26Hfox[17;26Hfox[18;26Hfox[19;26Hfox[20;26Hfox[21;26Hfox[22;26Hfox[23;66H(B[0;7m22[22;26H[?25h[?25l
+
+(B[m[92m-- INSERT --(B[m[48C[7X[1;22r[H[M[r[21;26H[30m[103mfox
+(B[m 31  日本語を入力した行[K[23;12H(B[0;7m[+]                                                31,29-20       64[6 q[22;24H[?25h[?25l(B[m
+
+[12X[23;67H(B[0;7m6-18[2 q[22;22H[?25h[?25l
+
+(B[m:vsplit[2 q[?1002l[?1006l[24;1H[?25h[?25l[1;2H24  24[2;2H   the lazy dog.[22X[3;2H25  25[4;2H   the lazy dog.[22X[5;2H26  26[6;2H   the lazy dog.[22X[7;2H27  27[8;2H   the lazy dog.[22X[9;2H28  2[10;2H   the lazy dog.[22X[11;3H9  29[12;2H   the lazy dog.[22X[13;2H30  30[14;2H   the lazy dog.[22X[15;2H31  日本語を入力した行[16X[16;2H32 日本語のテキスト。全角の文字が二つの[17;2H   セルを占める。[21X[18;2H33 한국어 텍스트[22X[19;2H34 混在 mixed テキスト[16X[20;2H35 [35X[21;3H6 end[32X
+~[39X[1;41H│[2;41H│[3;41H│[4;41H│[5;41H│[6;41H│[7;41H│[8;41H│[9;41H│[10;41H│[11;41H│[12;41H│[13;41H│[14;41H│[15;41H│[16;41H│[17;41H│[18;41H│[19;41H│[20;41H│[21;41H│[22;41H│[23;23H(B[0;7m31,26-18       Bot[1;42H(B[m 24  24: The quick brown [30m[103mfox(B[m jumps over[2;42H     the lazy dog.[3;42H 25  25: The quick brown [30m[103mfox(B[m jumps over[4;42H     the lazy dog.[5;42H 26  26: The quick brown [30m[103mfox(B[m jumps over[6;42H     the lazy dog.[7;42H 27  27: The quick brown [30m[103mfox(B[m jumps over[8;42H     the lazy dog.[9;42H 28  28: The quick brown [30m[103mfox(B[m jumps over[10;42H     the lazy dog.[11;42H 29  29: The quick brown [30m[103mfox(B[m jumps over[12;42H     the lazy dog.[13;42H 30  30: The quick brown [30m[103mfox(B[m jumps over[14;42H     the lazy dog.[15;42H 31  日本語を入力した行[16;42H 32 日本語のテキスト。全角の文字が二つ>[17;42H    のセルを占める。[18;42H 33 한국어 텍스트[19;42H 34 混在 mixed テキスト[20;42H 35 [8X[21;42H 36 end[5X[22;42H~[K[23;42H(B[0;1;4msample.txt [+]       31,26-18       Bot[2 q[?1002h[?1006h[15;22H[?25h[?25l[24;70H(B[m^Wl[15;22H[?25h[?25l[24;70H   [A(B[0;1;4msample.txt [+]        31,26-18       Bot (B[0;7msample.txt [+]       31,26-18       Bot[15;63H[?25h[?25l[24;70H(B[mgg[15;63H[?25h[?25l[24;70H  [1;43H 1   1[3;43H 2   2[5;43H 3   3[7;43H 4   4[9;43H 5   5[11;43H 6   6[13;43H 7   7[15;43H 8   8: The quick brown [30m[103mfox(B[m jumps over[16;43H    the lazy dog.[K[17;44H9   9: The quick brown [30m[103mfox(B[m jumps over[18;43H    the lazy dog.[19;43H10  10: The quick brown [30m[103mfox(B[m jumps over[20;43H    the lazy dog.[21;43H11  11: The quick brown [30m[103mfox(B[m jumps over[22;42H     the lazy dog.[K[23;63H(B[0;7m1,18           Top[1;63H[?25h

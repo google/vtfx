@@ -1,0 +1,9 @@
+{
+  "command": "tig",
+  "columns": 80,
+  "rows": 24,
+  "term": "xterm-256color",
+  "app_version": "tig version 2.6.0",
+  "reference": "tmux 3.6b",
+  "bytes": 1736
+}

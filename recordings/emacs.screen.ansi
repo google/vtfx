@@ -1,0 +1,24 @@
+[7mFile Edit Options Buffers Tools Text Help                                       
+[0m  1: The quick brown fox jumps over the lazy dog.                               
+  2: The quick brown fox jumps over the lazy dog.                               
+  3: The quick brown fox jumps over the lazy dog.                               
+  4: The quick brown fox jumps over the lazy dog.                               
+  5: The quick brown fox jumps over the lazy dog.                               
+  6: The quick brown fox jumps over the lazy dog.                               
+  7: The quick brown fox jumps over the lazy dog.                               
+  8: The quick brown fox jumps over the lazy dog.                               
+  9: The quick brown fox jumps over the lazy dog.                               
+ 10: The quick brown fox jumps over the lazy dog.                               
+[38;5;236m[47m-UUU:**-  F1  [1msample.txt  [0m[38;5;236m[47m   Top   L1     (Text) -------------------------------
+[39m[49m 29: The quick brown fox jumps over the lazy dog.                               
+ 30: The quick brown fox jumps over the lazy dog.                               
+日本語のテキスト。全角の文字が二つのセルを占める。                              
+한국어 텍스트                                                                   
+日本語の行                                                                      
+混在 mixed テキスト 
+
+end                 
+
+
+[30m[48;5;250m-UUU:**-  F1  [1msample.txt  [0m[30m[48;5;250m   Bot   L34    (Text) -------------------------------
+

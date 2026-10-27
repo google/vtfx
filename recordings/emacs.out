@@ -1,0 +1,86 @@
+[?1049h[22;0;0t[?12;25h[?1h=[H[2J[24d[K[?1l>[?12l[?25h[?1049l[23;0;0t[39;49m[?1049h[22;0;0t[?12;25h[?1h=[>0c[H[2J[24d[K[H[?25l[7mFile Edit Options Buffers Tools Lisp-Interaction Help                           [0m[39;49m[27m
+[A
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[30m[48;5;250m-UUU:---  F1  [39;49m[1m[30m[48;5;250m*scratch*   [0m[39;49m[30m[48;5;250m   All   L1     (Lisp Interaction ElDoc) -------------[39;49m
+[A[2d[?12l[?25h[?12;25h[?2004h[?1004h[24d[?25lFor information about GNU Emacs and the GNU system, type [38;5;18m[48;5;255mC-h C-a[39;49m.[H
+[?12l[?25h[?12;25h[24d[?25l[38;5;20mI-search: [39;49mf[K[?12l[?25h[?12;25h[?25lo[?12l[?25h[?12;25h[?25lx[?12l[?25h[?12;25h[?25lMark saved where search started[H
+[?12l[?25h[?12;25h[24d[?25lMark saved where search started[K[H[7mFile Edit Options Buffers Tools Text Help                                       [0m[39;49m[27m
+[A
+  1: The quick brown fox jumps over the lazy dog.[K
+  2: The quick brown fox jumps over the lazy dog.[K
+  3: The quick brown fox jumps over the lazy dog.[K
+  4: The quick brown fox jumps over the lazy dog.[K
+  5: The quick brown fox jumps over the lazy dog.[K
+  6: The quick brown fox jumps over the lazy dog.[K
+  7: The quick brown fox jumps over the lazy dog.[K
+  8: The quick brown fox jumps over the lazy dog.[K
+  9: The quick brown fox jumps over the lazy dog.[K
+ 10: The quick brown fox jumps over the lazy dog.[K
+ 11: The quick brown fox jumps over the lazy dog.[K
+ 12: The quick brown fox jumps over the lazy dog.[K
+ 13: The quick brown fox jumps over the lazy dog.[K
+ 14: The quick brown fox jumps over the lazy dog.[K
+ 15: The quick brown fox jumps over the lazy dog.[K
+ 16: The quick brown fox jumps over the lazy dog.[K
+ 17: The quick brown fox jumps over the lazy dog.[K
+ 18: The quick brown fox jumps over the lazy dog.[K
+ 19: The quick brown fox jumps over the lazy dog.[K
+ 20: The quick brown fox jumps over the lazy dog.[K
+ 21: The quick brown fox jumps over the lazy dog.[K
+[30m[48;5;250m-UUU:---  F1  [39;49m[1m[30m[48;5;250msample.txt  [0m[39;49m[30m[48;5;250m   Top   L1     (Text) -------------------------------[39;49m
+[A[2;25H[?12l[?25h[?12;25h[24;1H[K[12d[?25l[30m[48;5;250m-UUU:---  F1  [39;49m[1m[30m[48;5;250msample.txt  [0m[39;49m[30m[48;5;250m   Top   L1     (Text) -------------------------------[39;49m
+[C[C[1P[1@
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+[38;5;236m[47m-UUU:---  F1  [39;49m[1m[38;5;236m[47msample.txt  [0m[39;49m[38;5;236m[47m   Top   L1     (Text) -------------------------------[39;49m
+[2;25H[?12l[?25h[?12;25h[12;1H[?25l[38;5;236m[47m-UUU:---  F1  [39;49m[1m[38;5;236m[47msample.txt  [0m[39;49m[38;5;236m[47m   Top   L1     (Text) -------------------------------[39;49m
+[23d[30m[48;5;250m-UUU:---  F1  [39;49m[1m[30m[48;5;250msample.txt  [0m[39;49m[30m[48;5;250m   Top   L1     (Text) -------------------------------[39;49m
+[13;25H[?12l[?25h[?12;25h[24;1H[?25lMark set[13;25H[?12l[?25h[?12;25h[C[?25l29
+30
+日本語のテキスト。全角の文字が二つのセルを占める。
+한국어 텍스트[K
+混在 mixed テキスト[K
+[K
+end[K
+[K
+[K
+[K[23;30H[30m[48;5;250mBot   L36[39;49m[20;1H[?12l[?25h[?12;25h
+
+
+
+[K[12;6H[?25l[38;5;236m[47m**[39;49m
+
+
+
+
+日本語の行[K
+混在 mixed テキスト
+[K
+end[23;6H[30m[48;5;250m**-  F1  [39;49m[1m[30m[48;5;250msample.txt  [0m[39;49m[30m[48;5;250m   Bot   L34[39;49m[18;1H[?12l[?25h[?12;25h
