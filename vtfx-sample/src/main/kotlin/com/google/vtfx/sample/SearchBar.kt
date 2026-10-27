@@ -31,6 +31,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,7 +60,8 @@ import com.google.vtfx.compose.TerminalState
  */
 @Composable
 fun SearchBar(state: TerminalState, onClose: () -> Unit, modifier: Modifier = Modifier) {
-    var text by remember { mutableStateOf("") }
+    // Saved as the state saves its search, so that the field shows the text after recreation.
+    var text by rememberSaveable { mutableStateOf("") }
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { focus.requestFocus() }
     val close = {
