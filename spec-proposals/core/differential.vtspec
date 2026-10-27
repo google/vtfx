@@ -1,0 +1,130 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Cases surfaced by differential testing against alacritty_terminal 0.26.0,
+# proposed for promotion to spec/core/.
+
+=== IL resets the cursor column to the first column
+size 6x3
+input "111111\r\n222222\e[2;4H\e[LX"
+screen
+  |111111|
+  |X     |
+  |222222|
+cursor 2,2
+ref DEC STD 070 (IL moves to column 1; xterm matches, ECMA-48 8.3.67 and alacritty_terminal keep the column)
+
+=== DL resets the cursor column to the first column
+size 6x3
+input "111111\r\n222222\r\n333333\e[2;4H\e[MX"
+screen
+  |111111|
+  |X33333|
+  |      |
+cursor 2,2
+ref DEC STD 070 (DL moves to column 1; xterm matches, ECMA-48 8.3.32 and alacritty_terminal keep the column)
+
+=== CBT cancels a pending wrap and moves to the previous tab stop
+size 10x2
+input "abcdefghij\e[ZX"
+screen
+  |abcdefghXj|
+  |          |
+cursor 10,1
+ref ctlseqs: CSI Ps Z (CBT); tmux cancels pending wrap, while xterm and alacritty_terminal keep it
+
+=== Mode 1049 reset on the main screen restores the saved cursor
+size 8x2
+input "\e[2;4H\e7\e[1;1Habc\e[?1049lX"
+screen
+  |abc     |
+  |   X    |
+cursor 5,2
+ref ctlseqs: CSI ? 1049 l (combines mode 1047 reset and DECRC; xterm matches, alacritty_terminal ignores it on the main screen)
+
+=== Mode 1049 set on the alternate screen saves the cursor
+size 8x2
+input "\e[?1049h\e[2;4H\e[?1049h\e[1;1Habc\e8X"
+screen
+  |abc     |
+  |   X    |
+cursor 5,2
+ref ctlseqs: CSI ? 1049 h (combines DECSC and mode 1047 set; xterm matches, alacritty_terminal ignores it on the alternate screen)
+
+=== A combining character at the first column without a preceding character is dropped
+size 6x2
+input "\u0301\e[CX"
+screen
+  | X    |
+  |      |
+cursor 3,1
+ref docs/design/emulation.md section 7.2 (xterm -u8 drops combining marks on blank cells; alacritty_terminal attaches them to a space)
+
+=== EL 0, 1, and 2 cancel a pending wrap
+size 6x3
+input "abcdef\e[0KX\r\nabcdef\e[1KY\r\nabcdef\e[2KZ"
+screen
+  |abcdeX|
+  |     Y|
+  |     Z|
+cursor 6,3
+ref ctlseqs: CSI Ps K (EL); xterm and tmux cancel pending wrap on EL 0, 1, and 2
+
+=== ED 0, 1, and 2 cancel a pending wrap while ED 3 keeps it
+size 6x2
+input "abcdef\e[0JX\e[1;1Habcdef\e[3JY"
+screen
+  |abcdef|
+  |Y     |
+cursor 2,2
+ref ctlseqs: CSI Ps J (ED); xterm and tmux cancel pending wrap on ED 0, 1, and 2, and keep it on ED 3
+
+=== ICH, DCH, and ECH cancel a pending wrap
+size 6x3
+input "abcdef\e[1@X\r\nabcdef\e[1PY\r\nabcdef\e[1XZ"
+screen
+  |abcdeX|
+  |abcdeY|
+  |abcdeZ|
+cursor 6,3
+ref ctlseqs: CSI Ps @ (ICH), CSI Ps P (DCH), CSI Ps X (ECH)
+
+=== Without autowrap, a wide character at the right margin is dropped
+size 5x2
+input "\e[?7labcd\u3042"
+screen
+  |abcd |
+  |     |
+cursor 5,1
+ref ctlseqs: CSI ? 7 l (DECAWM); xterm and tmux ignore a two-cell character that does not fit at the right margin
+
+=== LF, IND, and RI cancel a pending wrap
+size 6x3
+input "123456\nX\r\n123456\eMY"
+screen
+  |123456|
+  |     Y|
+  |123456|
+cursor 6,2
+ref xterm 409 (LF, IND, and RI move vertically from the last column and cancel pending wrap; alacritty_terminal keeps pending wrap)
+
+=== HT at a pending wrap stays on the same row
+size 6x2
+input "123456\t\rX"
+screen
+  |X23456|
+  |      |
+cursor 2,1
+ref xterm 409 and tmux (HT stops at the right margin without wrapping to the next row; alacritty_terminal wraps on HT)
+

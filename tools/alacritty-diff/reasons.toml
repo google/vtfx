@@ -1,0 +1,214 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Known reasons why vtfx-core and alacritty_terminal 0.26.0 produce different screens, cursors,
+# or cell styles, read by scripts/alacritty_diff.py (docs/design/testing.md).
+#
+# Each [[reason]] matches a differing case by regular expressions on:
+# - "cases": the case id ("<group>/<name>")
+# - "input": the escaped input and resize operations of the case
+# - "difference": the formatted difference description
+# When more than one pattern key is present on a [[reason]], all present keys must match.
+# The first matching [[reason]] wins.
+#
+# "kind" is one of:
+# - "Bug in alacritty_terminal"
+# - "Unsupported by alacritty_terminal"
+# - "Intentional difference"
+# - "Open question"
+
+# --- Bugs in alacritty_terminal 0.26.0 ---
+
+[[reason]]
+difference = "alacritty=err\\(timeout"
+summary = "Resizing wide characters to 1 column hangs in alacritty_terminal"
+kind = "Bug in alacritty_terminal"
+detail = "Row::shrink_columns in alacritty_terminal 0.26.0 loops without advancing when wrapping a two-cell wide character into a 1-column grid."
+
+[[reason]]
+difference = "alacritty=err\\(index out of bounds"
+summary = "Printing a wide character in a 1-column grid panics in alacritty_terminal"
+kind = "Bug in alacritty_terminal"
+detail = "Term::input writes the wide-character spacer at Column(1) without checking columns >= 2, panicking on 1-column grids. vtfx-core drops wide characters when columns < 2."
+
+[[reason]]
+cases = "^(spec/erase\\.vtspec:ED 1|generated/erase/ed-1-r2-)"
+summary = "ED 1 on the second row leaves the first row unerased in alacritty_terminal"
+kind = "Bug in alacritty_terminal"
+detail = "Term::clear_screen(ClearMode::Above) clears rows above the cursor only when cursor.line > 1 instead of cursor.line > 0, leaving row 0 intact when the cursor is on row 1 (0-based)."
+
+[[reason]]
+cases = "^(spec-proposals/differential\\.vtspec:(EL 0|ICH)|generated/erase/el-0-pending-wrap$|generated/edit/(ich|dch)-pending-wrap$)"
+summary = "EL 0, ICH, and DCH do not clear pending wrap in alacritty_terminal"
+kind = "Bug in alacritty_terminal"
+detail = "LineClearMode::Right, insert_blank, and delete_chars in alacritty_terminal leave cursor.input_needs_wrap set (and EL 0 advances past the last cell when input_needs_wrap is set, leaving the last column unerased). xterm, tmux, and vtfx-core clear pendingWrap."
+
+[[reason]]
+cases = "^(spec-proposals/differential\\.vtspec:(LF, IND, and RI|HT at a pending wrap)|generated/c0/(lf-ind-ri|ht-cr)-at-pending-wrap$)"
+summary = "LF, IND, and RI keep pending wrap and HT wraps at the right margin in alacritty_terminal"
+kind = "Bug in alacritty_terminal"
+detail = "linefeed and reverse_index in alacritty_terminal keep cursor.input_needs_wrap set on the target row so the next character wraps an extra line, and put_tab wraps immediately to the next row when input_needs_wrap is set. xterm and vtfx-core clear pendingWrap on vertical index controls and keep HT on the current row."
+
+[[reason]]
+cases = "^fuzz-core/autowrap-off$"
+summary = "Printing at the right margin with DECAWM off still sets pending wrap in alacritty_terminal"
+kind = "Bug in alacritty_terminal"
+detail = "When TermMode::LINE_WRAP is off, alacritty_terminal still sets cursor.input_needs_wrap at the last column, so re-enabling DECAWM (CSI ? 7 h) wraps the next character instead of overwriting the last column as xterm and vtfx-core do."
+
+[[reason]]
+cases = "^(fuzz-core/controls|generated/esc/decaln-resets-margins-and-fills-e)$"
+summary = "DECALN does not reset scrolling margins, origin mode, or the cursor in alacritty_terminal"
+kind = "Bug in alacritty_terminal"
+detail = "DEC STD 070 and xterm reset DECSTBM margins and DECOM and home the cursor to (1, 1) on ESC # 8; alacritty_terminal fills the grid with 'E' without resetting margins or moving the cursor (and ignores LNM mode 20 in fuzz-core/controls)."
+
+[[reason]]
+cases = "^generated/cursor/(cuu-cud-inside-and-outside-margins|cnl-cpl-with-margins)$"
+summary = "CUU, CUD, CNL, and CPL ignore top and bottom scrolling margins in alacritty_terminal"
+kind = "Bug in alacritty_terminal"
+detail = "Term::move_up and Term::move_down clamp only to the screen bounds instead of stopping at the DECSTBM top and bottom margins when the cursor starts inside the scrolling region (DEC STD 070, xterm, tmux)."
+
+[[reason]]
+cases = "^generated/scroll/decstbm-invalid-regions$"
+summary = "DECSTBM checks top < bottom before clamping bottom to the screen height in alacritty_terminal"
+kind = "Bug in alacritty_terminal"
+detail = "For CSI 99 ; 100 r on a 4-row screen, alacritty_terminal accepts 99 < 100 before clamping both margins to row 4 and homing the cursor; xterm, tmux, and vtfx-core clamp bottom to rows first and ignore the invalid region."
+
+[[reason]]
+cases = "^(generated/modes/decrst-6-homes-cursor|generated/random/seed-155)$"
+summary = "DECRST 6 (CSI ? 6 l) when origin mode is already off does not home the cursor in alacritty_terminal"
+kind = "Bug in alacritty_terminal"
+detail = "DEC STD 070 and xterm home the cursor to (1, 1) on both CSI ? 6 h and CSI ? 6 l regardless of the previous state of DECOM; alacritty_terminal skips homing when DECOM was already reset."
+
+[[reason]]
+cases = "^fuzz-core/tabs$"
+summary = "CBT after clearing all tab stops does not reach column 0 in alacritty_terminal"
+kind = "Bug in alacritty_terminal"
+detail = "After CSI 3 g clears every tab stop, backward tab (CSI Ps Z) in alacritty_terminal stops short of column 0, whereas xterm, tmux, and vtfx-core move to column 0."
+
+[[reason]]
+cases = "^(fuzz-core/wide-wrap|generated/erase/wide-split-by-el-ed-ech|generated/edit/(ich-narrow-and-wide|ich-pushes-wide-half-off-edge|dch-narrow-and-wide|irm-narrow-and-wide)|generated/sgr/wide-wrap-padding-style)$"
+summary = "Splitting or wrapping wide characters leaves half-cells or active SGR flags in alacritty_terminal"
+kind = "Bug in alacritty_terminal"
+detail = "Erasing, inserting, or deleting across one half of a two-cell wide character in alacritty_terminal leaves the surviving cell with WIDE_CHAR or WIDE_CHAR_SPACER instead of clearing both halves as xterm, tmux, and vtfx-core do, and autowrap padding at the right margin copies foreground and underline flags onto the blank padding cell instead of BCE background only."
+
+# --- Features not supported by alacritty_terminal 0.26.0 ---
+
+[[reason]]
+cases = "^(fuzz-core/graphics|fuzz-core/crash-3b037937e76b3af450d875a0a6e7845fb680b8d1|fuzz-gate/graphics|recordings-graphics/)"
+summary = "Kitty graphics protocol and Unicode image placeholders"
+kind = "Unsupported by alacritty_terminal"
+detail = "vtfx-core implements the Kitty graphics protocol (APC G ... ST), cursor advancement after image placements, and stripping U+10EEEE placeholder code points from LineSnapshot.text() (docs/decisions/0080); alacritty_terminal ignores APC graphics commands and treats U+10EEEE as text."
+
+[[reason]]
+cases = "^generated/c0/lnm-mode-20$"
+summary = "Line Feed / New Line Mode (LNM, CSI 20 h)"
+kind = "Unsupported by alacritty_terminal"
+detail = "vtfx-core implements ANSI mode 20 so LF, VT, and FF also move to column 0; alacritty_terminal ignores CSI 20 h."
+
+[[reason]]
+cases = "^generated/charset/uk-and-ascii$"
+summary = "UK National Replacement Character Set (ESC ( A)"
+kind = "Unsupported by alacritty_terminal"
+detail = "vtfx-core maps '#' to U+00A3 in the UK character set; vte 0.15 only implements ASCII ('B') and DEC Special Graphics ('0')."
+
+[[reason]]
+cases = "^generated/erase/decsed-decsel$"
+summary = "Selective erase (DECSED CSI ? Ps J, DECSEL CSI ? Ps K)"
+kind = "Unsupported by alacritty_terminal"
+detail = "vtfx-core treats DECSED and DECSEL as normal ED and EL since character protection is not supported (docs/decisions/0079); alacritty_terminal ignores CSI ? J and CSI ? K."
+
+[[reason]]
+cases = "^generated/modes/(alt-screen-1047-and-47|save-cursor-1048)$"
+summary = "DEC private modes 47, 1047, and 1048"
+kind = "Unsupported by alacritty_terminal"
+detail = "vtfx-core implements modes 47 and 1047 (alternate screen) and 1048 (save/restore cursor) alongside 1049; alacritty_terminal 0.26.0 ignores CSI ? 1048 h/l and does not clear the alternate screen on CSI ? 1047 l as xterm does."
+
+[[reason]]
+cases = "^generated/reset/decstr-soft-reset$"
+summary = "Soft terminal reset (DECSTR, CSI ! p)"
+kind = "Unsupported by alacritty_terminal"
+detail = "vtfx-core resets modes, margins, character sets, and SGR attributes on CSI ! p; alacritty_terminal ignores CSI ! p."
+
+[[reason]]
+cases = "^generated/sgr/(underlines-and-underline-color|overline-53-55)$"
+summary = "SGR 21 (double underline) and SGR 53/55 (overline)"
+kind = "Unsupported by alacritty_terminal"
+detail = "vtfx-core supports ECMA-48 SGR 21 for double underline and SGR 53/55 for overline; alacritty_terminal only accepts CSI 4:2 m for double underline and has no overline cell flag."
+
+# --- Open specification questions (proposed in spec-proposals/core/differential.vtspec) ---
+
+[[reason]]
+cases = "^(spec-proposals/differential\\.vtspec:(IL|DL) resets the cursor column|generated/edit/il-dl-)"
+summary = "Whether IL and DL reset the cursor column to column 0"
+kind = "Open question"
+detail = "DEC STD 070 and xterm move the cursor to column 1 on IL (CSI Ps L) and DL (CSI Ps M), as vtfx-core does; ECMA-48 sections 8.3.67 / 8.3.32, tmux, and alacritty_terminal preserve the cursor column. Proposed in spec-proposals/core/differential.vtspec."
+
+[[reason]]
+cases = "^(spec-proposals/differential\\.vtspec:CBT cancels a pending wrap|generated/cursor/cbt-from-pending-wrap$)"
+summary = "Whether CBT (CSI Ps Z) cancels a pending wrap"
+kind = "Open question"
+detail = "vtfx-core and tmux clear pendingWrap when CBT moves left to the previous tab stop (keeping pendingWrap only at the right margin); xterm and alacritty_terminal leave pendingWrap set. Proposed in spec-proposals/core/differential.vtspec."
+
+[[reason]]
+cases = "^spec-proposals/differential\\.vtspec:Mode 1049 (reset on the main screen|set on the alternate screen)"
+summary = "Whether CSI ? 1049 h/l saves or restores the cursor when already on the target screen"
+kind = "Open question"
+detail = "xterm and vtfx-core execute the DECSC / DECRC step of mode 1049 even when already on the alternate or main screen; alacritty_terminal returns early when the active screen does not change. Proposed in spec-proposals/core/differential.vtspec."
+
+[[reason]]
+cases = "^spec-proposals/differential\\.vtspec:A combining character at the first column"
+summary = "Whether a combining character on a blank cell is dropped or attached to a space"
+kind = "Open question"
+detail = "vtfx-core and xterm -u8 ignore combining marks when there is no preceding graphic character; alacritty_terminal attaches them to the blank cell's space character. Proposed in spec-proposals/core/differential.vtspec."
+
+# --- Intentional design differences ---
+
+[[reason]]
+cases = "^(fuzz-core/invalid-utf8|fuzz-core/crash-(43c0d2250f95bf20a9a43e2ccfd64707da701882|5d1659dbf40ef6a4d3b7985a239e44d08c929ce0)|fuzz-gate/crash-fca1421b90070b20c12e4b4c4014444c0b453b4a|generated/unicode/utf8-malformed-maximal-subpart)$"
+summary = "UTF-8 maximal-subpart replacement, ignored UTF-8 C1 controls, and code-point-first parsing"
+kind = "Intentional difference"
+detail = "vtfx-core decodes UTF-8 into code points before running the DEC ANSI state machine (docs/decisions/0079): ill-formed byte sequences emit one U+FFFD per maximal subpart, UTF-8 C1 controls (U+0080..U+009F, such as 0xC2 0x9B) are ignored, and a non-ASCII code point inside ESC or CSI aborts the sequence without consuming the next ASCII byte. alacritty_terminal runs a byte-level parser that dispatches 0xC2 0x9B as CSI, enters CsiIgnore on non-ASCII bytes in CSI, and emits fewer U+FFFD on surrogate byte sequences."
+
+[[reason]]
+cases = "^fuzz-core/repeat$"
+summary = "REP (CSI Ps b) count clamped to screen cells"
+kind = "Intentional difference"
+detail = "vtfx-core clamps REP to columns * rows so a few bytes cannot perform unbounded work (docs/decisions/0081, docs/design/emulation.md section 10.2); alacritty_terminal executes up to 65,535 repetitions."
+
+[[reason]]
+cases = "^generated/unicode/regional-indicator-flags$"
+summary = "Adjacent regional indicators paired into two-cell flags"
+kind = "Intentional difference"
+detail = "vtfx-core joins pairs of regional indicator symbols into a single two-cell wide character (docs/decisions/0079, docs/design/emulation.md section 7.2); alacritty_terminal stores each indicator in its own single-width cell."
+
+[[reason]]
+cases = "^generated/resize/"
+summary = "Reflow of wrapped lines, saved main-screen cursor, and trailing blanks on resize"
+kind = "Intentional difference"
+detail = "vtfx-core reflows the main screen and its saved cursor as insertion points, drops trailing blank cells (including BCE-erased blanks) on reflow, and cuts/pads only the alternate screen (docs/decisions/0084); alacritty_terminal reflows grid rows and wide-character padding with different cursor clamping and column-shrink behavior."
+
+# --- Compound seeded stress sequences ---
+
+[[reason]]
+cases = "^generated/random/seed-"
+input = "R\\("
+summary = "Seeded random stress sequences combining resize/reflow with control sequences"
+kind = "Intentional difference"
+detail = "Compound fixed-seed sequence mixing resize operations with control sequences; differs due to the reflow policies of docs/decisions/0084 and the individual control-sequence differences cataloged above."
+
+[[reason]]
+cases = "^generated/random/seed-"
+summary = "Seeded random stress sequences exercising open specification questions (mode 1049, IL/DL)"
+kind = "Open question"
+detail = "Compound fixed-seed sequence without resize that exercises CSI ? 1049 l on the main screen or IL/DL cursor column handling, covered individually in spec-proposals/core/differential.vtspec."

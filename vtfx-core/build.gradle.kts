@@ -30,6 +30,12 @@ tasks.test {
     // working directory of the tests, the module directory, to keep the build cache relocatable.
     inputs.dir("../spec").withPathSensitivity(PathSensitivity.RELATIVE).withPropertyName("spec")
     systemProperty("vtfx.specDir", "../spec")
+    inputs
+        .dir("../spec-proposals")
+        .optional()
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+        .withPropertyName("specProposals")
+    systemProperty("vtfx.specProposalsDir", "../spec-proposals")
     // The recordings of real apps (tools/recordings), replayed by RecordingReplayTest.
     inputs
         .dir("../recordings")
@@ -67,4 +73,14 @@ tasks.register<JavaExec>("benchmarkWorkloads") {
     )
     inputs.dir("../recordings").withPathSensitivity(PathSensitivity.RELATIVE)
     outputs.dir(directory)
+}
+
+// Writes the classpath of the differential test runner (DifferentialHost in the tests), which
+// scripts/alacritty_diff.py runs against alacritty_terminal. Not part of the check.
+tasks.register("differentialClasspath") {
+    val classpath = sourceSets.test.get().runtimeClasspath
+    val output = layout.buildDirectory.file("differential-classpath.txt")
+    inputs.files(classpath)
+    outputs.file(output)
+    doLast { output.get().asFile.writeText(classpath.files.joinToString(File.pathSeparator)) }
 }
