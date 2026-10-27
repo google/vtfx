@@ -45,6 +45,30 @@ internal class Utf8Decoder {
         while (i < end) {
             val byte = bytes[i].toInt() and 0xFF
             if (bytesNeeded == 0) {
+                // A whole sequence of two or three bytes within this call, whose first byte does
+                // not
+                // narrow the range of the next (as E0 and ED do), is decoded at once: the bulk of
+                // text beyond ASCII. Anything else goes through the states below.
+                if (byte in 0xC2..0xDF && i + 1 < end) {
+                    val second = bytes[i + 1].toInt()
+                    if (second and 0xC0 == 0x80) {
+                        sink.accept(((byte and 0x1F) shl 6) or (second and 0x3F))
+                        i += 2
+                        continue
+                    }
+                } else if (byte in 0xE1..0xEF && byte != 0xED && i + 2 < end) {
+                    val second = bytes[i + 1].toInt()
+                    val third = bytes[i + 2].toInt()
+                    if (second and 0xC0 == 0x80 && third and 0xC0 == 0x80) {
+                        sink.accept(
+                            ((byte and 0x0F) shl 12) or
+                                ((second and 0x3F) shl 6) or
+                                (third and 0x3F)
+                        )
+                        i += 3
+                        continue
+                    }
+                }
                 i++
                 when (byte) {
                     in 0x00..0x7F -> sink.accept(byte)

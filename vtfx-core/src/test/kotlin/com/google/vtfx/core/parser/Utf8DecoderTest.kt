@@ -16,6 +16,7 @@
 
 package com.google.vtfx.core.parser
 
+import java.util.Random
 import kotlin.test.assertEquals
 import org.junit.Test
 
@@ -93,5 +94,24 @@ class Utf8DecoderTest {
                 )
             ),
         )
+    }
+
+    @Test
+    fun decodesTheSameInOneCallAsOneByteAtATime() {
+        // Whole sequences within a call are decoded at once; one byte per call goes through the
+        // states. Bytes from a small set, so that valid and broken sequences of every kind occur.
+        val pieces =
+            intArrayOf(0x41, 0x7F, 0x80, 0xBF, 0xC0, 0xC2, 0xDF, 0xE0, 0xE1, 0xE3, 0xED, 0xEF)
+        val more = intArrayOf(0x81, 0x9F, 0xA0, 0xF0, 0xF4, 0xF5, 0xFF)
+        val random = Random(20261027L)
+        repeat(5000) { iteration ->
+            val input =
+                ByteArray(random.nextInt(12)) {
+                    val set = if (random.nextInt(4) == 0) more else pieces
+                    set[random.nextInt(set.size)].toByte()
+                }
+            val oneByteAtATime = decode(*Array(input.size) { byteArrayOf(input[it]) })
+            assertEquals(oneByteAtATime, decode(input), "iteration $iteration")
+        }
     }
 }
