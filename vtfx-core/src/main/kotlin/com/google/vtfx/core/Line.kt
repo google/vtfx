@@ -400,18 +400,20 @@ internal class Line(columns: Int, style: CellStyle = CellStyle.Default) {
      * [anchors], which the caller took from this line.
      */
     fun compact(anchors: Array<Placement>? = null): CompactLine {
-        val end = contentEnd()
-        val trailingStyle = if (codes.isEmpty()) 0L else styles[codes.size - 1]
+        // The arrays in locals, so that the loops do not load the fields on every cell.
+        val codes = codes
+        val styles = styles
+        val size = codes.size
+        var end = size
+        while (end > 0 && codes[end - 1] == BLANK) end--
+        val trailingStyle = if (size == 0) 0L else styles[size - 1]
         // Blank cells erased with another background than the last cell's keep their styles.
-        var styleEnd = codes.size
+        var styleEnd = size
         while (styleEnd > end && styles[styleEnd - 1] == trailingStyle) styleEnd--
-        var uniform = true
-        for (column in 1 until styleEnd) {
-            if (styles[column] != styles[0]) {
-                uniform = false
-                break
-            }
-        }
+        val firstStyle = if (size == 0) 0L else styles[0]
+        var sameStyles = 1
+        while (sameStyles < styleEnd && styles[sameStyles] == firstStyle) sameStyles++
+        val uniform = sameStyles >= styleEnd
         var clusterText: String? = null
         var clusterIndex: IntArray? = null
         clusters?.let { array ->
@@ -432,7 +434,7 @@ internal class Line(columns: Int, style: CellStyle = CellStyle.Default) {
             columns = codes.size,
             codes = codes.copyOf(end),
             styles =
-                if (uniform) LongArray(minOf(styleEnd, 1)) { styles[0] }
+                if (uniform) LongArray(minOf(styleEnd, 1)) { firstStyle }
                 else styles.copyOf(styleEnd),
             styledCells = styleEnd,
             trailingStyle = trailingStyle,
