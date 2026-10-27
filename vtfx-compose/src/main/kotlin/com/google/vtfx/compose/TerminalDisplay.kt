@@ -26,6 +26,7 @@ import androidx.annotation.MainThread
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.setValue
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.LineSnapshot
@@ -83,7 +84,14 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
             if (value != null) watch(value, session.searchLines(Long.MAX_VALUE, 1))
         }
 
-    private var selectionState: TerminalSelection? by mutableStateOf(null)
+    /**
+     * Compared by identity: a long press or a drag tells that the display dropped or replaced its
+     * selection when [selection] is no longer the one it set. With the default structural policy, a
+     * selection equal to the current one, which a move within a cell makes, would not be stored:
+     * the gesture would find the earlier one instead of its own and stop selecting.
+     */
+    private var selectionState: TerminalSelection? by
+        mutableStateOf(null, referentialEqualityPolicy())
 
     /**
      * The selected lines that the screen held when the selection was made or last checked, from

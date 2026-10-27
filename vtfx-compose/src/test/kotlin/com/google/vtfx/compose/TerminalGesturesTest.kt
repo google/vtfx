@@ -178,6 +178,34 @@ class TerminalGesturesTest {
     }
 
     @Test
+    fun movesWithinACellLetTheFingerGoOnExtending() {
+        val toolbar = FakeTextToolbar()
+        composeRule.setContent {
+            CompositionLocalProvider(LocalTextToolbar provides toolbar) {
+                Terminal(display, Modifier.size(300.dp, 200.dp))
+            }
+        }
+        composeRule.waitForIdle()
+        session.feed("hello world".toByteArray())
+        composeRule.waitForIdle()
+        val cellWidth =
+            composeRule.onRoot().fetchSemanticsNode().size.width.toFloat() /
+                session.snapshot().columns
+        pressAndHold(Offset(1f, 5f))
+        composeRule.onRoot().performTouchInput {
+            moveTo(Offset(7.5f * cellWidth, 5f))
+            // A finger moves many times within a cell; the selection used to stop after the
+            // second.
+            moveTo(Offset(7.5f * cellWidth + 1f, 5f))
+            moveTo(Offset(9.5f * cellWidth, 5f))
+            up()
+        }
+        composeRule.waitForIdle()
+        assertEquals(display.selectionOf(Cell(0, 0), Cell(9, 0)), display.selection)
+        assertEquals(TextToolbarStatus.Shown, toolbar.status)
+    }
+
+    @Test
     fun onlyATapInThePaddingActsAndItDropsTheSelection() {
         val toolbar = FakeTextToolbar()
         composeRule.setContent {

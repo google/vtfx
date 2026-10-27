@@ -212,6 +212,21 @@ class TerminalMouseTest {
     }
 
     @Test
+    fun aDragGoesOnAfterMovesWithinACell() {
+        show("hello world")
+        mouse {
+            moveTo(cell(1, 0))
+            press()
+            moveTo(cell(3, 0))
+            // A mouse reports many moves within a cell; the drag used to stop after the second.
+            moveTo(cell(3, 0) + Offset(1f, 0f))
+            moveTo(cell(8, 0))
+            release()
+        }
+        assertEquals(display.selectionOf(Cell(1, 0), Cell(8, 0)), display.selection)
+    }
+
+    @Test
     fun aClickWithoutADragSelectsNothingAndDropsTheSelection() {
         show("hello world")
         display.selection = display.selectionOf(Cell(0, 0), Cell(4, 0))
