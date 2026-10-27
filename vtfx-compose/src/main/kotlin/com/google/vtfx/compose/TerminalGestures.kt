@@ -46,8 +46,9 @@ import kotlin.math.abs
  *
  * - A tap shows the keyboard, and if the host asked for mouse events, it is also a click. A tap
  *   drops the selection.
- * - A long press selects the word under it, and moving the finger then extends the selection.
- *   [onSelectionEnd] is called when the finger is lifted, with the position to show a menu at.
+ * - A long press selects the word under it, and moving the finger then extends the selection by
+ *   words. [onSelectionEnd] is called when the finger is lifted, with the position to show a menu
+ *   at.
  * - A vertical swipe scrolls: as the mouse wheel if the host asked for mouse events, as the arrow
  *   keys on the alternate screen (as xterm's alternateScroll), and through the scrollback
  *   otherwise.
@@ -99,10 +100,10 @@ internal fun Modifier.terminalGestures(
                     }
                     Press.Moved -> {}
                     null -> {
-                        // A long press: select the word, then follow the finger until it is lifted.
+                        // A long press: select the word, then follow the finger by words until
+                        // it is lifted.
                         val snapshot = display.displaySnapshot()
                         val pressed = displayCell(down.position, metrics, snapshot)
-                        val start = snapshot.position(pressed)
                         val word = TerminalSelection.word(snapshot, pressed)
                         var selected: TerminalSelection? = word
                         display.selection = word
@@ -130,16 +131,7 @@ internal fun Modifier.terminalGestures(
                                 selected = null
                                 continue
                             }
-                            val cell = now.position(displayCell(position, metrics, now))
-                            selected =
-                                if (cell == start) word
-                                else {
-                                    TerminalSelection(
-                                        if (cell < start) word.end else word.start,
-                                        cell,
-                                        word.generation,
-                                    )
-                                }
+                            selected = word.extendedTo(now, displayCell(position, metrics, now))
                             display.selection = selected
                         }
                         if (selected != null && display.selection === selected)

@@ -160,6 +160,37 @@ class TerminalGesturesTest {
     }
 
     @Test
+    fun movingAfterALongPressExtendsByWords() {
+        show("hello big world")
+        val cellWidth =
+            composeRule.onRoot().fetchSemanticsNode().size.width.toFloat() /
+                session.snapshot().columns
+        fun at(column: Int) = Offset((column + 0.5f) * cellWidth, 5f)
+        pressAndHold(at(7))
+        composeRule.onRoot().performTouchInput { moveTo(at(1)) }
+        composeRule.waitForIdle()
+        // From the end of "big" to the start of the word under the finger.
+        assertEquals(
+            display.selectionOf(Cell(8, 0), Cell(0, 0), SelectionUnit.Word),
+            display.selection,
+        )
+        // Back within the word, only the word.
+        composeRule.onRoot().performTouchInput { moveTo(at(6)) }
+        composeRule.waitForIdle()
+        assertEquals(
+            display.selectionOf(Cell(6, 0), Cell(8, 0), SelectionUnit.Word),
+            display.selection,
+        )
+        moveAndLift(at(11))
+        assertEquals(
+            display.selectionOf(Cell(6, 0), Cell(14, 0), SelectionUnit.Word),
+            display.selection,
+        )
+        composeRule.runOnIdle { display.copySelection() }
+        assertEquals(listOf("big world"), copied)
+    }
+
+    @Test
     fun liftingTheFingerAfterALongPressShowsTheMenu() {
         val toolbar = FakeTextToolbar()
         composeRule.setContent {
@@ -189,22 +220,25 @@ class TerminalGesturesTest {
             }
         }
         composeRule.waitForIdle()
-        session.feed("hello world".toByteArray())
+        session.feed("ab cd ef gh".toByteArray())
         composeRule.waitForIdle()
         val cellWidth =
             composeRule.onRoot().fetchSemanticsNode().size.width.toFloat() /
                 session.snapshot().columns
         pressAndHold(Offset(1f, 5f))
         composeRule.onRoot().performTouchInput {
-            moveTo(Offset(7.5f * cellWidth, 5f))
+            moveTo(Offset(3.5f * cellWidth, 5f))
             // A finger moves many times within a cell; the selection used to stop after the
             // second.
-            moveTo(Offset(7.5f * cellWidth + 1f, 5f))
-            moveTo(Offset(9.5f * cellWidth, 5f))
+            moveTo(Offset(3.5f * cellWidth + 1f, 5f))
+            moveTo(Offset(6.5f * cellWidth, 5f))
             up()
         }
         composeRule.waitForIdle()
-        assertEquals(display.selectionOf(Cell(0, 0), Cell(9, 0)), display.selection)
+        assertEquals(
+            display.selectionOf(Cell(0, 0), Cell(7, 0), SelectionUnit.Word),
+            display.selection,
+        )
         assertEquals(TextToolbarStatus.Shown, toolbar.status)
     }
 

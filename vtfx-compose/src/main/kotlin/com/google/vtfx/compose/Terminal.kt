@@ -116,9 +116,9 @@ import kotlinx.coroutines.flow.collectLatest
  * only the keys that the IME passes on, and an IME such as Gboard takes the keys of a physical
  * keyboard and sends them itself.
  *
- * A long press selects the word under it, and shows a menu to copy, paste, and select all. The app
- * reads and changes the selection through [state], for its own Copy command or shortcut, and
- * searches the text through it, for its own search field.
+ * A long press selects the word under it, a drag after it going on by words, and shows a menu to
+ * copy, paste, and select all. The app reads and changes the selection through [state], for its own
+ * Copy command or shortcut, and searches the text through it, for its own search field.
  *
  * With a mouse, the primary button selects: a drag selects the text it goes over, a double click a
  * word, and a triple click a line, a drag after either going on by words or lines, and Shift+click
