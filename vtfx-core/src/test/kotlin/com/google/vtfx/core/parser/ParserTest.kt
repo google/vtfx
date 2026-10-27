@@ -16,6 +16,7 @@
 
 package com.google.vtfx.core.parser
 
+import java.util.Random
 import kotlin.test.assertEquals
 import org.junit.Test
 
@@ -327,5 +328,32 @@ class ParserTest {
     @Test
     fun handlesSequencesSplitAcrossChunks() {
         assertEquals(listOf("csi(12;3H)", "print(あ)"), parse("\u001b[1", "2;", "3H", "あ"))
+    }
+
+    @Test
+    fun takesTheParametersOfACsiAsThoseOfADcs() {
+        // The parameters of a CSI are taken in a loop of their own; those of a DCS one at a time.
+        val random = Random(20261027L)
+        val bytes = "0123456789;:"
+        repeat(2000) { iteration ->
+            val parameters = buildString {
+                repeat(random.nextInt(80)) {
+                    // Long runs of digits too, which reach the clamp.
+                    append(
+                        if (random.nextInt(3) == 0) bytes[10 + random.nextInt(2)]
+                        else bytes[random.nextInt(10)]
+                    )
+                }
+            }
+            val csi =
+                parse("\u001b[${parameters}m").single().removePrefix("csi(").removeSuffix("m)")
+            val dcs =
+                // ST is ESC \, which also dispatches as an escape sequence.
+                parse("\u001bP${parameters}q\u001b\\")
+                    .first()
+                    .removePrefix("dcs(")
+                    .removeSuffix("q;)")
+            assertEquals(dcs, csi, "iteration $iteration: $parameters")
+        }
     }
 }

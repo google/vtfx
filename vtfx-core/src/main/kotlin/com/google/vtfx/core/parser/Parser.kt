@@ -122,10 +122,12 @@ internal class Parser(
                         byte in '0'.code..';'.code &&
                         decoder.isIdle
                 ) {
-                    // Parameters, the bulk of control sequences such as SGR. A pending UTF-8
-                    // sequence goes first, which the byte ends as U+FFFD.
-                    param(byte)
+                    // Parameters, the bulk of control sequences such as SGR, taken up to the
+                    // first other byte. A pending UTF-8 sequence goes first, which the byte ends
+                    // as U+FFFD.
+                    i = params.accept(bytes, i, end)
                     state = CSI_PARAM
+                    continue
                 } else if (byte >= 0 && decoder.isIdle) {
                     // Inside a sequence, ASCII needs no decoding.
                     advance(byte)

@@ -81,6 +81,43 @@ internal class Params {
         }
     }
 
+    /**
+     * Takes the parameter bytes ('0' to '9', ';', and ':') of [bytes] from [from], up to [to] or
+     * the first other byte, as [addDigit] and [nextParameter] do for each, and returns the index
+     * after them. The bulk of control sequences such as SGR is parameters, so they are taken in a
+     * loop that keeps the position in a local.
+     */
+    internal fun accept(bytes: ByteArray, from: Int, to: Int): Int {
+        val values = values
+        var index = index
+        var i = from
+        while (i < to) {
+            val byte = bytes[i].toInt()
+            if (byte in '0'.code..'9'.code) {
+                if (index < MAX_COUNT) {
+                    val value = values[index] * 10 + (byte - '0'.code)
+                    values[index] =
+                        if (value > ProtocolLimits.MAX_PARAMETER) ProtocolLimits.MAX_PARAMETER
+                        else value
+                }
+            } else if (byte == ';'.code || byte == ':'.code) {
+                if (index < MAX_COUNT) {
+                    index++
+                    if (index < MAX_COUNT) {
+                        values[index] = 0
+                        subParameter[index] = byte == ':'.code
+                    }
+                }
+            } else {
+                break
+            }
+            i++
+        }
+        if (i > from) started = true
+        this.index = index
+        return i
+    }
+
     /** Fixes [size] once the sequence is complete. */
     internal fun finish() {
         size = if (started) minOf(index + 1, MAX_COUNT) else 0
