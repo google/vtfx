@@ -289,6 +289,7 @@ Host output is untrusted (requirement 6.1). The policy and the reasons for each 
 
 ## 11. Verification
 
-- The spec tests in `spec/core` (section 3 of [testing.md](testing.md)) and the unit tests named in section 3 check the behavior. `EmulationCoverageTest` groups tests by the features of section 3.
+- The spec tests in `spec/core` (section 3 of [testing.md](testing.md)), the proposed specs in `spec-proposals/core` (`ProposedSpecTest`, section 2 of [testing.md](testing.md)), and the unit tests named in section 3 check the behavior. `EmulationCoverageTest` groups tests by the features of section 3.
 - esctest2 runs against vtfx for reports, not as a gate (section 11 of [testing.md](testing.md)). The reasons for failing cases are in `tools/esctest/reasons.toml`.
+- Differential testing against `alacritty_terminal` runs for reports, not as a gate (section 15 of [testing.md](testing.md)). The reasons for differing cases are in `tools/alacritty-diff/reasons.toml`.
 - The output of real programs is recorded and replayed (section 10 of [testing.md](testing.md)).

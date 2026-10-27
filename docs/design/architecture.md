@@ -188,7 +188,7 @@ The tests of each module are listed below. Where the oracles live, the gate rule
 
 | Target | Tests | Gate? |
 |---|---|---|
-| `vtfx-core` | JVM unit tests. Spec tests owned by humans (`spec/core`, section 3 of [testing.md](testing.md)). Replay tests of recordings of real apps (section 10 of [testing.md](testing.md)). | Yes |
+| `vtfx-core` | JVM unit tests. Spec tests owned by humans (`spec/core`, section 3 of [testing.md](testing.md)) and proposed specs (`spec-proposals/core`, section 2 of [testing.md](testing.md)). Replay tests of recordings of real apps (section 10 of [testing.md](testing.md)). | Yes |
 | `vtfx-core`, `vtfx-gate`, `vtfx-input`, `vtfx-font`, `vtfx-font-gate` | Fuzzing, one target per module (section 7 of [testing.md](testing.md)). | A 30-second run each. Long runs are separate |
 | `vtfx-input` | IME trace replay tests (`spec/ime`, section 4 of [testing.md](testing.md)). Tests with hostile IME calls. | Yes |
 | `vtfx-gate` | Table-driven tests of key encoding. Unit tests of replies, pastes, and policies, including malicious inputs (section 12 of [testing.md](testing.md)). | Yes |
@@ -199,7 +199,7 @@ The tests of each module are listed below. Where the oracles live, the gate rule
 | `vtfx-font-gate` | Unit tests of the verifier with canonical fonts kept as files, and with changes to them. | Yes |
 | `vtfx-font-gate-android` | No unit tests of its own; `SystemFontsTest` in the rendering e2e loads sanitized fonts through it. | No (reports only) |
 | `vtfx-sample` | Unit tests of the fake host and of the font store, and unit tests with Robolectric of the view model. | Yes |
-| Whole | e2e on the emulator (IME e2e with a real IME, and rendering e2e with hardware acceleration; section 8 of [testing.md](testing.md)), esctest2 (section 11 of [testing.md](testing.md)). | No (reports only) |
+| Whole | e2e on the emulator (IME e2e with a real IME, and rendering e2e with hardware acceleration; section 8 of [testing.md](testing.md)), esctest2 (section 11 of [testing.md](testing.md)), differential testing against `alacritty_terminal` (section 15 of [testing.md](testing.md)). | No (reports only) |
 
 ## 7. Toolchain
 

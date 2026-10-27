@@ -124,7 +124,7 @@ Long fuzzing and the emulator e2e take time, so they are not included. They run 
 
 ## 10. Recording and replaying the output of real apps
 
-- On the development machine, run real apps (vim, less, htop, tmux) in a pseudo-terminal and record their output (`tools/recordings/record.py`, recordings in `recordings/`). The size is 80 × 24 with `TERM=xterm-256color`.
+- On the development machine, run real apps (vim, less, htop, tmux, neovim, emacs, mc, btop, tig, fzf, ncdu) in a pseudo-terminal and record their output (`tools/recordings/record.py`, recordings in `recordings/`). The size is 80 × 24 with `TERM=xterm-256color`.
 - The expected screen is obtained by replaying the same output into a reference terminal (tmux). The reference pane is put in raw mode (the apps ran in raw mode, so output processing that turns LF into CR LF must not happen).
 - `RecordingReplayTest` in `vtfx-core` compares the screen after replaying a recording with the reference. It checks that all characters match, and that attributes (color, bold, italic, underline, reverse, strikethrough) match for non-blank cells. The reference attributes are read with a reader independent of vtfx's interpretation of SGR.
 - `RecordingScreenshotTest` in `vtfx-compose` has provisional goldens of the same recordings, the graphics recordings included. `replay <name>` in the sample app can display the same recording.
@@ -174,3 +174,10 @@ A release needs more than the gates. These checks run on the tree to be released
 | `scripts/e2e_ime.py` on the emulator (section 8) | Yes | No case fails after its rerun. The cases reported as flaky are named in the `TEST=` line |
 | `scripts/e2e_render.py` on the emulator (section 8) | Yes | Every test passes |
 | `scripts/device_checks.py --serial` and `scripts/e2e_ime.py --serial` on real devices ([device-checks.md](../device-checks.md)) | No; recommended when a device is at hand | Results that differ from the expectation are handled as bugs ([reviews/README.md](../reviews/README.md)); whether one holds up the release is decided by a human |
+
+## 15. Differential testing against alacritty_terminal
+
+- `scripts/alacritty_diff.py` runs `vtfx-core` and `alacritty_terminal` 0.26.0 on the same inputs and writes the results to `build/reports/alacritty-diff.md`. It is for reports and is not a gate ([decisions/0094](../decisions/0094-differential-testing.md)).
+- `DifferentialHost` in the tests of `vtfx-core` and the standalone Rust binary in `tools/alacritty-diff` (`Cargo.lock` committed; neither Rust nor Cargo is required by `scripts/check.sh` or CI) read the same line-based stream of sizes, writes, and resizes on standard input and print the screen text, the cursor position, and, with `--styles`, the cell styles on standard output.
+- Inputs are `spec/core/*.vtspec`, `spec-proposals/core/*.vtspec`, the corpora of `TerminalFuzzer` (decoding its resize records) and `GateFuzzer` (plus directories passed with `--extra-corpus`), the recordings in `recordings/` and `recordings/graphics/`, and deterministic feature and fixed-seed sequences covering [emulation.md](emulation.md).
+- Known differences (bugs in `alacritty_terminal`, features it does not implement, open specification questions proposed in `spec-proposals/core/` and run by `ProposedSpecTest` in `vtfx-core`, and intentional design differences) are matched in `tools/alacritty-diff/reasons.toml` by regular expressions on the case name, input, or difference. Unexplained differences appear at the top of the report, and are resolved either by fixing `vtfx-core` with a regression test, by proposing a spec in `spec-proposals/core/`, or by recording a reason.
