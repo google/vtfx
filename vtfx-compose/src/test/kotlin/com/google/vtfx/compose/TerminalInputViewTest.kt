@@ -162,7 +162,7 @@ class TerminalInputViewTest {
 
     /** Selects text on [host]'s display, as a drag would. */
     private fun select(host: Host) {
-        host.display.selection = TerminalSelection(Cell(0, 0), Cell(2, 0))
+        host.display.selection = host.display.selectionOf(Cell(0, 0), Cell(2, 0))
     }
 
     @Test

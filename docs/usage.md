@@ -87,7 +87,7 @@ DropdownMenuItem(
 )
 ```
 
-- `hasSelection` is Compose state: what reads it is recomposed when the user selects or the selection goes away. The selection is dropped whenever the display changes (output, scrolling, typing, resizing).
+- `hasSelection` is Compose state: what reads it is recomposed when the user selects or the selection goes away. The selection stays on its text as output and scrolling move it, and is dropped when that text changes, on typing, and on resizing.
 - `copySelection()` copies to the session's `clipboard` and keeps the selection. It returns `false` if there is no selection or no clipboard.
 - `selectAll()` selects the scrollback and the screen (only the screen on the alternate screen). Copying it copies at most the newest 10,000 lines, cut to 256 Ki characters, so that the system clipboard can take it.
 - `clearSelection()` drops the selection.

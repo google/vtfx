@@ -75,7 +75,7 @@ class RowSeamTest {
     @Test
     fun selectionJoinsAcrossRows() {
         show("a\r\nb\r\nc\r\nd\r\n")
-        display.selection = TerminalSelection(Cell(0, 0), Cell(30, 3))
+        display.selection = display.selectionOf(Cell(0, 0), Cell(30, 3))
         composeRule.waitForIdle()
         assertEquals(1, colorsBetween(x = 300).size)
     }

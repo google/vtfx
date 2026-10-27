@@ -128,7 +128,8 @@ class DeviceLimitsTest {
         session.feed(("a" + "\u0301".repeat(31)).repeat(300 * 100).toByteArray())
         var copied = false
         composeRule.runOnIdle {
-            display.selection = TerminalSelection(Cell(0, 0), Cell(299, 99))
+            display.selection =
+                TerminalSelection.onDisplay(display.displaySnapshot(), Cell(0, 0), Cell(299, 99))
             copied = display.copySelection()
         }
         assertTrue(copied)

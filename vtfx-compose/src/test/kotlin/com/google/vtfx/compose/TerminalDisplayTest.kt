@@ -60,7 +60,7 @@ class TerminalDisplayTest {
         val cluster = "a" + "\u0301".repeat(31)
         session.feed(cluster.repeat(300 * 100).toByteArray(Charsets.UTF_8))
         val display = TerminalDisplay(session)
-        display.selection = TerminalSelection(Cell(0, 0), Cell(299, 99))
+        display.selection = display.selectionOf(Cell(0, 0), Cell(299, 99))
 
         assertTrue(display.copySelection())
 

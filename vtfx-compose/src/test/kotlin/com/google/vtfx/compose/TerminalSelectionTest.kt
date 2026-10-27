@@ -20,6 +20,7 @@ package com.google.vtfx.compose
 
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.Terminal
+import com.google.vtfx.core.TerminalSnapshot
 import kotlin.random.Random
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -28,31 +29,38 @@ class TerminalSelectionTest {
     private fun snapshot(columns: Int, rows: Int, output: String) =
         Terminal(columns, rows).apply { write(output.toByteArray()) }.snapshot()
 
+    /** The selected text of what [snapshot] shows. */
+    private fun TerminalSelection.text(snapshot: TerminalSnapshot): String =
+        text(List(snapshot.rows) { snapshot.line(it) }, snapshot.firstLine)
+
     @Test
     fun textAcrossLinesDropsTrailingBlanks() {
         val s = snapshot(10, 3, "first  \r\nsecond\r\nthird")
-        assertEquals("rst\nsecond\nth", TerminalSelection(Cell(2, 0), Cell(1, 2)).text(s))
+        assertEquals(
+            "rst\nsecond\nth",
+            TerminalSelection.onDisplay(s, Cell(2, 0), Cell(1, 2)).text(s),
+        )
     }
 
     @Test
     fun selectionCanBeBackwards() {
         val s = snapshot(10, 2, "abc\r\ndef")
-        assertEquals("bc\nde", TerminalSelection(Cell(1, 1), Cell(1, 0)).text(s))
+        assertEquals("bc\nde", TerminalSelection.onDisplay(s, Cell(1, 1), Cell(1, 0)).text(s))
     }
 
     @Test
     fun wrappedLinesAreJoined() {
         val s = snapshot(5, 2, "abcdefgh")
-        assertEquals("abcdefgh", TerminalSelection(Cell(0, 0), Cell(4, 1)).text(s))
+        assertEquals("abcdefgh", TerminalSelection.onDisplay(s, Cell(0, 0), Cell(4, 1)).text(s))
     }
 
     @Test
     fun cellsBeyondTheLinesAreNotRead() {
         // A selection made on a wider display, for example before a resize.
         val s = snapshot(5, 2, "abc\r\ndef")
-        assertEquals("", TerminalSelection(Cell(7, 0), Cell(9, 0)).text(s))
-        assertEquals("\nde", TerminalSelection(Cell(7, 0), Cell(1, 1)).text(s))
-        assertEquals("abc\ndef", TerminalSelection(Cell(0, 0), Cell(9, 1)).text(s))
+        assertEquals("", TerminalSelection.onDisplay(s, Cell(7, 0), Cell(9, 0)).text(s))
+        assertEquals("\nde", TerminalSelection.onDisplay(s, Cell(7, 0), Cell(1, 1)).text(s))
+        assertEquals("abc\ndef", TerminalSelection.onDisplay(s, Cell(0, 0), Cell(9, 1)).text(s))
     }
 
     @Test
@@ -72,7 +80,8 @@ class TerminalSelectionTest {
             val columns = random.nextInt(3, 30)
             // Tall enough that no line scrolls off.
             val s = snapshot(columns, ROWS, lines.joinToString("\r\n"))
-            val text = TerminalSelection(Cell(0, 0), Cell(columns - 1, ROWS - 1)).text(s)
+            val text =
+                TerminalSelection.onDisplay(s, Cell(0, 0), Cell(columns - 1, ROWS - 1)).text(s)
             assertEquals("seed $seed", lines.joinToString("\n").trimEnd('\n'), text.trimEnd('\n'))
         }
     }
@@ -82,19 +91,20 @@ class TerminalSelectionTest {
         // "あ" does not fit in the last column, so autowrap leaves it blank. Copying used to
         // include that cell as a space.
         val s = snapshot(10, 2, "aaaaaaaaaあb")
-        assertEquals("aaaaaaaaaあb", TerminalSelection(Cell(0, 0), Cell(2, 1)).text(s))
+        assertEquals("aaaaaaaaaあb", TerminalSelection.onDisplay(s, Cell(0, 0), Cell(2, 1)).text(s))
         // A selection that starts on that cell.
-        assertEquals("あ", TerminalSelection(Cell(9, 0), Cell(1, 1)).text(s))
+        assertEquals("あ", TerminalSelection.onDisplay(s, Cell(9, 0), Cell(1, 1)).text(s))
         // A space that the host wrote there is text.
+        val space = snapshot(10, 2, "aaaaaaaaa あ")
         assertEquals(
             "aaaaaaaaa あ",
-            TerminalSelection(Cell(0, 0), Cell(1, 1)).text(snapshot(10, 2, "aaaaaaaaa あ")),
+            TerminalSelection.onDisplay(space, Cell(0, 0), Cell(1, 1)).text(space),
         )
         // A cell erased there before a narrow character is a space, as in the middle of a line.
+        val erased = snapshot(10, 2, "aaaaaaaaaxb\u001b[1;10H\u001b[K")
         assertEquals(
             "aaaaaaaaa b",
-            TerminalSelection(Cell(0, 0), Cell(0, 1))
-                .text(snapshot(10, 2, "aaaaaaaaaxb\u001b[1;10H\u001b[K")),
+            TerminalSelection.onDisplay(erased, Cell(0, 0), Cell(0, 1)).text(erased),
         )
     }
 
@@ -102,7 +112,7 @@ class TerminalSelectionTest {
     fun wideCharactersAreIncludedWhole() {
         val s = snapshot(10, 1, "aあいb")
         // From the right half of あ to the left half of い.
-        assertEquals("あい", TerminalSelection(Cell(2, 0), Cell(3, 0)).text(s))
+        assertEquals("あい", TerminalSelection.onDisplay(s, Cell(2, 0), Cell(3, 0)).text(s))
     }
 
     @Test
@@ -118,22 +128,22 @@ class TerminalSelectionTest {
         // An ideographic space (U+3000) at 0 and 1, "foo" at 2 to 4, concealed "秘密" at 6 to 9.
         val s = snapshot(20, 1, "\u3000foo \u001b[8m秘密\u001b[28mbar")
         assertEquals(
-            TerminalSelection(Cell(2, 0), Cell(4, 0)),
+            TerminalSelection.onDisplay(s, Cell(2, 0), Cell(4, 0)),
             TerminalSelection.word(s, Cell(3, 0)),
         )
         assertEquals(
-            TerminalSelection(Cell(10, 0), Cell(12, 0)),
+            TerminalSelection.onDisplay(s, Cell(10, 0), Cell(12, 0)),
             TerminalSelection.word(s, Cell(11, 0)),
         )
         // Either half of a blank wide character selects both of its halves alone.
         for (column in 0..1) {
             assertEquals(
-                TerminalSelection(Cell(0, 0), Cell(1, 0)),
+                TerminalSelection.onDisplay(s, Cell(0, 0), Cell(1, 0)),
                 TerminalSelection.word(s, Cell(column, 0)),
             )
         }
         assertEquals(
-            TerminalSelection(Cell(8, 0), Cell(9, 0)),
+            TerminalSelection.onDisplay(s, Cell(8, 0), Cell(9, 0)),
             TerminalSelection.word(s, Cell(9, 0)),
         )
     }

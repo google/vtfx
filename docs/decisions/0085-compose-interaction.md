@@ -54,14 +54,18 @@ While the display shows the scrollback, the mouse is the terminal's even if the 
 
 ## 4. Selection and copying
 
-The selection is held in the display's coordinates and dropped whenever the display changes (output, scrolling, input, size), also during a long press, which then selects nothing more and shows no menu. Copying is the user's action, so the OSC 52 policy ([0083](0083-gate.md)) does not apply; it goes through the gate (section 4.2 of [gate-policy.md](../design/gate-policy.md)). See section 4 of [compose-input.md](../design/compose-input.md).
+The selection stays on the text the user selected: its cells are named by line numbers that survive scrolling, as the search's matches are (topic 15), so output and the user's scrolling move it with its text. It is dropped when that text changes, as copying reads it (the characters, their widths, concealment, and the autowrap between selected lines, not the style); when the lines are numbered again (resizing, clearing the scrollback, switching screens); when all its lines leave the scrollback, its first lines being cut off when only they leave; on the user's input; and on a tap or a click. A long press or a drag stops selecting when its selection is dropped. Copying is the user's action, so the OSC 52 policy ([0083](0083-gate.md)) does not apply; it goes through the gate (section 4.2 of [gate-policy.md](../design/gate-policy.md)). See section 4 of [compose-input.md](../design/compose-input.md).
 
-**Why.** Display coordinates need not follow positions in the scrollback, which change with eviction and reflow.
+**Why.** Dropping the selection on any change of the display would make it hard to use: output that does not touch the selected text (a log growing below it, a clock in a status line, a right prompt) would drop it at once, and so would scrolling to see its context. Desktop terminals keep the selection with its text (Alacritty, kitty, VTE, xterm); the ones that look at the text drop it when it changes. Comparing the text that copying would give drops the selection exactly when copying would give text other than what was selected, and a change of style alone, which copying ignores, keeps it. Lines in the scrollback do not change while the numbering stays, so a check reads only the selected lines that the screen held, at most a screen of them, also when they scrolled into the scrollback before the check. Cutting off lines that left the scrollback, as Alacritty does, keeps the rest that the user selected. Input drops the selection because it returns the display to the bottom, where the user moves on, as typing does in desktop terminals.
 
 **Alternatives considered.**
-- **Hold the selection in absolute scrollback positions and keep it across output**: Positions change with eviction due to the scrollback limit and with reflow. Revisit if needed.
+- **Hold the selection in the display's coordinates and drop it whenever the display changes**: No line numbers needed, but output anywhere and scrolling drop the selection.
+- **Drop the selection when the emulator writes into or erases its cells, as Alacritty does for erasures**: Needs tracking in `vtfx-core` of the cells each operation touches, and drops the selection when a program rewrites the same text, as shells redrawing their prompt do.
+- **Compare whole lines, styles included**: Simpler, but a redraw in other colors or a change elsewhere on a selected line (a right prompt) would drop it.
+- **Drop the whole selection when its first lines leave the scrollback**: Simpler, but a selection of all the text would be dropped by any output once the scrollback is full.
+- **Keep the selection on the user's input**: Typing returns the display to the bottom and changes the line of the prompt; keeping the selection there is of little use, and the app can copy before.
 
-**Impact of reversing.** Change the branches in `TerminalGestures`, the triggers for clearing the selection in `TerminalDisplay`, and section 4 of [compose-input.md](../design/compose-input.md).
+**Impact of reversing.** Change `checkSelection` and the selection's coordinates in `TerminalDisplay` and `TerminalSelection`, the gestures in `TerminalGestures` and `TerminalMouse`, the drawing in `TerminalRenderer`, and section 4 of [compose-input.md](../design/compose-input.md).
 
 ## 5. `TerminalState`
 
@@ -198,7 +202,7 @@ The app has the search field; the terminal finds the matches, highlights them, a
 **Why.** An incremental search must keep up with two kinds of change. Each change of the query searches again, over a default scrollback of 10,000 lines of up to 120 columns: the kept text spares reading and laying out the lines again, which is most of the work. Output goes on while the user searches, as in a log that keeps flowing, and lines enter and leave the scrollback and reflow: line numbers let the search follow them.
 
 **Alternatives considered.**
-- **Drop the search on output, as the selection**: No line numbers needed, but a flowing log could not be searched.
+- **Drop the search on output**: No line numbers needed, but a flowing log could not be searched.
 - **Read and lay out every line at each change of the query**: No memory kept, but several times the work, all of it on the main thread, with the session's lock held while the lines are copied.
 - **Search on another thread**: The main thread would stay free, but stale results would have to be dropped as the query and the output change, and the modules that do not depend on Android have no executor to run it on. Not needed at the measured cost (timed on the JVM, not on ART: section 14 of [device-checks.md](../device-checks.md)).
 

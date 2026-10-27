@@ -189,7 +189,7 @@ class TerminalScreenshotTest {
     @Test
     fun selection() {
         show(output = "first line\r\nsecond 日本語 line\r\nthird\r\n")
-        display.selection = TerminalSelection(Cell(6, 0), Cell(10, 1))
+        display.selection = display.selectionOf(Cell(6, 0), Cell(10, 1))
         composeRule.waitForIdle()
         composeRule.onRoot().captureRoboImage()
     }

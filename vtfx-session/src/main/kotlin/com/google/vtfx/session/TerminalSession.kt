@@ -23,7 +23,6 @@ import com.google.vtfx.core.CursorShape
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.KeyModifiers
 import com.google.vtfx.core.KeyStroke
-import com.google.vtfx.core.LineSnapshot
 import com.google.vtfx.core.ProtocolLimits
 import com.google.vtfx.core.SearchLines
 import com.google.vtfx.core.Terminal
@@ -593,21 +592,11 @@ public class TerminalSession(
     }
 
     /**
-     * Returns copies of the last [maxLines] lines of the scrollback and the screen, oldest first,
-     * taken at once, for a display's selection of all the text. On the alternate screen, which has
-     * no scrollback, they are the screen's rows.
-     *
-     * @throws IllegalArgumentException if [maxLines] is negative.
-     * @suppress
-     */
-    @InternalVtfxApi
-    public fun lines(maxLines: Int): List<LineSnapshot> = lock.withLock { terminal.lines(maxLines) }
-
-    /**
-     * Returns copies of lines for a display's search, from line [from], taken at once: at least
-     * [minLines] lines of the scrollback and more to the end of a text to search, or through the
-     * screen (`Terminal.searchLines`). A display reads [minLines] at a time, so that the lock is
-     * not held while the whole scrollback is copied.
+     * Returns copies of lines for a display's search and selection, from line [from], taken at
+     * once: at least [minLines] lines of the scrollback and more to the end of a text to search, or
+     * through the screen (`Terminal.searchLines`). A search reads [minLines] at a time, so that the
+     * lock is not held while the whole scrollback is copied; a selection reads the lines it checks
+     * or copies.
      *
      * @throws IllegalArgumentException unless [minLines] is positive.
      * @suppress

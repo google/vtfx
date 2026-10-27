@@ -101,8 +101,9 @@ internal fun Modifier.terminalGestures(
                     null -> {
                         // A long press: select the word, then follow the finger until it is lifted.
                         val snapshot = display.displaySnapshot()
-                        val start = displayCell(down.position, metrics, snapshot)
-                        val word = TerminalSelection.word(snapshot, start)
+                        val pressed = displayCell(down.position, metrics, snapshot)
+                        val start = snapshot.position(pressed)
+                        val word = TerminalSelection.word(snapshot, pressed)
                         var selected: TerminalSelection? = word
                         display.selection = word
                         var position = down.position
@@ -117,18 +118,26 @@ internal fun Modifier.terminalGestures(
                             val lifted = change.changedToUpIgnoreConsumed()
                             change.consume()
                             if (lifted) break
-                            // The selection is dropped when the display changes, and [snapshot] is
-                            // then out of date: the rest of the gesture selects nothing.
+                            // The display drops the selection when its text changes: the rest of
+                            // the gesture selects nothing (docs/decisions/0085).
                             if (display.selection !== selected) selected = null
                             if (selected == null) continue
                             position = change.position
-                            val cell = displayCell(position, metrics, snapshot)
+                            // Output may have scrolled the text since the press: the finger is over
+                            // what the display shows now.
+                            val now = display.displaySnapshot()
+                            if (now.generation != word.generation) {
+                                selected = null
+                                continue
+                            }
+                            val cell = now.position(displayCell(position, metrics, now))
                             selected =
                                 if (cell == start) word
                                 else {
                                     TerminalSelection(
                                         if (cell < start) word.end else word.start,
                                         cell,
+                                        word.generation,
                                     )
                                 }
                             display.selection = selected

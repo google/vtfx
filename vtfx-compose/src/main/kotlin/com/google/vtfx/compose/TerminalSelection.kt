@@ -46,39 +46,77 @@ internal data class Cell(val column: Int, val row: Int) : Comparable<Cell> {
 }
 
 /**
- * A selection of text on the display, from [anchor] to [focus] inclusive, in either order. It is in
- * the display's coordinates, so it is dropped whenever the display changes (docs/decisions/0085).
+ * A cell of the text, 0-based: [column] of [line], numbered as [TerminalSnapshot.firstLine] numbers
+ * lines, so that it names the same cell while the line scrolls into the scrollback.
+ */
+internal data class TextPosition(val column: Int, val line: Long) : Comparable<TextPosition> {
+    override fun compareTo(other: TextPosition): Int =
+        compareValuesBy(this, other, { it.line }, { it.column })
+}
+
+/** Returns the position in the text of [cell] of the display. */
+internal fun TerminalSnapshot.position(cell: Cell): TextPosition =
+    TextPosition(cell.column, firstLine + cell.row)
+
+/**
+ * A selection of text, from [anchor] to [focus] inclusive, in either order. Its lines are numbered
+ * as in snapshots of [generation], so that it stays on its text as the text scrolls; the display
+ * drops it when the text changes (docs/decisions/0085).
  *
- * @property isAll Whether it selects all the text, the scrollback included, rather than the cells
- *   from [anchor] to [focus], which then cover the display (docs/decisions/0085).
+ * @property isAll Whether Select all made it, from the oldest line to the last row of the screen,
+ *   so that the empty lines at its end are not copied (docs/decisions/0085).
  */
 internal data class TerminalSelection(
-    val anchor: Cell,
-    val focus: Cell,
+    val anchor: TextPosition,
+    val focus: TextPosition,
+    val generation: Long,
     val isAll: Boolean = false,
 ) {
-    val start: Cell
+    val start: TextPosition
         get() = minOf(anchor, focus)
 
-    val end: Cell
+    val end: TextPosition
         get() = maxOf(anchor, focus)
 
     /**
-     * Returns the selected text of [snapshot]. Lines are separated by "\n" unless the line was
-     * wrapped by autowrap, and trailing blanks of each line are dropped. Wide characters are
-     * included whole. The blank that autowrap leaves before a wide character that does not fit is
-     * not text ([LineSnapshot.endsWithWidePadding]). Concealed cells are blanks ([visibleTextAt]).
+     * Returns the selected text of [lines], the first of them being line [firstLine], which must
+     * hold the selected lines from the start, or from a later line to copy fewer. Lines are
+     * separated by "\n" unless the line was wrapped by autowrap, and trailing blanks of each line
+     * are dropped. Wide characters are included whole. The blank that autowrap leaves before a wide
+     * character that does not fit is not text ([LineSnapshot.endsWithWidePadding]). Concealed cells
+     * are blanks ([visibleTextAt]).
      */
-    fun text(snapshot: TerminalSnapshot): String =
-        text(List(snapshot.rows) { snapshot.line(it) }, start, end)
+    fun text(lines: List<LineSnapshot>, firstLine: Long): String {
+        val start = start
+        val end = end
+        val from = maxOf(start.line, firstLine)
+        if (from > end.line) return ""
+        return text(
+            lines,
+            Cell(if (from == start.line) start.column else 0, (from - firstLine).toInt()),
+            Cell(end.column, (end.line - firstLine).toInt()),
+        )
+    }
+
+    /**
+     * Returns the columns of line [line] that the selection covers, or null if it covers none. The
+     * last column may be beyond the line, for a selection made on a wider display.
+     */
+    fun columnsOf(line: Long, columns: Int): IntRange? {
+        val start = start
+        val end = end
+        if (line < start.line || line > end.line) return null
+        return (if (line == start.line) start.column else 0)..(if (line == end.line) end.column
+            else columns - 1)
+    }
 
     companion object {
-        /** Selects all of [snapshot]'s display, standing for all the text. */
-        fun all(snapshot: TerminalSnapshot): TerminalSelection =
+        /** Selects from [anchor] to [focus], cells of [snapshot]'s display. */
+        fun onDisplay(snapshot: TerminalSnapshot, anchor: Cell, focus: Cell): TerminalSelection =
             TerminalSelection(
-                Cell(0, 0),
-                Cell(snapshot.columns - 1, snapshot.rows - 1),
-                isAll = true,
+                snapshot.position(anchor),
+                snapshot.position(focus),
+                snapshot.generation,
             )
 
         /**
@@ -91,13 +129,13 @@ internal data class TerminalSelection(
             if (column > 0 && line.widthAt(column) == 0) column--
             if (isBlank(line, column)) {
                 val last = if (line.widthAt(column) == 2) column + 1 else column
-                return TerminalSelection(Cell(column, cell.row), Cell(last, cell.row))
+                return onDisplay(snapshot, Cell(column, cell.row), Cell(last, cell.row))
             }
             var from = column
             while (from > 0 && !isBlank(line, from - 1)) from--
             var to = column
             while (to < line.columns - 1 && !isBlank(line, to + 1)) to++
-            return TerminalSelection(Cell(from, cell.row), Cell(to, cell.row))
+            return onDisplay(snapshot, Cell(from, cell.row), Cell(to, cell.row))
         }
 
         /**
@@ -109,7 +147,7 @@ internal data class TerminalSelection(
             while (first > 0 && snapshot.line(first - 1).isWrapped) first--
             var last = cell.row
             while (last < snapshot.rows - 1 && snapshot.line(last).isWrapped) last++
-            return TerminalSelection(Cell(0, first), Cell(snapshot.columns - 1, last))
+            return onDisplay(snapshot, Cell(0, first), Cell(snapshot.columns - 1, last))
         }
 
         /**

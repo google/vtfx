@@ -395,16 +395,16 @@ internal class TerminalRenderer(
     }
 
     private fun DrawScope.drawSelection(selection: TerminalSelection, snapshot: TerminalSnapshot) {
-        val start = selection.start
-        val end = selection.end
-        for (row in start.row..minOf(end.row, snapshot.rows - 1)) {
-            val from = if (row == start.row) start.column else 0
-            val to = if (row == end.row) end.column + 1 else snapshot.columns
+        // Lines numbered again since it was made, which the display drops at its next check.
+        if (selection.generation != snapshot.generation) return
+        for (row in 0 until snapshot.rows) {
+            val columns =
+                selection.columnsOf(snapshot.firstLine + row, snapshot.columns) ?: continue
             fill.rect(
                 this,
                 colors.selection,
-                Offset(from * metrics.width, row * metrics.height),
-                Size((to - from) * metrics.width, metrics.height),
+                Offset(columns.first * metrics.width, row * metrics.height),
+                Size((columns.last + 1 - columns.first) * metrics.width, metrics.height),
             )
         }
     }

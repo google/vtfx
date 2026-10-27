@@ -28,6 +28,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.google.vtfx.core.InternalVtfxApi
+import com.google.vtfx.core.LineSnapshot
 import com.google.vtfx.core.SearchIndex
 import com.google.vtfx.core.SearchLines
 import com.google.vtfx.core.SearchMatch
@@ -69,15 +70,30 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
     val isScrolledBack: Boolean
         get() = scrollOffset > 0 && session.scrollbackSize > 0
 
-    /** The text the user selected on the display, or null. Dropped when the display changes. */
-    var selection: TerminalSelection? by mutableStateOf(null)
+    /**
+     * The text the user selected, or null. It stays on its text as the text scrolls, and is dropped
+     * when that text changes or the lines are numbered again (docs/decisions/0085).
+     */
+    var selection: TerminalSelection?
+        get() = selectionState
+        set(value) {
+            selectionState = value
+            watchedLines = null
+            // The lines of the screen now, against which the next output is compared.
+            if (value != null) watch(value, session.searchLines(Long.MAX_VALUE, 1))
+        }
+
+    private var selectionState: TerminalSelection? by mutableStateOf(null)
 
     /**
-     * Incremented each time the display changes and drops the selection, so that a gesture that has
-     * not made a selection yet can tell that its snapshot is out of date.
+     * The selected lines that the screen held when the selection was made or last checked, from
+     * line [WatchedLines.first]. Lines of the scrollback do not change until the lines are numbered
+     * again, but those of the screen do, and they may also scroll into the scrollback before the
+     * next check: the check compares these with what the lines hold then. Null without a selection.
      */
-    var changeCount: Int = 0
-        private set
+    private var watchedLines: WatchedLines? = null
+
+    private class WatchedLines(val first: Long, val lines: List<LineSnapshot>)
 
     /** Receives the requests of the IME editing model, while this display's view has the focus. */
     var inputHost: InputHost? = null
@@ -122,14 +138,11 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
 
     /**
      * Scrolls the display [lines] lines back into the scrollback (or forward, if negative), within
-     * the scrollback.
+     * the scrollback. The selection stays on its text.
      */
     fun scrollBy(lines: Int) {
         val limit = session.scrollbackSize
-        val next = (scrollOffset + lines).coerceIn(0, limit)
-        if (next == scrollOffset) return
-        scrollOffset = next
-        onDisplayChanged()
+        scrollOffset = (scrollOffset + lines).coerceIn(0, limit)
     }
 
     /**
@@ -139,32 +152,51 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
     fun copySelection(clear: Boolean = true): Boolean {
         val selected = selection ?: return false
         if (clear) selection = null
-        return session.copyToClipboard(selectedText(selected))
+        val text = selectedText(selected)
+        if (text == null) {
+            // The lines were numbered again or left, and the next redraw would drop it.
+            selection = null
+            return false
+        }
+        return session.copyToClipboard(text)
     }
 
-    /** Selects all the text: the scrollback and the screen (docs/decisions/0085). */
+    /**
+     * Selects all the text: the scrollback and the screen, from the oldest line to the last row of
+     * the screen (docs/decisions/0085).
+     */
     fun selectAll() {
-        selection = TerminalSelection.all(displaySnapshot())
+        val screen = session.searchLines(Long.MAX_VALUE, 1)
+        selection =
+            TerminalSelection(
+                TextPosition(0, screen.oldestLine),
+                TextPosition(
+                    screen.lines.last().columns - 1,
+                    screen.screenLine + screen.lines.size - 1,
+                ),
+                screen.generation,
+                isAll = true,
+            )
     }
 
     /**
      * Returns the text of [selected], of which the newest lines that fit in [MAX_COPIED_LENGTH]
-     * characters. All the text is that of the newest lines, at most [MAX_COPIED_LINES] of them and
-     * [MAX_COPIED_CELLS] cells.
+     * characters, from at most its newest [MAX_COPIED_LINES] lines and [MAX_COPIED_CELLS] cells.
+     * Returns null if the lines were numbered again since it was made, or all left the scrollback.
      */
-    private fun selectedText(selected: TerminalSelection): String {
-        if (!selected.isAll) return newestThatFit(selected.text(displaySnapshot()))
+    private fun selectedText(selected: TerminalSelection): String? {
+        val end = selected.end.line
         val columns = session.size().first
-        val lines = session.lines(minOf(MAX_COPIED_LINES, MAX_COPIED_CELLS / columns))
-        if (lines.isEmpty()) return ""
-        val text =
-            TerminalSelection.text(
-                    lines,
-                    Cell(0, 0),
-                    Cell(lines.last().columns - 1, lines.size - 1),
-                )
-                .trimEnd('\n')
-        return newestThatFit(text)
+        val maxLines = minOf(MAX_COPIED_LINES, MAX_COPIED_CELLS / columns)
+        val from = maxOf(selected.start.line, end - maxLines + 1)
+        val read = session.searchLines(from, (end - from + 1).toInt())
+        if (read.generation != selected.generation || end < read.oldestLine) return null
+        // Not before from, where the read starts on the screen that the selection starts below.
+        val first = maxOf(from, read.firstLine)
+        val lines =
+            read.lines.subList((first - read.firstLine).toInt(), (end - read.firstLine + 1).toInt())
+        val text = selected.text(lines, first)
+        return newestThatFit(if (selected.isAll) text.trimEnd('\n') else text)
     }
 
     /**
@@ -320,13 +352,80 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
     fun notifyEditorChanged() {
         editorVersion++
         scrollOffset = 0
-        onDisplayChanged()
+        // The user moved on from the selection (docs/decisions/0085).
+        selection = null
     }
 
-    /** Counts a change of the display in [changeCount], and drops the selection. */
-    private fun onDisplayChanged() {
-        changeCount++
-        selection = null
+    /**
+     * Drops the selection if its text changed since it was made or last checked, if the lines were
+     * numbered again, or if all of it left the scrollback; cuts off the part that left
+     * (docs/decisions/0085). Reads the selected lines that the screen held at the last check, so
+     * that the work is bounded by the screen's rows, not by the size of the selection.
+     */
+    private fun checkSelection() {
+        val selected = selection ?: return
+        val watched = checkNotNull(watchedLines)
+        val start = selected.start
+        val end = selected.end
+        val from = maxOf(start.line, watched.first)
+        val read =
+            session.searchLines(
+                from,
+                (end.line - from + 1).coerceIn(1, Int.MAX_VALUE.toLong()).toInt(),
+            )
+        if (read.generation != selected.generation || end.line < read.oldestLine) {
+            selection = null
+            return
+        }
+        for ((index, old) in watched.lines.withIndex()) {
+            val line = watched.first + index
+            // A line that left the scrollback, which is cut off below.
+            if (line < read.firstLine) continue
+            val new = read.lines[(line - read.firstLine).toInt()]
+            if (
+                !sameSelectedText(
+                    old,
+                    new,
+                    checkNotNull(selected.columnsOf(line, old.columns)),
+                    line < end.line,
+                )
+            ) {
+                selection = null
+                return
+            }
+        }
+        val kept =
+            if (start.line >= read.oldestLine) selected
+            else if (selected.anchor == start)
+                selected.copy(anchor = TextPosition(0, read.oldestLine))
+            else selected.copy(focus = TextPosition(0, read.oldestLine))
+        if (kept != selected) selectionState = kept
+        watch(kept, read)
+    }
+
+    /**
+     * Keeps, as [watchedLines], the lines of [selected] from the first row of the screen, which
+     * [read] must hold through the end of the selection.
+     */
+    private fun watch(selected: TerminalSelection, read: SearchLines) {
+        if (read.generation != selected.generation) {
+            // Made from a snapshot taken before the lines were numbered again.
+            selectionState = null
+            return
+        }
+        val first = maxOf(selected.start.line, read.screenLine)
+        // Not beyond the last row, for a selection made on a taller display.
+        val last = minOf(selected.end.line, read.firstLine + read.lines.size - 1)
+        watchedLines =
+            WatchedLines(
+                first,
+                if (first > last) emptyList()
+                else
+                    read.lines.subList(
+                        (first - read.firstLine).toInt(),
+                        (last - read.firstLine + 1).toInt(),
+                    ),
+            )
     }
 
     /** The size waiting for [applyPendingSize], or null. */
@@ -431,7 +530,7 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
             runOnMain {
                 invalidationPending.set(false)
                 version++
-                onDisplayChanged()
+                checkSelection()
                 updateSearch()
                 inputHost?.onScreenChanged()
             }
@@ -497,6 +596,30 @@ internal fun readSearchLines(
         reads++
         if (!index.update(lines) || reads >= maxReads) return
     }
+}
+
+/**
+ * Whether [old] and [new], the same line at two times, show the same text in [columns], as copying
+ * reads it: the same characters, widths, and concealed cells, and, if the selection goes on to the
+ * next line ([continues]), whether autowrap joins them. Styles that do not hide text do not count,
+ * so that a redraw in other colors keeps the selection.
+ */
+private fun sameSelectedText(
+    old: LineSnapshot,
+    new: LineSnapshot,
+    columns: IntRange,
+    continues: Boolean,
+): Boolean {
+    if (old.columns != new.columns) return false
+    if (continues && old.isWrapped != new.isWrapped) return false
+    // A wide character whose right half is selected is copied whole.
+    var first = columns.first
+    if (first > 0 && (old.widthAt(first) == 0 || new.widthAt(first) == 0)) first--
+    for (column in first..minOf(columns.last, old.columns - 1)) {
+        if (old.widthAt(column) != new.widthAt(column)) return false
+        if (old.visibleTextAt(column) != new.visibleTextAt(column)) return false
+    }
+    return true
 }
 
 /** The matches of a search that a display shows, and the current match, if any. */

@@ -199,7 +199,7 @@ class TerminalMouseTest {
     fun dragSelectsWithoutAMenuOrTheHost() {
         show("hello world")
         drag(cell(1, 0), cell(7, 0))
-        assertEquals(TerminalSelection(Cell(1, 0), Cell(7, 0)), display.selection)
+        assertEquals(display.selectionOf(Cell(1, 0), Cell(7, 0)), display.selection)
         assertEquals(emptyList<FakeTextToolbar.Menu>(), toolbar.menus)
         assertEquals("", sent.toString())
     }
@@ -208,13 +208,13 @@ class TerminalMouseTest {
     fun dragBackwardsSelectsFromThePress() {
         show("hello world")
         drag(cell(7, 0), cell(2, 0))
-        assertEquals(TerminalSelection(Cell(7, 0), Cell(2, 0)), display.selection)
+        assertEquals(display.selectionOf(Cell(7, 0), Cell(2, 0)), display.selection)
     }
 
     @Test
     fun aClickWithoutADragSelectsNothingAndDropsTheSelection() {
         show("hello world")
-        display.selection = TerminalSelection(Cell(0, 0), Cell(4, 0))
+        display.selection = display.selectionOf(Cell(0, 0), Cell(4, 0))
         mouse { click(cell(2, 0)) }
         assertNull(display.selection)
     }
@@ -223,7 +223,7 @@ class TerminalMouseTest {
     fun doubleClickSelectsAWord() {
         show("hello world")
         mouse { doubleClick(cell(7, 0)) }
-        assertEquals(TerminalSelection(Cell(6, 0), Cell(10, 0)), display.selection)
+        assertEquals(display.selectionOf(Cell(6, 0), Cell(10, 0)), display.selection)
     }
 
     @Test
@@ -237,7 +237,7 @@ class TerminalMouseTest {
             release()
         }
         // From the end of "big" to the cell under the pointer.
-        assertEquals(TerminalSelection(Cell(8, 0), Cell(1, 0)), display.selection)
+        assertEquals(display.selectionOf(Cell(8, 0), Cell(1, 0)), display.selection)
     }
 
     @Test
@@ -247,7 +247,7 @@ class TerminalMouseTest {
         session.feed("first\r\n${"x".repeat(columns + 3)}\r\nlast".toByteArray())
         composeRule.waitForIdle()
         mouse { tripleClick(cell(1, 2)) }
-        assertEquals(TerminalSelection(Cell(0, 1), Cell(columns - 1, 2)), display.selection)
+        assertEquals(display.selectionOf(Cell(0, 1), Cell(columns - 1, 2)), display.selection)
         composeRule.runOnIdle { display.copySelection() }
         assertEquals(listOf("x".repeat(columns + 3)), copied)
     }
@@ -256,13 +256,13 @@ class TerminalMouseTest {
     fun shiftClickExtendsTheSelection() {
         show("hello world")
         mouse { doubleClick(cell(1, 0)) }
-        assertEquals(TerminalSelection(Cell(0, 0), Cell(4, 0)), display.selection)
+        assertEquals(display.selectionOf(Cell(0, 0), Cell(4, 0)), display.selection)
         withKey(Key.ShiftLeft) { click(cell(8, 0)) }
-        assertEquals(TerminalSelection(Cell(0, 0), Cell(8, 0)), display.selection)
+        assertEquals(display.selectionOf(Cell(0, 0), Cell(8, 0)), display.selection)
     }
 
     @Test
-    fun newOutputDuringADragEndsTheSelection() {
+    fun overwritingTheSelectionDuringADragEndsIt() {
         show("hello world")
         mouse {
             moveTo(cell(1, 0))
@@ -270,7 +270,7 @@ class TerminalMouseTest {
             moveTo(cell(3, 0))
         }
         assertNotNull(display.selection)
-        session.feed("!".toByteArray())
+        session.feed("\rhallo".toByteArray())
         composeRule.waitForIdle()
         mouse {
             moveTo(cell(8, 0))
@@ -280,7 +280,46 @@ class TerminalMouseTest {
     }
 
     @Test
-    fun outputBeforeTheFirstMoveOfADragEndsTheSelection() {
+    fun outputOutsideTheSelectionDuringADragLetsItGoOn() {
+        show("hello world")
+        mouse {
+            moveTo(cell(1, 0))
+            press()
+            moveTo(cell(3, 0))
+        }
+        session.feed("\r\nmore".toByteArray())
+        composeRule.waitForIdle()
+
+        mouse {
+            moveTo(cell(8, 0))
+            release()
+        }
+
+        assertEquals(display.selectionOf(Cell(1, 0), Cell(8, 0)), display.selection)
+    }
+
+    @Test
+    fun aDragFollowsTheTextThatOutputScrolls() {
+        show(lines(100))
+        mouse {
+            moveTo(cell(1, 1))
+            press()
+            moveTo(cell(3, 1))
+        }
+        // Scrolls the screen up by a line: the press is now on the first row.
+        session.feed("\r\nnew".toByteArray())
+        composeRule.waitForIdle()
+
+        mouse {
+            moveTo(cell(3, 2))
+            release()
+        }
+
+        assertEquals(display.selectionOf(Cell(1, 0), Cell(3, 2)), display.selection)
+    }
+
+    @Test
+    fun outputBeforeTheFirstMoveOfADragLetsItSelect() {
         show("hello world")
         mouse {
             moveTo(cell(1, 0))
@@ -288,12 +327,14 @@ class TerminalMouseTest {
         }
         session.feed("!".toByteArray())
         composeRule.waitForIdle()
+
         mouse {
             moveTo(cell(8, 0))
             moveTo(cell(9, 0))
             release()
         }
-        assertNull(display.selection)
+
+        assertEquals(display.selectionOf(Cell(1, 0), Cell(9, 0)), display.selection)
         assertEquals(emptyList<TerminalLinkClick>(), linkClicks)
     }
 
@@ -305,7 +346,7 @@ class TerminalMouseTest {
             press()
             moveTo(cell(3, 0))
         }
-        session.feed("!".toByteArray())
+        session.feed("\rhallo".toByteArray())
         composeRule.waitForIdle()
         mouse {
             moveTo(cell(8, 0))
@@ -354,7 +395,7 @@ class TerminalMouseTest {
         show(lines(100))
         drag(cell(1, 1), cell(1, 5))
         assertEquals(0, display.scrollOffset)
-        assertEquals(TerminalSelection(Cell(1, 1), Cell(1, 5)), display.selection)
+        assertEquals(display.selectionOf(Cell(1, 1), Cell(1, 5)), display.selection)
     }
 
     @Test
@@ -427,7 +468,7 @@ class TerminalMouseTest {
             moveTo(cell(7, 0))
             release()
         }
-        assertEquals(TerminalSelection(Cell(1, 0), Cell(7, 0)), display.selection)
+        assertEquals(display.selectionOf(Cell(1, 0), Cell(7, 0)), display.selection)
         // At the press, which the host gets as input, as a tap drops it.
         mouse {
             moveTo(cell(2, 0))
@@ -448,7 +489,7 @@ class TerminalMouseTest {
             moveTo(cell(7, 0))
             release()
         }
-        assertEquals(TerminalSelection(Cell(1, 0), Cell(7, 0)), display.selection)
+        assertEquals(display.selectionOf(Cell(1, 0), Cell(7, 0)), display.selection)
         assertEquals("", sent.toString())
     }
 
@@ -527,7 +568,7 @@ class TerminalMouseTest {
             linkClicks.single().link,
         )
         drag(cell(6, 1), cell(3, 2))
-        assertEquals(TerminalSelection(Cell(6, 1), Cell(3, 2)), display.selection)
+        assertEquals(display.selectionOf(Cell(6, 1), Cell(3, 2)), display.selection)
         mouse { rightClick(cell(2, 1)) }
         assertEquals(1, toolbar.menus.size)
         mouse {

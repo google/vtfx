@@ -40,8 +40,8 @@ import com.google.vtfx.core.SearchQuery
  * the composition last; when that one leaves, it acts on none until a terminal enters again. The
  * selection and the search belong to the terminal, and go when it leaves the composition.
  *
- * The selection is in what the terminal displays, so the terminal drops it whenever the display
- * changes: on output from the host, on scrolling, on typing, and on resizing. The search stays, and
+ * The selection stays on the text the user selected as output and scrolling move it, and the
+ * terminal drops it when that text changes, on typing, and on resizing. The search stays too, and
  * follows the output.
  *
  * Use it on the main thread.

