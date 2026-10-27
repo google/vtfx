@@ -116,6 +116,8 @@ class PrintAsciiTest {
                 "\uD83C\uDDEF",
                 "\u001b[1;31m",
                 "\u001b[0m",
+                "\u001b[4:3;58;5;3m",
+                "\u001b[59m",
                 "\u001b[4h",
                 "\u001b[4l",
                 "\u001b[?7l",

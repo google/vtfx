@@ -168,15 +168,7 @@ internal class Emulator(
             val line = screen[cursorY]
             // The characters that fit on this line before the last column.
             val run = minOf(to - i, columns - 1 - cursorX)
-            for (k in 0 until run) {
-                line.setNarrow(
-                    cursorX + k,
-                    bytes[i + k].toInt(),
-                    styleBits,
-                    activeLink,
-                    underlineColor,
-                )
-            }
+            line.setAscii(cursorX, bytes, i, i + run, styleBits, activeLink, underlineColor)
             cursorX += run
             i += run
             if (i < to) {

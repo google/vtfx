@@ -177,6 +177,44 @@ internal class Line(columns: Int, style: CellStyle = CellStyle.Default) {
     }
 
     /**
+     * Writes the printable ASCII characters in [from, to) of [bytes] from [column]: the same as
+     * [setNarrow] for each, for runs of plain text. The caller ensures that they fit.
+     */
+    fun setAscii(
+        column: Int,
+        bytes: ByteArray,
+        from: Int,
+        to: Int,
+        style: Long,
+        link: Int,
+        underlineColor: Int,
+    ) {
+        val end = column + (to - from)
+        if (end == column) return
+        val codes = codes
+        // Only a wide character across either edge of the run keeps a half outside it; one inside
+        // is overwritten whole.
+        if (codes[column] == WIDE_TAIL || (end < codes.size && codes[end] == WIDE_TAIL)) {
+            val erased = CellStyle(style).erased()
+            breakWide(column, erased)
+            breakWide(end - 1, erased)
+        }
+        for (i in from until to) codes[column + i - from] = bytes[i].toInt()
+        styles.fill(style, column, end)
+        clusters?.fill(null, column, end)
+        if (link != 0 || links != null) {
+            (links ?: IntArray(codes.size).also { links = it }).fill(link, column, end)
+        }
+        if (underlineColor != 0 || underlineColors != null) {
+            (underlineColors ?: IntArray(codes.size).also { underlineColors = it }).fill(
+                underlineColor,
+                column,
+                end,
+            )
+        }
+    }
+
+    /**
      * Appends a combining [codePoint] to the character at [column]. Does nothing if there is no
      * character or the cluster would be longer than [MAX_CLUSTER_LENGTH].
      */
