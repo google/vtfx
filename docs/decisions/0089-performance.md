@@ -1,8 +1,8 @@
 # Performance targets and benchmarks
 
-- Status: Approved
-- Date: 2026-10-25
-- Related: Requirements 6.1 and 6.2, section 1 of [testing.md](../design/testing.md), section 10.2 of [emulation.md](../design/emulation.md), sections 1 and 5 of [device-checks.md](../device-checks.md), [research/performance-2026-10.md](../research/performance-2026-10.md), [0081](0081-resource-limits.md), [0084](0084-session-and-threads.md), `scripts/benchmark.py`
+- Status: Provisional
+- Date: 2026-10-27
+- Related: Requirements 6.1 and 6.2, section 1 of [testing.md](../design/testing.md), section 10.2 of [emulation.md](../design/emulation.md), sections 1, 5, and 17 of [device-checks.md](../device-checks.md), [research/performance-2026-10.md](../research/performance-2026-10.md), [0081](0081-resource-limits.md), [0084](0084-session-and-threads.md), `scripts/benchmark.py`
 
 ## Background
 
@@ -12,7 +12,7 @@ Requirement 6.2 asks for being more efficient than WebView with xterm.js, and fo
 
 `scripts/benchmark.py` measures the following and reports them against the targets, which are its constants; it is not a gate.
 
-1. **Throughput**: `TerminalBenchmark` in `vtfx-core` (`./gradlew :vtfx-core:benchmark`) writes ASCII text, colored output with many SGRs, Japanese, and recordings of real apps (`recordings/`) in 4 KiB chunks into a 120 × 40 terminal, and measures MB/s of host output. The same loads run through `@xterm/headless` (6.0.0, Node 24) on the same machine (`tools/benchmark/xterm-headless.mjs`).
+1. **Throughput**: `TerminalBenchmark` in `vtfx-core` (`./gradlew :vtfx-core:benchmark`) writes ASCII text, colored output with many SGRs, Japanese, and recordings of real apps (`recordings/`) in 4 KiB chunks into a 120 × 40 terminal, and measures MB/s of host output. The same loads run through `@xterm/headless` (6.0.0, Node 24) on the same machine (`tools/benchmark/xterm-headless.mjs`). On devices, topic 4.
 2. **Scrollback memory**: an estimate of the size of the array of scrollback lines when the default 10,000 lines are filled with each load, and, as the worst case, with lines in which every one of 120 cells has a different color.
 3. **Rendering**: the sample app's `RenderBenchmark` on the emulator, in two scenes with updates every 16 ms (`full`: the whole screen, equivalent to 120 × 50, changes every time; `scroll`: colored log lines flow one at a time), measures the p50 of the UI thread's drawing time in `FrameMetrics` (`DRAW_DURATION`). The time of the whole frame is not a target. The steps are in section 5 of [device-checks.md](../device-checks.md).
 
@@ -66,3 +66,18 @@ The values are in section 5 of [device-checks.md](../device-checks.md); the scen
 - **A Macrobenchmark module** (`androidx.benchmark`): it measures frames from another process with its own tooling, but adds dependencies and a module for what `FrameMetrics` in the app already gives.
 
 **Impact of reversing.** Remove the `benchmark` build type and `src/benchmark/`, make `LaunchOptions.read` take `benchmark` only in debuggable builds again, and have `scripts/benchmark.py` install the debug build. Taking the extras in every build would make `LaunchOptions.read` take them without the flags, and drop the note in section 1 of device-checks.md.
+
+## 4. Throughput on devices
+
+1. **The sample app measures the throughput on a device**: `ThroughputBenchmark`, started with the `throughput` extra in the benchmark build of topic 3, feeds the workloads of topic 1 to a `TerminalSession` that no display shows, in writes of 4 KiB into 120 × 40, and logs MB/s of each. The steps are in section 17 of [device-checks.md](../device-checks.md).
+2. **The same bytes as on the JVM**: `./gradlew :vtfx-core:benchmarkWorkloads` writes the workloads of `TerminalBenchmark` to files, and `scripts/benchmark.py` pushes them over adb into the app's external files directory.
+3. **Twice**: after install, when ART interprets the app and compiles hot code with its JIT, and after `cmd package compile -m speed -f`, which compiles the whole app ahead of time. `scripts/benchmark.py` reports both, with the JVM's results beside them, after the rendering scenes on the same device.
+4. **No targets on devices for now**: the results are for reference.
+
+**Why.** The JVM on the development machine and ART on a phone differ in their compilers, so the throughput that apps see is not the JVM's: on a Pixel 9 (Android 16), ASCII ran at about 61 MB/s against about 125 on the JVM of the development machine, and alacritty_terminal 0.26.0, fed the same bytes through JNI, at 109. A measurement on the device is what tells whether an optimization helps there. The session, rather than the `Terminal` that `TerminalBenchmark` writes to, is what an app feeds and the public API that the sample uses; its locks and the gate cost little per write of 4 KiB. Generating the workloads in the sample would duplicate `TerminalBenchmark`'s generators, which live in vtfx-core's tests, and the sample may depend only on vtfx-compose (`config/boundaries.toml`); pushing files keeps one generator and sends data to the device only through adb ([0092](0092-device-checks-by-agents.md) topic 3). The two compilations tell whether code compiled ahead of time, as Baseline Profiles would give apps at install, makes the interpretation faster than the JIT does.
+
+**Alternatives considered.**
+- **Bundle the workloads in the APK**: the build of the sample would need the output of a task of vtfx-core's tests, a dependency between projects that the boundaries do not allow, for data that only the benchmark reads.
+- **A Microbenchmark module** (`androidx.benchmark`): it locks clocks and reports stable numbers, but adds dependencies and an instrumented test module for what a loop over a few workloads gives (as for the rendering, topic 3).
+
+**Impact of reversing.** Remove `ThroughputBenchmark`, the `throughput` extras of `LaunchOptions`, the task `benchmarkWorkloads` and the option `--write-workloads` of `TerminalBenchmark`, the device's throughput from `scripts/benchmark.py`, and section 17 of device-checks.md.

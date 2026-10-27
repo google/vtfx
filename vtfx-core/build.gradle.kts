@@ -51,3 +51,20 @@ tasks.register<JavaExec>("benchmark") {
     )
     outputs.upToDateWhen { false }
 }
+
+// Writes the workloads of the benchmark to files, which scripts/benchmark.py pushes to a device for
+// the sample app to measure (section 5 of docs/device-checks.md).
+tasks.register<JavaExec>("benchmarkWorkloads") {
+    description = "Writes the workloads of the throughput benchmark to build/benchmark-workloads."
+    group = "verification"
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("com.google.vtfx.core.benchmark.TerminalBenchmark")
+    val directory = layout.buildDirectory.dir("benchmark-workloads")
+    args(
+        "--write-workloads",
+        directory.get().asFile.absolutePath,
+        file("../recordings").absolutePath,
+    )
+    inputs.dir("../recordings").withPathSensitivity(PathSensitivity.RELATIVE)
+    outputs.dir(directory)
+}

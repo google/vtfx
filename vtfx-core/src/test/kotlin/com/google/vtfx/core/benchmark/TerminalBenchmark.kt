@@ -28,24 +28,38 @@ import java.io.File
  *
  * Each workload is generated deterministically, written in chunks of 4 KiB as a host would deliver
  * it, for a warm-up and then a measured period. The result is MB/s of host output.
+ *
+ * With `--write-workloads DIRECTORY RECORDINGS`, it writes the workloads to files named
+ * `<workload>.bin` instead, which the sample app's ThroughputBenchmark measures on a device
+ * (`./gradlew :vtfx-core:benchmarkWorkloads`, section 5 of docs/device-checks.md).
  */
 object TerminalBenchmark {
     private const val CHUNK = 4096
 
     private class Workload(val name: String, val data: ByteArray)
 
+    private fun workloads(recordings: File?): List<Workload> =
+        listOf(
+            Workload("ascii", ascii()),
+            Workload("sgr", colored()),
+            Workload("cjk", cjk()),
+        ) + listOfNotNull(recordings?.let { Workload("recordings", replay(it)) })
+
     @JvmStatic
     fun main(args: Array<String>) {
+        if (args.getOrNull(0) == "--write-workloads") {
+            val directory = File(args[1])
+            directory.mkdirs()
+            for (workload in workloads(File(args[2]))) {
+                File(directory, "${workload.name}.bin").writeBytes(workload.data)
+            }
+            return
+        }
         val recordings = args.getOrNull(0)?.let { File(it) }
         val seconds = args.getOrNull(1)?.toDouble() ?: 3.0
         // An optional name runs only that workload, for profiling.
         val only = args.getOrNull(2)
-        val workloads =
-            listOf(
-                Workload("ascii", ascii()),
-                Workload("sgr", colored()),
-                Workload("cjk", cjk()),
-            ) + listOfNotNull(recordings?.let { Workload("recordings", replay(it)) })
+        val workloads = workloads(recordings)
         println("workload\tMB/s\tscrollback MiB")
         for (workload in workloads.filter { only == null || it.name == only }) {
             val unused = run(workload, seconds / 3)

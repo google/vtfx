@@ -55,5 +55,30 @@ class CheckRendersTest(unittest.TestCase):
         self.assertIn("flood", str(raised.exception.code))
 
 
+class ThroughputTest(unittest.TestCase):
+    LOG = "\n".join([
+        "--------- beginning of main",
+        '{"workload":"ascii","mbps":62.1,"seconds":3.0}',
+        '{"workload":"cjk","mbps":54.6,"seconds":3.0}',
+    ])
+
+    def test_a_finished_run_gives_the_rate_of_each_workload(self):
+        rates = benchmark.parse_throughput(self.LOG + '\n{"done":true}')
+        self.assertEqual({"ascii": 62.1, "cjk": 54.6}, rates)
+
+    def test_a_run_that_has_not_finished_gives_nothing(self):
+        self.assertIsNone(benchmark.parse_throughput(self.LOG))
+
+    def test_a_run_without_the_workloads_fails(self):
+        # Without the workloads on the device, ThroughputBenchmark logs only that it is done.
+        rates = benchmark.parse_throughput("No workloads in /storage\n{\"done\":true}")
+        with self.assertRaises(SystemExit) as raised:
+            benchmark.check_throughput("jit", rates)
+        self.assertIn("ascii, sgr, cjk, recordings", str(raised.exception.code))
+
+    def test_a_run_with_every_workload_passes(self):
+        benchmark.check_throughput("jit", {"ascii": 1.0, "sgr": 1.0, "cjk": 1.0, "recordings": 1.0})
+
+
 if __name__ == "__main__":
     unittest.main()

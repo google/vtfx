@@ -20,6 +20,8 @@
 - Memory of the scrollback, by estimate, from the same benchmark.
 - Frame times of the sample app on the emulator or a device (RenderBenchmark), if one is connected: updates every
   16 ms, and a flood of output without a break (docs/decisions/0089).
+- Throughput of the same workloads as on the JVM in the sample app on that device (ThroughputBenchmark), after
+  installing, which leaves the code to ART's JIT, and after compiling the app ahead of time with the speed filter.
 
 The targets are in docs/decisions/0089; the report marks each result against them. Not part of the
 check: timing depends on the machine.
@@ -52,6 +54,13 @@ FLOOD_FPS_TARGET = 0.8  # frames per second, as a share of the refresh rate
 FLOOD_JANKY_TARGET = 35.0  # %
 FLOOD_THROUGHPUT_TARGET = 0.75  # the throughput with the display, as a share of that without one
 RENDER_SCENARIOS = ["full", "scroll", "flood"]
+PACKAGE = "com.google.vtfx.sample"
+# Where ./gradlew :vtfx-core:benchmarkWorkloads writes the workloads, and where the sample app reads them.
+WORKLOADS = os.path.join(ROOT, "vtfx-core", "build", "benchmark-workloads")
+DEVICE_WORKLOADS = f"/sdcard/Android/data/{PACKAGE}/files/workloads"
+# How the code runs in each measurement of the throughput on the device: after `adb install`, ART interprets the
+# app and compiles hot code with its JIT; `cmd package compile -m speed` compiles the whole app ahead of time.
+COMPILATIONS = {"jit": "After install (JIT)", "speed": "Compiled with speed (AOT)"}
 
 
 def parse_table(text):
@@ -81,20 +90,33 @@ def xterm_throughput(node):
     return parse_table(out)
 
 
-def render(serial):
+def gradle(*tasks):
+    subprocess.run([os.path.join(ROOT, "gradlew"), "--console=plain", "-q", *tasks], cwd=ROOT, check=True)
+
+
+def device(serial):
+    """Installs the benchmark build on the device and runs the rendering scenes and the throughput benchmark."""
     def adb(*args):
         return subprocess.run([ADB, "-s", serial, *args], capture_output=True, text=True).stdout
 
-    subprocess.run([os.path.join(ROOT, "gradlew"), "--console=plain", "-q", ":vtfx-sample:assembleBenchmark"], cwd=ROOT,
-                   check=True)
+    gradle(":vtfx-sample:assembleBenchmark", ":vtfx-core:benchmarkWorkloads")
     adb("install", "-r", os.path.join(ROOT, "vtfx-sample", "build", "outputs", "apk", "benchmark", "vtfx-sample-benchmark.apk"))
     adb("shell", "svc", "power", "stayon", "true")
     adb("shell", "input", "keyevent", "KEYCODE_WAKEUP")
     # Behind the lock screen the activity draws no frames. This dismisses a lock screen without a
     # credential; a device with one has to be unlocked by hand.
     adb("shell", "wm", "dismiss-keyguard")
+    renders = render(adb)
+    throughputs = device_throughput(adb)
+    release = adb("shell", "getprop", "ro.build.version.release").strip()
+    emulator = adb("shell", "getprop", "ro.kernel.qemu").strip() == "1"
+    name = "emulator" if emulator else adb("shell", "getprop", "ro.product.model").strip()
+    return renders, throughputs, f"{name}, Android {release}", emulator
+
+
+def render(adb):
     adb("logcat", "-c")
-    adb("shell", "am", "start", "-S", "-W", "-n", "com.google.vtfx.sample/.MainActivity", "--ez", "benchmark", "true")
+    adb("shell", "am", "start", "-S", "-W", "-n", f"{PACKAGE}/.MainActivity", "--ez", "benchmark", "true")
     deadline = time.time() + 300
     results = {}
     while time.time() < deadline and len(results) < len(RENDER_SCENARIOS):
@@ -104,10 +126,58 @@ def render(serial):
                 data = json.loads(line)
                 results[data["scenario"]] = data
     check_renders(results)
-    release = adb("shell", "getprop", "ro.build.version.release").strip()
-    emulator = adb("shell", "getprop", "ro.kernel.qemu").strip() == "1"
-    device = "emulator" if emulator else adb("shell", "getprop", "ro.product.model").strip()
-    return results, f"{device}, Android {release}", emulator
+    return results
+
+
+def device_throughput(adb):
+    """Measures the throughput on the device after install and after compiling the app with the speed filter, and
+    leaves the app compiled as after install."""
+    # The app makes the directory of the workloads first, as a run that measures nothing: files that adb pushes into
+    # a directory that adb made, which belongs to the shell, are not visible to the app.
+    run_throughput(adb, "none")
+    adb("push", os.path.join(WORKLOADS, "."), DEVICE_WORKLOADS + "/")
+    results = {"jit": run_throughput(adb)}
+    adb("shell", "cmd", "package", "compile", "-m", "speed", "-f", PACKAGE)
+    results["speed"] = run_throughput(adb)
+    adb("shell", "cmd", "package", "compile", "--reset", PACKAGE)
+    for compilation, rates in results.items():
+        check_throughput(compilation, rates)
+    return results
+
+
+def run_throughput(adb, workload=None):
+    """Runs ThroughputBenchmark, of only the given workload if any, and returns MB/s by workload."""
+    adb("logcat", "-c")
+    adb("shell", "am", "start", "-S", "-W", "-n", f"{PACKAGE}/.MainActivity", "--ez", "throughput", "true",
+        *(["--es", "workload", workload] if workload else []))
+    deadline = time.time() + 120
+    while time.time() < deadline:
+        time.sleep(2)
+        rates = parse_throughput(adb("logcat", "-d", "-s", "VtfxThroughput:I", "-v", "raw"))
+        if rates is not None:
+            return rates
+    sys.exit("ThroughputBenchmark did not finish")
+
+
+def parse_throughput(log):
+    """Returns MB/s by workload from the log of ThroughputBenchmark, or None if it has not finished."""
+    rates = {}
+    for line in log.splitlines():
+        if not line.startswith("{"):
+            continue
+        data = json.loads(line)
+        if data.get("done"):
+            return rates
+        rates[data["workload"]] = float(data["mbps"])
+    return None
+
+
+def check_throughput(compilation, rates):
+    """Fails unless ThroughputBenchmark measured every workload: without the workloads on the device, it measures
+    none."""
+    missing = [name for name in THROUGHPUT_TARGETS if name not in rates]
+    if missing:
+        sys.exit(f"ThroughputBenchmark ({compilation}) reported no result for {', '.join(missing)}")
 
 
 def check_renders(results):
@@ -134,7 +204,7 @@ def main():
 
     vtfx = vtfx_throughput()
     xterm = xterm_throughput(args.node) if args.node else {}
-    renders, device, emulator = ({}, None, False) if args.skip_emulator else render(args.serial)
+    renders, throughputs, device_name, emulator = ({}, {}, None, False) if args.skip_emulator else device(args.serial)
 
     commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip()
     cpu = re.search(r"model name\s*:\s*(.*)", open("/proc/cpuinfo").read())
@@ -165,7 +235,7 @@ def main():
         lines.append(f"| {name} | {mib:.1f} | ≤ {SCROLLBACK_TYPICAL_TARGET:.0f} | {mark(mib <= SCROLLBACK_TYPICAL_TARGET)} |")
     worst = float(vtfx["worst"][1])
     lines.append(f"| worst (every cell a different color) | {worst:.1f} | ≤ {SCROLLBACK_WORST_TARGET:.0f} | {mark(worst <= SCROLLBACK_WORST_TARGET)} |")
-    lines += ["", f"## Rendering ({device or '-'}, updates equivalent to 120 × 50 every 16 ms)", ""]
+    lines += ["", f"## Rendering ({device_name or '-'}, updates equivalent to 120 × 50 every 16 ms)", ""]
     if renders:
         lines += ["| Scene | UI thread drawing p50 (ms) | Whole frame p50 / p90 (ms) | Target (drawing p50) | Result |", "|---|---|---|---|---|"]
         for scenario, target in DRAW_TARGETS.items():
@@ -205,6 +275,22 @@ def main():
             f"| Throughput / without a display | {throughput:.0%} | ≥ {FLOOD_THROUGHPUT_TARGET:.0%} | "
             f"{mark(throughput >= FLOOD_THROUGHPUT_TARGET)} |",
         ]
+    else:
+        lines.append("Not measured.")
+    lines += ["", f"## Throughput on the device ({device_name or '-'}, 120 × 40, writes of 4 KiB)", ""]
+    if throughputs:
+        lines += [
+            "The workloads of the JVM's throughput, fed to a session in the sample app's benchmark build. There are no",
+            "targets on devices (docs/decisions/0089).",
+            "",
+            "| Load | " + " | ".join(f"{label} (MB/s)" for label in COMPILATIONS.values()) + " | JVM on this machine (MB/s) |",
+            "|---|" + "---|" * len(COMPILATIONS) + "---|",
+        ]
+        for name in THROUGHPUT_TARGETS:
+            rates = " | ".join(f"{throughputs[compilation][name]:.1f}" for compilation in COMPILATIONS)
+            lines.append(f"| {name} | {rates} | {float(vtfx[name][0]):.1f} |")
+        if emulator:
+            lines += ["", "The emulator runs on this machine's CPU, so it does not show the throughput of devices."]
     else:
         lines.append("Not measured.")
     path = os.path.join(ROOT, "build", "reports", "performance.md")

@@ -18,13 +18,14 @@ adb -s SERIAL install -r vtfx-sample/build/outputs/apk/debug/vtfx-sample-debug.a
 
 The sample app is a terminal connected to a fake host (a small shell that echoes input). `help` lists the commands. The extra key bar (Esc, Tab, Ctrl, Alt, arrows, Direct, Find) is shown only while the software keyboard is shown.
 
-The extras that can be passed at startup are as follows. The activity is exported and any app could pass them, so only a debuggable build takes `logHostInput`, and only a debuggable build or the benchmark build (section 5) takes `benchmark` ([decisions/0089](decisions/0089-performance.md)).
+The extras that can be passed at startup are as follows. The activity is exported and any app could pass them, so only a debuggable build takes `logHostInput`, and only a debuggable build or the benchmark build (section 5) takes `benchmark` and `throughput` ([decisions/0089](decisions/0089-performance.md)).
 
 | extra | Meaning |
 |---|---|
 | `--ez logHostInput true` | Writes the bytes sent to the host to logcat (tag `VtfxSampleHost`) in hex on every send |
 | `--es locale ja` | The locale for Han glyphs (`TerminalStyle.locale`) |
 | `--ez benchmark true` | Runs the rendering benchmark |
+| `--ez throughput true` | Runs the throughput benchmark (section 17); `--es workload NAME` measures only that workload, and `--es seconds N` measures each for N seconds instead of 3 |
 
 Watch the bytes that reached the host in another terminal as follows. One line is one send.
 
@@ -346,3 +347,38 @@ What to tell us: the Gboard version, the device and Android version, and each ro
 | 13: IMEs on API 29 to 33 | Agents (`scripts/e2e_ime.py --serial`); the keys of more Gboard versions remain to be found | — |
 | 14: searching | Agents | — |
 | 15: restarts of the IME | Agents, with a virtual keyboard (`scripts/device_checks.py` for 15.2) | Whether the restart when Ctrl is armed feels disruptive (15.3) |
+| 17: throughput | Agents | — |
+
+## 17. Throughput
+
+Topic 4 of [decisions/0089](decisions/0089-performance.md). The sample app's `ThroughputBenchmark` feeds the workloads of the JVM's `TerminalBenchmark` (section 1 of 0089) to a session that no display shows, in writes of 4 KiB into 120 × 40, and logs MB/s of each. The workloads are files that the JVM writes and adb pushes to the device, so that the device measures the same bytes. `scripts/benchmark.py --serial SERIAL` runs it after the rendering scenes of section 5, once after installing the app, when ART interprets it and compiles hot code with its JIT, and once after compiling the whole app ahead of time with the `speed` filter, and writes both to `build/reports/performance.md`. By hand, with the benchmark build installed as in section 5:
+
+```bash
+./gradlew :vtfx-core:benchmarkWorkloads
+```
+
+The app makes the directory of the workloads on a first run, which measures nothing: it cannot see files that adb pushes into a directory that adb made, which belongs to the shell.
+
+```bash
+adb -s SERIAL shell am start -S -W -n com.google.vtfx.sample/.MainActivity --ez throughput true --es workload none
+```
+
+```bash
+adb -s SERIAL push vtfx-core/build/benchmark-workloads/. /sdcard/Android/data/com.google.vtfx.sample/files/workloads/
+```
+
+```bash
+adb -s SERIAL logcat -c
+```
+
+```bash
+adb -s SERIAL shell am start -S -W -n com.google.vtfx.sample/.MainActivity --ez throughput true
+```
+
+After about 20 seconds, one line of JSON per workload, and `{"done":true}` at the end, appear in the following.
+
+```bash
+adb -s SERIAL logcat -d -s VtfxThroughput:I -v raw
+```
+
+To compare with code compiled ahead of time, run `adb -s SERIAL shell cmd package compile -m speed -f com.google.vtfx.sample` and start it again; `cmd package compile --reset com.google.vtfx.sample` returns to the state after install. To profile, measure one workload for longer (`--es workload ascii --es seconds 30`) and record the app meanwhile with `adb -s SERIAL shell simpleperf record --app com.google.vtfx.sample --duration 10 -o /data/local/tmp/perf.data`, which the benchmark build allows since it is profileable by the shell; `simpleperf report -i /data/local/tmp/perf.data --comms vtfx-benchmark- --sort symbol` on the device lists the hot methods of the benchmark's thread.

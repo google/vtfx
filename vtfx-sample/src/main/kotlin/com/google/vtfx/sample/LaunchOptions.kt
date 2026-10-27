@@ -24,6 +24,12 @@ internal class LaunchOptions(
     val logHostInput: Boolean,
     /** Whether to run [RenderBenchmark]. */
     val benchmark: Boolean,
+    /** Whether to run [ThroughputBenchmark]. */
+    val throughput: Boolean,
+    /** The only workload that [ThroughputBenchmark] measures, or null for all of them. */
+    val workload: String?,
+    /** How many seconds [ThroughputBenchmark] measures each workload for. */
+    val seconds: Double,
     /** A language tag for the locale of Han glyphs, such as "ja", or null. */
     val locale: String?,
 ) {
@@ -34,14 +40,26 @@ internal class LaunchOptions(
         /** A boolean extra that turns on [benchmark]. */
         const val EXTRA_BENCHMARK = "benchmark"
 
+        /** A boolean extra that turns on [throughput]. */
+        const val EXTRA_THROUGHPUT = "throughput"
+
+        /** A string extra for [workload]. */
+        const val EXTRA_WORKLOAD = "workload"
+
+        /** A string extra for [seconds], a decimal number. */
+        const val EXTRA_SECONDS = "seconds"
+
         /** A string extra for [locale]. */
         const val EXTRA_LOCALE = "locale"
+
+        /** The default of [seconds], as in `TerminalBenchmark` of vtfx-core. */
+        const val DEFAULT_SECONDS = 3.0
 
         /**
          * Reads the extras with [booleanExtra] and [stringExtra]. The activity is exported, so any
          * app can start it with them: only a [debuggable] build takes the one that logs what the
          * user types, and only a debuggable build or one [profileable] by the shell, as the
-         * benchmark build is, takes the one that runs the benchmark (docs/decisions/0089).
+         * benchmark build is, takes the ones that run the benchmarks (docs/decisions/0089).
          */
         fun read(
             debuggable: Boolean,
@@ -52,6 +70,11 @@ internal class LaunchOptions(
             LaunchOptions(
                 logHostInput = debuggable && booleanExtra(EXTRA_LOG_HOST_INPUT),
                 benchmark = (debuggable || profileable) && booleanExtra(EXTRA_BENCHMARK),
+                throughput = (debuggable || profileable) && booleanExtra(EXTRA_THROUGHPUT),
+                workload = stringExtra(EXTRA_WORKLOAD),
+                seconds =
+                    stringExtra(EXTRA_SECONDS)?.toDoubleOrNull()?.takeIf { it > 0 }
+                        ?: DEFAULT_SECONDS,
                 locale = stringExtra(EXTRA_LOCALE),
             )
     }

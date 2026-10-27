@@ -59,6 +59,7 @@ import com.google.vtfx.core.LinkPattern
 import com.google.vtfx.font.gate.SanitizedFamily
 import com.google.vtfx.gate.OpenUrlResult
 import com.google.vtfx.session.TerminalSession
+import java.io.File
 
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalLayoutApi::class)
@@ -76,6 +77,10 @@ class MainActivity : ComponentActivity() {
         if (options.logHostInput) viewModel.logHostInput = true
         if (options.benchmark && savedInstanceState == null) {
             RenderBenchmark(this, viewModel.session).start()
+        }
+        if (options.throughput && savedInstanceState == null) {
+            val directory = File(getExternalFilesDir(null), ThroughputBenchmark.DIRECTORY)
+            ThroughputBenchmark(directory, options.workload, options.seconds).start()
         }
         // The locale of Han glyphs, such as "ja", for checking them on a device in another
         // language.
