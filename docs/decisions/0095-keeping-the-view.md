@@ -1,6 +1,6 @@
 # Keeping the view of a terminal across leaving the composition
 
-- Status: Provisional
+- Status: Approved
 - Date: 2026-10-27
 - Related: Requirement 5.5, section 5 of [compose-input.md](../design/compose-input.md), section 4 of [session-and-threads.md](../design/session-and-threads.md), [usage.md](../usage.md), [0084](0084-session-and-threads.md), [0085](0085-compose-interaction.md)
 
