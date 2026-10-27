@@ -10,7 +10,6 @@ Until decided, the provisional decision is implemented. The impact of reversing 
 
 | Item | What to decide | Related |
 |---|---|---|
-| Differential testing against alacritty_terminal | Approve or revise the provisional decision on the standalone `alacritty_terminal` 0.26.0 differential runner outside `scripts/check.sh`, its inputs, and the triage workflow (agents write provisional decisions; only a human sets status to Approved) | [0094](decisions/0094-differential-testing.md), section 15 of [testing.md](design/testing.md), `017ed5b8987cade26f48e5882ae9aceedef37cd7` |
 
 ## 2. Work only humans can do
 

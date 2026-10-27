@@ -1,6 +1,6 @@
 # Differential testing against alacritty_terminal
 
-- Status: Provisional
+- Status: Approved
 - Date: 2026-10-27
 - Related: Requirements 5.1, 6.1, and 7.2, section 6 of [architecture.md](../design/architecture.md), section 11 of [emulation.md](../design/emulation.md), sections 1, 2, 10, and 15 of [testing.md](../design/testing.md), [review-queue.md](../review-queue.md), [0079](0079-emulation-scope.md), [0080](0080-kitty-graphics.md), [0081](0081-resource-limits.md), [0084](0084-session-and-threads.md), [0088](0088-build-boundaries-and-tests.md), `scripts/alacritty_diff.py`, `tools/alacritty-diff`, `spec-proposals/core/differential.vtspec`
 
