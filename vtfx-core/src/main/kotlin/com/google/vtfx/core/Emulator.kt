@@ -794,14 +794,17 @@ internal class Emulator(
         val erased = style.erased()
         when (mode) {
             0 -> {
+                pendingWrap = false
                 screen[cursorY].erase(cursorX, columns, erased)
                 for (row in cursorY + 1 until rows) screen[row].clear(erased)
             }
             1 -> {
+                pendingWrap = false
                 for (row in 0 until cursorY) screen[row].clear(erased)
                 screen[cursorY].erase(0, cursorX + 1, erased)
             }
             2 -> {
+                pendingWrap = false
                 // Clearing the screen clears its images too, so that `clear` works, as the
                 // protocol says (docs/decisions/0080).
                 graphics.deleteVisible(layer, rows)
@@ -815,9 +818,18 @@ internal class Emulator(
         val erased = style.erased()
         val line = screen[cursorY]
         when (mode) {
-            0 -> line.erase(cursorX, columns, erased)
-            1 -> line.erase(0, cursorX + 1, erased)
-            2 -> line.erase(0, columns, erased)
+            0 -> {
+                pendingWrap = false
+                line.erase(cursorX, columns, erased)
+            }
+            1 -> {
+                pendingWrap = false
+                line.erase(0, cursorX + 1, erased)
+            }
+            2 -> {
+                pendingWrap = false
+                line.erase(0, columns, erased)
+            }
         }
     }
 

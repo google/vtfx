@@ -1196,6 +1196,39 @@ class TerminalTest {
     }
 
     @Test
+    fun erasingInLineOrDisplayCancelsPendingWrap() {
+        for (sequence in
+            listOf(
+                "\u001b[K",
+                "\u001b[1K",
+                "\u001b[2K",
+                "\u001b[?K",
+                "\u001b[?1K",
+                "\u001b[?2K",
+                "\u001b[J",
+                "\u001b[1J",
+                "\u001b[2J",
+                "\u001b[?J",
+                "\u001b[?1J",
+                "\u001b[?2J",
+            )) {
+            val t = terminal(4, 2)
+            t.write("abcd${sequence}Z")
+            assertEquals('Z', t.lines()[0][3], sequence.replace("\u001b", "ESC"))
+            assertEquals("    ", t.lines()[1], sequence.replace("\u001b", "ESC"))
+            assertEquals(CursorState(3, 0), t.cursor, sequence.replace("\u001b", "ESC"))
+        }
+        // ED 3 clears only the scrollback, and unrecognized parameters do nothing, so a pending
+        // wrap remains.
+        for (sequence in listOf("\u001b[3J", "\u001b[4J", "\u001b[3K")) {
+            val t = terminal(4, 2)
+            t.write("abcd${sequence}Z")
+            assertEquals(listOf("abcd", "Z   "), t.lines(), sequence.replace("\u001b", "ESC"))
+            assertEquals(CursorState(1, 1), t.cursor, sequence.replace("\u001b", "ESC"))
+        }
+    }
+
+    @Test
     fun invalidUtf8IsDisplayedAsReplacementCharacter() {
         val t = terminal(3, 1)
         t.write(byteArrayOf(0x61, 0xFF.toByte(), 0x62))
