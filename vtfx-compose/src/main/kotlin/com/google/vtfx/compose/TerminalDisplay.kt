@@ -356,6 +356,42 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
         if (result != searchResult) searchResult = result
     }
 
+    /**
+     * Returns what the display shows, for a display that takes its place: the line at its top, and
+     * the search (docs/decisions/0095).
+     */
+    fun view(): SavedView {
+        val snapshot = displaySnapshot()
+        return SavedView(
+            sessionKey(session),
+            snapshot.generation,
+            topLine = if (scrollOffset == 0) null else snapshot.firstLine,
+            searchIndex?.query,
+            currentMatch,
+        )
+    }
+
+    /**
+     * Shows what [view] says another display showed: the same lines and current match, if the
+     * session is the same and its lines were not numbered again since, or else the bottom, and the
+     * same search. Lines that left the scrollback since give way to the oldest one kept, as when
+     * the display follows the scrollback.
+     */
+    fun restore(view: SavedView) {
+        val lines = session.searchLines(Long.MAX_VALUE, 1)
+        val same = view.sessionKey == sessionKey(session) && view.generation == lines.generation
+        val top = view.topLine
+        scrollOffset =
+            if (!same || top == null) 0
+            else
+                (lines.screenLine - maxOf(top, lines.oldestLine))
+                    .coerceIn(0L, session.scrollbackSize.toLong())
+                    .toInt()
+        // The match that the search keeps if it still matches.
+        currentMatch = if (same) view.currentMatch else null
+        search(view.query)
+    }
+
     /** Called after the user typed or edited. The display returns to the bottom. */
     fun notifyEditorChanged() {
         editorVersion++

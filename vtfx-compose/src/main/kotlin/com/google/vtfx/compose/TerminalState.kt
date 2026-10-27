@@ -23,10 +23,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.google.vtfx.core.InternalVtfxApi
+import com.google.vtfx.core.SearchMatch
 import com.google.vtfx.core.SearchQuery
+import com.google.vtfx.session.TerminalSession
+import java.util.UUID
+import java.util.WeakHashMap
 
 // See docs/decisions/0085.
 /**
@@ -37,8 +42,17 @@ import com.google.vtfx.core.SearchQuery
  * The state acts on the [Terminal] it is passed to while that is in the composition. Before and
  * after, there is nothing to act on: [hasSelection] is false, [searchResult] is null, and the
  * functions do nothing. If it is passed to two terminals at once, it acts on the one that entered
- * the composition last; when that one leaves, it acts on none until a terminal enters again. The
- * selection and the search belong to the terminal, and go when it leaves the composition.
+ * the composition last; when that one leaves, it acts on none until a terminal enters again.
+ *
+ * When the terminal it acts on leaves the composition, as when the user switches to another tab or
+ * screen, the state keeps the search and the lines of the scrollback the terminal showed, and gives
+ * them to the next terminal it is passed to: a terminal coming back shows the same lines, and the
+ * same search with the same current match, as long as its session is the same and its lines were
+ * not numbered again since (by resizing, clearing the scrollback, or switching between the main and
+ * the alternate screen); otherwise it shows the bottom, and searches the new lines for the same
+ * text. [rememberTerminalState] also saves them with the instance state, so that they survive a
+ * configuration change and a `SaveableStateHolder`, as navigation keeps the screens in the back
+ * stack. The selection is not kept.
  *
  * The selection stays on the text the user selected as output and scrolling move it, and the
  * terminal drops it when that text changes, on typing, and on resizing. The search stays too, and
@@ -51,6 +65,12 @@ import com.google.vtfx.core.SearchQuery
 public class TerminalState {
     /** The display of the terminal that this state acts on, or null. */
     private var display: TerminalDisplay? by mutableStateOf(null)
+
+    /**
+     * What the last display that this state acted on showed when it left the composition, for the
+     * next one that enters, or null. Null while a display is attached, which holds the view then.
+     */
+    private var savedView: SavedView? = null
 
     /**
      * Whether the user selected text in the terminal. A snapshot state: composables that read it
@@ -135,16 +155,117 @@ public class TerminalState {
         display?.search(null)
     }
 
-    /** Starts acting on [display], the display of a terminal that entered the composition. */
+    /**
+     * Starts acting on [display], the display of a terminal that entered the composition, and gives
+     * it the view that the last display left, if any.
+     */
     internal fun attach(display: TerminalDisplay) {
+        val view = savedView
+        if (view != null) {
+            savedView = null
+            display.restore(view)
+        }
         this.display = display
     }
 
-    /** Stops acting on [display], if it still acts on it. */
+    /** Stops acting on [display], if it still acts on it, and keeps what it shows. */
     internal fun detach(display: TerminalDisplay) {
-        if (this.display === display) this.display = null
+        if (this.display !== display) return
+        savedView = display.view()
+        this.display = null
+    }
+
+    /** What the attached display shows, or what the last one left, or null. */
+    internal fun view(): SavedView? {
+        val display = display
+        return if (display != null) display.view() else savedView
+    }
+
+    internal companion object {
+        /** Saves the view in the instance state ([SavedView.toSaveable]). */
+        val Saver: Saver<TerminalState, Any> =
+            Saver(
+                save = { state -> state.view()?.toSaveable() },
+                restore = { saved ->
+                    TerminalState().apply { savedView = SavedView.fromSaveable(saved) }
+                },
+            )
     }
 }
 
-/** Creates a [TerminalState] and remembers it across recompositions. */
-@Composable public fun rememberTerminalState(): TerminalState = remember { TerminalState() }
+/**
+ * Creates a [TerminalState] and remembers it across recompositions, and, with the instance state,
+ * across configuration changes and while its place in the composition is kept by a
+ * `SaveableStateHolder`, as when navigation keeps the screens in the back stack.
+ */
+@Composable
+public fun rememberTerminalState(): TerminalState =
+    rememberSaveable(saver = TerminalState.Saver) { TerminalState() }
+
+/**
+ * What a display showed, for the display that takes its place (docs/decisions/0095).
+ *
+ * @property sessionKey The key of the session that the display showed ([sessionKey]).
+ * @property generation The generation of the line numbers of [topLine] and [currentMatch].
+ * @property topLine The number of the line at the top of the display, or null if the display
+ *   followed the output at the bottom.
+ * @property query The text that the display searched for, or null.
+ * @property currentMatch The current match of the search, or null.
+ */
+internal class SavedView(
+    val sessionKey: String,
+    val generation: Long,
+    val topLine: Long?,
+    val query: SearchQuery?,
+    val currentMatch: SearchMatch?,
+) {
+    /** Returns this as values that a `Bundle` can hold, for [fromSaveable]. */
+    fun toSaveable(): ArrayList<Any?> =
+        arrayListOf(
+            sessionKey,
+            generation,
+            topLine,
+            query?.text,
+            query?.ignoreCase,
+            currentMatch?.firstLine,
+            currentMatch?.startColumn,
+            currentMatch?.lastLine,
+            currentMatch?.endColumn,
+        )
+
+    companion object {
+        /** Returns the view that [toSaveable] returned [saved] for. */
+        fun fromSaveable(saved: Any): SavedView {
+            val values = saved as List<*>
+            val text = values[3] as String?
+            val firstLine = values[5] as Long?
+            return SavedView(
+                sessionKey = values[0] as String,
+                generation = values[1] as Long,
+                topLine = values[2] as Long?,
+                query = if (text == null) null else SearchQuery(text, values[4] as Boolean),
+                currentMatch =
+                    if (firstLine == null) null
+                    else
+                        SearchMatch(
+                            firstLine,
+                            values[6] as Int,
+                            values[7] as Long,
+                            values[8] as Int,
+                        ),
+            )
+        }
+    }
+}
+
+/**
+ * The key of each session that a display has shown, for telling whether a saved view is of the same
+ * session. Random, so that a view saved before the process was killed does not match the new
+ * session of the same app; weak, so that the sessions can go. Used on the main thread.
+ */
+private val sessionKeys = WeakHashMap<TerminalSession, String>()
+
+/** The key of [session] in the views of its displays. */
+@MainThread
+internal fun sessionKey(session: TerminalSession): String =
+    sessionKeys.getOrPut(session) { UUID.randomUUID().toString() }

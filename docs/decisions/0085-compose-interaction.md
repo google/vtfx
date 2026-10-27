@@ -183,7 +183,7 @@ See section 11 of [compose-input.md](../design/compose-input.md).
 
 The app has the search field; the terminal finds the matches, highlights them, and scrolls to them ([0087](0087-public-api.md)). See section 13 of [compose-input.md](../design/compose-input.md) for this topic and topics 15 and 16.
 
-1. The state of a search belongs to the display, as the selection does: `TerminalDisplay` holds it, and `TerminalState` (topic 5) is the app's handle on it.
+1. The state of a search belongs to the display, as the selection does: `TerminalDisplay` holds it, and `TerminalState` (topic 5) is the app's handle on it, which keeps the query while the display is out of the composition ([0095](0095-keeping-the-view.md)).
 2. `TerminalColors` takes `searchMatch` and `searchCurrentMatch`, required like `selection`.
 
 **Why.** Two `Terminal`s showing one session search apart, and a session without a UI has no search. Moving to the next match is an event, like Select all, so the API is calls on the state rather than a parameter of `Terminal`. Before 1.0, parameters may be added without keeping the previous signature ([0087](0087-public-api.md)).

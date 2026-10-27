@@ -92,13 +92,14 @@ DropdownMenuItem(
 - `selectAll()` selects the scrollback and the screen (only the screen on the alternate screen). Copying it copies at most the newest 10,000 lines, cut to 256 Ki characters, so that the system clipboard can take it.
 - `clearSelection()` drops the selection.
 - Use the state on the main thread, with one `Terminal` at a time. While it is not passed to a `Terminal` in the composition, it has no selection and its functions do nothing.
+- When the `Terminal` leaves the composition, as when the user switches to another tab or screen, the state keeps the lines of the scrollback it showed and the search, and the `Terminal` shows them again when it comes back with the same state. `rememberTerminalState()` saves them with the instance state, so a `SaveableStateHolder` (Navigation's back stack, tabs) and a configuration change keep them; give each tab its own state. After resizing, which reflows the lines, or with another session, the `Terminal` shows the bottom. The selection is not kept.
 
 ### Search
 
 The app provides the search field; the terminal finds, highlights, and scrolls to the matches through the same `TerminalState` (section 13 of [compose-input.md](design/compose-input.md)).
 
 ```kotlin
-var query by remember { mutableStateOf("") }
+var query by rememberSaveable { mutableStateOf("") } // The state keeps its search too.
 TextField(
     value = query,
     onValueChange = {
@@ -117,7 +118,7 @@ IconButton(onClick = { state.findNext() }) { /* Down */ }
 
 - The search starts from the bottom and keeps the current match while the text still matches it. `findPrevious()` moves up and `findNext()` down, going round at the ends; each scrolls the terminal to the current match.
 - The text is matched as it is (no regular expressions), within a line, through the rows that autowrap joins. Concealed text is not matched, and only the newest 1,000 matches are kept.
-- The search follows the output and stays until `clearSearch()` or empty text, or until the `Terminal` leaves the composition. `searchResult` is Compose state.
+- The search follows the output and stays until `clearSearch()` or empty text. `searchResult` is Compose state.
 - The highlight colors are `TerminalColors.searchMatch` and `searchCurrentMatch`.
 - Keys such as Ctrl+Shift+F, Enter, and Shift+Enter are the app's: handle them with `onPreImeKeyEvent` and the search field.
 

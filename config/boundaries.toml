@@ -317,6 +317,9 @@ classes = [
     "androidx/compose/ui/text/font/GenericFontFamily",
     "androidx/compose/ui/viewinterop/AndroidView_androidKt",
     "java/lang/Runnable",
+    # The random key that names a session in a display's saved view (docs/decisions/0095).
+    "java/util/UUID",
+    "java/util/WeakHashMap",
     "java/util/concurrent/atomic/AtomicBoolean",
     "java/util/function/Predicate",
     "kotlinx/coroutines/CoroutineScope",
@@ -330,6 +333,7 @@ packages = [
     "androidx/compose/foundation/layout",
     "androidx/compose/runtime",
     "androidx/compose/runtime/internal",
+    "androidx/compose/runtime/saveable",
     "androidx/compose/ui",
     "androidx/compose/ui/draw",
     "androidx/compose/ui/geometry",
