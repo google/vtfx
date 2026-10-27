@@ -337,8 +337,9 @@ class ParserTest {
         val bytes = "0123456789;:"
         repeat(2000) { iteration ->
             val parameters = buildString {
-                repeat(random.nextInt(80)) {
-                    // Long runs of digits too, which reach the clamp.
+                // Up to 160 bytes, a third of them separators: often more parameters than Params
+                // keeps, and long runs of digits too, which reach the clamp.
+                repeat(random.nextInt(160)) {
                     append(
                         if (random.nextInt(3) == 0) bytes[10 + random.nextInt(2)]
                         else bytes[random.nextInt(10)]
