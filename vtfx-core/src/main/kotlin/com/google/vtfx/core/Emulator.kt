@@ -197,12 +197,9 @@ internal class Emulator(
         if (width == 2 && columns < 2) return
         if (pendingWrap && autowrap) wrap()
         if (width == 2 && cursorX == columns - 1) {
-            if (autowrap) {
-                screen[cursorY].erase(cursorX, columns, style.erased())
-                wrap()
-            } else {
-                cursorX = columns - 2
-            }
+            if (!autowrap) return
+            screen[cursorY].erase(cursorX, columns, style.erased())
+            wrap()
         }
         val line = screen[cursorY]
         if (insert) line.insertBlanks(cursorX, width, style.erased())
@@ -248,7 +245,8 @@ internal class Emulator(
             if (pendingWrap && autowrap) wrap()
             val run = minOf(left, (columns - cursorX) / width)
             if (run == 0) {
-                // A wide character at the last column, which print moves or wraps.
+                if (!autowrap) return
+                // A wide character at the last column, which print wraps.
                 print(lastPrinted)
                 left--
                 continue

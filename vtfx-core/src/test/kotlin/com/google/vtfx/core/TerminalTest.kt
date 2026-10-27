@@ -1229,6 +1229,24 @@ class TerminalTest {
     }
 
     @Test
+    fun wideCharacterAtRightMarginWithAutowrapOffIsDropped() {
+        val t = terminal(5, 2)
+        t.write("\u001b[?7labcde漢")
+        assertEquals(listOf("abcde", "     "), t.lines())
+        assertEquals(CursorState(4, 0), t.cursor)
+        // Re-enabling autowrap must not wrap without another character filling the last column.
+        t.write("\u001b[?7hZ")
+        assertEquals(listOf("abcdZ", "     "), t.lines())
+        assertEquals(CursorState(4, 0), t.cursor)
+
+        // Also in insert mode and with REP.
+        val ins = terminal(5, 2)
+        ins.write("\u001b[?7l\u001b[4hあ\u001b[1;5H\u001b[3b")
+        assertEquals(listOf("あ   ", "     "), ins.lines())
+        assertEquals(CursorState(4, 0), ins.cursor)
+    }
+
+    @Test
     fun invalidUtf8IsDisplayedAsReplacementCharacter() {
         val t = terminal(3, 1)
         t.write(byteArrayOf(0x61, 0xFF.toByte(), 0x62))
