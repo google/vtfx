@@ -458,7 +458,8 @@ class TerminalSessionTest {
         // Alt+BS, which readline takes as deleting the word "bar".
         assertEquals("foo bar\u001b\u007f", sent.toString())
         assertEquals("", session.edit { it.text })
-        assertEquals(1, restarts)
+        // The IME never saw the app's text, and the key typed nothing, so it is not restarted.
+        assertEquals(0, restarts)
         // An IME correction of the text it saw before is then outside the history.
         assertFalse(session.edit { it.replaceText(4, 6, "baz") })
         assertEquals("foo bar\u001b\u007f", sent.toString())

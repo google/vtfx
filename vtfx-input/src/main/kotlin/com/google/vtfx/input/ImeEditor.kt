@@ -379,7 +379,10 @@ public class ImeEditor(
         val key = asKey(stroke)
         val hadComposingText = composing.isNotEmpty()
         commitComposingText()
-        changedSinceRestart = true
+        // A key changes the edit buffer only through the composing text it commits or the
+        // character it types, which mark the change themselves. A key with nothing typed, such as
+        // an arrow key that moves around in a program, does not restart the IME: Gboard hides and
+        // shows its toolbar for physical keyboards on every restart (section 5.2).
         if (
             key is KeyStroke.Character &&
                 !key.modifiers.ctrl &&

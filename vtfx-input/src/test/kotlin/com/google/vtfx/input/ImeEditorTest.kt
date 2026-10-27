@@ -350,6 +350,35 @@ class ImeEditorTest {
     }
 
     @Test
+    fun keysWithNothingTypedDoNotRestartTheIme() {
+        // Restarting makes Gboard hide and show its toolbar for physical keyboards, so moving
+        // around with the arrow keys made it flicker on every press.
+        val alt = KeyModifiers.of(alt = true)
+        editor.onKeyDown(KeyStroke.Special(TerminalKey.Up))
+        editor.onKeyDown(KeyStroke.Special(TerminalKey.Left))
+        editor.onKeyDown(KeyStroke.Special(TerminalKey.Escape))
+        editor.onKeyDown(KeyStroke.Special(TerminalKey.Enter))
+        editor.onKeyDown(KeyStroke.Special(TerminalKey.Backspace))
+        editor.onKeyDown(characterKey('f'.code, alt))
+        assertEquals(0, restarts)
+        assertEquals(6, sent.size)
+    }
+
+    @Test
+    fun theFirstKeyAfterTypingRestartsTheImeOnce() {
+        editor.commitText("ab")
+        editor.onKeyDown(KeyStroke.Special(TerminalKey.Left))
+        assertEquals(1, restarts)
+        editor.onKeyDown(KeyStroke.Special(TerminalKey.Left))
+        editor.onKeyDown(KeyStroke.Special(TerminalKey.Right))
+        assertEquals(1, restarts)
+        // A character key types into the history, so the next key restarts again.
+        editor.onKeyDown(characterKey('c'.code))
+        editor.onKeyDown(KeyStroke.Special(TerminalKey.Up))
+        assertEquals(2, restarts)
+    }
+
+    @Test
     fun aRestartRequestRestartsTheImeEvenIfNothingChangedSinceTheLastRestart() {
         editor.requestRestart()
         assertEquals(1, restarts)
@@ -770,7 +799,8 @@ class ImeEditorTest {
         editor.onKeyDown(left)
         editor.onKeyDown(ctrlC)
         assertEquals(listOf<HostInput>(text("あ"), HostInput.Key(left), HostInput.Key(ctrlC)), sent)
-        assertEquals(2, restarts)
+        // Ctrl+C typed nothing after the restart of Left, so the IME is not restarted again.
+        assertEquals(1, restarts)
     }
 
     @Test
