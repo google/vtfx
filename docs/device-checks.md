@@ -191,6 +191,8 @@ Section 3 of [compose-input.md](design/compose-input.md). Only Compose's injecte
 
 What to tell us: the device, the Android version, the mouse or touchpad, and each row's result. If the right button acts as Back, or the pointer does not change, tell us too.
 
+The drag of 7.3 was run on a Pixel 9 (Android 15) on 2026-10-27, with a virtual USB mouse made with the `hid` shell command that moved a few pixels every 20 ms for 3 seconds: the selection followed the pointer over four rows. Before `3bed452827a78e9bf046198b74b6725a801b93c3`, the same drag selected a single cell and stopped, because a fine mouse reports several moves within a cell. The other rows were not run.
+
 ## 8. Images
 
 Section 9 of [emulation.md](design/emulation.md). Images of the kitty graphics protocol were checked on the JVM, with recordings of real programs and screenshot tests, and drawn on the emulator by the rendering e2e (section 8 of [testing.md](design/testing.md)), whose `DeviceLimitsTest` also drew the largest image on a Pixel XL (Android 10). Real programs were not run on a device. The sample app has no SSH, so it can only replay recordings; checking real programs needs an app that embeds vtfx and connects over SSH to a host with `kitten icat`, timg, and yazi.
