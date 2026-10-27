@@ -136,9 +136,14 @@ internal class Line(columns: Int, style: CellStyle = CellStyle.Default) {
         link: Int = 0,
         underlineColor: Int = 0,
     ) {
-        val erased = style.erased()
-        breakWide(column, erased)
-        if (width == 2) breakWide(column + 1, erased)
+        val end = column + width
+        // Only a wide character across either edge of the cells written keeps a half outside them;
+        // one inside them is overwritten whole.
+        if (codes[column] == WIDE_TAIL || (end < codes.size && codes[end] == WIDE_TAIL)) {
+            val erased = style.erased()
+            breakWide(column, erased)
+            if (width == 2) breakWide(column + 1, erased)
+        }
         codes[column] = codePoint
         styles[column] = style.bits
         clusters?.set(column, null)

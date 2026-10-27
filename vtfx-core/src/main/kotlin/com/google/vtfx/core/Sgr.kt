@@ -26,10 +26,11 @@ import com.google.vtfx.core.parser.Params
 internal data class Rendition(val style: CellStyle, val underlineColor: TerminalColor) {
     /**
      * The underline color written to cells, as [TerminalColor.bits]: 0 (the default) unless the
-     * style underlines, so that a color left set after the underline ends takes no memory.
+     * style underlines, so that a color left set after the underline ends takes no memory. Computed
+     * once, since every character printed reads it.
      */
-    val cellUnderlineColor: Int
-        get() = if (style.underline == UnderlineStyle.None) 0 else underlineColor.bits
+    val cellUnderlineColor: Int =
+        if (style.underline == UnderlineStyle.None) 0 else underlineColor.bits
 
     companion object {
         val Default = Rendition(CellStyle.Default, TerminalColor.Default)
