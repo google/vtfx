@@ -161,6 +161,13 @@ internal constructor(
      * @suppress
      */
     @InternalVtfxApi public val firstLine: Long,
+    /**
+     * The generation of the line numbers, as [SearchLines.generation]: [firstLine] names the same
+     * line as a number from a snapshot or a read of the same generation.
+     *
+     * @suppress
+     */
+    @InternalVtfxApi public val generation: Long,
     internal val lines: List<LineSnapshot>,
     /**
      * The rows above the display that autowrap joins to its first line, at most [rows] of them,

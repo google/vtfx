@@ -23,6 +23,7 @@ import java.time.Duration
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 import org.junit.Test
 
@@ -402,6 +403,46 @@ class SearchTest {
         val snapshot = terminal.snapshot(scrollOffset = 1)
 
         assertEquals(index.matches[1].firstLine, snapshot.firstLine)
+    }
+
+    @Test
+    fun aSnapshotHasTheGenerationOfTheSearchLines() {
+        val terminal = terminal(20, 2, "line 1\r\nline 2\r\nline 3")
+        terminal.write("\u001b[3J")
+
+        val snapshot = terminal.snapshot()
+
+        assertEquals(terminal.searchLines(0, 1).generation, snapshot.generation)
+    }
+
+    @Test
+    fun clearingTheScrollbackChangesTheGenerationOfASnapshot() {
+        val terminal = terminal(20, 2, "line 1\r\nline 2\r\nline 3")
+        val before = terminal.snapshot().generation
+
+        terminal.write("\u001b[3J")
+
+        assertNotEquals(before, terminal.snapshot().generation)
+    }
+
+    @Test
+    fun resizingChangesTheGenerationOfASnapshot() {
+        val terminal = terminal(20, 2, "line 1")
+        val before = terminal.snapshot().generation
+
+        terminal.resize(20, 3)
+
+        assertNotEquals(before, terminal.snapshot().generation)
+    }
+
+    @Test
+    fun switchingToTheAlternateScreenChangesTheGenerationOfASnapshot() {
+        val terminal = terminal(20, 2, "line 1")
+        val before = terminal.snapshot().generation
+
+        terminal.write("\u001b[?1049h")
+
+        assertNotEquals(before, terminal.snapshot().generation)
     }
 
     @Test

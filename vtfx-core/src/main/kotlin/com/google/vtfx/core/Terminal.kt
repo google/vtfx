@@ -158,7 +158,6 @@ public class Terminal(
      */
     public fun searchLines(from: Long, minLines: Int): SearchLines {
         require(minLines > 0) { "minLines must be positive: $minLines" }
-        val alternate = emulator.isAlternateScreen
         val screen = emulator.screen
         val screenLine = emulator.scrollback.pushes
         val oldestLine = screenLine - visibleScrollbackSize()
@@ -178,8 +177,7 @@ public class Terminal(
         val isComplete = line == screenLine
         if (isComplete) for (row in 0 until screen.rows) lines += lineSnapshot(screen[row].copy())
         return SearchLines(
-            // Switching the screen numbers the lines again too.
-            generation = emulator.scrollback.generation * 2 + if (alternate) 1 else 0,
+            generation = lineGeneration(),
             firstLine = firstLine,
             lines = lines,
             oldestLine = oldestLine,
@@ -235,6 +233,7 @@ public class Terminal(
             isAlternateScreen = emulator.isAlternateScreen,
             scrollOffset = offset,
             firstLine = emulator.scrollback.pushes - offset,
+            generation = lineGeneration(),
             lines = lines,
             linesAbove = linesAbove.toList(),
             linesBelow = linesBelow,
@@ -352,6 +351,11 @@ public class Terminal(
     /** The number of lines of the scrollback shown: none on the alternate screen. */
     private fun visibleScrollbackSize(): Int =
         if (emulator.isAlternateScreen) 0 else emulator.scrollback.size
+
+    /** The generation of the line numbers, as [SearchLines.generation] describes. */
+    private fun lineGeneration(): Long =
+        // Switching the screen numbers the lines again too.
+        emulator.scrollback.generation * 2 + if (emulator.isAlternateScreen) 1 else 0
 
     /**
      * Returns a copy of line [index] among the [scrollbackSize] lines of the scrollback shown,
