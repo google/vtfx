@@ -19,6 +19,7 @@ The scope of work and the instructions given by the user take precedence.
 - [docs/design/boundaries.md](docs/design/boundaries.md): how the build checks the module boundaries in `config/boundaries.toml`
 - [docs/decisions/README.md](docs/decisions/README.md): records of design decisions. Read only the README up front; the design documents say what the current design is. Open a decision itself only when you need the reasons behind the design or are about to make or change a decision.
 - [docs/review-queue.md](docs/review-queue.md): items waiting for a human
+- [docs/todo.md](docs/todo.md): work for agents that has been decided on but not started
 - [docs/reviews/README.md](docs/reviews/README.md): the procedure of the code review feedback loop, and the list of open bug reports
 
 Write documents, code, comments, and commit messages in English.
@@ -34,7 +35,7 @@ This rule applies only to what is written into the repository. Conversations wit
 
 ## Development process
 
-- **How to start work**: Before starting, read review-queue.md and the open reports in the [list of bug reports](docs/reviews/README.md). Fix bugs and update reports according to section 3 of [docs/reviews/README.md](docs/reviews/README.md).
+- **How to start work**: Before starting, read review-queue.md, todo.md, and the open reports in the [list of bug reports](docs/reviews/README.md). Fix bugs and update reports according to section 3 of [docs/reviews/README.md](docs/reviews/README.md). Remove an item of todo.md in the commit that finishes it.
 - **Code review**: When asked for a review, follow section 2 of [docs/reviews/README.md](docs/reviews/README.md) and write a report with reproduction tests. Do not change product code.
 - **Decisions**: Decide design choices not written in the documents provisionally by yourself. Record decisions in [docs/decisions/](docs/decisions/README.md) and refer to them from the related commits. Do not stop work to defer a decision. A decision records why it holds now: when it changes, rewrite it or replace it and delete the old one, since the history keeps the past versions ([docs/decisions/0091](docs/decisions/0091-security-review-and-process.md)).
 - **Things only humans can do**: When you run into licensing, publishing, judgments that checks on real devices leave to a human, approval of goldens or oracles, and so on, record them in [docs/review-queue.md](docs/review-queue.md) and continue with other work. Run the checks on real devices yourself, on devices that you reach over adb ([docs/decisions/0092](docs/decisions/0092-device-checks-by-agents.md)).
