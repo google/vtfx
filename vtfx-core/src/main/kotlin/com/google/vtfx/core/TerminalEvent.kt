@@ -146,10 +146,11 @@ public sealed interface TerminalQuery {
     public data class CellPixelSize(val height: Int, val width: Int) : TerminalQuery
 
     /**
-     * OSC 10, 11, 12, or 4 with "?": the color of [target]. The colors are the display's, not the
-     * model's.
+     * OSC 10, 11, 12, or 4 with "?": the color of [target]. [hostColor] is the color the host set
+     * for it ([HostColors]), 0xRRGGBB, when the query came; if null, the color is the display's.
      */
-    @InternalVtfxApi public data class Color(val target: ColorTarget) : TerminalQuery
+    @InternalVtfxApi
+    public data class Color(val target: ColorTarget, val hostColor: Int?) : TerminalQuery
 
     /**
      * The reply to a kitty graphics command (docs/decisions/0080): the [imageId] (or the id given
@@ -210,7 +211,7 @@ public enum class ModeState(
 }
 
 /**
- * The color asked by OSC 10, 11, 12, or 4.
+ * A color that OSC 10, 11, 12, or 4 asks for or sets.
  *
  * @suppress
  */

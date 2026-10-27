@@ -71,6 +71,15 @@ public class Terminal(
         get() = emulator.isAlternateScreen
 
     /**
+     * The colors that the host set (OSC 4, 10, 11, 12).
+     *
+     * @suppress
+     */
+    @InternalVtfxApi
+    public val hostColors: HostColors
+        get() = emulator.hostColors
+
+    /**
      * The number of times the cursor went to another line: to a row that autowrap does not join
      * with its own, onto a line that scrolling brought to its row (a line feed or a reverse index
      * at a margin, SU, SD, IL, DL, or the cursor moving after an image), or onto a line of the
@@ -230,6 +239,7 @@ public class Terminal(
             rows = emulator.rows,
             cursor = cursor,
             modes = emulator.modes,
+            hostColors = emulator.hostColors,
             isAlternateScreen = emulator.isAlternateScreen,
             scrollOffset = offset,
             firstLine = emulator.scrollback.pushes - offset,

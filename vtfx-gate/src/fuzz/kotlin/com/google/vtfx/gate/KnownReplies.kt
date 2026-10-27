@@ -18,7 +18,8 @@ package com.google.vtfx.gate
 
 /**
  * Every reply the gate can make with the default policy and without [ReportedColors], with numbers
- * only where the terminal state supplies them. Host text is never part of a reply.
+ * only where the terminal state supplies them, such as the colors that the host set. Host text is
+ * never part of a reply.
  */
 internal object KnownReplies {
     val pattern: Regex =
@@ -36,6 +37,8 @@ internal object KnownReplies {
                     """\u001bP>\|vtfx\(0\.1\)\u001b\\""",
                     """\u001b\[\?[0145]u""",
                     """\u001b\[8;\d{1,4};\d{1,4}t""",
+                    // Colors that the host set: numbers that the host chose, as 0xRRGGBB.
+                    """\u001b\](?:1[0-2]|4;\d{1,3});rgb:[0-9a-f]{4}/[0-9a-f]{4}/[0-9a-f]{4}\u001b\\""",
                     // Pixel sizes, only once a display gave the size of a cell.
                     """\u001b\[[46];\d{1,7};\d{1,7}t""",
                     // Kitty graphics: the numbers of the command and a fixed status.

@@ -164,7 +164,7 @@ Hardware keys go to the focused terminal. `TerminalInputView` passes the keys th
 
 `TerminalStyle.padding: PaddingValues`, zero by default ([decisions/0085](../decisions/0085-compose-interaction.md)).
 
-- The padding is drawn in the grid's default background color, swapped with the foreground in reverse video (DECSCNM), as the renderer swaps the grid's.
+- The padding is drawn in the grid's default background color, the host's if it set one (OSC 11, section 12 of [emulation.md](emulation.md)), swapped with the foreground in reverse video (DECSCNM), as the renderer swaps the grid's.
 - The grid's `Canvas`, the `TerminalInputView` for the IME, and the rows for accessibility are all inset by `Modifier.padding`. Their coordinates stay the grid's, so the touch gestures, the long-press menu's anchor, and the `CursorAnchorInfo` need no offset. The columns and rows are counted from the inset size, and the default size adds the padding.
 - `Modifier.padding` follows the layout direction, so `start` is on the right in right-to-left layouts. The default size and the tap detector of the padding round the padding to pixels as `Modifier.padding` does.
 - A tap in the padding focuses the terminal and shows the keyboard, as a tap on the grid does; long presses and drags in the padding do nothing. The mouse acts over the padding as over the grid (section 3), at the nearest cell.

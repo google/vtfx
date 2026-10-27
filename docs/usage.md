@@ -249,7 +249,7 @@ assertEquals("ls\r", sent.toString())
 - There are no timers and no thread assumptions, so tests can be written synchronously. Listeners are also called within the call.
 - There is no display, so change the size with `resize(columns, rows)`. `onResize` is called on the first `resize`, even if the size is unchanged, and then when the size, or the size of a cell in pixels, changes. To answer the host's queries for pixel sizes and to size images without a size in cells, also give the size of a cell in pixels (`resize(columns, rows, cellWidth, cellHeight)`); see the KDoc of `resize`.
 - Lines that scrolled off the screen can be read with `session.snapshot(scrollOffset)`. The number of lines that can be scrolled back is `session.scrollbackSize` (0 on the alternate screen).
-- Color queries (OSC 10, 11, 12, 4) are not answered. Once `Terminal` displays the session, they are answered with its colors.
+- Color queries (OSC 10, 11, 12, 4) are answered only for the colors that the host set. Once `Terminal` displays the session, the others are answered with its colors.
 - Send keys and text with `sendKey`, `sendText`, and `paste`.
 
 ## 9. Related documents

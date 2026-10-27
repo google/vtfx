@@ -245,6 +245,25 @@ class TerminalScreenshotTest {
     }
 
     /**
+     * Colors that the host set (docs/decisions/0096): a dark blue background, in the padding too,
+     * light yellow text, an orange focused cursor, color 1 (red) as green, for text and for a
+     * background, and color 208 as blue.
+     */
+    @Test
+    fun hostColors() {
+        show(
+            TerminalStyle(padding = PaddingValues(8.dp)),
+            output =
+                "\u001b]10;#ffffcc;#000040;#ff8000\u0007\u001b]4;1;rgb:00/c0/00;208;#0000ff\u0007" +
+                    "host \u001b[31mred\u001b[0m \u001b[38;5;208m208\u001b[0m " +
+                    "\u001b[41m \u001b[0m\r\n$ ",
+        )
+        composeRule.onRoot().performClick()
+        composeRule.waitForIdle()
+        composeRule.onRoot().captureRoboImage()
+    }
+
+    /**
      * The base64 of an image of 64 by 64 pixels for the tests of images, RGBA: four quarters, red,
      * green, blue, and translucent white, the first three each a checkerboard of squares of 8
      * pixels in its color and a darker one. Its edges are sharp, so that the screenshots show how

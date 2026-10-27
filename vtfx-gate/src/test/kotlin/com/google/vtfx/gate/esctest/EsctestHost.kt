@@ -52,7 +52,9 @@ object EsctestHost {
                 ColorTarget.Foreground -> 0x000000
                 ColorTarget.Background -> 0xFFFFFF
                 ColorTarget.Cursor -> 0x000000
-                is ColorTarget.Palette -> null
+                // Any color, as a display reports one, which the tests of OSC 104 and 105 read
+                // before they set a color and expect again after they reset it.
+                is ColorTarget.Palette -> 0x808080
             }
         }
         val gate = TerminalGate(writer, colors = colors)

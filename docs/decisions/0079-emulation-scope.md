@@ -1,12 +1,12 @@
 # The scope of terminal emulation
 
-- Status: Approved
+- Status: Provisional
 - Date: 2026-10-25
-- Related: Requirements 4.2, 5.1, 5.2, 5.4, 6.1, 6.2, 6.5, and section 8 of [REQUIREMENTS.md](../REQUIREMENTS.md), sections 1 to 8 and 9.7 of [emulation.md](../design/emulation.md), sections 2 to 4 of [compose-input.md](../design/compose-input.md), section 3 of [gate-policy.md](../design/gate-policy.md), [fonts.md](../design/fonts.md), [conformance-references.md](../research/conformance-references.md), [terminal-comparison-2026-10.md](../research/terminal-comparison-2026-10.md), [0081](0081-resource-limits.md), [0083](0083-gate.md), [0089](0089-performance.md), [0088](0088-build-boundaries-and-tests.md), [0085](0085-compose-interaction.md), [0080](0080-kitty-graphics.md)
+- Related: Requirements 4.2, 5.1, 5.2, 5.4, 6.1, 6.2, 6.5, and section 8 of [REQUIREMENTS.md](../REQUIREMENTS.md), sections 1 to 8 and 9.7 of [emulation.md](../design/emulation.md), sections 2 to 4 of [compose-input.md](../design/compose-input.md), section 3 of [gate-policy.md](../design/gate-policy.md), [fonts.md](../design/fonts.md), [conformance-references.md](../research/conformance-references.md), [terminal-comparison-2026-10.md](../research/terminal-comparison-2026-10.md), [0081](0081-resource-limits.md), [0083](0083-gate.md), [0089](0089-performance.md), [0088](0088-build-boundaries-and-tests.md), [0085](0085-compose-interaction.md), [0080](0080-kitty-graphics.md), [0096](0096-host-colors.md)
 
 ## Background
 
-Requirement 5.1 asks for the range of supported escape sequences and modes to be documented, and for deviations from the references to be recorded; requirement 5.2 asks for a policy on fullwidth and Ambiguous characters, grapheme clusters, and the Unicode version. Host output is untrusted (requirement 6.1). Apps on the host choose what to send from the terminfo that `TERM` names, and count widths with libc's `wcwidth()`; where vtfx and the host disagree, cursor positions shift and the screen breaks. alacritty_terminal, the terminal library of Alacritty, has features that vtfx lacks; topics 3 and 8 say which of them vtfx takes, apart from those left out for reasons of their own: setting colors from the host (topic 3), searching with regular expressions ([0085](0085-compose-interaction.md)), and creating PTYs (section 4.2 of [REQUIREMENTS.md](../REQUIREMENTS.md)).
+Requirement 5.1 asks for the range of supported escape sequences and modes to be documented, and for deviations from the references to be recorded; requirement 5.2 asks for a policy on fullwidth and Ambiguous characters, grapheme clusters, and the Unicode version. Host output is untrusted (requirement 6.1). Apps on the host choose what to send from the terminfo that `TERM` names, and count widths with libc's `wcwidth()`; where vtfx and the host disagree, cursor positions shift and the screen breaks. alacritty_terminal, the terminal library of Alacritty, has features that vtfx lacks; topics 3 and 8 say which of them vtfx takes, apart from setting colors from the host, which [0096](0096-host-colors.md) takes, and those left out for reasons of their own: searching with regular expressions ([0085](0085-compose-interaction.md)), and creating PTYs (section 4.2 of [REQUIREMENTS.md](../REQUIREMENTS.md)).
 
 ## 1. References
 
@@ -44,7 +44,6 @@ Support the features in section 3 of [emulation.md](../design/emulation.md), and
 | Reports of the title and icon name (XTWINOPS 20, 21) | Reports become a command injection path (section 3 of [gate-policy.md](../design/gate-policy.md)). |
 | Icon name (OSC 1), a title stack index (the third parameter of XTWINOPS 22, 23) | Android screens have no icon name. The index is an xterm extension that major apps do not use. |
 | Checksums of the screen contents (DECRQCRA) | They become a path for leaking the contents. esctest does not need them enabled: its harness computes them in the test code. |
-| Setting colors (setting OSC 4, 10, 11, 12; 104, 110–112) | Colors are decided by the app's style. Queries are answered. |
 | Protection attribute for selective erase (DECSCA) | Major apps do not use it. |
 | Printing (MC), sounds other than the bell | Outside the scope of terminal emulation. |
 | Image protocols other than kitty's, such as sixel | Out of scope (section 4.2 of [REQUIREMENTS.md](../REQUIREMENTS.md)); why the kitty graphics protocol was taken rather than sixel is in [0080](0080-kitty-graphics.md). |
@@ -128,7 +127,7 @@ The resulting behavior is in section 8 of [emulation.md](../design/emulation.md)
 **Why.**
 1. The 64 bits of `CellStyle` are full: 26 bits for each of the two colors, 3 for the underline style, and 8 flags leave one bit, while a color takes 26. The side array costs 4 bytes per cell, only in lines that use the color; the scrollback's budget ([0081](0081-resource-limits.md)) counts it, so the worst case stays within the budget, and such lines keep fewer lines, as lines with hyperlinks do. Output without SGR 58 pays one null check per written cell, and nothing in the comparison of lines without arrays, so the speed of plain text ([0089](0089-performance.md)) is unaffected beyond that check. Storing the color only while the rendition underlines means that a color left set after the underline ends (common, since `SGR 24` does not reset it) takes no memory, and a cell does not carry a color it does not show.
 2. Apps that underline a whole row (vim's `cursorline`, status lines) show it to the end, and runs of different styles line up.
-3. The text under a block cursor was always drawn in the default background color, which an app could not change. Setting colors with OSC 10 to 12 remains unsupported (topic 3).
+3. The text under a block cursor was always drawn in the default background color, which an app could not change. The host sets the cursor color with OSC 12, but not the color of the text under it ([0096](0096-host-colors.md)).
 
 **Alternatives considered.**
 - **Pack the underline color into `CellStyle`**: no room. Widening `CellStyle` to two `Long`s would double the style memory of every cell, against the targets of [0089](0089-performance.md), for a feature most output does not use.

@@ -73,10 +73,10 @@ The code of a character key is `KeyStroke.Character.unshiftedCodePoint`, the cha
 | DECRQSS `m`, `r`, ` q` | `DCS 1 $ r ... ST` with the values of the setting from the terminal state; `DCS 0 $ r ST` for any other setting |
 | XTWINOPS 18 | `CSI 8 ; rows ; columns t` |
 | XTWINOPS 14, 16 | `CSI 4 ; height ; width t`, `CSI 6 ; height ; width t` in pixels, only once the display has given the size of a cell |
-| OSC 10, 11, 12, 4 queries | `OSC n ; rgb:rrrr/gggg/bbbb ST` from the colors the display reports (`ReportedColors`); not answered without them |
+| OSC 10, 11, 12, 4 queries | `OSC n ; rgb:rrrr/gggg/bbbb ST` with the color the host set, which the query carries (`TerminalQuery.Color.hostColor`, section 12 of [emulation.md](emulation.md)), or else the color the display reports (`ReportedColors`); not answered without either |
 | kitty graphics commands | `APC G` with the numbers of the command and a fixed status string ([decisions/0080](../decisions/0080-kitty-graphics.md)) |
 
-Every number in a reply is checked against its range before the reply is built (positions up to `TerminalLimits.MAX_DIMENSION`, sizes in pixels up to that times `ProtocolLimits.MAX_CELL_SIZE`, palette indexes 0 to 255, checked before `ReportedColors` is asked, graphics ids and numbers up to `ProtocolLimits.MAX_GRAPHICS_NUMBER`, with an image id or number in every graphics reply); a number out of range is a programming error.
+Every number in a reply is checked against its range before the reply is built (positions up to `TerminalLimits.MAX_DIMENSION`, sizes in pixels up to that times `ProtocolLimits.MAX_CELL_SIZE`, palette indexes 0 to 255, checked before `ReportedColors` is asked, colors the host set up to `0xFFFFFF`, graphics ids and numbers up to `ProtocolLimits.MAX_GRAPHICS_NUMBER`, with an image id or number in every graphics reply); a number out of range is a programming error.
 
 The following queries are not answered (the model does not emit `ReplyRequested`):
 

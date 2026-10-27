@@ -52,6 +52,7 @@ The lower bound of the supported scope is the features of the terminfo entry `xt
 | Cursor shape | DECSCUSR (0–6) | `EmulationCoverageTest`, screenshots |
 | Queries | DA1, DECID, DA2, DSR 5, DSR 6, DECXCPR, DECRQM (ANSI and DEC modes), DECRQSS (`m`, `r`, ` q`), XTVERSION, the flags of the kitty keyboard protocol (`CSI ? u`), XTWINOPS 14 (with 0 or 2) and 16 (sizes in pixels, section 9), XTWINOPS 18, `?` of OSC 4, 10, 11, and 12 | `EmulationCoverageTest`, `GraphicsTest`, the gate's `RepliesAndMouseTest`, `AttackTest` |
 | OSC | 0, 2 (title), 8 (hyperlinks), 52 (clipboard; the policy is in section 4.1 of [gate-policy.md](gate-policy.md)) | `EmulationCoverageTest`, `AttackTest` |
+| Colors | Setting the indexed colors (OSC 4), the default foreground and background (OSC 10, 11), and the cursor color (OSC 12), and resetting them (OSC 104, 110–112), section 12 | `EmulationCoverageTest.HostColorSettings`, `LineCacheTest`, the gate's `RepliesAndMouseTest` |
 | Images | The kitty graphics protocol (APC `G`), section 9 | `GraphicsTest`, `GraphicsRecordingTest`, `ResourceExhaustionTest`, the gate's `RepliesAndMouseTest` and `AttackTest`, screenshots |
 | Title stack | 0 and 2 of XTWINOPS 22 (save) and 23 (restore). Only titles are pushed. The limit on the depth is in section 10 | `EmulationCoverageTest.SavedTitles` |
 | Mouse | Tracking (9, 1000, 1002, 1003) and encodings (default, 1005, 1006, 1015). The gate assembles the reports (`HostWriter.sendMouse`); touch and pointer input are mapped to them as in [decisions/0085](../decisions/0085-compose-interaction.md) | `RepliesAndMouseTest` |
@@ -69,7 +70,7 @@ The replies to queries are built by `vtfx-gate` from the state, never from the r
 | Reports of the title and icon name (XTWINOPS 20, 21) | Not answered |
 | Icon name (OSC 1), a title stack index (the third parameter of XTWINOPS 22, 23), and 1 of XTWINOPS 22, 23 (icon name only) | Ignored; requests with a third parameter are ignored as a whole |
 | Checksums of the screen contents (DECRQCRA) | Not answered. The esctest harness computes them in the test code (section 11 of [testing.md](testing.md)) |
-| Setting colors (setting OSC 4, 10, 11, 12; OSC 104, 110–112) | Ignored. The colors come from the app's style; queries are answered |
+| Other colors of xterm (OSC 5, 13–19, 105–119: special, mouse pointer, Tektronix, and highlight colors), X11 color names | Ignored (section 12) |
 | Protection attribute for selective erase (DECSCA) | Ignored. DECSED and DECSEL are normal erases |
 | Drawing blinking characters (SGR 5, 6) | The model keeps the attribute, but the display does not blink the text. The cursor blinks when the host asks for it (DECSCUSR, mode 12; [decisions/0085](../decisions/0085-compose-interaction.md)) |
 | Printing (MC), sounds other than the bell, image protocols other than kitty's, such as sixel | Ignored |
@@ -92,6 +93,7 @@ The reasons for each are in [decisions/0079](../decisions/0079-emulation-scope.m
 | OSC, DCS, and APC beyond the string limit | Not specified | The whole string is dropped | [decisions/0081](../decisions/0081-resource-limits.md) |
 | 1 of XTWINOPS 22, 23 (icon name only) | Pushes an entry with only the icon name. Pop takes the top entry and fills missing values from the entries below | Does nothing, as in VTE. 0 and 2 push only the title. With usage like vim's, which saves and restores the title and the icon name separately, the resulting title is the same as in xterm | [decisions/0079](../decisions/0079-emulation-scope.md) |
 | DECSCUSR 0 | Blinking block (ctlseqs) | Returns to the app's default (`TerminalStyle.cursorShape`, `cursorBlinking`), as in VTE, kitty, and Windows Terminal. RIS does the same. The app's default is shown until the host sets DECSCUSR 1–6 or mode 12 | [decisions/0079](../decisions/0079-emulation-scope.md) |
+| OSC 4 pairs with an index out of range or a color that does not parse | xterm stops at the pair | The pair is skipped and the rest apply | [decisions/0096](../decisions/0096-host-colors.md) |
 | Window title (OSC 0, 2) | Passed as sent | Cut to 1024 UTF-16 units, without C0 and C1 controls, DEL, U+2028, U+2029, and the bidirectional formatting characters, so that an app can show it outside the terminal | [decisions/0081](../decisions/0081-resource-limits.md) |
 
 The deviations of the syntax are in section 2.
@@ -119,7 +121,8 @@ The support for the features of `xterm-256color` (Debian, ncurses 6.5) is as fol
 | `E3` (erasing the scrollback) | Supported |
 | `flash` (toggling DECSCNM) | Supported |
 | `smglr`, `smglp`, `smgrp`, `mgc` (left and right margins) | Not supported (section 4) |
-| `initc`, `oc`, `Cs`, `Cr` (setting colors) | Not supported; ignored (section 4) |
+| `initc`, `oc` (setting and resetting the palette) | Supported (section 12) |
+| `Cs`, `Cr` (setting and resetting the cursor color) | Supported (section 12) |
 | `smm`, `rmm` (meta key, 1034) | Ignored. Alt is sent as an ESC prefix |
 | `mc0`, `mc4`, `mc5` (printing) | Not supported; ignored |
 
@@ -174,7 +177,7 @@ The underline color, the drawing of underlines and overlines, and the cursor's t
 
 - `TerminalColors.cursorText` is the color of the text, and its decorations, under a focused block cursor. The default `Color.Unspecified` takes the default background color.
 - In reverse video (DECSCNM) it is ignored: the cursor takes the default foreground and the text the default background.
-- The host cannot set it (section 4); OSC 12 queries report `cursor`.
+- The host cannot set it (section 12); OSC 12 sets `cursor`, and its queries report it.
 
 ## 9. Images: the kitty graphics protocol
 
@@ -293,3 +296,15 @@ Host output is untrusted (requirement 6.1). The policy and the reasons for each 
 - esctest2 runs against vtfx for reports, not as a gate (section 11 of [testing.md](testing.md)). The reasons for failing cases are in `tools/esctest/reasons.toml`.
 - Differential testing against `alacritty_terminal` runs for reports, not as a gate (section 15 of [testing.md](testing.md)). The reasons for differing cases are in `tools/alacritty-diff/reasons.toml`.
 - The output of real programs is recorded and replayed (section 10 of [testing.md](testing.md)).
+
+## 12. Colors set by the host
+
+The host may set colors that the display draws in place of those of the app's `TerminalStyle`. The reasons are in [decisions/0096](../decisions/0096-host-colors.md).
+
+- OSC 4 takes pairs of an index (0 to 255) and a color or `?`. OSC 10, 11, and 12 take colors or `?` separated by `;`, for the default foreground, background, and cursor color from their own on, as in xterm: `OSC 10 ; fg ; bg ST` sets both. An empty field skips a color, and colors past the cursor's are ignored.
+- A color is `rgb:R/G/B`, with 1 to 4 hexadecimal digits for each component, scaled to its range (`rgb:f/80/abc` is `#ff80ab`), or `#RGB`, `#RRGGBB`, `#RRRGGGBBB`, or `#RRRRGGGGBBBB`, whose digits are the high bits of each component (`#abc` is `#a0b0c0`), as XParseColor reads them. The prefix `rgb:` and the digits are read in either case. Colors are kept with 8 bits per component. Any other color, including X11 color names, is ignored, and a pair of OSC 4 with one is skipped.
+- A query (`?`) reports the color the host set before it, in the same OSC too, or else the display's (section 3 of [gate-policy.md](gate-policy.md)).
+- OSC 104 resets the indexed colors listed, separated by `;`, up to the first item that is not a number; without a list, every indexed color. OSC 110, 111, and 112 reset the default foreground, background, and cursor color, ignoring their arguments.
+- DECSTR and RIS reset the indexed colors, but not the default and cursor colors, as xterm's reset does.
+- The core keeps the colors in `HostColors` (`@InternalVtfxApi`), which `TerminalSnapshot.hostColors` and `TerminalSession.hostColors()` expose. The display draws the cells and the padding with them (`DisplayColors` in `vtfx-compose`): the indexed colors, the default colors, which reverse video (DECSCNM) swaps as it swaps the style's, and the cursor. The selection, the search matches, and the text under the cursor (section 8.3) keep the style's colors.
+- The state is a fixed 259 colors. A change makes the display draw every line again, as a change of the size or of reverse video does.

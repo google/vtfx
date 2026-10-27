@@ -20,6 +20,7 @@ package com.google.vtfx.session
 
 import com.google.vtfx.core.AmbiguousWidth
 import com.google.vtfx.core.CursorShape
+import com.google.vtfx.core.HostColors
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.KeyModifiers
 import com.google.vtfx.core.KeyStroke
@@ -196,8 +197,8 @@ public class TerminalSession(
     @InternalVtfxApi public val ambiguousWidth: AmbiguousWidth = ambiguousWidth
 
     /**
-     * The colors of the display, which replies to color queries report, or null to not answer them.
-     * Set by a display.
+     * The colors of the display, which replies to color queries report for the colors that the host
+     * did not set, or null to not answer those. Set by a display.
      *
      * @suppress
      */
@@ -817,6 +818,13 @@ public class TerminalSession(
      * @suppress
      */
     @InternalVtfxApi public fun modes(): TerminalModes = lock.withLock { terminal.modes }
+
+    /**
+     * Returns the colors that the host set (OSC 4, 10, 11, 12).
+     *
+     * @suppress
+     */
+    @InternalVtfxApi public fun hostColors(): HostColors = lock.withLock { terminal.hostColors }
 
     /**
      * Returns whether the alternate screen is shown.

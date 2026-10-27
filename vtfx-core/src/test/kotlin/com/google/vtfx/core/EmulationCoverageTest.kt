@@ -215,11 +215,11 @@ class EmulationCoverageTest {
             )
             assertEquals(
                 listOf(
-                    TerminalQuery.Color(ColorTarget.Foreground),
-                    TerminalQuery.Color(ColorTarget.Background),
-                    TerminalQuery.Color(ColorTarget.Cursor),
-                    TerminalQuery.Color(ColorTarget.Palette(1)),
-                    TerminalQuery.Color(ColorTarget.Palette(2)),
+                    TerminalQuery.Color(ColorTarget.Foreground, hostColor = null),
+                    TerminalQuery.Color(ColorTarget.Background, hostColor = null),
+                    TerminalQuery.Color(ColorTarget.Cursor, hostColor = null),
+                    TerminalQuery.Color(ColorTarget.Palette(1), hostColor = null),
+                    TerminalQuery.Color(ColorTarget.Palette(2), hostColor = null),
                 ),
                 replies(),
             )
@@ -682,6 +682,181 @@ class EmulationCoverageTest {
                 ),
                 titles(),
             )
+        }
+    }
+
+    /** Colors that the host sets (OSC 4, 10, 11, 12, 104, 110 to 112; docs/decisions/0096). */
+    class HostColorSettings : EventRecorder by TerminalEvents() {
+        private fun Terminal.hostColor(target: ColorTarget) = snapshot().hostColors.rgb(target)
+
+        @Test
+        fun osc4SetsIndexedColors() {
+            val t = terminal()
+
+            t.write("\u001b]4;1;#102030;200;rgb:40/50/60\u0007")
+
+            assertEquals(0x102030, t.hostColor(ColorTarget.Palette(1)))
+            assertEquals(0x405060, t.hostColor(ColorTarget.Palette(200)))
+        }
+
+        @Test
+        fun rgbComponentsAreScaledToTheirNumberOfDigits() {
+            val t = terminal()
+
+            t.write("\u001b]4;1;rgb:f/80/abc\u0007\u001b]4;2;RGB:1234/0/fff\u0007")
+
+            assertEquals(0xFF80AB, t.hostColor(ColorTarget.Palette(1)))
+            assertEquals(0x1200FF, t.hostColor(ColorTarget.Palette(2)))
+        }
+
+        @Test
+        fun rgbComponentsOfFourHighDigitsDoNotOverflow() {
+            // Found by esctest: the scaling of ffff overflowed an Int and threw.
+            val t = terminal()
+
+            t.write("\u001b]4;1;rgb:ffff/8000/abcd\u0007")
+
+            assertEquals(0xFF80AB, t.hostColor(ColorTarget.Palette(1)))
+        }
+
+        @Test
+        fun sharpComponentsAreTheHighBits() {
+            val t = terminal()
+
+            t.write("\u001b]4;1;#abc;2;#123456789abc;3;#fedcba987\u0007")
+
+            assertEquals(0xA0B0C0, t.hostColor(ColorTarget.Palette(1)))
+            assertEquals(0x12569A, t.hostColor(ColorTarget.Palette(2)))
+            assertEquals(0xFECB98, t.hostColor(ColorTarget.Palette(3)))
+        }
+
+        @Test
+        fun colorNamesAndMalformedColorsAreIgnored() {
+            val t = terminal()
+
+            t.write(
+                "\u001b]4;1;red;2;rgb:1/2;3;rgb:12345/0/0;4;#12345;5;#ggg;6;rgbi:1/1/1\u0007" +
+                    "\u001b]10;SlateGray\u0007"
+            )
+
+            assertEquals(HostColors.None, t.snapshot().hostColors)
+        }
+
+        @Test
+        fun osc4SkipsPairsWithAnIndexOutOfRange() {
+            val t = terminal()
+
+            t.write("\u001b]4;256;#ffffff;x;#ffffff;-1;#ffffff;7;#010203;9\u0007")
+
+            assertEquals(0x010203, t.hostColor(ColorTarget.Palette(7)))
+            assertNull(t.hostColor(ColorTarget.Palette(9)))
+        }
+
+        @Test
+        fun osc10SetsTheDynamicColorsInTurnAndSkipsEmptyFields() {
+            val t = terminal()
+
+            t.write("\u001b]10;#111111;;#333333;#444444\u0007")
+
+            assertEquals(0x111111, t.hostColor(ColorTarget.Foreground))
+            assertNull(t.hostColor(ColorTarget.Background))
+            assertEquals(0x333333, t.hostColor(ColorTarget.Cursor))
+        }
+
+        @Test
+        fun osc11And12StartAtTheirOwnColor() {
+            val t = terminal()
+
+            t.write("\u001b]11;#222222\u0007\u001b]12;#333333\u0007")
+
+            assertNull(t.hostColor(ColorTarget.Foreground))
+            assertEquals(0x222222, t.hostColor(ColorTarget.Background))
+            assertEquals(0x333333, t.hostColor(ColorTarget.Cursor))
+        }
+
+        @Test
+        fun queriesCarryTheColorThatTheHostSetBeforeThem() {
+            val t = terminal()
+
+            t.write("\u001b]4;1;?;1;#ff0000;1;?\u0007\u001b]10;#00ff00;?\u0007")
+
+            assertEquals(
+                listOf(
+                    TerminalQuery.Color(ColorTarget.Palette(1), hostColor = null),
+                    TerminalQuery.Color(ColorTarget.Palette(1), hostColor = 0xFF0000),
+                    TerminalQuery.Color(ColorTarget.Background, hostColor = null),
+                ),
+                replies(),
+            )
+        }
+
+        @Test
+        fun osc104ResetsTheIndexedColorsListed() {
+            val t = terminal()
+            t.write("\u001b]4;1;#010101;2;#020202;3;#030303\u0007")
+
+            t.write("\u001b]104;1;3\u0007")
+
+            assertNull(t.hostColor(ColorTarget.Palette(1)))
+            assertEquals(0x020202, t.hostColor(ColorTarget.Palette(2)))
+            assertNull(t.hostColor(ColorTarget.Palette(3)))
+        }
+
+        @Test
+        fun osc104StopsAtAnItemThatIsNotANumber() {
+            val t = terminal()
+            t.write("\u001b]4;1;#010101;2;#020202\u0007")
+
+            t.write("\u001b]104;1;x;2\u0007")
+
+            assertNull(t.hostColor(ColorTarget.Palette(1)))
+            assertEquals(0x020202, t.hostColor(ColorTarget.Palette(2)))
+        }
+
+        @Test
+        fun osc104WithoutArgumentsResetsEveryIndexedColor() {
+            val t = terminal()
+            t.write("\u001b]4;1;#010101;255;#020202\u0007\u001b]11;#222222\u0007")
+
+            t.write("\u001b]104\u0007")
+
+            assertNull(t.hostColor(ColorTarget.Palette(1)))
+            assertNull(t.hostColor(ColorTarget.Palette(255)))
+            assertEquals(0x222222, t.hostColor(ColorTarget.Background))
+        }
+
+        @Test
+        fun osc110To112ResetTheirDynamicColor() {
+            val t = terminal()
+            t.write("\u001b]10;#111111;#222222;#333333\u0007")
+
+            t.write("\u001b]110\u0007\u001b]112;ignored\u0007")
+
+            assertNull(t.hostColor(ColorTarget.Foreground))
+            assertEquals(0x222222, t.hostColor(ColorTarget.Background))
+            assertNull(t.hostColor(ColorTarget.Cursor))
+        }
+
+        @Test
+        fun softResetResetsTheIndexedColorsButNotTheDynamicOnes() {
+            val t = terminal()
+            t.write("\u001b]4;1;#010101\u0007\u001b]11;#222222\u0007")
+
+            t.write("\u001b[!p")
+
+            assertNull(t.hostColor(ColorTarget.Palette(1)))
+            assertEquals(0x222222, t.hostColor(ColorTarget.Background))
+        }
+
+        @Test
+        fun fullResetResetsTheIndexedColorsButNotTheDynamicOnes() {
+            val t = terminal()
+            t.write("\u001b]4;1;#010101\u0007\u001b]11;#222222\u0007")
+
+            t.write("\u001bc")
+
+            assertNull(t.hostColor(ColorTarget.Palette(1)))
+            assertEquals(0x222222, t.hostColor(ColorTarget.Background))
         }
     }
 }

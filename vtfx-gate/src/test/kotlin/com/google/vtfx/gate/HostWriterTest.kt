@@ -124,6 +124,14 @@ class HostWriterTest {
     }
 
     @Test
+    fun hostColorOutOfRangeIsAProgrammingError() {
+        assertFailsWith<IllegalArgumentException> {
+            writer.sendReply(TerminalQuery.Color(ColorTarget.Foreground, hostColor = 0x1000000))
+        }
+        assertEquals(emptyList(), sent)
+    }
+
+    @Test
     fun paletteIndexOutOfRangeIsAProgrammingError() {
         // The index is checked before the display is asked for the color: a display that looks it
         // up in its palette must not be given an index beyond it, and the check does not depend on
@@ -135,7 +143,10 @@ class HostWriterTest {
         for (index in listOf(-1, 256)) {
             for (colors in listOf(fromPalette, ReportedColors { null }, null)) {
                 assertFailsWith<IllegalArgumentException>("$index") {
-                    writer.sendReply(TerminalQuery.Color(ColorTarget.Palette(index)), colors)
+                    writer.sendReply(
+                        TerminalQuery.Color(ColorTarget.Palette(index), hostColor = null),
+                        colors,
+                    )
                 }
             }
         }

@@ -286,11 +286,19 @@ internal fun Terminal(
             }
         }
 
-    // The padding takes the grid's default background, which reverse video (DECSCNM) swaps.
+    // The padding takes the grid's default background, which reverse video (DECSCNM) swaps and the
+    // host may set (OSC 10, 11).
     val reverseVideo by
         remember(display) {
             derivedStateOf { display.observeVersion().let { session.modes().reverseVideo } }
         }
+    val hostColors by
+        remember(display) {
+            derivedStateOf { display.observeVersion().let { session.hostColors() } }
+        }
+    // Made again only when the colors change, not on every output.
+    val paddingColors by
+        remember(style.colors) { derivedStateOf { DisplayColors(style.colors, hostColors) } }
     val layoutDirection = LocalLayoutDirection.current
 
     Box(
@@ -300,7 +308,8 @@ internal fun Terminal(
             // beyond the grid; they must not draw over the app's UI around the terminal.
             .clipToBounds()
             .drawBehind {
-                drawRect(if (reverseVideo) style.colors.foreground else style.colors.background)
+                val colors = paddingColors
+                drawRect(if (reverseVideo) colors.foreground else colors.background)
             }
             // Over the padding too, before the touch gestures, which then do not see the mouse.
             .terminalMouse(

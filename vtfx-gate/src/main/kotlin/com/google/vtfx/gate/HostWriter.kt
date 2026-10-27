@@ -113,7 +113,7 @@ public class HostWriter(private val connection: HostConnection) {
 
     /**
      * Sends the reply to [query], built from the terminal state only. Color queries are answered
-     * with [colors], or not at all without them.
+     * with the color the host set, else with [colors], or not at all without them.
      *
      * @suppress
      */

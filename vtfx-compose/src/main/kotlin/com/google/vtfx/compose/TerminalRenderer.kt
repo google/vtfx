@@ -41,6 +41,7 @@ import com.google.vtfx.core.AmbiguousWidth
 import com.google.vtfx.core.CellStyle
 import com.google.vtfx.core.CursorShape
 import com.google.vtfx.core.FoundLink
+import com.google.vtfx.core.HostColors
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.LineSnapshot
 import com.google.vtfx.core.TerminalColor
@@ -147,7 +148,10 @@ internal class TerminalRenderer(
      * The drawing of each line, by content, so that a line that did not change is not drawn again.
      */
     private val lineCache = LineCache(metrics, density)
-    private val colors = style.colors
+    private val styleColors = style.colors
+
+    /** The colors of the last frame, made again when the host changes its colors. */
+    private var colors = DisplayColors(styleColors, HostColors.None)
 
     /** The text of a run, reused across runs, since a frame draws many. */
     private val runText = StringBuilder()
@@ -188,6 +192,9 @@ internal class TerminalRenderer(
         /** False during the off phase of a blinking cursor. */
         cursorOn: Boolean,
     ) {
+        if (snapshot.hostColors != colors.host) {
+            colors = DisplayColors(styleColors, snapshot.hostColors)
+        }
         val reverse = snapshot.modes.reverseVideo
         val defaultForeground = if (reverse) colors.background else colors.foreground
         val defaultBackground = if (reverse) colors.foreground else colors.background
@@ -197,7 +204,7 @@ internal class TerminalRenderer(
         drawImages(snapshot, images, underText = true)
         val nativeCanvas = drawContext.canvas.nativeCanvas
         if (nativeCanvas.isHardwareAccelerated) {
-            lineCache.startFrame(snapshot.columns, reverse)
+            lineCache.startFrame(snapshot.columns, reverse, colors.host)
             for (row in 0 until snapshot.rows) {
                 val line = snapshot.line(row)
                 val node =
@@ -833,14 +840,16 @@ internal class LineCache(private val metrics: CellMetrics, private val density: 
     private var frame = 0
     private var columns = -1
     private var reverse = false
+    private var hostColors = HostColors.None
 
-    fun startFrame(columns: Int, reverse: Boolean) {
+    fun startFrame(columns: Int, reverse: Boolean, hostColors: HostColors) {
         frame++
         // The width and the colors of every line change with these.
-        if (columns != this.columns || reverse != this.reverse) {
+        if (columns != this.columns || reverse != this.reverse || hostColors != this.hostColors) {
             clear()
             this.columns = columns
             this.reverse = reverse
+            this.hostColors = hostColors
         }
     }
 

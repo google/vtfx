@@ -33,10 +33,16 @@ kind = "Unsupported"
 detail = "VT400 and later features that major apps do not use (decisions/0079)."
 
 [[reason]]
-tests = "^(ChangeColor|ChangeDynamicColor|ChangeSpecialColor|ResetColor|ResetSpecialColor)Tests\\."
-summary = "Setting colors (OSC 4, 5, 10–19, 104–119)"
+tests = "^(ChangeColor|ChangeDynamicColor|ChangeSpecialColor)Tests\\.test_\\w+_(CIELab|CIELuv|CIEXYZ|CIEuvY|CIExyY|RGBI|TekHVC)$"
+summary = "Color forms other than rgb: and #"
 kind = "Unsupported"
-detail = "Colors are decided by the app's style. Queries are answered (decisions/0079)."
+detail = "Colors are read only as rgb:R/G/B and #RGB to #RRRRGGGGBBBB; the other forms of XParseColor and X11 color names are ignored (decisions/0096)."
+
+[[reason]]
+tests = "^(ChangeSpecialColorTests\\.test_ChangeSpecialColor_Multiple2|ResetSpecialColorTests\\.)"
+summary = "Special colors (OSC 5, 105)"
+kind = "Unsupported"
+detail = "xterm's special colors (bold, underline, and the like) are ignored (decisions/0096). The other ChangeSpecialColor tests pass only because XTGETTCAP is not answered: esctest then takes 16 indexed colors and sets the special colors with OSC 4 as indexed colors 16 and up."
 
 [[reason]]
 tests = "^XtermWinopsTests\\."

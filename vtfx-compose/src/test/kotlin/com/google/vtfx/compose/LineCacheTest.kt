@@ -19,6 +19,7 @@
 package com.google.vtfx.compose
 
 import androidx.compose.ui.unit.Density
+import com.google.vtfx.core.HostColors
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.Terminal
 import org.junit.Assert.assertEquals
@@ -46,7 +47,8 @@ class LineCacheTest {
             }
             .also { cache.endFrame() }
 
-    private fun startFrame() = cache.startFrame(columns = 10, reverse = false)
+    private fun startFrame(hostColors: HostColors = HostColors.None) =
+        cache.startFrame(columns = 10, reverse = false, hostColors = hostColors)
 
     @Test
     fun unchangedLinesAreNotRecordedAgain() {
@@ -68,5 +70,20 @@ class LineCacheTest {
         assertSame(node, frame(prompt).single())
         assertEquals(2, recordings)
         assertTrue(node.hasDisplayList())
+    }
+
+    @Test
+    fun linesAreRecordedAgainWhenTheHostChangesItsColors() {
+        val hostBackground =
+            Terminal(1, 1).apply { write("\u001b]11;#102030\u0007".toByteArray()) }.hostColors
+        startFrame()
+        val node = frame(prompt).single()
+
+        startFrame(hostBackground)
+        val nodeInTheHostColors = frame(prompt).single()
+
+        // The node is kept for reuse, and recorded again.
+        assertSame(node, nodeInTheHostColors)
+        assertEquals(2, recordings)
     }
 }

@@ -111,11 +111,11 @@ class RepliesAndMouseTest {
 
         @Test
         fun colorsComeFromTheDisplay() {
-            writer.sendReply(TerminalQuery.Color(ColorTarget.Foreground), colors)
-            writer.sendReply(TerminalQuery.Color(ColorTarget.Background), colors)
-            writer.sendReply(TerminalQuery.Color(ColorTarget.Palette(1)), colors)
-            writer.sendReply(TerminalQuery.Color(ColorTarget.Cursor), colors)
-            writer.sendReply(TerminalQuery.Color(ColorTarget.Foreground))
+            writer.sendReply(TerminalQuery.Color(ColorTarget.Foreground, hostColor = null), colors)
+            writer.sendReply(TerminalQuery.Color(ColorTarget.Background, hostColor = null), colors)
+            writer.sendReply(TerminalQuery.Color(ColorTarget.Palette(1), hostColor = null), colors)
+            writer.sendReply(TerminalQuery.Color(ColorTarget.Cursor, hostColor = null), colors)
+            writer.sendReply(TerminalQuery.Color(ColorTarget.Foreground, hostColor = null))
             assertEquals(
                 listOf(
                     "\\e]10;rgb:e5e5/e5e5/e5e5\\e\\",
@@ -124,6 +124,23 @@ class RepliesAndMouseTest {
                 ),
                 sent,
             )
+        }
+
+        @Test
+        fun aColorThatTheHostSetWinsOverTheDisplays() {
+            writer.sendReply(
+                TerminalQuery.Color(ColorTarget.Background, hostColor = 0x102030),
+                colors,
+            )
+
+            assertEquals(listOf("\\e]11;rgb:1010/2020/3030\\e\\"), sent)
+        }
+
+        @Test
+        fun aColorThatTheHostSetIsReportedWithoutTheDisplay() {
+            writer.sendReply(TerminalQuery.Color(ColorTarget.Palette(4), hostColor = 0xABCDEF))
+
+            assertEquals(listOf("\\e]4;4;rgb:abab/cdcd/efef\\e\\"), sent)
         }
 
         @Test

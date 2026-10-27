@@ -147,6 +147,13 @@ internal constructor(
     public val cursor: CursorState,
     /** The modes set by the host. */
     public val modes: TerminalModes,
+    /**
+     * The colors that the host set (OSC 4, 10, 11, 12), which the display draws in place of its
+     * own.
+     *
+     * @suppress
+     */
+    @InternalVtfxApi public val hostColors: HostColors,
     /** Whether the alternate screen is displayed. */
     public val isAlternateScreen: Boolean,
     /**

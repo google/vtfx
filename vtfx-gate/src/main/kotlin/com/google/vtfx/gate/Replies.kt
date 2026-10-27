@@ -31,8 +31,8 @@ import com.google.vtfx.core.UnderlineStyle
 import java.util.Base64
 
 /**
- * The colors that the display uses, which replies to color queries report (OSC 10, 11, 12, 4).
- * Called on the thread that handles the query, which may be any thread.
+ * The colors that the display uses where the host did not set them, which replies to color queries
+ * report (OSC 10, 11, 12, 4). Called on the thread that handles the query, which may be any thread.
  *
  * @suppress
  */
@@ -81,7 +81,10 @@ internal object Replies {
             GraphicsStatus.Unsupported -> "EINVAL:animation is not supported"
         }
 
-    /** Returns the reply to [query], or null if there is none (a color without [colors]). */
+    /**
+     * Returns the reply to [query], or null if there is none (a color that the host did not set,
+     * without [colors]).
+     */
     fun encode(query: TerminalQuery, colors: ReportedColors?): ByteArray? {
         val reply =
             when (query) {
@@ -133,7 +136,7 @@ internal object Replies {
                     checkPixels(query.width)
                     "\u001b[6;${query.height};${query.width}t"
                 }
-                is TerminalQuery.Color -> color(query.target, colors) ?: return null
+                is TerminalQuery.Color -> color(query, colors) ?: return null
                 is TerminalQuery.GraphicsReply -> graphics(query)
             }
         return reply.toByteArray(Charsets.US_ASCII)
@@ -170,12 +173,17 @@ internal object Replies {
         return id
     }
 
-    private fun color(target: ColorTarget, colors: ReportedColors?): String? {
+    private fun color(query: TerminalQuery.Color, colors: ReportedColors?): String? {
+        val target = query.target
         // Checked before the display is asked, which may look the index up in its palette.
         if (target is ColorTarget.Palette) {
             require(target.index in 0..255) { "index out of range: ${target.index}" }
         }
-        val rgb = colors?.rgb(target) ?: return null
+        val hostColor = query.hostColor
+        if (hostColor != null)
+            require(hostColor in 0..0xFFFFFF) { "color out of range: $hostColor" }
+        // The color the host set wins over the display's, which the display draws it in place of.
+        val rgb = hostColor ?: colors?.rgb(target) ?: return null
         val spec =
             "rgb:%04x/%04x/%04x"
                 .format(

@@ -35,7 +35,10 @@ public class TerminalGate(
     private val policy: GatePolicy = GatePolicy(),
     private val clipboard: ClipboardAccess? = null,
     private val urlOpener: UrlOpener? = null,
-    /** The display's colors, for color queries. Without them, color queries are not answered. */
+    /**
+     * The display's colors, for color queries about colors that the host did not set. Without them,
+     * those queries are not answered.
+     */
     private val colors: ReportedColors? = null,
 ) {
     /**

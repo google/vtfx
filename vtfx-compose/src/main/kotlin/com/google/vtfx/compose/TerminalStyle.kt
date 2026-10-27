@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.sp
 import com.google.vtfx.core.ColorTarget
 import com.google.vtfx.core.CursorShape
 import com.google.vtfx.core.InternalVtfxApi
-import com.google.vtfx.core.TerminalColor
 import com.google.vtfx.gate.ReportedColors
 
 /**
@@ -138,16 +137,8 @@ public class TerminalColors(
             "palette=$palette, selection=$selection, searchMatch=$searchMatch, " +
             "searchCurrentMatch=$searchCurrentMatch, cursorText=$cursorText)"
 
-    /** Resolves [color] to a display color, using [default] for the default color. */
-    internal fun resolve(color: TerminalColor, default: Color): Color =
-        when {
-            color.isDefault -> default
-            color.isIndexed -> indexed(color.index)
-            else -> Color(0xFF000000.toInt() or color.rgb)
-        }
-
     /** Returns the color of [index] of the 256 colors: the palette, then xterm's colors. */
-    private fun indexed(index: Int): Color =
+    internal fun indexed(index: Int): Color =
         if (index < ANSI_COLORS) palette[index] else XTERM_COLORS[index - ANSI_COLORS]
 
     public companion object {

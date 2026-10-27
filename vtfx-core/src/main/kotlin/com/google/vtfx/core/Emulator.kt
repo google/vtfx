@@ -100,6 +100,10 @@ internal class Emulator(
     /** Whether the host set the cursor style, which then wins over the app's default. */
     private var cursorStyleFromHost = false
 
+    /** The colors that the host set (OSC 4, 10, 11, 12; docs/decisions/0096). */
+    var hostColors: HostColors = HostColors.None
+        private set
+
     /** The last graphic character printed, for REP, or -1. */
     private var lastPrinted = -1
 
@@ -1017,33 +1021,98 @@ internal class Emulator(
 
     override fun oscDispatch(data: CharSequence) {
         val separator = data.indexOf(';')
-        if (separator < 0) return
+        if (separator < 0) {
+            // The resets of colors are the only commands that take no arguments.
+            when (data.toString()) {
+                "104" -> resetPalette("")
+                "110" -> resetColor(ColorTarget.Foreground)
+                "111" -> resetColor(ColorTarget.Background)
+                "112" -> resetColor(ColorTarget.Cursor)
+            }
+            return
+        }
         when (data.substring(0, separator)) {
             "0",
             "2" -> setTitle(cleanTitle(data, separator + 1))
-            "4" -> paletteQuery(data.substring(separator + 1))
+            "4" -> paletteColors(data.substring(separator + 1))
             "8" -> hyperlink(data.substring(separator + 1))
-            "10" -> colorQuery(data.substring(separator + 1), ColorTarget.Foreground)
-            "11" -> colorQuery(data.substring(separator + 1), ColorTarget.Background)
-            "12" -> colorQuery(data.substring(separator + 1), ColorTarget.Cursor)
+            "10" -> dynamicColors(data.substring(separator + 1), first = 0)
+            "11" -> dynamicColors(data.substring(separator + 1), first = 1)
+            "12" -> dynamicColors(data.substring(separator + 1), first = 2)
             "52" -> clipboard(data.substring(separator + 1))
+            "104" -> resetPalette(data.substring(separator + 1))
+            // As in xterm, the arguments of these are ignored.
+            "110" -> resetColor(ColorTarget.Foreground)
+            "111" -> resetColor(ColorTarget.Background)
+            "112" -> resetColor(ColorTarget.Cursor)
         }
     }
 
-    /** OSC 10, 11, 12 with "?" asks for a color. Setting colors is not supported. */
-    private fun colorQuery(argument: String, target: ColorTarget) {
-        if (argument == "?") reply(TerminalQuery.Color(target))
+    /**
+     * OSC 10, 11, 12: colors or "?", separated by ";", for the dynamic colors from [first] of
+     * foreground, background, and cursor on, as in xterm; an empty field skips a color. Those after
+     * the cursor's (OSC 13 to 19 in xterm) are ignored, and so are colors that do not parse.
+     */
+    private fun dynamicColors(arguments: String, first: Int) {
+        val fields = arguments.split(';')
+        editHostColors { colors ->
+            for ((i, field) in fields.withIndex()) {
+                val target = DYNAMIC_COLORS.getOrNull(first + i) ?: break
+                colorField(colors, target, field)
+            }
+        }
     }
 
-    /** OSC 4 with "index;?" pairs asks for palette colors. Setting them is not supported. */
-    private fun paletteQuery(arguments: String) {
+    /**
+     * OSC 4: pairs of an index from 0 to 255 and a color or "?". A pair with another index, or with
+     * a color that does not parse, is skipped, and so is an index without a color at the end.
+     */
+    private fun paletteColors(arguments: String) {
         val parts = arguments.split(';')
-        if (parts.size % 2 != 0) return
-        for (i in parts.indices step 2) {
-            val index = parts[i].toIntOrNull() ?: continue
-            if (index in 0..255 && parts[i + 1] == "?")
-                reply(TerminalQuery.Color(ColorTarget.Palette(index)))
+        editHostColors { colors ->
+            for (i in 0 until parts.size - 1 step 2) {
+                val index = parts[i].toIntOrNull() ?: continue
+                if (index in 0..255) colorField(colors, ColorTarget.Palette(index), parts[i + 1])
+            }
         }
+    }
+
+    /** Sets [target] to the color of [field], or replies with it if [field] is "?". */
+    private fun colorField(colors: HostColors.Editor, target: ColorTarget, field: String) {
+        if (field == "?") {
+            // With the colors set before the query in the same OSC, as xterm replies.
+            reply(TerminalQuery.Color(target, colors.rgb(target)))
+            return
+        }
+        val rgb = HostColors.parse(field)
+        if (rgb != null) colors.set(target, rgb)
+    }
+
+    /**
+     * OSC 104: returns the indexed colors listed, separated by ";", to the display's, or all of
+     * them without a list. As in xterm, the list ends at the first item that is not a number, and
+     * indexes beyond 255 are ignored.
+     */
+    private fun resetPalette(arguments: String) {
+        editHostColors { colors ->
+            if (arguments.isEmpty()) {
+                colors.resetPalette()
+            } else {
+                for (item in arguments.split(';')) {
+                    val index = item.toIntOrNull()?.takeIf { it >= 0 } ?: break
+                    if (index <= 255) colors.reset(ColorTarget.Palette(index))
+                }
+            }
+        }
+    }
+
+    /** OSC 110, 111, 112: returns [target] to the display's color. */
+    private fun resetColor(target: ColorTarget) {
+        editHostColors { it.reset(target) }
+    }
+
+    private fun editHostColors(edit: (HostColors.Editor) -> Unit) {
+        hostColors = hostColors.edit(edit)
     }
 
     /** OSC 8: `params ; URI`. An empty URI ends the link. */
@@ -1137,7 +1206,7 @@ internal class Emulator(
 
     // --- Resets and resizing ---
 
-    /** DECSTR. */
+    /** DECSTR. As in xterm, it returns the indexed colors to the display's, but not the others. */
     private fun softReset() {
         insertMode = false
         originMode = false
@@ -1159,12 +1228,14 @@ internal class Emulator(
         applyKeyboardFlags()
         charsets = CharsetState()
         pendingWrap = false
+        editHostColors { it.resetPalette() }
     }
 
     /**
      * RIS. The scrollback, the window title, and the saved titles are kept, as in xterm. The images
-     * on the screen go, as the protocol says, and those of the alternate screen. The stacks of the
-     * keyboard flags are emptied by DECSTR, as in kitty.
+     * on the screen go, as the protocol says, and those of the alternate screen. DECSTR empties the
+     * stacks of the keyboard flags, as in kitty, and resets the indexed colors, as in xterm; the
+     * dynamic colors that OSC 10, 11, and 12 set stay, as in xterm.
      */
     fun reset() {
         // The line the cursor was on is gone, even if the cursor stays on its row.
@@ -1254,6 +1325,10 @@ internal class Emulator(
         private const val SO = 0x0E
         private const val SI = 0x0F
         private const val TAB_WIDTH = 8
+
+        /** The dynamic colors in the order of OSC 10, 11, and 12. */
+        private val DYNAMIC_COLORS =
+            listOf(ColorTarget.Foreground, ColorTarget.Background, ColorTarget.Cursor)
 
         /** The longest OSC 8 URI kept, as the OSC 8 specification suggests for terminals. */
         const val MAX_URI_LENGTH = 2083
