@@ -177,7 +177,7 @@ Section 3 of [compose-input.md](design/compose-input.md). Only Compose's injecte
 | 7.1 | Turn the wheel up, then down | The scrollback scrolls 3 lines a notch, and back; nothing appears in logcat |
 | 7.2 | Two-finger scroll on a touchpad, and a high-resolution wheel if there is one | Scrolls smoothly in proportion, not in jumps or not at all |
 | 7.3 | Drag over some text; double-click a word; triple-click a line | The text, the word, the line are highlighted; no menu appears |
-| 7.4 | Shift+click further on | The selection extends to there |
+| 7.4 | Shift+click further on | The selection extends to there; after a double click (7.3), to the end of the word clicked |
 | 7.5 | Right-click on the selection | The menu (Copy, Paste, Select all) appears at the pointer; Copy copies the selection |
 | 7.6 | Ctrl+Shift+C after selecting | The selection is copied (the system's clipboard preview shows it) |
 | 7.7 | Hover over a link, then over plain text | The pointer is a hand over the link and an I-beam elsewhere |

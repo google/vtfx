@@ -34,9 +34,11 @@ import androidx.compose.ui.test.MouseButton
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performMultiModalInput
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.rightClick
 import androidx.compose.ui.test.tripleClick
 import androidx.compose.ui.unit.dp
@@ -353,7 +355,69 @@ class TerminalMouseTest {
             display.selection,
         )
         withKey(Key.ShiftLeft) { click(cell(8, 0)) }
-        assertEquals(display.selectionOf(Cell(0, 0), Cell(8, 0)), display.selection)
+        // To the end of the word clicked, as the double click selected by words.
+        assertEquals(
+            display.selectionOf(Cell(0, 0), Cell(10, 0), SelectionUnit.Word),
+            display.selection,
+        )
+    }
+
+    @Test
+    fun shiftClickAfterADragExtendsByCells() {
+        show("hello big world")
+        drag(cell(7, 0), cell(8, 0))
+        withKey(Key.ShiftLeft) { click(cell(1, 0)) }
+        // From the far end of the selection.
+        assertEquals(display.selectionOf(Cell(8, 0), Cell(1, 0)), display.selection)
+    }
+
+    @Test
+    fun shiftClickBeforeAWordExtendsFromItsEndByWords() {
+        show("hello big world")
+        mouse { doubleClick(cell(12, 0)) }
+        withKey(Key.ShiftLeft) {
+            moveTo(cell(7, 0))
+            press()
+        }
+        assertEquals(
+            display.selectionOf(Cell(14, 0), Cell(6, 0), SelectionUnit.Word),
+            display.selection,
+        )
+        // The drag that follows goes on by words.
+        mouse {
+            moveTo(cell(1, 0))
+            release()
+        }
+        assertEquals(
+            display.selectionOf(Cell(14, 0), Cell(0, 0), SelectionUnit.Word),
+            display.selection,
+        )
+    }
+
+    @Test
+    fun shiftClickAfterATripleClickExtendsByLines() {
+        show("first\r\nsecond\r\nthird")
+        val columns = session.snapshot().columns
+        mouse { tripleClick(cell(1, 0)) }
+        withKey(Key.ShiftLeft) { click(cell(1, 2)) }
+        assertEquals(
+            display.selectionOf(Cell(0, 0), Cell(columns - 1, 2), SelectionUnit.Line),
+            display.selection,
+        )
+        composeRule.runOnIdle { display.copySelection() }
+        assertEquals(listOf("first\nsecond\nthird"), copied)
+    }
+
+    @Test
+    fun shiftClickAfterALongPressExtendsByWords() {
+        show("hello big world")
+        composeRule.onRoot().performTouchInput { longClick(cell(7, 0)) }
+        composeRule.waitForIdle()
+        withKey(Key.ShiftLeft) { click(cell(11, 0)) }
+        assertEquals(
+            display.selectionOf(Cell(6, 0), Cell(14, 0), SelectionUnit.Word),
+            display.selection,
+        )
     }
 
     @Test

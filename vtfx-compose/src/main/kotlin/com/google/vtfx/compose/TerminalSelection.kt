@@ -58,7 +58,7 @@ internal data class TextPosition(val column: Int, val line: Long) : Comparable<T
 internal fun TerminalSnapshot.position(cell: Cell): TextPosition =
     TextPosition(cell.column, firstLine + cell.row)
 
-/** What a selection grows by when a drag extends it (docs/decisions/0085). */
+/** What a selection grows by when a drag or a Shift+click extends it (docs/decisions/0085). */
 internal enum class SelectionUnit {
     Cell,
     Word,

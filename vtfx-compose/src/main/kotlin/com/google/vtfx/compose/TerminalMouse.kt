@@ -55,8 +55,8 @@ import kotlin.math.abs
  * Otherwise:
  * - The primary button selects: a drag selects the cells it goes over, a double click selects a
  *   word and a triple click a line, and the drag that follows extends them by words or lines; a
- *   click with Shift extends the selection. A click without a drag is a tap: [onLinkClick], else
- *   [onClick].
+ *   click with Shift extends the selection by the unit that made it. A click without a drag is a
+ *   tap: [onLinkClick], else [onClick].
  * - The secondary button calls [onContextClick].
  * - The wheel scrolls as a swipe does, in steps of [WHEEL_LINES] lines a notch.
  */
@@ -281,11 +281,11 @@ private class MouseHandler(
         val current = display.selection?.takeIf { it.generation == generation }
         val (origin, selected) =
             if (clicks == 1 && modifiers.isShiftPressed && current != null) {
-                // Extends the selection from its end farther from the cell, which may have
-                // scrolled off the display.
+                // Extends the selection by its unit from its end farther from the cell, which may
+                // have scrolled off the display.
                 val anchor = if (position < current.start) current.end else current.start
-                TerminalSelection(anchor, anchor, generation) to
-                    TerminalSelection(anchor, position, generation)
+                val origin = TerminalSelection(anchor, anchor, generation, unit = current.unit)
+                origin to origin.extendedTo(snapshot, cell)
             } else {
                 val unit =
                     when (clicks) {
