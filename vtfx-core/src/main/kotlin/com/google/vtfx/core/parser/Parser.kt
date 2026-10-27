@@ -100,6 +100,21 @@ internal class Parser(
                     i = j
                     continue
                 }
+                val byte = bytes[i].toInt()
+                if (byte == ESC && i + 1 < end && bytes[i + 1] == CSI_INTRODUCER) {
+                    // ESC [, which starts most of the sequences, goes to CSI_ENTRY at once, as
+                    // the two transitions do.
+                    exitState()
+                    enterCsi()
+                    i += 2
+                    continue
+                }
+                if (byte in 0 until 0x20 && byte != ESC && byte != CAN && byte != SUB) {
+                    // A C0 control, such as CR and LF, as advance executes it in this state.
+                    handler.execute(byte)
+                    i++
+                    continue
+                }
                 // Decode up to the next printable ASCII byte, which may start another run.
                 j = i + 1
                 while (j < end && bytes[j] !in PRINTABLE_ASCII_FIRST..PRINTABLE_ASCII_LAST) j++
@@ -128,6 +143,13 @@ internal class Parser(
                     i = params.accept(bytes, i, end)
                     state = CSI_PARAM
                     continue
+                } else if (
+                    (state == CSI_ENTRY || state == CSI_PARAM) &&
+                        byte in 0x40..0x7E &&
+                        decoder.isIdle
+                ) {
+                    // The final byte, as advance dispatches it in these states.
+                    csiDispatch(byte)
                 } else if (byte >= 0 && decoder.isIdle) {
                     // Inside a sequence, ASCII needs no decoding.
                     advance(byte)
@@ -418,6 +440,7 @@ internal class Parser(
     companion object {
         private const val PRINTABLE_ASCII_FIRST: Byte = 0x20
         private const val PRINTABLE_ASCII_LAST: Byte = 0x7E
+        private const val CSI_INTRODUCER: Byte = 0x5B
         private const val BEL = 0x07
         private const val CAN = 0x18
         private const val SUB = 0x1A

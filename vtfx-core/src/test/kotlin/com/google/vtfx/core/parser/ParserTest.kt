@@ -357,4 +357,61 @@ class ParserTest {
             assertEquals(dcs, csi, "iteration $iteration: $parameters")
         }
     }
+
+    @Test
+    fun parsesTheSameInOneCallAsOneByteAtATime() {
+        // Within a call, the parser takes some sequences, such as ESC [, at once; one byte per
+        // call goes through the states one transition at a time.
+        val pieces =
+            listOf(
+                "a",
+                "bc",
+                "\r",
+                "\n",
+                "\u0007",
+                "\u0018",
+                "\u001a",
+                "\u001b",
+                "\u001b[",
+                "\u001b[1;31m",
+                "\u001b[?25h",
+                "\u001b[2 q",
+                "\u001b[1\r2H",
+                "\u001b[\u007fm",
+                "\u001b[\u001b[m",
+                "\u001b(0",
+                "\u001b]0;title\u0007",
+                "\u001bP1\$q\u001b\\",
+                "\u001b_Gx\u001b\\",
+                "あ",
+                "\u00e9",
+                "\uD83D\uDE00",
+                "0",
+                ";",
+                ":",
+                "[",
+                "m",
+                "?",
+            )
+        val random = Random(20261027L)
+        repeat(3000) { iteration ->
+            val input = buildString {
+                repeat(random.nextInt(12)) { append(pieces[random.nextInt(pieces.size)]) }
+            }
+            val bytes = input.toByteArray(Charsets.UTF_8)
+            // Also a UTF-8 sequence cut short, which the parser replaces with U+FFFD.
+            val cut =
+                if (bytes.isNotEmpty() && random.nextInt(4) == 0) bytes.copyOf(bytes.size - 1)
+                else bytes
+            val whole = Recorder().also { Parser(it, 100).parse(cut) }.result()
+            val oneByteAtATime =
+                Recorder()
+                    .also { recorder ->
+                        val parser = Parser(recorder, 100)
+                        for (k in cut.indices) parser.parse(cut, k, 1)
+                    }
+                    .result()
+            assertEquals(oneByteAtATime, whole, "iteration $iteration: $input")
+        }
+    }
 }
