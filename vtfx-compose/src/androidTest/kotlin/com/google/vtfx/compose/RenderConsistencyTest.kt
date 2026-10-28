@@ -286,6 +286,26 @@ class RenderConsistencyTest {
         assertDisplayMatchesState()
     }
 
+    /**
+     * The cache keys lines by their content, which colors that the host sets do not change, so the
+     * lines drawn before must be drawn again in the new colors, and again after the reset
+     * (docs/decisions/0096).
+     */
+    @Test
+    fun linesDrawnBeforeTheHostSetsColors() {
+        show()
+        step("\u001b[41m   \u001b[0m\r\n$ ")
+
+        step("\u001b]4;1;#00ff00\u0007\u001b]11;#000080\u0007")
+        assertShows(0x00FF00, 1 to 0)
+        assertShows(0x000080, 10 to 3)
+
+        step("\u001b]104\u0007\u001b]111\u0007")
+        assertShows(style.colors.palette[1].toArgb(), 1 to 0)
+        assertShows(style.colors.background.toArgb(), 10 to 3)
+        assertDisplayMatchesState()
+    }
+
     @Test
     fun resizing() {
         show()
