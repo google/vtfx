@@ -1,6 +1,6 @@
 # Selection handles for touch
 
-- Status: Provisional
+- Status: Approved
 - Date: 2026-10-28
 - Related: Requirement 5.4, sections 2, 4, and 14 of [compose-input.md](../design/compose-input.md), section 19 of [device-checks.md](../device-checks.md), [0085](0085-compose-interaction.md)
 
