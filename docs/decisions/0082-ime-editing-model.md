@@ -1,6 +1,6 @@
 # The IME editing model
 
-- Status: Provisional
+- Status: Approved
 - Date: 2026-10-25
 - Related: Requirements 5.3, 5.4, 6.1, and 8, [ime-contract.md](../design/ime-contract.md), section 8 of [compose-input.md](../design/compose-input.md), section 2 of [gate-policy.md](../design/gate-policy.md), [research/ime-languages.md](../research/ime-languages.md), [research/ime-gboard-device.md](../research/ime-gboard-device.md), [research/ime-gboard-autocorrect.md](../research/ime-gboard-autocorrect.md), [0084](0084-session-and-threads.md), [0085](0085-compose-interaction.md), [0087](0087-public-api.md), `ImeEditor` in `vtfx-input`, `TerminalSession`, `TerminalInputView`
 

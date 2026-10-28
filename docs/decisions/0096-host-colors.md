@@ -1,6 +1,6 @@
 # Colors set by the host
 
-- Status: Provisional
+- Status: Approved
 - Date: 2026-10-27
 - Related: Requirements 5.1, 6.1, and section 8 of [REQUIREMENTS.md](../REQUIREMENTS.md), sections 3 to 6 and 8.3 of [emulation.md](../design/emulation.md), section 3 of [gate-policy.md](../design/gate-policy.md), section 2 of [session-and-threads.md](../design/session-and-threads.md), [terminal-comparison-2026-10.md](../research/terminal-comparison-2026-10.md), [0079](0079-emulation-scope.md), [0083](0083-gate.md)
 
