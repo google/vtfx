@@ -61,7 +61,10 @@ class TerminalInputConnectionTest {
         session.edit { it.commitText("ab") }
         val info = EditorInfo()
         session.edit { TerminalInputConnection.configure(info, it, directInput = false) }
-        assertEquals(InputType.TYPE_CLASS_TEXT, info.inputType)
+        assertEquals(
+            InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS,
+            info.inputType,
+        )
         assertEquals(
             EditorInfo.IME_ACTION_NONE or
                 EditorInfo.IME_FLAG_NO_FULLSCREEN or
@@ -80,7 +83,10 @@ class TerminalInputConnectionTest {
         session.edit { it.commitText("ab") }
         val info = EditorInfo()
         session.edit { TerminalInputConnection.configure(info, it, directInput = false) }
-        assertEquals(InputType.TYPE_CLASS_TEXT, info.inputType)
+        assertEquals(
+            InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS,
+            info.inputType,
+        )
         assertEquals(
             EditorInfo.IME_ACTION_NONE or
                 EditorInfo.IME_FLAG_NO_FULLSCREEN or

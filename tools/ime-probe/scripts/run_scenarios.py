@@ -208,7 +208,7 @@ for base in ["ja-convert", "ko-hangul"]:
 
 # The editor configuration of docs/design/ime-contract.md. Traces recorded under it can be replayed
 # as regression tests, since the IME saw the same editor as it would with vtfx.
-CONTRACT = {"surrounding": "history", "input_type": "text", "no_learning": True, "reject_selection": True}
+CONTRACT = {"surrounding": "history", "input_type": "text_nosuggest", "no_learning": True, "reject_selection": True}
 for base in [name for name in list(SCENARIOS) if "@" not in name]:
     lang, steps, _ = SCENARIOS[base]
     SCENARIOS[f"{base}@contract"] = (lang, steps, CONTRACT)

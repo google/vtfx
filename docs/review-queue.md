@@ -11,6 +11,7 @@ Until decided, the provisional decision is implemented. The impact of reversing 
 | Item | What to decide | Related |
 |---|---|---|
 | Colors set by the host | Approve [0096](decisions/0096-host-colors.md) (the host may set the palette, the default colors, and the cursor color, without a setting for the app to refuse them; xterm's forms without X11 color names; DECSTR and RIS reset only the palette, as in xterm), and approve again [0079](decisions/0079-emulation-scope.md), which went back to Provisional when setting colors left its list of features left out | [0096](decisions/0096-host-colors.md), [0079](decisions/0079-emulation-scope.md), section 12 of [emulation.md](design/emulation.md) |
+| `NO_SUGGESTIONS` by default | Approve again [0082](decisions/0082-ime-editing-model.md), which went back to Provisional when topic 2 added `NO_SUGGESTIONS` to the default `inputType` to stop Gboard's autocorrect. The traces of `spec/ime` were recorded with `TYPE_CLASS_TEXT` alone, as the header of `spec/ime/gboard.toml` says; decide whether to record them again under the new contract configuration (`CONTRACT` in `tools/ime-probe/scripts/run_scenarios.py`) and update the header. Humans own `spec/` and `tools/ime-probe/traces/` | [0082](decisions/0082-ime-editing-model.md), section 3 of [ime-contract.md](design/ime-contract.md), [research/ime-gboard-autocorrect.md](research/ime-gboard-autocorrect.md) |
 ## 2. Work only humans can do
 
 | Item | Contents | Related |

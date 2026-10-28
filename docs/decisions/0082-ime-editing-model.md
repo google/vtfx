@@ -1,8 +1,8 @@
 # The IME editing model
 
-- Status: Approved
+- Status: Provisional
 - Date: 2026-10-25
-- Related: Requirements 5.3, 5.4, 6.1, and 8, [ime-contract.md](../design/ime-contract.md), section 8 of [compose-input.md](../design/compose-input.md), section 2 of [gate-policy.md](../design/gate-policy.md), [research/ime-languages.md](../research/ime-languages.md), [research/ime-gboard-device.md](../research/ime-gboard-device.md), [0084](0084-session-and-threads.md), [0085](0085-compose-interaction.md), [0087](0087-public-api.md), `ImeEditor` in `vtfx-input`, `TerminalSession`, `TerminalInputView`
+- Related: Requirements 5.3, 5.4, 6.1, and 8, [ime-contract.md](../design/ime-contract.md), section 8 of [compose-input.md](../design/compose-input.md), section 2 of [gate-policy.md](../design/gate-policy.md), [research/ime-languages.md](../research/ime-languages.md), [research/ime-gboard-device.md](../research/ime-gboard-device.md), [research/ime-gboard-autocorrect.md](../research/ime-gboard-autocorrect.md), [0084](0084-session-and-threads.md), [0085](0085-compose-interaction.md), [0087](0087-public-api.md), `ImeEditor` in `vtfx-input`, `TerminalSession`, `TerminalInputView`
 
 ## Background
 
@@ -20,16 +20,19 @@ Requirement 5.3 asks for Japanese input that works, for a way to send Latin lett
 
 ## 2. Direct input
 
-By default the IME is told `TYPE_CLASS_TEXT`. For IMEs that hold English words as composing text, the app can switch to direct input (`TerminalSession.directInput`), which tells the IME `VISIBLE_PASSWORD` and `NO_SUGGESTIONS` (sections 3 and 13 of [ime-contract.md](../design/ime-contract.md)).
+By default the IME is told `TYPE_CLASS_TEXT` with `NO_SUGGESTIONS`. For IMEs that hold English words as composing text, the app can switch to direct input (`TerminalSession.directInput`), which tells the IME `VISIBLE_PASSWORD` and `NO_SUGGESTIONS` (sections 3 and 13 of [ime-contract.md](../design/ime-contract.md)).
 
-**Why.** With `TYPE_CLASS_TEXT`, Gboard commits English one letter at a time, and Japanese and Korean conversion work. With IMEs that hold English words as composing text, apps that act on each key, like vim's normal mode, get nothing until the word is committed. Many IMEs offer no Japanese or Korean input with direct input, so the user switches depending on the situation.
+**Why.** With `TYPE_CLASS_TEXT`, Gboard commits English one letter at a time, and Japanese and Korean conversion work. Without `NO_SUGGESTIONS`, Gboard autocorrects the word just typed when Enter or Space follows it, although `AUTO_CORRECT` is not set: `unicode` Enter ran `Unicode` on the host, and `i` Space became `I `. The user typed what they meant, and the host has already received it; the rewrite reaches the host as DELs and new text, and runs at once with Enter. `NO_SUGGESTIONS` stopped every correction measured, and Japanese conversion kept its candidates ([research/ime-gboard-autocorrect.md](../research/ime-gboard-autocorrect.md)). With IMEs that hold English words as composing text, apps that act on each key, like vim's normal mode, get nothing until the word is committed. Many IMEs offer no Japanese or Korean input with direct input, so the user switches depending on the situation.
 
 **Alternatives considered.**
 - **Always use `VISIBLE_PASSWORD`**: Japanese and Korean cannot be entered (section 3 of the contract).
+- **Other variations that stopped autocorrect (`URI`, `EMAIL_ADDRESS`, `FILTER`, `WEB_EDIT_TEXT`)**: they say what the text is, which a terminal's input is not, and IMEs may change their layout or keys for them; `NO_SUGGESTIONS` only says what the editor wants.
+- **Reject rewrites of the input history in the editing model**: it would work with any IME, but Gboard sent its correction as `deleteSurroundingText` and `commitText` in one batch edit, which the editing model cannot tell from other edits without heuristics, and the IME would be told to restart after each rejected correction. Asking the IME not to correct is simpler; rejecting stays possible for IMEs that ignore the flag.
+- **Leave autocorrect to the user's Gboard settings**: turning it off there affects every app, and the default sends text the user did not type.
 - **Automatically switch to direct input on the alternate screen (vim, less, and so on)**: Japanese could no longer be entered in vim's insert mode. Whether on the alternate screen does not match whether in normal mode.
 - **Send English composing text one character at a time**: it breaks invariant 2, that composing text is not sent, and cannot be distinguished from Japanese composing text.
 
-**Impact of reversing.** To drop direct input, remove `TerminalSession.directInput` and the parameter of `TerminalInputConnection.configure` (a public API change).
+**Impact of reversing.** To drop direct input, remove `TerminalSession.directInput` and the parameter of `TerminalInputConnection.configure` (a public API change). To drop `NO_SUGGESTIONS` from the default, change `TerminalInputConnection.configure`, its test in `TerminalInputConnectionTest`, and section 3 of the contract; Gboard's corrections then reach the host again.
 
 ## 3. The view the IME connects to
 

@@ -287,9 +287,9 @@ internal class TerminalInputConnection(
 
     companion object {
         /**
-         * Fills [outAttrs] as docs/design/ime-contract.md section 3 specifies. With [directInput],
-         * the IME is asked for plain characters without suggestions, which it then commits one by
-         * one.
+         * Fills [outAttrs] as docs/design/ime-contract.md section 3 specifies. The IME is asked for
+         * no suggestions, which keeps Gboard from autocorrecting what was typed. With
+         * [directInput], it is asked for plain characters too, which it then commits one by one.
          */
         fun configure(outAttrs: EditorInfo, editor: ImeEditor, directInput: Boolean) {
             outAttrs.inputType =
@@ -298,7 +298,7 @@ internal class TerminalInputConnection(
                         InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD or
                         InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
                 } else {
-                    InputType.TYPE_CLASS_TEXT
+                    InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
                 }
             outAttrs.imeOptions =
                 EditorInfo.IME_ACTION_NONE or
