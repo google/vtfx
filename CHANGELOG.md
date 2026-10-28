@@ -3,6 +3,15 @@
 This file lists the notable changes of each release of vtfx, newest first.
 Versions follow Semantic Versioning; before 1.0, any release may break compatibility ([topic 2 of docs/decisions/0087](docs/decisions/0087-public-api.md)).
 
+## 0.4.0 - Unreleased
+
+### Changed
+
+- `vtfx-compose`: `TerminalState` now keeps the view of a terminal (the lines scrolled to, the search query, and the current match) while the `Terminal` is out of the composition, as with tabs or Navigation, and the terminal shows the same lines and match when it comes back with the same session, and the bottom otherwise. `rememberTerminalState()` saves the view with the instance state, so that it also survives configuration changes. The selection is not kept.
+- `vtfx-compose`: The colors that the host sets with OSC 4, 10, 11, and 12 (the palette, the default foreground and background, and the cursor color) are now drawn in place of the style's colors, in the cells and the padding, until the host resets them with OSC 104 and 110 to 112. Before, the settings were ignored. Colors are read in the `rgb:` and `#` forms; X11 color names are ignored. DECSTR and RIS reset only the palette, as in xterm.
+- `vtfx-gate`: Replies to color queries (OSC 4, 10, 11, and 12) report the colors that the host set, and the display's colors only for the others.
+- `vtfx-compose`: A selection made by touch now shows a handle at each end, which can be dragged to move that end by cells.
+
 ## 0.3.0 - 2026-10-27
 
 ### Changed
