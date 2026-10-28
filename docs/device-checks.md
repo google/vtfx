@@ -348,6 +348,7 @@ What to tell us: the Gboard version, the device and Android version, and each ro
 | 14: searching | Agents | — |
 | 15: restarts of the IME | Agents, with a virtual keyboard (`scripts/device_checks.py` for 15.2) | Whether the restart when Ctrl is armed feels disruptive (15.3) |
 | 17: throughput | Agents | — |
+| 18: colors set by the host | Agents, judging screenshots | — |
 
 ## 17. Throughput
 
@@ -393,3 +394,17 @@ To compare with code compiled ahead of time, run `adb -s SERIAL shell cmd packag
 On other devices, and compiled with `speed`, the results are for reference.
 
 Checked on a Pixel 9 (Android 16) on 2026-10-27 with `scripts/benchmark.py`: after install, ascii 100.2, sgr 72.6, cjk 76.2, and recordings 96.8 MB/s; compiled with `speed`, 99.4, 67.7, 68.8, and 93.9 MB/s. The optimizations that got there are in [research/performance-art-2026-10.md](research/performance-art-2026-10.md).
+
+## 18. Colors set by the host
+
+Section 12 of [emulation.md](design/emulation.md), [decisions/0096](decisions/0096-host-colors.md). The display keeps the drawing of lines by content (section 5), which colors that the host sets do not change, so lines drawn before must be drawn again in the new colors. The JVM checks the cache (`LineCacheTest`) and the screenshots (`TerminalScreenshotTest.hostColors`), and the rendering e2e checks the drawing with hardware acceleration (`RenderConsistencyTest.linesDrawnBeforeTheHostSetsColors`, section 8 of [testing.md](design/testing.md)).
+
+| # | Action | Expected |
+|---|---|---|
+| 18.1 | In the sample app, `colors`, then `theme` (Solarized Dark, set with OSC 10 to 12 and OSC 4 as theme tools do) | The background, the padding, the text, the cursor, and the 16 colors of the lines drawn before change to the theme's; the colors 16 to 255 stay |
+| 18.2 | `theme reset` | Everything returns to the app's colors |
+| 18.3 | Run `scripts/e2e_render.py --serial SERIAL` | `linesDrawnBeforeTheHostSetsColors` passes |
+
+What to tell us: the device, the Android version, screenshots of 18.1 and 18.2, and the report of 18.3.
+
+Checked on a Pixel 9 (Android 15) on 2026-10-28: 18.1 and 18.2 as expected, judged from screenshots; `scripts/e2e_render.py` passed all 21 tests. With the cache not cleared on a change of the colors, `linesDrawnBeforeTheHostSetsColors` failed on the same device (the cell of color 1 stayed `#CD0000` instead of `#00FF00`).
