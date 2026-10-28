@@ -14,8 +14,13 @@
  * limitations under the License.
  */
 
+@file:OptIn(InternalVtfxApi::class)
+
 package com.google.vtfx.sample
 
+import com.google.vtfx.core.ColorTarget
+import com.google.vtfx.core.HostColors
+import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.session.TerminalSession
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -53,6 +58,29 @@ class EchoHostTest {
     fun enterRunsTheLineAndPrompts() {
         receive("size\r")
         assertEquals("size\r\n80 x 24\r\n\u001b[32m$\u001b[0m ", output.toString())
+    }
+
+    @Test
+    fun themeSetsTheColorsAsTheHost() {
+        val session = TerminalSession({})
+        val themed = EchoHost(output = { session.feed(it) }, recording = { null }, font = {})
+
+        themed.receive("theme\r".toByteArray())
+
+        val colors = session.snapshot().hostColors
+        assertEquals(0x002B36, colors.rgb(ColorTarget.Background))
+        assertEquals(0xDC322F, colors.rgb(ColorTarget.Palette(1)))
+    }
+
+    @Test
+    fun themeResetGivesTheColorsBackToTheApp() {
+        val session = TerminalSession({})
+        val themed = EchoHost(output = { session.feed(it) }, recording = { null }, font = {})
+        themed.receive("theme\r".toByteArray())
+
+        themed.receive("theme reset\r".toByteArray())
+
+        assertEquals(HostColors.None, session.snapshot().hostColors)
     }
 
     @Test

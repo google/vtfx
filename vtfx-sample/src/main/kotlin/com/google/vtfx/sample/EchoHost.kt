@@ -185,6 +185,8 @@ class EchoHost(
             // The recording is shown instead of the prompt.
             "replay" -> if (replay(argument)) return false
             "reset" -> output("\u001bc")
+            // Colors set as theme tools set them (docs/decisions/0096), until "theme reset".
+            "theme" -> output(if (argument == "reset") THEME_RESET else THEME)
             "font" -> font(argument)
             // Mouse reports (button events, SGR), to try a mouse as with vim's mouse=a.
             "mouse" ->
@@ -296,6 +298,22 @@ class EchoHost(
         const val REPLAY_COLUMNS = 80
         const val REPLAY_ROWS = 24
 
+        /**
+         * Solarized Dark: the default colors, the cursor, and the 16 ANSI colors, set with OSC 10
+         * to 12 and OSC 4 as base16-shell and similar tools do.
+         */
+        private const val THEME =
+            "\u001b]10;#839496;#002b36;#93a1a1\u0007" +
+                "\u001b]4;" +
+                "0;#073642;1;#dc322f;2;#859900;3;#b58900;" +
+                "4;#268bd2;5;#d33682;6;#2aa198;7;#eee8d5;" +
+                "8;#002b36;9;#cb4b16;10;#586e75;11;#657b83;" +
+                "12;#839496;13;#6c71c4;14;#93a1a1;15;#fdf6e3" +
+                "\u0007"
+
+        private const val THEME_RESET =
+            "\u001b]104\u0007\u001b]110\u0007\u001b]111\u0007\u001b]112\u0007"
+
         const val HELP =
             "Commands:\r\n" +
                 "  help     this text\r\n" +
@@ -308,6 +326,7 @@ class EchoHost(
                 "           neovim, emacs, mc, btop, tig, fzf, ncdu,\r\n" +
                 "           timg, icat, icat-placeholder, fastfetch (images)\r\n" +
                 "  reset    reset the terminal\r\n" +
+                "  theme    set the colors as the host (theme reset: back to the app's)\r\n" +
                 "  mouse    send mouse reports (mouse off: stop)\r\n" +
                 "  font     font import [FACE]: add a font file to the fonts, sanitized;\r\n" +
                 "           font reset: back to the system font; font: list them\r\n" +
