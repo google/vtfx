@@ -349,6 +349,7 @@ What to tell us: the Gboard version, the device and Android version, and each ro
 | 15: restarts of the IME | Agents, with a virtual keyboard (`scripts/device_checks.py` for 15.2) | Whether the restart when Ctrl is armed feels disruptive (15.3) |
 | 17: throughput | Agents | — |
 | 18: colors set by the host | Agents, judging screenshots | — |
+| 19: selection handles | Agents, with touches from a virtual touchscreen | Whether dragging a handle feels right (19.2, 19.3), judged from a recording |
 
 ## 17. Throughput
 
@@ -408,3 +409,19 @@ Section 12 of [emulation.md](design/emulation.md), [decisions/0096](decisions/00
 What to tell us: the device, the Android version, screenshots of 18.1 and 18.2, and the report of 18.3.
 
 Checked on a Pixel 9 (Android 15) on 2026-10-28: 18.1 and 18.2 as expected, judged from screenshots; `scripts/e2e_render.py` passed all 21 tests. With the cache not cleared on a change of the colors, `linesDrawnBeforeTheHostSetsColors` failed on the same device (the cell of color 1 stayed `#CD0000` instead of `#00FF00`).
+
+## 19. Selection handles
+
+Section 14 of [compose-input.md](design/compose-input.md), [decisions/0097](decisions/0097-selection-handles.md). The handles are popups that move with the finger. Robolectric checks what a drag selects (`SelectionHandlesTest`) and the look (`TerminalScreenshotTest.selectionHandles`), but its windows do not move; on a device, the popup's window moves while the finger drags it, and the finger's position must still follow the finger.
+
+| # | Action | Expected |
+|---|---|---|
+| 19.1 | In the sample app, long-press a word and lift the finger | The word is selected, the menu shows, and a teardrop handle hangs below each end of the word |
+| 19.2 | Drag the end handle slowly to the right over several cells, then back, and lift it | The end follows the handle's tip cell by cell without jumping, with a light vibration at each cell; the menu goes during the drag and comes back over the row when the handle is lifted |
+| 19.3 | Drag the start handle to the previous row and lift it | The start follows to the previous row; the handle does not pass the end handle when dragged beyond it |
+| 19.4 | Long-press the first column of the last row and drag the end handle | Both handles hang below the terminal, over the key bar, and the end handle can be dragged; the start handle, at the window's left edge, hangs right of its tip |
+| 19.5 | With handles shown, tap the terminal, and select again with a mouse | The handles go on the tap, and a mouse selection shows none |
+
+What to tell us: the device and Android version, a recording of 19.2 to 19.4, and whether the handle stayed under the finger.
+
+Run on a Pixel 9 (Android 14) on 2026-10-28 with touches injected with `adb shell input touchscreen motionevent`: 19.1 to 19.5 as expected, judged from screenshots, except the mouse of 19.5, which was not attached. Each finger move of three cells moved the end three cells while the popup moved with the handle. Before the menu's rectangle covered the handles, the menu of a long press on the first row went below the row, over the handles; and before handles turned at the window's edge, the start handle of a selection from the first column was outside the window. Whether a drag by a finger feels right is left to a human (section 3 of [review-queue.md](review-queue.md)).

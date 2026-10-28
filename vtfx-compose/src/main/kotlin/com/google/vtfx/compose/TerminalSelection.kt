@@ -65,6 +65,12 @@ internal enum class SelectionUnit {
     Line,
 }
 
+/** An end of a selection, in the order of the text. */
+internal enum class SelectionEnd {
+    Start,
+    End,
+}
+
 /**
  * A selection of text, from [anchor] to [focus] inclusive, in either order. Its lines are numbered
  * as in snapshots of [generation], so that it stays on its text as the text scrolls; the display
@@ -133,6 +139,36 @@ internal data class TerminalSelection(
             TerminalSelection(to, from, generation, unit = unit)
         } else {
             TerminalSelection(from, to, generation, unit = unit)
+        }
+    }
+
+    /**
+     * Returns this selection with its [end] moved to [cell] of [snapshot]'s display, whose lines
+     * must be numbered as this selection's, as a selection handle moves it: by cells, keeping the
+     * other end, and not past it, so that at least one cell stays selected. A wide character is
+     * taken whole at the moved end. The result extends by cells (docs/decisions/0097).
+     */
+    fun withEndAt(end: SelectionEnd, snapshot: TerminalSnapshot, cell: Cell): TerminalSelection {
+        val line = snapshot.line(cell.row)
+        val column =
+            when (end) {
+                SelectionEnd.Start ->
+                    if (cell.column > 0 && line.widthAt(cell.column) == 0) cell.column - 1
+                    else cell.column
+                SelectionEnd.End ->
+                    if (line.widthAt(cell.column) == 2) cell.column + 1 else cell.column
+            }
+        val moved = snapshot.position(Cell(column, cell.row))
+        return when (end) {
+            SelectionEnd.Start ->
+                TerminalSelection(
+                    this.end,
+                    minOf(moved, this.end),
+                    generation,
+                    unit = SelectionUnit.Cell,
+                )
+            SelectionEnd.End ->
+                TerminalSelection(start, maxOf(moved, start), generation, unit = SelectionUnit.Cell)
         }
     }
 

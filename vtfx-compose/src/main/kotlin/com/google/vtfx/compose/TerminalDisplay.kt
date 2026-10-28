@@ -73,16 +73,36 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
 
     /**
      * The text the user selected, or null. It stays on its text as the text scrolls, and is dropped
-     * when that text changes or the lines are numbered again (docs/decisions/0085).
+     * when that text changes or the lines are numbered again (docs/decisions/0085). Setting it
+     * hides the handles until [showHandles].
      */
     var selection: TerminalSelection?
         get() = selectionState
         set(value) {
             selectionState = value
+            handlesShown = false
             watchedLines = null
             // The lines of the screen now, against which the next output is compared.
             if (value != null) watch(value, session.searchLines(Long.MAX_VALUE, 1))
         }
+
+    /**
+     * Whether the selection shows the handles that drag its ends: a touch made it or last moved it
+     * (docs/decisions/0097). False without a selection.
+     */
+    val showsHandles: Boolean
+        get() = handlesShown && selectionState != null
+
+    /** Shows the handles of the current selection, until [selection] is set again. */
+    fun showHandles() {
+        handlesShown = selectionState != null
+    }
+
+    /**
+     * Kept apart from the selection, which the display replaces when it cuts it to the lines left
+     * in the scrollback: the cut selection keeps its handles.
+     */
+    private var handlesShown by mutableStateOf(false)
 
     /**
      * Compared by identity: a long press or a drag tells that the display dropped or replaced its

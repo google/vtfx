@@ -148,6 +148,66 @@ class TerminalSelectionTest {
         )
     }
 
+    @Test
+    fun withEndAt_start_movesTheStartAndKeepsTheEnd() {
+        val s = snapshot(10, 2, "abc def\r\nghi")
+        val selection = TerminalSelection.word(s, Cell(5, 0))
+
+        val moved = selection.withEndAt(SelectionEnd.Start, s, Cell(1, 0))
+
+        assertEquals(TerminalSelection.onDisplay(s, Cell(6, 0), Cell(1, 0)), moved)
+    }
+
+    @Test
+    fun withEndAt_end_movesTheEndToAnotherLine() {
+        val s = snapshot(10, 2, "abc def\r\nghi")
+        val selection = TerminalSelection.word(s, Cell(1, 0))
+
+        val moved = selection.withEndAt(SelectionEnd.End, s, Cell(1, 1))
+
+        assertEquals(TerminalSelection.onDisplay(s, Cell(0, 0), Cell(1, 1)), moved)
+    }
+
+    @Test
+    fun withEndAt_startPastTheEnd_stopsAtTheEnd() {
+        val s = snapshot(10, 2, "abc def\r\nghi")
+        val selection = TerminalSelection.word(s, Cell(1, 0))
+
+        val moved = selection.withEndAt(SelectionEnd.Start, s, Cell(2, 1))
+
+        assertEquals(TerminalSelection.onDisplay(s, Cell(2, 0), Cell(2, 0)), moved)
+    }
+
+    @Test
+    fun withEndAt_endBeforeTheStart_stopsAtTheStart() {
+        val s = snapshot(10, 2, "abc def\r\nghi")
+        val selection = TerminalSelection.word(s, Cell(5, 0))
+
+        val moved = selection.withEndAt(SelectionEnd.End, s, Cell(0, 0))
+
+        assertEquals(TerminalSelection.onDisplay(s, Cell(4, 0), Cell(4, 0)), moved)
+    }
+
+    @Test
+    fun withEndAt_startOnTheRightHalfOfAWideCharacter_takesItWhole() {
+        val s = snapshot(10, 1, "aあb")
+        val selection = TerminalSelection.onDisplay(s, Cell(3, 0), Cell(3, 0))
+
+        val moved = selection.withEndAt(SelectionEnd.Start, s, Cell(2, 0))
+
+        assertEquals(TerminalSelection.onDisplay(s, Cell(3, 0), Cell(1, 0)), moved)
+    }
+
+    @Test
+    fun withEndAt_endOnTheLeftHalfOfAWideCharacter_takesItWhole() {
+        val s = snapshot(10, 1, "aあb")
+        val selection = TerminalSelection.onDisplay(s, Cell(0, 0), Cell(0, 0))
+
+        val moved = selection.withEndAt(SelectionEnd.End, s, Cell(1, 0))
+
+        assertEquals(TerminalSelection.onDisplay(s, Cell(0, 0), Cell(2, 0)), moved)
+    }
+
     private companion object {
         const val ROWS = 200
     }

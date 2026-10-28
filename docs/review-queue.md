@@ -11,6 +11,7 @@ Until decided, the provisional decision is implemented. The impact of reversing 
 | Item | What to decide | Related |
 |---|---|---|
 | Colors set by the host | Approve [0096](decisions/0096-host-colors.md) (the host may set the palette, the default colors, and the cursor color, without a setting for the app to refuse them; xterm's forms without X11 color names; DECSTR and RIS reset only the palette, as in xterm), and approve again [0079](decisions/0079-emulation-scope.md), which went back to Provisional when setting colors left its list of features left out | [0096](decisions/0096-host-colors.md), [0079](decisions/0079-emulation-scope.md), section 12 of [emulation.md](design/emulation.md) |
+| Selection handles | Approve [0097](decisions/0097-selection-handles.md) (handles only for selections made by touch, drawn as Compose's text fields draw theirs in `LocalTextSelectionColors`, in popups, moving their end by cells without passing the other end, and without scrolling at the edges of the display) | [0097](decisions/0097-selection-handles.md), section 14 of [compose-input.md](design/compose-input.md) |
 ## 2. Work only humans can do
 
 | Item | Contents | Related |
@@ -26,3 +27,4 @@ Checks that need a human: a judgment of how something looks or feels, or hardwar
 
 | Item | Section of [device-checks.md](device-checks.md) | Evidence |
 |---|---|---|
+| Feel of the selection handles | 19.2, 19.3 | The agent's run on a Pixel 9 (Android 14) on 2026-10-28 with injected touches: a recording of 19.1 to 19.5 and a screenshot of each, handed over with the change, not kept in the tree. Judge whether dragging a handle with a finger follows it as `TextView`'s handles do |

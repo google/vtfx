@@ -26,7 +26,9 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
+import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
 import com.github.takahirom.roborazzi.captureRoboImage
+import com.github.takahirom.roborazzi.captureScreenRoboImage
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.LinkPattern
 import com.google.vtfx.core.SearchQuery
@@ -192,6 +194,35 @@ class TerminalScreenshotTest {
         display.selection = display.selectionOf(Cell(6, 0), Cell(10, 1))
         composeRule.waitForIdle()
         composeRule.onRoot().captureRoboImage()
+    }
+
+    /**
+     * The handles of a selection made by touch, in popups over the window: the start handle left of
+     * "line" on the first row, and the end handle right of "second", in the default handle color.
+     */
+    @OptIn(ExperimentalRoborazziApi::class)
+    @Test
+    fun selectionHandles() {
+        show(output = "first line\r\nsecond line\r\n")
+        display.selection = display.selectionOf(Cell(6, 0), Cell(5, 1))
+        display.showHandles()
+        composeRule.waitForIdle()
+        captureScreenRoboImage()
+    }
+
+    /**
+     * A selection from the first column of a terminal at the window's left edge: the start handle,
+     * which would leave the window on the left of its tip, hangs on its right, pointing at the top
+     * left, as the end handle does.
+     */
+    @OptIn(ExperimentalRoborazziApi::class)
+    @Test
+    fun selectionHandlesAtTheWindowEdge() {
+        show(output = "first line\r\nsecond line\r\n")
+        display.selection = display.selectionOf(Cell(0, 0), Cell(4, 0))
+        display.showHandles()
+        composeRule.waitForIdle()
+        captureScreenRoboImage()
     }
 
     /**

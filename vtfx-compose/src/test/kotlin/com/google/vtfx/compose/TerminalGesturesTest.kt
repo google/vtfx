@@ -31,10 +31,12 @@ import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.platform.TextToolbarStatus
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
@@ -249,7 +251,7 @@ class TerminalGesturesTest {
             CompositionLocalProvider(LocalTextToolbar provides toolbar) {
                 Terminal(
                     display,
-                    Modifier.size(300.dp, 200.dp),
+                    Modifier.size(300.dp, 200.dp).testTag(TERMINAL),
                     style = TerminalStyle(padding = PaddingValues(30.dp)),
                 )
             }
@@ -264,19 +266,20 @@ class TerminalGesturesTest {
         val selection = display.selectionOf(Cell(0, 0), Cell(4, 0), SelectionUnit.Word)
         assertEquals(selection, display.selection)
         assertEquals(TextToolbarStatus.Shown, toolbar.status)
-        // A drag and a long press in the padding do nothing.
-        composeRule.onRoot().performTouchInput {
+        // A drag and a long press in the padding do nothing. The selection handles are popups,
+        // other roots, so the touches go to the terminal by its tag.
+        composeRule.onNodeWithTag(TERMINAL).performTouchInput {
             down(inPadding)
             moveTo(inPadding + Offset(3 * padding, 0f))
             up()
         }
         composeRule.waitForIdle()
-        pressAndHold(inPadding)
-        moveAndLift(inPadding)
+        composeRule.onNodeWithTag(TERMINAL).performTouchInput { longClick(inPadding) }
+        composeRule.waitForIdle()
         assertEquals(selection, display.selection)
         assertEquals(TextToolbarStatus.Shown, toolbar.status)
         // A tap there drops the selection, as a tap on the grid does.
-        composeRule.onRoot().performTouchInput { click(inPadding) }
+        composeRule.onNodeWithTag(TERMINAL).performTouchInput { click(inPadding) }
         composeRule.waitForIdle()
         assertEquals(null, display.selection)
         assertEquals(TextToolbarStatus.Hidden, toolbar.status)
@@ -582,5 +585,7 @@ class TerminalGesturesTest {
     private companion object {
         /** Longer than the long press timeout. */
         const val LONG_PRESS_MILLIS = 700L
+
+        const val TERMINAL = "terminal"
     }
 }

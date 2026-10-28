@@ -83,6 +83,7 @@ import com.google.vtfx.core.TerminalSnapshot
 import com.google.vtfx.session.TerminalSession
 import com.google.vtfx.session.TerminalSessionListener
 import kotlin.math.ceil
+import kotlin.math.floor
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -117,8 +118,9 @@ import kotlinx.coroutines.flow.collectLatest
  * keyboard and sends them itself.
  *
  * A long press selects the word under it, a drag after it going on by words, and shows a menu to
- * copy, paste, and select all. The app reads and changes the selection through [state], for its own
- * Copy command or shortcut, and searches the text through it, for its own search field.
+ * copy, paste, and select all, and handles that move the ends of the selection by cells. The app
+ * reads and changes the selection through [state], for its own Copy command or shortcut, and
+ * searches the text through it, for its own search field.
  *
  * With a mouse, the primary button selects: a drag selects the text it goes over, a double click a
  * word, and a triple click a line, a drag after either going on by words or lines, and Shift+click
@@ -300,6 +302,14 @@ internal fun Terminal(
     val paddingColors by
         remember(style.colors) { derivedStateOf { DisplayColors(style.colors, hostColors) } }
     val layoutDirection = LocalLayoutDirection.current
+    // The menu of a selection with handles covers the row at a position of the grid and the
+    // handles below it, so that the menu, placed below when there is no room above, does not cover
+    // the handles, as TextView places it.
+    val handlesMenuRect = { position: Offset ->
+        val top = floor(position.y / metrics.height) * metrics.height
+        val height = metrics.height + with(density) { HANDLE_SIZE.toPx() }
+        Rect(gridOrigin + Offset(position.x, top), Size(1f, height))
+    }
 
     Box(
         modifier
@@ -329,6 +339,7 @@ internal fun Terminal(
                             toolbar,
                             display,
                             Rect(origin + position, Size(1f, metrics.height)),
+                            withHandles = false,
                         )
                     }
                 },
@@ -397,11 +408,8 @@ internal fun Terminal(
                     onTap = onTap,
                     onLinkTap = onLinkTap,
                     onSelectionEnd = { position ->
-                        showMenu(
-                            toolbar,
-                            display,
-                            Rect(gridOrigin + position, Size(1f, metrics.height)),
-                        )
+                        display.showHandles()
+                        showMenu(toolbar, display, handlesMenuRect(position), withHandles = true)
                     },
                 )
         ) {
@@ -426,6 +434,17 @@ internal fun Terminal(
             gridRows,
             metrics,
             displayText,
+            Modifier.matchParentSize().padding(style.padding),
+        )
+        SelectionHandles(
+            display,
+            metrics,
+            onDragStart = { toolbar.hide() },
+            onDragEnd = { tip ->
+                // At the row that the tip is under, as the menu of a long press.
+                val row = tip - Offset(0f, metrics.height / 2)
+                showMenu(toolbar, display, handlesMenuRect(row), withHandles = true)
+            },
             Modifier.matchParentSize().padding(style.padding),
         )
     }
@@ -513,9 +532,15 @@ private fun Modifier.paddingTaps(
 /**
  * Shows the text toolbar at [rect], in the root's coordinates, with the commands for [display]'s
  * selection: Copy, which drops the selection, while there is one; Paste; and Select all, which
- * shows the toolbar again to copy.
+ * shows the toolbar again to copy, and the handles if [withHandles], for a menu that a touch opened
+ * (docs/decisions/0097).
  */
-private fun showMenu(toolbar: TextToolbar, display: TerminalDisplay, rect: Rect) {
+private fun showMenu(
+    toolbar: TextToolbar,
+    display: TerminalDisplay,
+    rect: Rect,
+    withHandles: Boolean,
+) {
     toolbar.showMenu(
         rect = rect,
         // Nothing is left to do when there is no clipboard to copy to.
@@ -528,7 +553,8 @@ private fun showMenu(toolbar: TextToolbar, display: TerminalDisplay, rect: Rect)
         onPasteRequested = { display.session.pasteFromClipboard() },
         onSelectAllRequested = {
             display.selectAll()
-            showMenu(toolbar, display, rect)
+            if (withHandles) display.showHandles()
+            showMenu(toolbar, display, rect, withHandles)
         },
     )
 }

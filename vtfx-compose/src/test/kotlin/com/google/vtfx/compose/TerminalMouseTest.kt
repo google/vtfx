@@ -30,11 +30,13 @@ import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.isCtrlPressed
 import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.platform.LocalTextToolbar
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.MouseButton
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performMultiModalInput
@@ -86,7 +88,7 @@ class TerminalMouseTest {
             CompositionLocalProvider(LocalTextToolbar provides toolbar) {
                 Terminal(
                     display,
-                    Modifier.size(300.dp, 200.dp),
+                    Modifier.testTag(TERMINAL).size(300.dp, 200.dp),
                     onLinkClick = { linkClicks += it },
                     onContextClick = onContextClick,
                 )
@@ -109,13 +111,14 @@ class TerminalMouseTest {
     private fun lines(count: Int) = (1..count).joinToString("\r\n") { "line $it" }
 
     private fun mouse(block: androidx.compose.ui.test.MouseInjectionScope.() -> Unit) {
-        composeRule.onRoot().performMouseInput(block)
+        // By its tag: the selection handles of a long press are popups, other roots.
+        composeRule.onNodeWithTag(TERMINAL).performMouseInput(block)
         composeRule.waitForIdle()
     }
 
     /** Runs [block] with [key] held down. */
     private fun withKey(key: Key, block: androidx.compose.ui.test.MouseInjectionScope.() -> Unit) {
-        composeRule.onRoot().performMultiModalInput {
+        composeRule.onNodeWithTag(TERMINAL).performMultiModalInput {
             key { keyDown(key) }
             mouse { block() }
             key { keyUp(key) }
@@ -563,7 +566,7 @@ class TerminalMouseTest {
             CompositionLocalProvider(LocalTextToolbar provides toolbar) {
                 Terminal(
                     display,
-                    Modifier.size(300.dp, 200.dp),
+                    Modifier.testTag(TERMINAL).size(300.dp, 200.dp),
                     style = TerminalStyle(padding = PaddingValues(20.dp)),
                 )
             }
@@ -851,7 +854,7 @@ class TerminalMouseTest {
         composeRule.setContent {
             Terminal(
                 display,
-                Modifier.padding(start = 10.dp, top = 20.dp).size(300.dp, 200.dp),
+                Modifier.testTag(TERMINAL).padding(start = 10.dp, top = 20.dp).size(300.dp, 200.dp),
                 onContextClick = onContextClick,
             )
         }
@@ -903,5 +906,9 @@ class TerminalMouseTest {
         withKey(Key.ShiftLeft) { click(cell(1, 0)) }
         assertEquals("", sent.toString())
         assertTrue(linkClicks.single().keyboardModifiers.isShiftPressed)
+    }
+
+    private companion object {
+        const val TERMINAL = "terminal"
     }
 }

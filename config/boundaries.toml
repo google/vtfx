@@ -296,6 +296,13 @@ classes = [
     "androidx/annotation/FontRes",
     "androidx/annotation/MainThread",
     "androidx/annotation/RequiresApi",
+    # The color of the selection handles that the app's theme gives its text fields
+    # (docs/decisions/0097).
+    "androidx/compose/foundation/text/selection/TextSelectionColors",
+    # The vibration of a selection handle moving a cell (docs/decisions/0097).
+    "androidx/compose/ui/hapticfeedback/HapticFeedback",
+    "androidx/compose/ui/hapticfeedback/HapticFeedbackType",
+    "androidx/compose/ui/hapticfeedback/HapticFeedbackType$Companion",
     "androidx/compose/ui/platform/InspectorInfo",
     "androidx/compose/ui/platform/TextToolbar",
     "androidx/compose/ui/platform/ValueElementSequence",
@@ -316,6 +323,11 @@ classes = [
     "androidx/compose/ui/text/font/FontWeight$Companion",
     "androidx/compose/ui/text/font/GenericFontFamily",
     "androidx/compose/ui/viewinterop/AndroidView_androidKt",
+    # The selection handles hang beyond the terminal in popups that do not take the focus
+    # (docs/decisions/0097).
+    "androidx/compose/ui/window/AndroidPopup_androidKt",
+    "androidx/compose/ui/window/PopupPositionProvider",
+    "androidx/compose/ui/window/PopupProperties",
     "java/lang/Runnable",
     # The random key that names a session in a display's saved view (docs/decisions/0095).
     "java/util/UUID",
@@ -384,10 +396,16 @@ members = [
     "android/view/inputmethod/InputMethodManager.showSoftInput",
     "android/view/inputmethod/InputMethodManager.updateCursorAnchorInfo",
     "android/view/inputmethod/InputMethodManager.updateSelection",
+    # The color of the selection handles (docs/decisions/0097).
+    "androidx/compose/foundation/text/selection/TextSelectionColorsKt.getLocalTextSelectionColors",
     "androidx/compose/ui/platform/CompositionLocalsKt.getLocalDensity",
     "androidx/compose/ui/platform/CompositionLocalsKt.getLocalFontFamilyResolver",
+    # The vibration of a selection handle moving a cell (docs/decisions/0097).
+    "androidx/compose/ui/platform/CompositionLocalsKt.getLocalHapticFeedback",
     "androidx/compose/ui/platform/CompositionLocalsKt.getLocalLayoutDirection",
     "androidx/compose/ui/platform/CompositionLocalsKt.getLocalTextToolbar",
+    # The test tags of the selection handles.
+    "androidx/compose/ui/platform/TestTagKt.testTag",
 ]
 
 # The sample app uses only the public API, as a third-party app would. Its classes are not checked:
