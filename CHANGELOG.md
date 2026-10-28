@@ -12,6 +12,10 @@ Versions follow Semantic Versioning; before 1.0, any release may break compatibi
 - `vtfx-gate`: Replies to color queries (OSC 4, 10, 11, and 12) report the colors that the host set, and the display's colors only for the others.
 - `vtfx-compose`: A selection made by touch now shows a handle at each end, which can be dragged to move that end by cells.
 
+### Fixed
+
+- `vtfx-compose`: The terminal now asks the IME for no suggestions (`TYPE_TEXT_FLAG_NO_SUGGESTIONS`) also outside direct input, so Gboard no longer autocorrects a word that has already reached the host, as when typing "unicode" and Enter ran "Unicode". Japanese conversion keeps its candidates.
+
 ## 0.3.0 - 2026-10-27
 
 ### Changed
