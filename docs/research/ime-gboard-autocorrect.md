@@ -48,7 +48,8 @@ Each row typed the keys shown and then Enter. The cell is what reached the host 
 | `TEXT` + `AUTO_COMPLETE`, `PERSON_NAME`, `POSTAL_ADDRESS` | Yes |
 
 - **`NO_SUGGESTIONS` stopped every correction measured**, on Enter and on Space. Section 3.3 of [ime-gboard-device.md](ime-gboard-device.md) found that it did not stop choosing suggestions or the double-space period; whether it stopped autocorrect was not measured then, since autocorrect was off in that Gboard's settings during those recordings.
-- **The double-space period still happens with `NO_SUGGESTIONS`**: `replaceText(2, 3, ". ")`, sent as DEL and `. `.
+- **The double-space period still happens with `NO_SUGGESTIONS`**: `replaceText(2, 3, ". ")`, sent as DEL and `. `. It also happened with `URI`, `EMAIL_ADDRESS`, `FILTER`, `PERSON_NAME`, `POSTAL_ADDRESS`, and `AUTO_COMPLETE` (`ok` Space Space Enter sent `ok ⌫. ⏎` with each). On the emulator, it did not happen with `VISIBLE_PASSWORD` and `TYPE_NULL` (section 3.4 of [ime-gboard-emulator.md](ime-gboard-emulator.md)).
+- **The suggestion bar still offers words with `NO_SUGGESTIONS`**: after `wor`, it showed `wor`, `WOR`, and `work`, as with `TYPE_CLASS_TEXT` alone.
 - `TYPE_CLASS_TEXT` corrected `unicode` on both runs.
 
 ## 4. Japanese with `NO_SUGGESTIONS`
@@ -59,5 +60,4 @@ With `TEXT` + `NO_SUGGESTIONS`, the globe key switched to the Japanese keyboard.
 
 - Other Gboard versions, and the newer Gboard of the Pixel XL and emulator checks (18.4)
 - Korean on a real device with `NO_SUGGESTIONS`
-- Whether the English suggestion bar still offers words with `NO_SUGGESTIONS` on this version
 - Other IMEs (Samsung Keyboard, SwiftKey, Simeji)
