@@ -59,6 +59,9 @@ import kotlin.math.abs
  *   tap: [onLinkClick], else [onClick].
  * - The secondary button calls [onContextClick].
  * - The wheel scrolls as a swipe does, in steps of [WHEEL_LINES] lines a notch.
+ *
+ * A two-finger swipe on a touchpad, which Compose gives as a pan of the mouse, scrolls as a swipe
+ * on the grid does, and is reported as the wheel when the host asks for mouse reports.
  */
 internal fun Modifier.terminalMouse(
     display: TerminalDisplay,
@@ -181,10 +184,30 @@ private class MouseHandler(
     /** The part of a notch that the wheel turned and that did not scroll yet. */
     private var wheelRemainder = 0f
 
+    /**
+     * The part of a cell height that the two-finger swipe going on moved and that did not scroll
+     * yet.
+     */
+    private var panRemainder = 0f
+
+    /**
+     * Whether the host gets the two-finger swipe going on as the wheel. Decided when it starts, as
+     * for a swipe on the grid, so that a swipe that scrolls down to the bottom of the scrollback
+     * stops there and does not go on to scroll the host.
+     */
+    private var panReporting = false
+
     fun handle(event: PointerEvent, change: PointerInputChange) {
         val modifiers = event.keyboardModifiers
         when (event.type) {
             PointerEventType.Scroll -> wheel(change, modifiers)
+            PointerEventType.PanStart -> {
+                panRemainder = 0f
+                panReporting = isReporting(modifiers)
+                pan(change, modifiers)
+            }
+            PointerEventType.PanMove,
+            PointerEventType.PanEnd -> pan(change, modifiers)
             PointerEventType.Exit -> {
                 reportedCell = null
                 onHover(null, null)
@@ -394,6 +417,24 @@ private class MouseHandler(
             reports = notches,
             lines = notches * WHEEL_LINES,
         )
+    }
+
+    /**
+     * A two-finger swipe on a touchpad, which Compose gives as a pan of the mouse: scrolls as a
+     * swipe on the grid does, a line per cell height moved.
+     */
+    private fun pan(change: PointerInputChange, modifiers: PointerKeyboardModifiers) {
+        // Positive when the fingers move down, toward earlier content, as a swipe down. The pan
+        // offset is an amount of scrolling, as the wheel's delta, so it goes the other way. Moves
+        // that came between two events are in the historical changes.
+        panRemainder -=
+            change.historical.fold(change.panOffset.y) { sum, historical ->
+                sum + historical.panOffset.y
+            }
+        val lines = (panRemainder / metrics.height).toInt()
+        if (lines == 0) return
+        panRemainder -= lines * metrics.height
+        scroll(change, modifiers, panReporting, reports = lines, lines = lines)
     }
 
     /**

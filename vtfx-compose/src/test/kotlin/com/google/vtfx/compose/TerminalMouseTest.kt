@@ -32,15 +32,18 @@ import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.MouseButton
+import androidx.compose.ui.test.TrackpadInjectionScope
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.pan
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performMultiModalInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.performTrackpadInput
 import androidx.compose.ui.test.rightClick
 import androidx.compose.ui.test.tripleClick
 import androidx.compose.ui.unit.dp
@@ -133,6 +136,21 @@ class TerminalMouseTest {
         release()
     }
 
+    private fun trackpad(block: TrackpadInjectionScope.() -> Unit) {
+        composeRule.onNodeWithTag(TERMINAL).performTrackpadInput(block)
+        composeRule.waitForIdle()
+    }
+
+    /** Runs [block] with Shift held down. */
+    private fun trackpadWithShift(block: TrackpadInjectionScope.() -> Unit) {
+        composeRule.onNodeWithTag(TERMINAL).performMultiModalInput {
+            key { keyDown(Key.ShiftLeft) }
+            trackpad { block() }
+            key { keyUp(Key.ShiftLeft) }
+        }
+        composeRule.waitForIdle()
+    }
+
     // --- Wheel ---
 
     @Test
@@ -196,6 +214,80 @@ class TerminalMouseTest {
         withKey(Key.ShiftLeft) { scroll(-1f) }
         assertEquals(3, display.scrollOffset)
         assertEquals("", sent.toString())
+    }
+
+    // --- Two-finger swipe on a touchpad ---
+    // Compose gives it as a pan of the mouse. In pan(), a positive y moves the fingers down.
+
+    @Test
+    fun twoFingerSwipeScrollsTheScrollbackALinePerCellHeight() {
+        show(lines(100))
+        trackpad { pan(Offset(0f, cellHeight * 2.5f)) }
+        assertEquals(2, display.scrollOffset)
+        trackpad { pan(Offset(0f, -cellHeight)) }
+        assertEquals(1, display.scrollOffset)
+        assertEquals("", sent.toString())
+    }
+
+    @Test
+    fun partsOfACellHeightAddUpWithinATwoFingerSwipe() {
+        show(lines(100))
+        trackpad {
+            panStart()
+            panMoveBy(Offset(0f, cellHeight * 0.6f))
+            panMoveBy(Offset(0f, cellHeight * 0.6f))
+            panEnd()
+        }
+        assertEquals(1, display.scrollOffset)
+    }
+
+    @Test
+    fun twoFingerSwipeOnTheAlternateScreenSendsAnArrowKeyPerCellHeight() {
+        show("\u001b[?1049h")
+        trackpad { pan(Offset(0f, cellHeight * 2)) }
+        assertEquals("\u001b[A".repeat(2), sent.toString())
+        sent.setLength(0)
+        trackpad { pan(Offset(0f, -cellHeight)) }
+        assertEquals("\u001b[B", sent.toString())
+        assertEquals(0, display.scrollOffset)
+    }
+
+    @Test
+    fun twoFingerSwipeIsReportedAsTheWheelWhenTheHostAsks() {
+        show("${lines(100)}\u001b[?1000h\u001b[?1006h")
+        trackpad {
+            moveTo(cell(2, 1))
+            pan(Offset(0f, cellHeight * 2))
+        }
+        assertEquals("\u001b[<64;3;2M".repeat(2), sent.toString())
+        sent.setLength(0)
+        trackpad { pan(Offset(0f, -cellHeight)) }
+        assertEquals("\u001b[<65;3;2M", sent.toString())
+        assertEquals(0, display.scrollOffset)
+    }
+
+    @Test
+    fun twoFingerSwipeWithShiftScrollsTheScrollbackWhileTheHostAsksForTheMouse() {
+        show("${lines(100)}\u001b[?1000h\u001b[?1006h")
+        trackpadWithShift { pan(Offset(0f, cellHeight * 2)) }
+        assertEquals(2, display.scrollOffset)
+        assertEquals("", sent.toString())
+    }
+
+    @Test
+    fun aTwoFingerSwipeDownToTheBottomStopsThere() {
+        // As a swipe on the grid: the swipe decides when it starts whether the host gets it.
+        show("${lines(100)}\u001b[?1000h\u001b[?1006h")
+        trackpadWithShift {
+            moveTo(cell(2, 1))
+            pan(Offset(0f, cellHeight * 3))
+        }
+        assertEquals(3, display.scrollOffset)
+        trackpad { pan(Offset(0f, -cellHeight * 5)) }
+        assertEquals(0, display.scrollOffset)
+        assertEquals("", sent.toString())
+        trackpad { pan(Offset(0f, -cellHeight)) }
+        assertEquals("\u001b[<65;3;2M", sent.toString())
     }
 
     // --- Selection ---
