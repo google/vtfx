@@ -56,7 +56,7 @@ import kotlin.math.abs
  * - The primary button selects: a drag selects the cells it goes over, a double click selects a
  *   word and a triple click a line, and the drag that follows extends them by words or lines; a
  *   click with Shift extends the selection by the unit that made it. A click without a drag is a
- *   tap: [onLinkClick], else [onClick].
+ *   tap: [onLinkClick], and [onClick] unless it took the click.
  * - The secondary button calls [onContextClick].
  * - The wheel scrolls as a swipe does, in steps of [WHEEL_LINES] lines a notch.
  *

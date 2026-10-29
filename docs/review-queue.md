@@ -10,6 +10,7 @@ Until decided, the provisional decision is implemented. The impact of reversing 
 
 | Item | What to decide | Related |
 |---|---|---|
+| Link clicks that the app does not take | Topic 7 of [0085](decisions/0085-compose-interaction.md) makes `onLinkClick` return whether it took the click, leaving the others to the terminal, so that an app that opens links only on Ctrl+click keeps the links drawn the same while Ctrl is up; this breaks the callbacks of apps, which return `Unit`. The rewrite made 0085 provisional; approve it or decide otherwise | [0085](decisions/0085-compose-interaction.md), section 6.1 of [compose-input.md](design/compose-input.md), [0087](decisions/0087-public-api.md) |
 | Traces of `spec/ime` under `NO_SUGGESTIONS` | Topic 2 of [0082](decisions/0082-ime-editing-model.md) adds `NO_SUGGESTIONS` to the default `inputType`, but the traces of `spec/ime` were recorded with `TYPE_CLASS_TEXT` alone, as the header of `spec/ime/gboard.toml` says; decide whether to record them again under the new contract configuration (`CONTRACT` in `tools/ime-probe/scripts/run_scenarios.py`) and update the header. Humans own `spec/` and `tools/ime-probe/traces/` | [0082](decisions/0082-ime-editing-model.md), section 3 of [ime-contract.md](design/ime-contract.md), [research/ime-gboard-autocorrect.md](research/ime-gboard-autocorrect.md) |
 ## 2. Work only humans can do
 

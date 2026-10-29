@@ -58,7 +58,7 @@ class TerminalScreenshotTest {
         style: TerminalStyle = TerminalStyle(),
         output: String,
         linkPatterns: List<LinkPattern> = listOf(LinkPattern.Urls),
-        onLinkClick: ((TerminalLinkClick) -> Unit)? = null,
+        onLinkClick: ((TerminalLinkClick) -> Boolean)? = null,
     ) {
         composeRule.setContent {
             Terminal(
@@ -168,7 +168,7 @@ class TerminalScreenshotTest {
                     LinkPattern.Urls,
                     LinkPattern(Regex("""\bcrbug/(\d+)"""), "https://crbug.com/{1}"),
                 ),
-            onLinkClick = {},
+            onLinkClick = { true },
         )
         composeRule.onRoot().captureRoboImage()
     }

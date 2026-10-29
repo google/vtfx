@@ -60,7 +60,10 @@ Terminal(
     viewModel.session,
     Modifier.fillMaxSize(),
     style = TerminalStyle(fontSize = 14.sp),
-    onLinkClick = { click -> confirmOpening(click.link.url) },
+    onLinkClick = { click ->
+        confirmOpening(click.link.url)
+        true
+    },
 )
 ```
 
@@ -152,7 +155,7 @@ TerminalStyle(font = TerminalFont.Sanitized(listOf(SanitizedFamily(latin), Sanit
 
 ### Links
 
-Link clicks are passed to `onLinkClick` as `TerminalLinkClick`: the `TerminalLink` (`click.link`), and how the user clicked it (below). There are two kinds of links, both shown underlined (section 6.1 of [compose-input.md](design/compose-input.md)). For both, **show the destination (`link.url`) to the user and get confirmation before** calling `session.openUrl(link.url)` (requirement 6.1).
+Link clicks are passed to `onLinkClick` as `TerminalLinkClick`: the `TerminalLink` (`click.link`), and how the user clicked it (below). `onLinkClick` returns whether it took the click: a click that it takes neither focuses the terminal nor shows the keyboard, and one that it does not take (`false`) acts as a click elsewhere, which focuses the terminal and shows the keyboard. There are two kinds of links, both shown underlined (section 6.1 of [compose-input.md](design/compose-input.md)). For both, **show the destination (`link.url`) to the user and get confirmation before** calling `session.openUrl(link.url)` (requirement 6.1).
 
 - `TerminalLink.Explicit`: an OSC 8 hyperlink. The host decides both the link text (`link.text`) and the destination, so they do not necessarily match. Showing the text and the destination side by side makes discrepancies easier to notice.
 - `TerminalLink.Matched`: text that matched `linkPatterns` (by default `LinkPattern.Urls`, the `http` and `https` URLs written in the text). The matched text can still differ from what the user sees; the KDoc of `Terminal` says how.
@@ -170,12 +173,14 @@ val failure = when (session.openUrl(url)) {
 
 Whether vtfx would try to open a URL (anything but `NotAllowed`) can be known beforehand with `session.canOpenUrl(url)`, so there is no need to show a confirmation dialog for URLs that vtfx does not allow. `GatePolicy.urlSchemes` applies equally to OSC 8 links and pattern links. Which text becomes a link is decided by `linkPatterns`, so adding a scheme to `urlSchemes` does not make URLs with that scheme detected in the text. If `onLinkClick` is not passed, links cannot be tapped, and `linkPatterns` are not matched.
 
-`click.pointerType` is the kind of pointer (`PointerType.Touch` for a tap, `PointerType.Mouse` for a mouse click), and `click.keyboardModifiers` the modifier keys held, so that an app can, for example, open links only on Ctrl+click with a mouse, as desktop terminals do. When no pointer clicked, they are `PointerType.Unknown` and no modifiers.
+`click.pointerType` is the kind of pointer (`PointerType.Touch` for a tap, `PointerType.Mouse` for a mouse click), and `click.keyboardModifiers` the modifier keys held, so that an app can, for example, open links only on Ctrl+click with a mouse, as desktop terminals do, and leave other clicks on links to the terminal. When no pointer clicked, they are `PointerType.Unknown` and no modifiers.
 
 ```kotlin
 onLinkClick = { click ->
     val mouse = click.pointerType == PointerType.Mouse
-    if (!mouse || click.keyboardModifiers.isCtrlPressed) confirmOpening(click.link.url)
+    val open = !mouse || click.keyboardModifiers.isCtrlPressed
+    if (open) confirmOpening(click.link.url)
+    open
 }
 ```
 

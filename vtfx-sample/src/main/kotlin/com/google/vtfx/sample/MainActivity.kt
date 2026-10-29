@@ -116,7 +116,10 @@ class MainActivity : ComponentActivity() {
                             locale = locale,
                         ),
                     linkPatterns = LINK_PATTERNS,
-                    onLinkClick = { click -> confirmOpening(viewModel.session, click.link.url) },
+                    onLinkClick = { click ->
+                        confirmOpening(viewModel.session, click.link.url)
+                        true
+                    },
                     onPreImeKeyEvent = {
                         interceptShortcut(it, state, onFind = { searching = true })
                     },

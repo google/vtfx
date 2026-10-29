@@ -1,7 +1,7 @@
 # Interaction in the Compose UI
 
-- Status: Approved
-- Date: 2026-10-25
+- Status: Provisional
+- Date: 2026-10-29
 - Related: Requirements 4.1, 5.4, 5.5, 6.1, 6.3, and 6.5, [compose-input.md](../design/compose-input.md), sections 4.2 and 5 of [gate-policy.md](../design/gate-policy.md), 2.7 of [research/xterm-js-ime.md](../research/xterm-js-ime.md), [0083](0083-gate.md), [0084](0084-session-and-threads.md), [0087](0087-public-api.md), [0090](0090-distribution.md), [0081](0081-resource-limits.md)
 
 ## Background
@@ -97,17 +97,20 @@ During synchronized output (mode 2026), copying and the link of a click read the
 
 ## 7. Link clicks
 
-1. A tap or a click on a link calls the app's `onLinkClick` instead of showing the keyboard. vtfx never opens a link from a click: the app shows the URL and opens it with `TerminalSession.openUrl` when the user confirms (requirement 6.1, [0083](0083-gate.md), section 5 of [gate-policy.md](../design/gate-policy.md)). Without the callback, links cannot be clicked.
+1. A tap or a click on a link calls the app's `onLinkClick`, which returns whether it took the click. A click that it takes does not show the keyboard; one that it does not take acts as a click off links, which focuses the terminal and shows the keyboard. vtfx never opens a link from a click: the app shows the URL and opens it with `TerminalSession.openUrl` when the user confirms (requirement 6.1, [0083](0083-gate.md), section 5 of [gate-policy.md](../design/gate-policy.md)). Without the callback, links cannot be clicked, and only OSC 8 hyperlinks are underlined; whether links are drawn as links does not depend on what the callback returns.
 2. While reporting, clicks go to the host regardless of links; with a mouse, a click with Shift held calls `onLinkClick` instead.
 3. `onLinkClick` takes a `TerminalLinkClick`: the link, the `PointerType` of the pointer that clicked, and the `PointerKeyboardModifiers` held, Compose's own types. It is a class, with room for more properties (the position, for example).
 
 See section 6.1 of [compose-input.md](../design/compose-input.md).
 
-**Why.** The pointer type and the modifiers let an app open links only on Ctrl+click with a mouse and still on a tap.
+**Why.** The pointer type and the modifiers let an app open links only on Ctrl+click with a mouse and still on a tap. Such an app has to leave the other clicks on links to the terminal, or a plain click on a link would neither focus the terminal nor show the keyboard. The click itself carries the modifiers, so the decision is made at the click, from the state that the click reports, and the links look the same whatever keys are held. Returning whether the event was consumed is Compose's convention for callbacks that may pass an event on, as `onPreImeKeyEvent` does.
 
 **Alternatives considered.**
 - **`onLinkClick: (TerminalLink, PointerType, PointerKeyboardModifiers) -> Unit`**: Every new property would break every caller; a class can grow.
 - **vtfx's own modifier flags instead of `PointerKeyboardModifiers`**: Duplicates Compose's type, whose `isCtrlPressed` and the other extensions apps already know.
+- **`onLinkClick` returning `Unit`, with links clickable only while it is given**: An app that takes only Ctrl+click has to pass the callback only while Ctrl is held, which it learns from key events: the links then lose and gain their underline whenever Ctrl is pressed and released, as for Ctrl+C, and the state is wrong when Ctrl changes while another view has the focus.
+- **A separate predicate deciding which clicks are link clicks, besides an `onLinkClick` returning `Unit`**: Keeps the callbacks of apps compiling, and could also decide the hand pointer while hovering, but two callbacks have to agree on each click. Before 1.0 the change of type is allowed ([0087](0087-public-api.md)), and the hand pointer did not need it.
+- **A click on a link always also acting as a click off links, as in xterm.js**: An app that opens links on a tap shows a confirmation, under which the keyboard would come up.
 - **Ctrl+click on a link overriding mouse reports**: Ctrl+click is a meaningful report for some hosts (bit 16), and Shift is already the xterm convention for taking the mouse back.
 
 ## 8. Hardware keys

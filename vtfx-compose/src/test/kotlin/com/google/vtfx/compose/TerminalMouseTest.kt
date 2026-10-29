@@ -80,6 +80,11 @@ class TerminalMouseTest {
     private val toolbar = FakeTextToolbar()
     private val linkClicks = mutableListOf<TerminalLinkClick>()
     private val contextClicks = mutableListOf<Offset>()
+    private var onLinkClick: ((TerminalLinkClick) -> Boolean)? by
+        mutableStateOf({ click ->
+            linkClicks += click
+            true
+        })
     private var onContextClick: ((Offset) -> Unit)? by mutableStateOf(null)
 
     /** The size of a cell, from the size of the grid and the session's size. */
@@ -92,7 +97,7 @@ class TerminalMouseTest {
                 Terminal(
                     display,
                     Modifier.testTag(TERMINAL).size(300.dp, 200.dp),
-                    onLinkClick = { linkClicks += it },
+                    onLinkClick = onLinkClick,
                     onContextClick = onContextClick,
                 )
             }
@@ -976,6 +981,25 @@ class TerminalMouseTest {
         )
         assertFalse(linkClicks[0].keyboardModifiers.isCtrlPressed)
         assertTrue(linkClicks[1].keyboardModifiers.isCtrlPressed)
+    }
+
+    @Test
+    fun aClickOnALinkThatTheAppTakesDoesNotFocusTheTerminal() {
+        show("\u001b]8;;https://example.com/a\u001b\\link\u001b[?1004h")
+
+        mouse { click(cell(1, 0)) }
+
+        assertEquals("", sent.toString())
+    }
+
+    @Test
+    fun aClickOnALinkThatTheAppDoesNotTakeFocusesTheTerminal() {
+        onLinkClick = { false }
+        show("\u001b]8;;https://example.com/a\u001b\\link\u001b[?1004h")
+
+        mouse { click(cell(1, 0)) }
+
+        assertEquals("\u001b[I", sent.toString())
     }
 
     @Test

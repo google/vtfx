@@ -54,7 +54,7 @@ public final class com.google.vtfx.compose.TerminalFont.System : com.google.vtfx
 }
 
 file com.google.vtfx.compose.TerminalKt {
-    @Composable public final fun Terminal(session: com.google.vtfx.session.TerminalSession, modifier: androidx.compose.ui.Modifier = ..., state: com.google.vtfx.compose.TerminalState = ..., style: com.google.vtfx.compose.TerminalStyle = ..., linkPatterns: kotlin.collections.List<com.google.vtfx.core.LinkPattern> = ..., onLinkClick: kotlin.Function1<com.google.vtfx.compose.TerminalLinkClick, kotlin.Unit>? = ..., onContextClick: kotlin.Function1<androidx.compose.ui.geometry.Offset, kotlin.Unit>? = ..., onPreImeKeyEvent: kotlin.Function1<androidx.compose.ui.input.key.KeyEvent, kotlin.Boolean>? = ...): kotlin.Unit
+    @Composable public final fun Terminal(session: com.google.vtfx.session.TerminalSession, modifier: androidx.compose.ui.Modifier = ..., state: com.google.vtfx.compose.TerminalState = ..., style: com.google.vtfx.compose.TerminalStyle = ..., linkPatterns: kotlin.collections.List<com.google.vtfx.core.LinkPattern> = ..., onLinkClick: kotlin.Function1<com.google.vtfx.compose.TerminalLinkClick, kotlin.Boolean>? = ..., onContextClick: kotlin.Function1<androidx.compose.ui.geometry.Offset, kotlin.Unit>? = ..., onPreImeKeyEvent: kotlin.Function1<androidx.compose.ui.input.key.KeyEvent, kotlin.Boolean>? = ...): kotlin.Unit
 }
 
 public abstract class com.google.vtfx.compose.TerminalLink {

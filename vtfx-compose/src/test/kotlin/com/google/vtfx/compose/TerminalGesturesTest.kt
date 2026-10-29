@@ -80,8 +80,11 @@ class TerminalGesturesTest {
     private val clickedLinks
         get() = linkClicks.map { it.link }
 
-    private var onLinkClick: ((TerminalLinkClick) -> Unit)? by
-        mutableStateOf({ click -> linkClicks += click })
+    private var onLinkClick: ((TerminalLinkClick) -> Boolean)? by
+        mutableStateOf({ click ->
+            linkClicks += click
+            true
+        })
     private var linkPatterns: List<LinkPattern> by mutableStateOf(listOf(LinkPattern.Urls))
 
     private fun show(output: String) {
@@ -440,6 +443,27 @@ class TerminalGesturesTest {
     }
 
     @Test
+    fun aTapOnALinkThatTheAppTakesDoesNotFocusTheTerminal() {
+        show("\u001b]8;;https://example.com/a\u001b\\link\u001b[?1004h")
+
+        composeRule.onRoot().performTouchInput { click(Offset(1f, 5f)) }
+        composeRule.waitForIdle()
+
+        assertEquals("", sent.toString())
+    }
+
+    @Test
+    fun aTapOnALinkThatTheAppDoesNotTakeFocusesTheTerminal() {
+        onLinkClick = { false }
+        show("\u001b]8;;https://example.com/a\u001b\\link\u001b[?1004h")
+
+        composeRule.onRoot().performTouchInput { click(Offset(1f, 5f)) }
+        composeRule.waitForIdle()
+
+        assertEquals("\u001b[I", sent.toString())
+    }
+
+    @Test
     fun aTapOnALinkIsATouchWithoutModifiers() {
         show("\u001b]8;;https://example.com/a\u001b\\link")
         composeRule.onRoot().performTouchInput { click(Offset(1f, 5f)) }
@@ -512,7 +536,10 @@ class TerminalGesturesTest {
     fun tapOnAHyperlinkCallsTheLatestCallback() {
         show("\u001b]8;;https://example.com/a\u001b\\link")
         val latest = mutableListOf<String>()
-        onLinkClick = { latest += it.link.url }
+        onLinkClick = {
+            latest += it.link.url
+            true
+        }
         composeRule.waitForIdle()
         composeRule.onRoot().performTouchInput { click(Offset(1f, 5f)) }
         composeRule.waitForIdle()
