@@ -387,19 +387,39 @@ private class MouseHandler(
         val notches = wheelRemainder.toInt()
         if (notches == 0) return
         wheelRemainder -= notches
-        val count = abs(notches)
+        scroll(
+            change,
+            modifiers,
+            isReporting(modifiers),
+            reports = notches,
+            lines = notches * WHEEL_LINES,
+        )
+    }
+
+    /**
+     * Scrolls toward earlier content if positive: [reports] wheel reports at the pointer's cell if
+     * [reporting], else [lines] arrow keys on the alternate screen, or [lines] lines through the
+     * scrollback.
+     */
+    private fun scroll(
+        change: PointerInputChange,
+        modifiers: PointerKeyboardModifiers,
+        reporting: Boolean,
+        reports: Int,
+        lines: Int,
+    ) {
         when {
-            isReporting(modifiers) -> {
-                val button = if (notches > 0) MouseButton.WheelUp else MouseButton.WheelDown
+            reporting -> {
+                val button = if (reports > 0) MouseButton.WheelUp else MouseButton.WheelDown
                 val cell = cellAt(grid(change.position), metrics, session)
-                repeat(count) { report(button, MouseAction.Press, cell, modifiers) }
+                repeat(abs(reports)) { report(button, MouseAction.Press, cell, modifiers) }
             }
             session.isAlternateScreen() ->
-                repeat(count * WHEEL_LINES) {
-                    session.sendScrollKey(if (notches > 0) TerminalKey.Up else TerminalKey.Down)
+                repeat(abs(lines)) {
+                    session.sendScrollKey(if (lines > 0) TerminalKey.Up else TerminalKey.Down)
                 }
             else -> {
-                display.scrollBy(notches * WHEEL_LINES)
+                display.scrollBy(lines)
                 // The pointer did not move, but what is under it did, and the host may get the
                 // mouse again at the bottom: the pointer icon follows.
                 if (pressed.isEmpty()) {
