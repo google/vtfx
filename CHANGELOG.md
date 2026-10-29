@@ -3,6 +3,16 @@
 This file lists the notable changes of each release of vtfx, newest first.
 Versions follow Semantic Versioning; before 1.0, any release may break compatibility ([topic 2 of docs/decisions/0087](docs/decisions/0087-public-api.md)).
 
+## 0.5.0 - Unreleased
+
+### Changed
+
+- `vtfx-compose`: `onLinkClick` of `Terminal` now returns whether it took the click. A click that it does not take (`false`) acts as a click off links, which focuses the terminal and shows the keyboard, so that an app can, for example, open links only on Ctrl+click with a mouse and leave other clicks on links to the terminal. Callbacks that return `Unit` no longer compile; return `true` to keep taking every click.
+
+### Fixed
+
+- `vtfx-compose`: A two-finger swipe on a touchpad (Android 14 and later) now scrolls as a swipe of a finger does: it scrolls the scrollback, sends arrow keys on the alternate screen, and is reported as the wheel when the host asks for the mouse. Before, it did nothing.
+
 ## 0.4.0 - 2026-10-28
 
 ### Changed
