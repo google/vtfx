@@ -1,6 +1,6 @@
 # Interaction in the Compose UI
 
-- Status: Provisional
+- Status: Approved
 - Date: 2026-10-29
 - Related: Requirements 4.1, 5.4, 5.5, 6.1, 6.3, and 6.5, [compose-input.md](../design/compose-input.md), sections 4.2 and 5 of [gate-policy.md](../design/gate-policy.md), 2.7 of [research/xterm-js-ime.md](../research/xterm-js-ime.md), [0083](0083-gate.md), [0084](0084-session-and-threads.md), [0087](0087-public-api.md), [0090](0090-distribution.md), [0081](0081-resource-limits.md)
 
