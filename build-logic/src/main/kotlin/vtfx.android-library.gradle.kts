@@ -16,6 +16,9 @@
 
 // Conventions for the Android library modules.
 
+import org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+
 plugins {
     id("com.android.library")
     id("vtfx.dokka")
@@ -42,6 +45,14 @@ kotlin {
         // Results must be used, as the CheckReturnValue checks of other build systems require
         // (docs/decisions/0088). Only a check: the sources compile without it.
         freeCompilerArgs.add("-Xreturn-value-checker=full")
+        // The sources also compile with Kotlin 2.0, for builds of them with an older compiler
+        // (docs/decisions/0098). The last flag silences the warning that 2.0 is deprecated.
+        languageVersion.set(KotlinVersion.KOTLIN_2_0)
+        apiVersion.set(KotlinVersion.KOTLIN_2_0)
+        freeCompilerArgs.add("-Xsuppress-version-warnings")
+        // Language version 2.0 would also bring back the JVM default methods mode of Kotlin 2.0,
+        // which changes the ABI of interfaces with default bodies (docs/decisions/0087 topic 5).
+        jvmDefault.set(JvmDefaultMode.ENABLE)
     }
 }
 
