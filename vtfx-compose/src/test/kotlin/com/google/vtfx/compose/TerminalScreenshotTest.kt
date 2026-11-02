@@ -252,6 +252,37 @@ class TerminalScreenshotTest {
         composeRule.onRoot().captureRoboImage()
     }
 
+    /**
+     * Every symbol for legacy computing, 32 to a row, with a space for the unassigned U+1FB93.
+     * Then, two rows high so that they join across rows too: the pattern fills, a slope of smooth
+     * mosaic wedges, and a rising line of eighth blocks. Last, light diagonals between box drawing
+     * lines.
+     */
+    @Test
+    fun symbolsForLegacyComputing() {
+        fun text(codePoints: Iterable<Int>) =
+            codePoints.joinToString("") {
+                if (it == 0x1FB93) " " else String(Character.toChars(it))
+            }
+        val rows = (0x1FB00..0x1FBAF).chunked(32).joinToString("\r\n") { text(it) }
+        val fills =
+            text(
+                listOf(0x1FB95, 0x1FB95, 0x1FB95, 0x20, 0x1FB96, 0x1FB96, 0x1FB96, 0x20) +
+                    listOf(0x1FB97, 0x1FB97, 0x1FB97, 0x20, 0x1FB98, 0x1FB98, 0x1FB98, 0x20) +
+                    listOf(0x1FB99, 0x1FB99, 0x1FB99, 0x20) +
+                    listOf(0x1FB48, 0x1FB46, 0x1FB42, 0x1FB4D, 0x1FB51, 0x1FB3D, 0x20) +
+                    listOf(0x2581, 0x1FB7B, 0x1FB7A, 0x1FB79, 0x1FB78, 0x1FB77, 0x1FB76, 0x2594)
+            )
+        val diagonals =
+            text(
+                listOf(0x2500, 0x1FBA6, 0x2500, 0x1FBA7, 0x2500, 0x1FBA6, 0x2500, 0x20) +
+                    listOf(0x2500, 0x1FBA4, 0x1FBA5, 0x2500, 0x20, 0x2500, 0x1FBAE, 0x2500) +
+                    listOf(0x20, 0x2500, 0x1FBAF, 0x2500, 0x20, 0x250C, 0x1FBA0, 0x1FBA1, 0x2510)
+            )
+        show(output = "\u001b[?25l$rows\r\n$fills\r\n$fills\r\n$diagonals")
+        composeRule.onRoot().captureRoboImage()
+    }
+
     @Test
     fun selection() {
         show(output = "first line\r\nsecond 日本語 line\r\nthird\r\n")
