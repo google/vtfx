@@ -24,7 +24,6 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
-import kotlin.math.roundToInt
 
 /**
  * Draws the separators of Powerline (U+E0B0 to U+E0B7) and Powerline Extra (U+E0B8 to U+E0BF):
@@ -41,25 +40,31 @@ internal object Powerline {
     private val path = Path()
 
     /**
-     * Draws [codePoint] in the cell at [topLeft] of [size], for [BuiltinGlyphs]. The cell is
-     * snapped to whole pixels, as [GridFill] fills backgrounds, so that the edges of the shapes on
-     * the cell's edges are crisp and meet the backgrounds of the neighbors.
+     * Draws [codePoint] in the cell at [topLeft] of [size], for [BuiltinGlyphs]. The sides of the
+     * shapes that lie on the cell's edges reach a pixel past the cell, and the drawing is clipped
+     * to the cell, without antialiasing. Those sides then cover the pixels whose centers are in the
+     * cell, as [GridFill] fills backgrounds, and meet the backgrounds of the neighbors without a
+     * seam, wherever the row lands: lines are drawn at row 0 and moved to their rows, which are
+     * rarely at whole pixels, so snapping to pixels when drawing would not do it.
      */
     fun DrawScope.drawPowerline(codePoint: Int, topLeft: Offset, size: Size, color: Color) {
-        val left = topLeft.x.roundToInt().toFloat()
-        val top = topLeft.y.roundToInt().toFloat()
-        val right = (topLeft.x + size.width).roundToInt().toFloat()
-        val bottom = (topLeft.y + size.height).roundToInt().toFloat()
-        val width = right - left
-        val height = bottom - top
-        val middle = top + height / 2
+        val left = topLeft.x
+        val top = topLeft.y
+        val right = left + size.width
+        val bottom = top + size.height
+        val middle = top + size.height / 2
+        // Past the edges, for the sides on them.
+        val outLeft = left - 1
+        val outTop = top - 1
+        val outRight = right + 1
+        val outBottom = bottom + 1
         val line = BuiltinGlyphs.lightLineWidth(size)
         clipRect(left, top, right, bottom) {
             when (codePoint) {
                 // Solid and outlined triangles pointing right and left.
-                0xE0B0 -> fillPolygon(color, left, top, right, middle, left, bottom)
+                0xE0B0 -> fillPolygon(color, outLeft, outTop, right, middle, outLeft, outBottom)
                 0xE0B1 -> strokePolyline(color, line, left, top, right, middle, left, bottom)
-                0xE0B2 -> fillPolygon(color, right, top, left, middle, right, bottom)
+                0xE0B2 -> fillPolygon(color, outRight, outTop, left, middle, outRight, outBottom)
                 0xE0B3 -> strokePolyline(color, line, right, top, left, middle, right, bottom)
                 // Half ellipses with their flat sides on the left and right edges.
                 0xE0B4 ->
@@ -68,8 +73,8 @@ internal object Powerline {
                         -90f,
                         180f,
                         true,
-                        Offset(left - width, top),
-                        Size(2 * width, height),
+                        Offset(outLeft - size.width, top),
+                        Size(2 * size.width + 1, size.height),
                     )
                 0xE0B5 ->
                     drawArc(
@@ -77,12 +82,19 @@ internal object Powerline {
                         -90f,
                         180f,
                         false,
-                        Offset(left - width + line / 2, top + line / 2),
-                        Size(2 * width - line, height - line),
+                        Offset(left - size.width + line / 2, top + line / 2),
+                        Size(2 * size.width - line, size.height - line),
                         style = Stroke(line),
                     )
                 0xE0B6 ->
-                    drawArc(color, 90f, 180f, true, Offset(left, top), Size(2 * width, height))
+                    drawArc(
+                        color,
+                        90f,
+                        180f,
+                        true,
+                        Offset(left, top),
+                        Size(2 * size.width + 1, size.height),
+                    )
                 0xE0B7 ->
                     drawArc(
                         color,
@@ -90,15 +102,17 @@ internal object Powerline {
                         180f,
                         false,
                         Offset(left + line / 2, top + line / 2),
-                        Size(2 * width - line, height - line),
+                        Size(2 * size.width - line, size.height - line),
                         style = Stroke(line),
                     )
                 // Triangles in the corners, and the diagonals between them. U+E0BD and U+E0BF
                 // repeat U+E0BB and U+E0B9.
-                0xE0B8 -> fillPolygon(color, left, top, left, bottom, right, bottom)
-                0xE0BA -> fillPolygon(color, right, top, right, bottom, left, bottom)
-                0xE0BC -> fillPolygon(color, left, top, right, top, left, bottom)
-                0xE0BE -> fillPolygon(color, left, top, right, top, right, bottom)
+                0xE0B8 ->
+                    fillPolygon(color, outLeft, outTop, outLeft, outBottom, outRight, outBottom)
+                0xE0BA ->
+                    fillPolygon(color, outRight, outTop, outRight, outBottom, outLeft, outBottom)
+                0xE0BC -> fillPolygon(color, outLeft, outTop, outRight, outTop, outLeft, outBottom)
+                0xE0BE -> fillPolygon(color, outLeft, outTop, outRight, outTop, outRight, outBottom)
                 0xE0B9,
                 0xE0BF -> drawLine(color, Offset(left, top), Offset(right, bottom), line)
                 0xE0BB,
