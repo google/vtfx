@@ -42,7 +42,8 @@ internal object BuiltinGlyphs {
             Braille.isDrawn(codePoint) ||
             Powerline.isDrawn(codePoint) ||
             LegacyComputing.isDrawn(codePoint) ||
-            ProgressGlyphs.isDrawn(codePoint)
+            ProgressGlyphs.isDrawn(codePoint) ||
+            GitBranchGlyphs.isDrawn(codePoint)
 
     /**
      * Draws [text], which [isDrawn], over the cells at [topLeft] of [size]: both cells of a wide
@@ -61,6 +62,8 @@ internal object BuiltinGlyphs {
                 with(LegacyComputing) { drawLegacyComputing(codePoint, topLeft, size, color, fill) }
             ProgressGlyphs.isDrawn(codePoint) ->
                 with(ProgressGlyphs) { drawProgress(codePoint, topLeft, size, color, fill) }
+            GitBranchGlyphs.isDrawn(codePoint) ->
+                with(GitBranchGlyphs) { drawGitBranch(codePoint, topLeft, size, color, fill) }
             else -> throw IllegalArgumentException("not drawn here: $text")
         }
     }

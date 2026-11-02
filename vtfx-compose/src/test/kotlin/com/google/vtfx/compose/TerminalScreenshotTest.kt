@@ -301,6 +301,28 @@ class TerminalScreenshotTest {
         composeRule.onRoot().captureRoboImage()
     }
 
+    /**
+     * A graph as vim-flog draws one, where a feature branch leaves main and merges back, its lines
+     * joined across cells, and box drawing lines that join a commit. Below it, the branch drawing
+     * characters U+F5D0 to U+F60D, one apart, 16 to a row: lines, fading lines, arcs, branches, and
+     * commits. The cursor is hidden, so that the nine rows fit.
+     */
+    @Test
+    fun gitBranchGlyphs() {
+        val all = (0xF5D0..0xF60D).map { String(Character.toChars(it)) }
+        show(
+            output =
+                "\uF5FC\uF5D0\uF5D7 Merge branch 'feature'\r\n" +
+                    "\uF5D1 \uF5FB Add the feature\r\n" +
+                    "\uF5FA \uF5D1 Fix a bug\r\n" +
+                    "\uF5DA\uF5D0\uF5D9 Start the feature\r\n" +
+                    "\uF5F8\u2500\u2500 Initial commit\r\n" +
+                    all.chunked(16).joinToString("\r\n") { it.joinToString(" ") } +
+                    "\u001b[?25l"
+        )
+        composeRule.onRoot().captureRoboImage()
+    }
+
     @Test
     fun selection() {
         show(output = "first line\r\nsecond 日本語 line\r\nthird\r\n")
