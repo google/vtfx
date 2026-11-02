@@ -34,3 +34,17 @@ vtfx draws as shapes the characters whose glyphs are meant to reach the edges of
 - **Bundle a symbol font**, such as Symbols Nerd Font: its glyphs come under several licenses (CC BY, OFL, Apache, and some without a license), and it still would not join across cells.
 
 **Impact of reversing.** Remove the families from `BuiltinGlyphs` in vtfx-compose, with their tests and screenshot goldens, and update section 7.3 of emulation.md.
+
+## 3. The glyphs of private use characters are fitted into their cells
+
+A glyph that a font gives a private use character, and that does not fit its cell, is scaled down, keeping its aspect ratio, to fit. It may take the next cell too if that cell is blank. A glyph that fits is drawn as the font draws it. The rule is in section 7.3 of [emulation.md](../design/emulation.md).
+
+**Why.** The icons of a Nerd Font that is not "Mono" advance one cell, but their ink is up to two cells wide, on the assumption that a space follows them. Without a space, the ink covered the next character, and in the last column the `Terminal`'s bounds cut it. Prompts such as powerlevel10k leave a space after icons for this, so a blank next cell is a space that the icon may use. Of the compared terminals, Ghostty, kitty, and WezTerm use the same test for the next cell, and kitty and WezTerm scale down a glyph that still does not fit. Glyphs that already fit, such as those of the "Mono" fonts, are left alone, so the rule changes nothing for fonts made for the cell.
+
+**Alternatives considered.**
+- **Leave the glyphs as fonts draw them**, as Alacritty, foot, VTE, and Windows Terminal do: the ink covers the next character.
+- **A table of how to fit each icon**, as Ghostty generates from the patcher of Nerd Fonts (some 10,000 code points): it follows one version of Nerd Fonts, and it is measured from a font made of icons under several licenses. Scaling by the measured ink needs no data.
+- **Also enlarge icons that are smaller than the cell**, as Ghostty does: it changes the look of fonts that were made for the cell.
+- **Apply the rule to every character that a fallback font draws**: Android does not tell which font drew a glyph. Wide symbols outside the private use area are rare, and section 7.3 leaves them as fonts draw them.
+
+**Impact of reversing.** Remove `PrivateUseGlyphs` and the call to it in `TerminalRenderer`, with `PrivateUseGlyphsTest`, the golden `privateUseIcons`, and the font `sanitized-icons.ttf`. Update section 7.3 of emulation.md.

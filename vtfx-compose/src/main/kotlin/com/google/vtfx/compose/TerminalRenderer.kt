@@ -156,6 +156,9 @@ internal class TerminalRenderer(
     /** The text of a run, reused across runs, since a frame draws many. */
     private val runText = StringBuilder()
 
+    /** Fits the glyphs of private use characters, such as icons, into their cells. */
+    private val privateUseGlyphs = PrivateUseGlyphs(metrics)
+
     /** Fills backgrounds, the selection, and the cursor, so that rows join without seams. */
     private val fill = GridFill()
 
@@ -474,7 +477,7 @@ internal class TerminalRenderer(
                 continue
             }
             if (!isGridAligned(text, line, column)) {
-                drawRun(text, column, row, cellStyle, defaultForeground, defaultBackground)
+                drawCell(text, line, column, row, cellStyle, defaultForeground, defaultBackground)
                 column += line.widthAt(column)
                 continue
             }
@@ -491,6 +494,42 @@ internal class TerminalRenderer(
             drawRun(run, column, row, cellStyle, defaultForeground, defaultBackground)
             column = end
         }
+    }
+
+    /**
+     * Draws [text], the text of the cell at [column] of [line], on its own, fitting the glyph of a
+     * private use character into the cells it may take ([PrivateUseGlyphs]).
+     */
+    private fun DrawScope.drawCell(
+        text: String,
+        line: LineSnapshot,
+        column: Int,
+        row: Int,
+        cellStyle: CellStyle,
+        defaultForeground: Color,
+        defaultBackground: Color,
+        colorOverride: Color? = null,
+    ) {
+        val paint = paints.forStyle(cellStyle.isBold, cellStyle.isItalic)
+        val fit = privateUseGlyphs.fit(text, line, column, paint)
+        if (fit == null) {
+            drawRun(
+                text,
+                column,
+                row,
+                cellStyle,
+                defaultForeground,
+                defaultBackground,
+                colorOverride,
+            )
+            return
+        }
+        val canvas = drawContext.canvas.nativeCanvas
+        canvas.save()
+        canvas.translate(column * metrics.width, row * metrics.height + fit.dy)
+        canvas.scale(fit.scale, fit.scale, 0f, fit.pivotY)
+        drawRun(text, 0, 0, cellStyle, defaultForeground, defaultBackground, colorOverride)
+        canvas.restore()
     }
 
     private fun isGridAligned(text: String, line: LineSnapshot, column: Int): Boolean =
@@ -711,8 +750,9 @@ internal class TerminalRenderer(
             if (BuiltinGlyphs.isDrawn(text)) {
                 with(BuiltinGlyphs) { draw(text, topLeft, size, cursorTextColor, fill) }
             } else {
-                drawRun(
+                drawCell(
                     text,
+                    line,
                     column,
                     cursorRow,
                     cellStyle,

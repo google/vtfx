@@ -32,6 +32,9 @@ import com.github.takahirom.roborazzi.captureScreenRoboImage
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.LinkPattern
 import com.google.vtfx.core.SearchQuery
+import com.google.vtfx.font.gate.FontLimits
+import com.google.vtfx.font.gate.SanitizedFamily
+import com.google.vtfx.font.gate.SanitizedFont
 import com.google.vtfx.session.TerminalSession
 import org.junit.Rule
 import org.junit.Test
@@ -222,6 +225,29 @@ class TerminalScreenshotTest {
                     "\u001b[33m\uE0B6\u001b[30;43m main \u001b[33;49m\uE0B4\u001b[m " +
                     "\u001b[35m\uE0BA\u001b[30;45m 12:00 \u001b[35;49m\uE0BC\u001b[m\r\n" +
                     "\u001b[30;47m a \uE0B1 b \uE0B1 c \u001b[m\r\n"
+        )
+        composeRule.onRoot().captureRoboImage()
+    }
+
+    /**
+     * Icons of a test font whose U+E000 is 1.8 cells wide and advances one cell, as in a Nerd Font
+     * that is not "Mono": before a space it takes both cells; before a character, under the cursor,
+     * and in the last column it is scaled down into its cell. U+E001 fits and is drawn as it is.
+     */
+    @Test
+    fun privateUseIcons() {
+        val bytes = checkNotNull(javaClass.getResourceAsStream("sanitized-icons.ttf")).readBytes()
+        val font =
+            TerminalFont.Sanitized(
+                listOf(SanitizedFamily(SanitizedFont.fromCanonical(bytes, FontLimits())))
+            )
+        show(
+            style = TerminalStyle(font = font),
+            output =
+                "\uE000 \uE001 MM\r\n" +
+                    "\uE000\uE001\uE000M\r\n" +
+                    "\u001b[31m\uE000 \u001b[32m\uE000\u001b[44m\uE000\u001b[m\r\n" +
+                    "\u001b[3;100H\uE000\u001b[2;1H",
         )
         composeRule.onRoot().captureRoboImage()
     }
