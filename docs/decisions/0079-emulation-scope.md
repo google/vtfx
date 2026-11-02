@@ -1,6 +1,6 @@
 # The scope of terminal emulation
 
-- Status: Provisional
+- Status: Approved
 - Date: 2026-10-25
 - Related: Requirements 4.2, 5.1, 5.2, 5.4, 6.1, 6.2, 6.5, and section 8 of [REQUIREMENTS.md](../REQUIREMENTS.md), sections 1 to 8 and 9.7 of [emulation.md](../design/emulation.md), sections 2 to 4 of [compose-input.md](../design/compose-input.md), section 3 of [gate-policy.md](../design/gate-policy.md), [fonts.md](../design/fonts.md), [conformance-references.md](../research/conformance-references.md), [terminal-comparison-2026-10.md](../research/terminal-comparison-2026-10.md), [0081](0081-resource-limits.md), [0083](0083-gate.md), [0089](0089-performance.md), [0088](0088-build-boundaries-and-tests.md), [0085](0085-compose-interaction.md), [0080](0080-kitty-graphics.md), [0096](0096-host-colors.md)
 
