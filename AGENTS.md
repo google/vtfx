@@ -55,6 +55,7 @@ This rule applies only to what is written into the repository. Conversations wit
 - Format Kotlin code in ktfmt's Kotlin coding conventions style. Format with `./gradlew formatKotlin` and review the diff before committing ([docs/decisions/0088](docs/decisions/0088-build-boundaries-and-tests.md)).
 - Long fuzzing and the emulator e2e are not part of check.sh. Operate the emulator with `scripts/emulator.sh setup|start|stop`.
 - Neither are the checks on real devices in [docs/device-checks.md](docs/device-checks.md). Tools that drive devices send data to the device only through adb, and never make the development machine reachable from the device (no `adb reverse`; topic 3 of [docs/decisions/0092](docs/decisions/0092-device-checks-by-agents.md)).
+- The repository is public, so do not name the model of a device that is not on sale to the public in commit messages, documents, or code. Write "a real device" with its API level (and the IME version if it matters) instead. When unsure whether a model is public, treat it as not public.
 - A tool for investigating IME behavior is in `tools/ime-probe/`. Its usage and past findings are in `docs/research/ime-*.md`. This development machine also has the AVD `vtfx-probe` with Gboard's Japanese (QWERTY) and Korean already set up.
 - Write the commands run and their results accurately in the `TEST=` line of the commit message. Do not write anything that was not run.
 
