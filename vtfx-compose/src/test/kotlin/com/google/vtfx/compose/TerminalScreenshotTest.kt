@@ -204,6 +204,28 @@ class TerminalScreenshotTest {
         composeRule.onRoot().captureRoboImage()
     }
 
+    /**
+     * Every separator of Powerline and Powerline Extra, each between cells of other backgrounds,
+     * and a prompt of segments that they join.
+     */
+    @Test
+    fun powerlineSeparators() {
+        val separators =
+            (0xE0B0..0xE0BF).joinToString(" ") {
+                "\u001b[34;41m" + String(Character.toChars(it)) + "\u001b[m"
+            }
+        show(
+            output =
+                separators +
+                    "\r\n\r\n" +
+                    "\u001b[30;42m user \u001b[32;44m\uE0B0\u001b[37;44m ~/src \u001b[34;49m\uE0B0\u001b[m " +
+                    "\u001b[33m\uE0B6\u001b[30;43m main \u001b[33;49m\uE0B4\u001b[m " +
+                    "\u001b[35m\uE0BA\u001b[30;45m 12:00 \u001b[35;49m\uE0BC\u001b[m\r\n" +
+                    "\u001b[30;47m a \uE0B1 b \uE0B1 c \u001b[m\r\n"
+        )
+        composeRule.onRoot().captureRoboImage()
+    }
+
     @Test
     fun selection() {
         show(output = "first line\r\nsecond 日本語 line\r\nthird\r\n")

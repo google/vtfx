@@ -21,8 +21,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import kotlin.math.max
-import kotlin.math.roundToInt
 
 /**
  * Draws box drawing characters (U+2500 to U+257F) and block elements (U+2580 to U+259F) as lines
@@ -208,7 +206,7 @@ internal object BoxDrawing {
         color: Color,
         fill: GridFill,
     ) {
-        val light = max(1f, (minOf(size.width, size.height) / 10f).roundToInt().toFloat())
+        val light = BuiltinGlyphs.lightLineWidth(size)
         val heavy = light * 2
         val centerX = topLeft.x + size.width / 2
         val centerY = topLeft.y + size.height / 2

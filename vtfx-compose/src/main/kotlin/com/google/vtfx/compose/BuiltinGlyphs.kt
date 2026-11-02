@@ -20,6 +20,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import kotlin.math.max
+import kotlin.math.roundToInt
 
 /**
  * The characters that the terminal draws as shapes rather than with font glyphs, over the cells
@@ -36,7 +38,7 @@ internal object BuiltinGlyphs {
     }
 
     private fun isDrawn(codePoint: Int): Boolean =
-        BoxDrawing.isDrawn(codePoint) || Braille.isDrawn(codePoint)
+        BoxDrawing.isDrawn(codePoint) || Braille.isDrawn(codePoint) || Powerline.isDrawn(codePoint)
 
     /**
      * Draws [text], which [isDrawn], over the cells at [topLeft] of [size]: both cells of a wide
@@ -49,7 +51,13 @@ internal object BuiltinGlyphs {
                 with(BoxDrawing) { drawBox(codePoint, topLeft, size, color, fill) }
             Braille.isDrawn(codePoint) ->
                 with(Braille) { drawBraille(codePoint, topLeft, size, color) }
+            Powerline.isDrawn(codePoint) ->
+                with(Powerline) { drawPowerline(codePoint, topLeft, size, color) }
             else -> throw IllegalArgumentException("not drawn here: $text")
         }
     }
+
+    /** The width of a light line in a cell of [size]; heavier lines are multiples of it. */
+    fun lightLineWidth(size: Size): Float =
+        max(1f, (minOf(size.width, size.height) / 10f).roundToInt().toFloat())
 }
