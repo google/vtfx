@@ -283,6 +283,24 @@ class TerminalScreenshotTest {
         composeRule.onRoot().captureRoboImage()
     }
 
+    /**
+     * The progress bar and spinner characters U+EE00 to U+EE0B, one apart, then bars at 0%, 50%,
+     * and 100%, each segments joined into one outlined bar, and the spinner frames in order.
+     */
+    @Test
+    fun progressBarGlyphs() {
+        val all = (0xEE00..0xEE0B).joinToString(" ") { String(Character.toChars(it)) }
+        show(
+            output =
+                "$all\r\n\r\n" +
+                    "\uEE00\uEE01\uEE01\uEE01\uEE01\uEE01\uEE01\uEE02   0%\r\n" +
+                    "\uEE03\uEE04\uEE04\uEE04\uEE01\uEE01\uEE01\uEE02  50%\r\n" +
+                    "\uEE03\uEE04\uEE04\uEE04\uEE04\uEE04\uEE04\uEE05 100%\r\n\r\n" +
+                    "\uEE06 \uEE07 \uEE08 \uEE09 \uEE0A \uEE0B Loading\r\n"
+        )
+        composeRule.onRoot().captureRoboImage()
+    }
+
     @Test
     fun selection() {
         show(output = "first line\r\nsecond 日本語 line\r\nthird\r\n")
