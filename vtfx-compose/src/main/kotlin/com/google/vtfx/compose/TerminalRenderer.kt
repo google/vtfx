@@ -135,7 +135,7 @@ internal class GridFill {
  * font aligns to the grid. Other characters are drawn one cell at a time, since a fallback font
  * (CJK, for example) does not have the cell width.
  *
- * Box drawing characters and block elements are drawn as shapes ([BoxDrawing]), and so are
+ * Box drawing characters and block elements are drawn as shapes ([BuiltinGlyphs]), and so are
  * underlines and overlines, over whole cells (docs/decisions/0079).
  */
 internal class TerminalRenderer(
@@ -456,14 +456,14 @@ internal class TerminalRenderer(
                 column++
                 continue
             }
-            if (text.length == 1 && BoxDrawing.isDrawn(text[0].code)) {
+            if (BuiltinGlyphs.isDrawn(text)) {
                 val color = foreground(cellStyle, defaultForeground, defaultBackground)
-                // Over both cells of a wide one: these are East Asian Ambiguous, two cells wide
-                // when the session takes them so.
+                // Over both cells of a wide one: box drawing characters are East Asian Ambiguous,
+                // two cells wide when the session takes them so.
                 val width = line.widthAt(column)
-                with(BoxDrawing) {
-                    drawBox(
-                        text[0].code,
+                with(BuiltinGlyphs) {
+                    draw(
+                        text,
                         Offset(column * metrics.width, row * metrics.height),
                         Size(width * metrics.width, metrics.height),
                         color,
@@ -708,8 +708,8 @@ internal class TerminalRenderer(
         if (cellStyle.isInvisible) return
         line.textAt(column)?.let { text ->
             // Drawn as drawText draws it, as geometry over the cell (both cells if wide).
-            if (text.length == 1 && BoxDrawing.isDrawn(text[0].code)) {
-                with(BoxDrawing) { drawBox(text[0].code, topLeft, size, cursorTextColor, fill) }
+            if (BuiltinGlyphs.isDrawn(text)) {
+                with(BuiltinGlyphs) { draw(text, topLeft, size, cursorTextColor, fill) }
             } else {
                 drawRun(
                     text,

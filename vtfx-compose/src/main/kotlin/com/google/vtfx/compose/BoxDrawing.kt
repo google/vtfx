@@ -33,8 +33,8 @@ internal object BoxDrawing {
     fun isDrawn(codePoint: Int): Boolean = codePoint in 0x2500..0x259F
 
     /**
-     * Draws [codePoint] in the cell at [topLeft] of [size]. The caller checks [isDrawn]. Rectangles
-     * are filled with [fill], so that they join the next cells without seams.
+     * Draws [codePoint] in the cell at [topLeft] of [size], for [BuiltinGlyphs]. Rectangles are
+     * filled with [fill], so that they join the next cells without seams.
      */
     fun DrawScope.drawBox(
         codePoint: Int,
