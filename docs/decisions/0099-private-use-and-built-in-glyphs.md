@@ -1,6 +1,6 @@
 # Private use characters and glyphs that vtfx draws itself
 
-- Status: Provisional
+- Status: Approved
 - Date: 2026-11-02
 - Related: Requirement 5.2 of [REQUIREMENTS.md](../REQUIREMENTS.md), sections 7.1 and 7.3 of [emulation.md](../design/emulation.md), [fonts.md](../design/fonts.md), [0079](0079-emulation-scope.md), [0086](0086-fonts.md), [0090](0090-distribution.md)
 
