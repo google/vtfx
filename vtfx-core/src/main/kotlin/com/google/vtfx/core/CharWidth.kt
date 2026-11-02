@@ -16,11 +16,9 @@
 
 package com.google.vtfx.core
 
-import com.google.vtfx.core.graphics.Placeholders
-
 // The tables (UnicodeWidthTables) are generated from the Unicode Character Database in
 // third_party/unicode by scripts/generate_unicode_tables.py. The policy is in
-// docs/decisions/0079.
+// docs/decisions/0079, and the width of private use characters in docs/decisions/0099.
 /**
  * The number of cells that a code point occupies. The terminal model uses it for host output, and
  * the display uses it for text that is not in the model, such as the IME's composing text.
@@ -38,17 +36,15 @@ public object CharWidth {
 
     /**
      * Returns 0 for characters that combine with the previous one, and 1 or 2 otherwise. East Asian
-     * Ambiguous characters are [ambiguousWidth] wide, except U+10EEEE, the placeholder of an image
-     * of the kitty graphics protocol, which takes one cell as in kitty.
+     * Ambiguous characters are [ambiguousWidth] wide, except private use characters, which take one
+     * cell either way, as hosts count them.
      */
     public fun of(codePoint: Int, ambiguousWidth: AmbiguousWidth = AmbiguousWidth.Narrow): Int {
         val kind = if (codePoint < BMP_SIZE) BMP[codePoint].toInt() else kindOf(codePoint)
         return when (kind) {
             ZERO -> 0
             WIDE -> 2
-            AMBIGUOUS ->
-                if (ambiguousWidth == AmbiguousWidth.Wide && codePoint != Placeholders.CODE_POINT) 2
-                else 1
+            AMBIGUOUS -> if (ambiguousWidth == AmbiguousWidth.Wide) 2 else 1
             else -> 1
         }
     }
@@ -103,6 +99,11 @@ public object CharWidth {
  * The width of East Asian Ambiguous characters (UAX #11), such as "○", "※", and Greek and Cyrillic
  * letters. It must match the host's setting (for example, vim's 'ambiwidth' and the locale's
  * wcwidth), or the cursor goes out of place.
+ *
+ * Private use characters, which UAX #11 also calls ambiguous, take one cell with either setting:
+ * the wcwidth() of hosts counts them as one cell in every locale, and shell prompts draw the icons
+ * of symbol fonts (such as Nerd Fonts and Powerline) from them. Vim with 'ambiwidth' set to
+ * "double" counts them as two cells unless `setcellwidths()` sets them to one.
  */
 public enum class AmbiguousWidth {
     /** One cell, as wcwidth() in most locales and as vtfx's default. */

@@ -11,6 +11,7 @@ Until decided, the provisional decision is implemented. The impact of reversing 
 | Item | What to decide | Related |
 |---|---|---|
 | Traces of `spec/ime` under `NO_SUGGESTIONS` | Topic 2 of [0082](decisions/0082-ime-editing-model.md) adds `NO_SUGGESTIONS` to the default `inputType`, but the traces of `spec/ime` were recorded with `TYPE_CLASS_TEXT` alone, as the header of `spec/ime/gboard.toml` says; decide whether to record them again under the new contract configuration (`CONTRACT` in `tools/ime-probe/scripts/run_scenarios.py`) and update the header. Humans own `spec/` and `tools/ime-probe/traces/` | [0082](decisions/0082-ime-editing-model.md), section 3 of [ime-contract.md](design/ime-contract.md), [research/ime-gboard-autocorrect.md](research/ime-gboard-autocorrect.md) |
+| Private use characters and drawn glyphs | Approve [0099](decisions/0099-private-use-and-built-in-glyphs.md) (private use characters are one cell wide even when ambiguous characters are wide), and approve again [0079](decisions/0079-emulation-scope.md), which went back to Provisional when its topic 6 took the exception | [0099](decisions/0099-private-use-and-built-in-glyphs.md), [0079](decisions/0079-emulation-scope.md), section 7 of [emulation.md](design/emulation.md) |
 ## 2. Work only humans can do
 
 | Item | Contents | Related |

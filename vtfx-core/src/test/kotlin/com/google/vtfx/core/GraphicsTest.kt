@@ -856,7 +856,7 @@ class GraphicsTest {
 
         @Test
         fun placeholdersAreOneCellWideAndNotText() {
-            // U+10EEEE is East Asian Ambiguous, as private use characters are.
+            // U+10EEEE is a private use character, which Wide leaves one cell wide.
             val terminal = Terminal(10, 2, ambiguousWidth = AmbiguousWidth.Wide)
             terminal.write("\u001b[38;5;42m" + cell(0, 0) + cell(0, 1) + "x")
             val line = terminal.snapshot().line(0)

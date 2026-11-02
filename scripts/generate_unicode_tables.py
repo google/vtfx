@@ -28,7 +28,9 @@ the wcwidth() of hosts with the same Unicode version:
 - 0: general categories Mn, Me, and Cf except U+00AD; Hangul Jungseong and Jongseong
   (U+1160..U+11FF, U+D7B0..U+D7FF); U+200B.
 - 2: East_Asian_Width W or F, including the defaults for unassigned code points in the CJK blocks.
-- Ambiguous: East_Asian_Width A, which is 1 or 2 by the terminal's setting.
+- Ambiguous: East_Asian_Width A, which is 1 or 2 by the terminal's setting, except private use
+  characters (general category Co), which are 1 either way: hosts count them as 1 whatever their
+  ambiguous setting, and symbol fonts draw them in one cell (docs/decisions/0099).
 - 1: everything else.
 
 The default-ignorable code points are those with the Default_Ignorable_Code_Point property in
@@ -150,6 +152,8 @@ def classify(east_asian_width_lines, category_lines):
     for first, last, value in parse_ranges(category_lines, missing=False):
         if value in ("Mn", "Me", "Cf"):
             classes[first : last + 1] = bytes([ZERO]) * (last + 1 - first)
+        elif value == "Co":
+            classes[first : last + 1] = bytes([OTHER]) * (last + 1 - first)
     for first, last in ((0x1160, 0x11FF), (0xD7B0, 0xD7FF), (0x200B, 0x200B)):
         classes[first : last + 1] = bytes([ZERO]) * (last + 1 - first)
     classes[0x00AD] = soft_hyphen

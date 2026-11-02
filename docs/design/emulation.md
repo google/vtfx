@@ -135,7 +135,7 @@ The policy is in [decisions/0079](../decisions/0079-emulation-scope.md).
 - `CharWidth` gives the width of a code point from tables generated from the Unicode Character Database 16.0.0 in `third_party/unicode` by `scripts/generate_unicode_tables.py`. The generated `UnicodeWidthTables.kt` is committed, and `scripts/check.sh` fails if it is not what the script generates ([decisions/0088](../decisions/0088-build-boundaries-and-tests.md)). The rules are those of glibc's `utf8_gen.py`:
   - Width 0: general categories Mn, Me, and Cf (except U+00AD), Hangul medial vowel and final consonant jamo (U+1160–U+11FF, U+D7B0–U+D7FF), and U+200B.
   - Width 2: East_Asian_Width W or F, including unassigned code points in the CJK ranges (the `@missing` defaults).
-  - East Asian Ambiguous (East_Asian_Width A): width 1 by default, 2 with `AmbiguousWidth.Wide` (an argument of `Terminal` and `TerminalSession`). U+10EEEE, the placeholder of the kitty graphics protocol, is width 1 either way (section 9.7).
+  - East Asian Ambiguous (East_Asian_Width A): width 1 by default, 2 with `AmbiguousWidth.Wide` (an argument of `Terminal` and `TerminalSession`). Private use characters (general category Co: U+E000–U+F8FF, U+F0000–U+FFFFD, and U+100000–U+10FFFD), which are East Asian Ambiguous too, are width 1 either way ([decisions/0099](../decisions/0099-private-use-and-built-in-glyphs.md)). Among them are the icons of Nerd Fonts and Powerline, and U+10EEEE, the placeholder of the kitty graphics protocol (section 9.7).
   - Everything else has width 1.
 - To move to another Unicode version, replace the UCD files as [third_party/unicode/README.md](../../third_party/unicode/README.md) describes and run the script.
 

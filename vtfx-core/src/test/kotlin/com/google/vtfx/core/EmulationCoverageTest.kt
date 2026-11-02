@@ -418,6 +418,16 @@ class EmulationCoverageTest {
         }
 
         @Test
+        fun privateUseCharactersAreOneCellEvenWhenAmbiguousCharactersAreWide() {
+            // A Powerline separator, a Nerd Font icon of the BMP, and one of plane 15.
+            val wide = Terminal(20, 3, ambiguousWidth = AmbiguousWidth.Wide)
+
+            wide.write("\uE0B0\uF015\uDB80\uDC01x")
+
+            assertEquals(4, wide.cursor.column)
+        }
+
+        @Test
         fun regionalIndicatorsPairIntoAFlag() {
             val t = terminal()
             // JP, then a third indicator that starts a new pair.

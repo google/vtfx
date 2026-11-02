@@ -41,6 +41,7 @@ EAST_ASIAN_WIDTH = textwrap.dedent("""\
     3001..3003;W     # Po     [3] IDEOGRAPHIC COMMA..DITTO MARK
     3400..3405;W     # Lo     [6] CJK UNIFIED IDEOGRAPH-3400..CJK UNIFIED IDEOGRAPH-3405
     4DB0..4DBF;N     # So    [16] (overrides the default of the block)
+    E000..E002;A     # Co     [3] (E002 is not private use in the categories below)
     FF01;F           # Po         FULLWIDTH EXCLAMATION MARK
 """)
 
@@ -55,6 +56,7 @@ DERIVED_GENERAL_CATEGORY = textwrap.dedent("""\
     200B          ; Cf #       ZERO WIDTH SPACE
     200C..200F    ; Cf #   [4] ZERO WIDTH NON-JOINER..RIGHT-TO-LEFT MARK
     3000          ; Zs #       IDEOGRAPHIC SPACE
+    E000..E001    ; Co #   [2] <private-use-E000>..<private-use-E001>
 """)
 
 DERIVED_CORE_PROPERTIES = textwrap.dedent("""\
@@ -178,6 +180,7 @@ EXPECTED_TABLES = textwrap.dedent("""\
         val AMBIGUOUS: IntArray = intArrayOf(
             0x00A1, 0x00A1,
             0x00AD, 0x00AD,
+            0xE002, 0xE002,
         )
     }
 """)
