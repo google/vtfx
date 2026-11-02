@@ -133,10 +133,16 @@ class Device:
     def setting(self, name):
         return self.shell("settings", "get", "secure", name).strip()
 
+    def installed_path(self):
+        """Returns the path of the sample app's APK on the device, or "" if it is not installed.
+        `pm path` exits with 1 and prints nothing for a package that is not installed."""
+        out = adb(self.serial, "shell", "pm", "path", "com.google.vtfx.sample", check=False)
+        return out.strip().removeprefix("package:")
+
     def install(self, apk):
         """Installs the APK unless the same one is installed. Declines Play Protect's offer to send
         the app for a security check, which otherwise holds the installation."""
-        installed = self.shell("pm", "path", "com.google.vtfx.sample").strip().removeprefix("package:")
+        installed = self.installed_path()
         if installed:
             remote = self.shell("sha256sum", installed).split()[0]
             local = subprocess.run(["sha256sum", apk], capture_output=True, text=True, check=True).stdout.split()[0]

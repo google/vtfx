@@ -19,7 +19,9 @@ Run with: python3 -m unittest discover -s scripts/tests
 
 import pathlib
 import sys
+import tempfile
 import unittest
+from unittest import mock
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
@@ -42,6 +44,25 @@ class KeyboardReportTest(unittest.TestCase):
     def test_unknown_key_is_rejected(self):
         with self.assertRaises(KeyError):
             device_checks.keyboard_report("ctrl+f13")
+
+
+class InstalledPathTest(unittest.TestCase):
+    """Runs Device.installed_path against a fake adb that answers `pm path` as a device does."""
+
+    def run_with_fake_adb(self, script):
+        with tempfile.TemporaryDirectory() as tmp:
+            fake = pathlib.Path(tmp) / "adb"
+            fake.write_text("#!/bin/sh\n" + script)
+            fake.chmod(0o755)
+            with mock.patch.object(device_checks.e2e_ime, "ADB_PATH", str(fake)):
+                return device_checks.Device("SERIAL").installed_path()
+
+    def test_package_not_installed_is_empty(self):
+        self.assertEqual(self.run_with_fake_adb("exit 1\n"), "")
+
+    def test_installed_package_gives_its_path(self):
+        path = self.run_with_fake_adb("echo 'package:/data/app/base.apk'\n")
+        self.assertEqual(path, "/data/app/base.apk")
 
 
 if __name__ == "__main__":
