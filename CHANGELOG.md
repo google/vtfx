@@ -3,6 +3,17 @@
 This file lists the notable changes of each release of vtfx, newest first.
 Versions follow Semantic Versioning; before 1.0, any release may break compatibility ([topic 2 of docs/decisions/0087](docs/decisions/0087-public-api.md)).
 
+## 0.6.0 - Unreleased
+
+### Changed
+
+- `vtfx-core`: With `AmbiguousWidth.Wide`, private use characters now take one cell instead of two, as `wcwidth()` of glibc counts them in every locale, so shell prompts and tmux status lines with Powerline separators or Nerd Font icons stay in line. vim with `ambiwidth=double` still counts them as two cells unless `setcellwidths()` says otherwise.
+- `vtfx-compose`: The terminal now draws these characters itself, as shapes that join across cells, in place of the glyphs of any font, the app's or user's included: braille patterns (U+2800–U+28FF), the separators of Powerline and Powerline Extra (U+E0B0–U+E0BF), the symbols for legacy computing (U+1FB00–U+1FBAF), the progress bar and spinner glyphs of Fira Code (U+EE00–U+EE0B), and the git branch glyphs of flog-symbols (U+F5D0–U+F60D). Before, Android's system fonts had no glyphs for them, so they showed as boxes for missing glyphs.
+
+### Fixed
+
+- `vtfx-compose`: The glyph of a private use character that is wider than its cell, such as an icon of a Nerd Font that is not "Mono", is now scaled down to fit the cell, or the cell and the next one when that one is blank. Before, it covered the next character, and the terminal's bounds cut it in the last column.
+
 ## 0.5.0 - 2026-10-29
 
 ### Changed
