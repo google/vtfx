@@ -45,6 +45,7 @@ import com.google.vtfx.core.TerminalLimits
 import com.google.vtfx.session.TerminalSession
 import java.util.Base64
 import kotlin.math.abs
+import kotlin.math.ceil
 import org.junit.Assert.assertEquals
 import org.junit.Assert.fail
 import org.junit.Rule
@@ -400,6 +401,28 @@ class RenderConsistencyTest {
         step("\u001b[?1049l")
         assertDisplayMatchesState()
         assertShows(RED, 1 to 0)
+    }
+
+    /**
+     * Shapes drawn over whole cells meet the row above without a seam on every row, though the
+     * display records a line at row 0 and draws it at its row, which is rarely at a whole pixel:
+     * rows of full blocks alternate with rows of U+E0BC, a triangle whose top side spans the cell.
+     * The first pixel row whose center is in a row of triangles must be the foreground at the left
+     * of the cell, as it is inside the cell.
+     */
+    @Test
+    fun drawnShapesJoinTheRowAboveOnEveryRow() {
+        show()
+        step("\u001b[?25l" + List(5) { "\u2588\u2588\r\n\uE0BC\uE0BC\r\n" }.joinToString(""))
+        val shown = composeRule.onRoot().captureToImage().asAndroidBitmap()
+        val metrics = CellMetrics.measure(textPaints())
+        val foreground = style.colors.foreground.toArgb()
+        val seams =
+            (1 until 10 step 2).filter { row ->
+                val y = ceil(row * metrics.height - 0.5f).toInt()
+                differs(shown.getPixel((metrics.width / 4).toInt(), y), foreground)
+            }
+        if (seams.isNotEmpty()) fail("Seams above the rows $seams")
     }
 
     private companion object {
