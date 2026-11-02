@@ -35,7 +35,8 @@ internal object BuiltinGlyphs {
         return Character.charCount(codePoint) == text.length && isDrawn(codePoint)
     }
 
-    private fun isDrawn(codePoint: Int): Boolean = BoxDrawing.isDrawn(codePoint)
+    private fun isDrawn(codePoint: Int): Boolean =
+        BoxDrawing.isDrawn(codePoint) || Braille.isDrawn(codePoint)
 
     /**
      * Draws [text], which [isDrawn], over the cells at [topLeft] of [size]: both cells of a wide
@@ -43,6 +44,12 @@ internal object BuiltinGlyphs {
      */
     fun DrawScope.draw(text: String, topLeft: Offset, size: Size, color: Color, fill: GridFill) {
         val codePoint = text.codePointAt(0)
-        with(BoxDrawing) { drawBox(codePoint, topLeft, size, color, fill) }
+        when {
+            BoxDrawing.isDrawn(codePoint) ->
+                with(BoxDrawing) { drawBox(codePoint, topLeft, size, color, fill) }
+            Braille.isDrawn(codePoint) ->
+                with(Braille) { drawBraille(codePoint, topLeft, size, color) }
+            else -> throw IllegalArgumentException("not drawn here: $text")
+        }
     }
 }

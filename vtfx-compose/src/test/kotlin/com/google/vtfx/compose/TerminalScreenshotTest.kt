@@ -188,6 +188,22 @@ class TerminalScreenshotTest {
         composeRule.onRoot().captureRoboImage()
     }
 
+    /**
+     * Every braille pattern, 32 to a row, and a graph and a bar drawn with them as btop draws its
+     * graphs: the dots keep their spacing across cells.
+     */
+    @Test
+    fun braille() {
+        val patterns = (0x2800..0x28FF).joinToString("") { String(Character.toChars(it)) }
+        show(
+            output =
+                patterns.chunked(32).joinToString("\r\n") +
+                    "\r\n\r\n\u2840\u2844\u2846\u2847\u28C7\u28E7\u28F7\u28FF\u28FE\u28FC\u28F8\u28B8\u2838\u2818\u2808\r\n" +
+                    "\u28FF\u28FF\u28FF\u28FF\u28FF\u28C0\u28C0\u28C0\r\n"
+        )
+        composeRule.onRoot().captureRoboImage()
+    }
+
     @Test
     fun selection() {
         show(output = "first line\r\nsecond 日本語 line\r\nthird\r\n")
