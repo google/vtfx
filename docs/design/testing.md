@@ -65,6 +65,8 @@ expected = "dont\u007f't \rteh \ri\u007fI \rok \u007f. \rhello world\u001b[D\u00
 
 The `send` events recorded in traces are not used as expected values, because the policy of the recording tool differs in part from the contract.
 
+Traces are recorded under the editor configuration of the contract (`CONTRACT` in `tools/ime-probe/scripts/run_scenarios.py`, `*@contract` scenarios), since what the IME sees changes which calls it makes. The traces of a real device in `gboard-device-contract/` are the exception: they were recorded with `TYPE_CLASS_TEXT` alone, before section 3 of [ime-contract.md](ime-contract.md) added `NO_SUGGESTIONS`, and are kept because they are the only traces in which the IME rewrites committed text (Gboard's autocorrect), as IMEs that ignore `NO_SUGGESTIONS` still do. The header of `spec/ime/gboard.toml` says which traces were recorded how.
+
 ## 5. Screenshot tests
 
 - Use Roborazzi, which renders Compose on the JVM. It does not need an emulator and runs deterministically.

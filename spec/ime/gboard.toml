@@ -1,9 +1,14 @@
 # Expected bytes sent to the host when replaying Gboard traces into the IME editing model of
 # docs/design/ime-contract.md. See docs/design/testing.md section 4.
 #
-# Only traces recorded under the contract configuration (input history policy, TYPE_CLASS_TEXT
-# only, no personalized learning, rejecting selection changes) are listed, since what the IME sees
-# changes which calls it makes.
+# Only traces recorded under the contract configuration (input history policy, no personalized
+# learning, rejecting selection changes) are listed, since what the IME sees changes which calls it
+# makes. The emulator traces were recorded with the default inputType of the contract,
+# TYPE_CLASS_TEXT | TYPE_TEXT_FLAG_NO_SUGGESTIONS (`CONTRACT` in
+# tools/ime-probe/scripts/run_scenarios.py). The real device traces were recorded with
+# TYPE_CLASS_TEXT alone, before the contract asked for no suggestions, and are kept on purpose:
+# they are the only traces in which an IME rewrites committed text (Gboard's autocorrect), which
+# IMEs that ignore NO_SUGGESTIONS still do (ime-contract.md sections 3 and 4.1).
 #
 # Derivation: the bytes the probe sent while recording, adjusted where the probe differs from the
 # contract. The only difference found is a committed "\n", which the probe sent as is and the
@@ -87,7 +92,7 @@ trace = "tools/ime-probe/traces/gboard-17.2-api37/en-double-space@contract.jsonl
 description = "Type 'ok', Space, Space, which Gboard replaces with '. ' via replaceText, then Enter."
 expected = "ok \u007f. \r"
 
-# --- Real device, Gboard with auto-correction enabled ---
+# --- Real device, Gboard with auto-correction enabled, TYPE_CLASS_TEXT alone ---
 
 [[case]]
 name = "device-english"
