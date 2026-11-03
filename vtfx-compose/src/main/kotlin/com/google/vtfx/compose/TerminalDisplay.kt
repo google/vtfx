@@ -342,6 +342,16 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
      */
     var fling: Fling? by mutableStateOf(null, referentialEqualityPolicy())
 
+    /**
+     * Starts a fling of [scroller] at [velocity], in pixels per second, for a swipe of a finger or
+     * of two on a touchpad, unless it has no speed: a fling that does not move would never end, and
+     * would take the next touch as one that stops it.
+     */
+    fun startFling(velocity: Offset, scroller: SwipeScroller) {
+        if (velocity.x == 0f && velocity.y == 0f) return
+        fling = Fling(velocity, scroller)
+    }
+
     /** Stops the fling, if one is running. */
     fun stopFling() {
         fling = null

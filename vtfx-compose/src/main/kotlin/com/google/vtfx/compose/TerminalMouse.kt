@@ -34,8 +34,10 @@ import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.input.pointer.isTertiaryPressed
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.Velocity
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.TerminalKey
 import com.google.vtfx.core.TerminalSnapshot
@@ -43,6 +45,7 @@ import com.google.vtfx.gate.MouseAction
 import com.google.vtfx.gate.MouseButton
 import com.google.vtfx.gate.MouseReport
 import kotlin.math.abs
+import kotlin.math.pow
 
 /**
  * What a mouse does on the grid (docs/decisions/0085). Other pointers are left to
@@ -119,6 +122,15 @@ internal fun Modifier.terminalMouse(
 /** The lines that a notch of the wheel scrolls through the scrollback, or the arrow keys sent. */
 private const val WHEEL_LINES = 3
 
+/** How much a notch of the wheel with Ctrl zooms the display. */
+private const val WHEEL_ZOOM = 1.2f
+
+/**
+ * How long the fingers of a touchpad's pan may rest before they are lifted and still fling, as long
+ * as Compose's VelocityTracker waits before it takes a pointer to have stopped.
+ */
+private const val PAN_STOPPED_MILLIS = 40L
+
 /** The buttons of a mouse that the terminal tells apart. */
 private enum class Button(val report: MouseButton) {
     Primary(MouseButton.Left),
@@ -184,35 +196,71 @@ private class MouseHandler(
     /** The part of a notch that the wheel turned and that did not scroll yet. */
     private var wheelRemainder = 0f
 
-    /**
-     * The part of a cell height that the two-finger swipe going on moved and that did not scroll
-     * yet.
-     */
-    private var panRemainder = 0f
+    /** The two-finger swipe on a touchpad going on, or null. */
+    private var pan: TouchpadPan? = null
 
     /**
-     * Whether the host gets the two-finger swipe going on as the wheel. Decided when it starts, as
-     * for a swipe on the grid, so that a swipe that scrolls down to the bottom of the scrollback
-     * stops there and does not go on to scroll the host.
+     * A two-finger swipe on a touchpad: it moves the zoomed display and scrolls as a swipe on the
+     * grid does, with [scroller], and flings at its end with the speed that [velocity] measures of
+     * the fingers' [position] (docs/decisions/0100).
      */
-    private var panReporting = false
+    private inner class TouchpadPan(reporting: Boolean) {
+        /** The last event of the swipe, with the pointer's position for wheel reports. */
+        var change: PointerInputChange? = null
+        var modifiers: PointerKeyboardModifiers? = null
+
+        val scroller =
+            SwipeScroller(display, metrics, reporting) { lines ->
+                scroll(
+                    checkNotNull(change),
+                    checkNotNull(modifiers),
+                    reporting,
+                    reports = lines,
+                    lines = lines,
+                )
+            }
+        val velocity = VelocityTracker()
+
+        /** Where the fingers are, from where they started, in pixels of the display. */
+        var position = Offset.Zero
+
+        /** When the fingers last moved. */
+        var movedMillis = Long.MIN_VALUE
+    }
 
     fun handle(event: PointerEvent, change: PointerInputChange) {
         val modifiers = event.keyboardModifiers
         when (event.type) {
             PointerEventType.Scroll -> wheel(change, modifiers)
             PointerEventType.PanStart -> {
-                panRemainder = 0f
-                panReporting = isReporting(modifiers)
-                pan(change, modifiers)
+                display.stopFling()
+                pan = startPan(modifiers)
+                pan?.let { pan(it, change, modifiers) }
             }
-            PointerEventType.PanMove,
-            PointerEventType.PanEnd -> pan(change, modifiers)
+            PointerEventType.PanMove -> pan?.let { pan(it, change, modifiers) }
+            PointerEventType.PanEnd -> {
+                pan?.let {
+                    pan(it, change, modifiers)
+                    fling(it, change)
+                }
+                pan = null
+            }
+            // A pinch on a touchpad zooms as a pinch of two fingers on the grid does
+            // (docs/decisions/0100). It is never reported.
+            PointerEventType.ScaleStart -> display.stopFling()
+            PointerEventType.ScaleChange ->
+                display.zoomBy(
+                    change.scaleFactor,
+                    change.position - gridOffset,
+                    change.position - gridOffset,
+                )
             PointerEventType.Exit -> {
                 reportedCell = null
                 onHover(null, null)
             }
             else -> {
+                // A press stops a fling, as a touch does, and then acts as usual.
+                if (event.type == PointerEventType.Press) display.stopFling()
                 for (button in Button.entries) {
                     if (button in pressed && !button.isPressed(event)) {
                         pressed -= button
@@ -230,7 +278,6 @@ private class MouseHandler(
         }
     }
 
-    /** Returns [position] in the modifier's bounds as a position on the grid. */
     /** The point of the grid under [position], through the zoom of the display. */
     private fun grid(position: Offset): Offset = display.toGrid(position - gridOffset)
 
@@ -406,36 +453,71 @@ private class MouseHandler(
     }
 
     private fun wheel(change: PointerInputChange, modifiers: PointerKeyboardModifiers) {
+        display.stopFling()
+        val reporting = isReporting(modifiers)
+        if (modifiers.isCtrlPressed && !reporting) {
+            // Ctrl+wheel zooms about the pointer, as in browsers, and touchpads that give a pinch
+            // as the wheel with Ctrl do (docs/decisions/0100). Up, away from the user, zooms in.
+            val at = change.position - gridOffset
+            display.zoomBy(WHEEL_ZOOM.pow(-change.scrollDelta.y), at, at)
+            return
+        }
         // Positive when turned up, toward earlier content, as a swipe down.
         wheelRemainder -= change.scrollDelta.y
         val notches = wheelRemainder.toInt()
         if (notches == 0) return
         wheelRemainder -= notches
-        scroll(
-            change,
-            modifiers,
-            isReporting(modifiers),
-            reports = notches,
-            lines = notches * WHEEL_LINES,
-        )
+        scroll(change, modifiers, reporting, reports = notches, lines = notches * WHEEL_LINES)
     }
 
     /**
-     * A two-finger swipe on a touchpad, which Compose gives as a pan of the mouse: scrolls as a
-     * swipe on the grid does, a line per cell height moved.
+     * Starts a two-finger swipe on a touchpad, which Compose gives as a pan of the mouse. Whether
+     * the host gets it as the wheel is decided when it starts, as for a swipe on the grid, so that
+     * a swipe that scrolls down to the bottom of the scrollback stops there and does not go on to
+     * scroll the host.
      */
-    private fun pan(change: PointerInputChange, modifiers: PointerKeyboardModifiers) {
-        // Positive when the fingers move down, toward earlier content, as a swipe down. The pan
-        // offset is an amount of scrolling, as the wheel's delta, so it goes the other way. Moves
-        // that came between two events are in the historical changes.
-        panRemainder -=
-            change.historical.fold(change.panOffset.y) { sum, historical ->
-                sum + historical.panOffset.y
-            }
-        val lines = (panRemainder / metrics.height).toInt()
-        if (lines == 0) return
-        panRemainder -= lines * metrics.height
-        scroll(change, modifiers, panReporting, reports = lines, lines = lines)
+    private fun startPan(modifiers: PointerKeyboardModifiers): TouchpadPan =
+        TouchpadPan(isReporting(modifiers))
+
+    /** Moves [pan] by the moves of [change], as a swipe on the grid moves. */
+    private fun pan(
+        pan: TouchpadPan,
+        change: PointerInputChange,
+        modifiers: PointerKeyboardModifiers,
+    ) {
+        pan.change = change
+        pan.modifiers = modifiers
+        // Moves that came between two events are in the historical changes.
+        for (historical in change.historical) {
+            move(pan, historical.uptimeMillis, historical.panOffset)
+        }
+        move(pan, change.uptimeMillis, change.panOffset)
+    }
+
+    private fun move(pan: TouchpadPan, uptimeMillis: Long, panOffset: Offset) {
+        // The pan offset is an amount of scrolling, as the wheel's delta, so it goes the other way
+        // than the fingers. Not zoomed, only vertical moves count, as for a finger.
+        val moved = -panOffset
+        val delta = if (display.zoom == 1f) Offset(0f, moved.y) else moved
+        // The start and the moves: an event without a move, as the end, would count as the
+        // fingers stopping there. Compared by components, which a negated zero passes.
+        if (delta.x == 0f && delta.y == 0f && pan.movedMillis != Long.MIN_VALUE) return
+        pan.position += delta
+        pan.movedMillis = uptimeMillis
+        pan.velocity.addPosition(uptimeMillis, pan.position)
+        pan.scroller.drag(delta)
+    }
+
+    /**
+     * Flings [pan], which ended with [change], with the speed of the fingers at their last move,
+     * unless they rested before they were lifted, as Compose's VelocityTracker takes a pointer to
+     * have stopped.
+     */
+    private fun fling(pan: TouchpadPan, change: PointerInputChange) {
+        if (change.uptimeMillis - pan.movedMillis > PAN_STOPPED_MILLIS) return
+        val maximum = viewConfiguration.maximumFlingVelocity
+        val speed = pan.velocity.calculateVelocity(Velocity(maximum, maximum))
+        display.startFling(Offset(speed.x, speed.y), pan.scroller)
     }
 
     /**

@@ -234,7 +234,7 @@ internal fun Modifier.terminalPanAndZoom(display: TerminalDisplay, metrics: Cell
                     // Not zoomed, the display has no room to move across.
                     val fling =
                         if (display.zoom == 1f) Offset(0f, speed.y) else Offset(speed.x, speed.y)
-                    if (fling != Offset.Zero) display.fling = Fling(fling, current)
+                    display.startFling(fling, current)
                     return@awaitEachGesture
                 }
                 // With the moves that the platform batched into this event.
@@ -294,11 +294,11 @@ internal class Fling(val velocity: Offset, val scroller: SwipeScroller) {
 }
 
 /**
- * Moves the zoomed display, and scrolls with what is left, by the distance that a finger moves in
- * one swipe and in the fling after it, a line per cell height on the display, with [scrollLines]:
- * positive toward earlier content. It scrolls as the mouse wheel if [reporting], which the swipe
- * decided when it started, as the arrow keys on the alternate screen, and through the scrollback
- * otherwise; this stops at the ends of the scrollback.
+ * Moves the zoomed display, and scrolls with what is left, by the distance that a finger, or two on
+ * a touchpad, move in one swipe and in the fling after it, a line per cell height on the display,
+ * with [scrollLines]: positive toward earlier content. It scrolls as the mouse wheel if
+ * [reporting], which the swipe decided when it started, as the arrow keys on the alternate screen,
+ * and through the scrollback otherwise; this stops at the ends of the scrollback.
  */
 internal class SwipeScroller(
     private val display: TerminalDisplay,

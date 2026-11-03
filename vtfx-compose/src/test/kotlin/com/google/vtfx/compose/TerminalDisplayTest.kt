@@ -19,6 +19,7 @@
 package com.google.vtfx.compose
 
 import android.os.Looper
+import androidx.compose.ui.geometry.Offset
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.TerminalLimits
 import com.google.vtfx.session.TerminalSession
@@ -302,5 +303,14 @@ class TerminalDisplayTest {
         assertEquals(0, full.scrollOffset)
         assertEquals("4", full.topDisplayedLine())
         assertEquals(null, full.selection)
+    }
+
+    @Test
+    fun aFlingWithoutSpeedDoesNotStart() {
+        val scroller = SwipeScroller(display, CellMetrics(10f, 20f, 15f), reporting = false) {}
+        display.startFling(-Offset(0f, 0f), scroller)
+        assertEquals(null, display.fling)
+        display.startFling(Offset(0f, -300f), scroller)
+        assertEquals(Offset(0f, -300f), display.fling?.velocity)
     }
 }

@@ -39,12 +39,12 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.pan
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performMultiModalInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.performTrackpadInput
 import androidx.compose.ui.test.rightClick
+import androidx.compose.ui.test.scale
 import androidx.compose.ui.test.tripleClick
 import androidx.compose.ui.unit.dp
 import com.google.vtfx.core.KeyModifiers
@@ -156,6 +156,16 @@ class TerminalMouseTest {
         composeRule.waitForIdle()
     }
 
+    /**
+     * Swipes two fingers by [offset] and lifts them after resting, so that the swipe does not
+     * fling.
+     */
+    private fun TrackpadInjectionScope.panAndRest(offset: Offset) {
+        panStart()
+        panMoveBy(offset)
+        panEnd(delayMillis = REST_MILLIS)
+    }
+
     // --- Wheel ---
 
     @Test
@@ -222,14 +232,14 @@ class TerminalMouseTest {
     }
 
     // --- Two-finger swipe on a touchpad ---
-    // Compose gives it as a pan of the mouse. In pan(), a positive y moves the fingers down.
+    // Compose gives it as a pan of the mouse. In panMoveBy(), a positive y moves the fingers down.
 
     @Test
     fun twoFingerSwipeScrollsTheScrollbackALinePerCellHeight() {
         show(lines(100))
-        trackpad { pan(Offset(0f, cellHeight * 2.5f)) }
+        trackpad { panAndRest(Offset(0f, cellHeight * 2.5f)) }
         assertEquals(2, display.scrollOffset)
-        trackpad { pan(Offset(0f, -cellHeight)) }
+        trackpad { panAndRest(Offset(0f, -cellHeight)) }
         assertEquals(1, display.scrollOffset)
         assertEquals("", sent.toString())
     }
@@ -241,7 +251,7 @@ class TerminalMouseTest {
             panStart()
             panMoveBy(Offset(0f, cellHeight * 0.6f))
             panMoveBy(Offset(0f, cellHeight * 0.6f))
-            panEnd()
+            panEnd(delayMillis = REST_MILLIS)
         }
         assertEquals(1, display.scrollOffset)
     }
@@ -249,10 +259,10 @@ class TerminalMouseTest {
     @Test
     fun twoFingerSwipeOnTheAlternateScreenSendsAnArrowKeyPerCellHeight() {
         show("\u001b[?1049h")
-        trackpad { pan(Offset(0f, cellHeight * 2)) }
+        trackpad { panAndRest(Offset(0f, cellHeight * 2)) }
         assertEquals("\u001b[A".repeat(2), sent.toString())
         sent.setLength(0)
-        trackpad { pan(Offset(0f, -cellHeight)) }
+        trackpad { panAndRest(Offset(0f, -cellHeight)) }
         assertEquals("\u001b[B", sent.toString())
         assertEquals(0, display.scrollOffset)
     }
@@ -262,11 +272,11 @@ class TerminalMouseTest {
         show("${lines(100)}\u001b[?1000h\u001b[?1006h")
         trackpad {
             moveTo(cell(2, 1))
-            pan(Offset(0f, cellHeight * 2))
+            panAndRest(Offset(0f, cellHeight * 2))
         }
         assertEquals("\u001b[<64;3;2M".repeat(2), sent.toString())
         sent.setLength(0)
-        trackpad { pan(Offset(0f, -cellHeight)) }
+        trackpad { panAndRest(Offset(0f, -cellHeight)) }
         assertEquals("\u001b[<65;3;2M", sent.toString())
         assertEquals(0, display.scrollOffset)
     }
@@ -274,7 +284,7 @@ class TerminalMouseTest {
     @Test
     fun twoFingerSwipeWithShiftScrollsTheScrollbackWhileTheHostAsksForTheMouse() {
         show("${lines(100)}\u001b[?1000h\u001b[?1006h")
-        trackpadWithShift { pan(Offset(0f, cellHeight * 2)) }
+        trackpadWithShift { panAndRest(Offset(0f, cellHeight * 2)) }
         assertEquals(2, display.scrollOffset)
         assertEquals("", sent.toString())
     }
@@ -285,14 +295,93 @@ class TerminalMouseTest {
         show("${lines(100)}\u001b[?1000h\u001b[?1006h")
         trackpadWithShift {
             moveTo(cell(2, 1))
-            pan(Offset(0f, cellHeight * 3))
+            panAndRest(Offset(0f, cellHeight * 3))
         }
         assertEquals(3, display.scrollOffset)
-        trackpad { pan(Offset(0f, -cellHeight * 5)) }
+        trackpad { panAndRest(Offset(0f, -cellHeight * 5)) }
         assertEquals(0, display.scrollOffset)
         assertEquals("", sent.toString())
-        trackpad { pan(Offset(0f, -cellHeight)) }
+        trackpad { panAndRest(Offset(0f, -cellHeight)) }
         assertEquals("\u001b[<65;3;2M", sent.toString())
+    }
+
+    @Test
+    fun aQuickTwoFingerSwipeFlings() {
+        show(lines(500))
+        trackpad { panAndRest(Offset(0f, cellHeight * 2)) }
+        assertEquals(2, display.scrollOffset)
+        trackpad {
+            panStart()
+            repeat(4) { panMoveBy(Offset(0f, cellHeight / 2)) }
+            panEnd()
+        }
+        assertTrue("${display.scrollOffset}", display.scrollOffset > 6)
+        assertEquals(null, display.fling)
+        assertEquals("", sent.toString())
+    }
+
+    @Test
+    fun aTwoFingerSwipeStopsAFling() {
+        show(lines(500))
+        composeRule.mainClock.autoAdvance = false
+        trackpad {
+            panStart()
+            repeat(4) { panMoveBy(Offset(0f, cellHeight / 2)) }
+            panEnd()
+        }
+        composeRule.mainClock.advanceTimeBy(50)
+        assertTrue(display.fling != null)
+        trackpad { panStart() }
+        composeRule.mainClock.advanceTimeBy(50)
+        assertEquals(null, display.fling)
+        val stopped = display.scrollOffset
+        composeRule.mainClock.advanceTimeBy(1000)
+        assertEquals(stopped, display.scrollOffset)
+    }
+
+    @Test
+    fun aTwoFingerSwipeMovesTheZoomedDisplayFirst() {
+        show(lines(100))
+        composeRule.runOnIdle { display.zoomBy(2f, Offset(300f, 200f), Offset(300f, 200f)) }
+        val pan = display.pan
+        trackpad { panAndRest(Offset(40f, cellHeight)) }
+        // The fingers moved right and down: the display shows more to the left and above.
+        assertEquals(pan.x - 20f, display.pan.x, 0.5f)
+        assertEquals(pan.y - cellHeight / 2, display.pan.y, 0.5f)
+        assertEquals(0, display.scrollOffset)
+    }
+
+    @Test
+    fun aPinchOnATouchpadZoomsAboutThePointer() {
+        show(lines(5))
+        val at = cell(10, 3)
+        trackpad {
+            moveTo(at)
+            scale(2f)
+        }
+        assertEquals(2f, display.zoom, 0.01f)
+        assertEquals(at.x, display.toGrid(at).x, 0.5f)
+        assertEquals(at.y, display.toGrid(at).y, 0.5f)
+        assertEquals("", sent.toString())
+    }
+
+    @Test
+    fun ctrlWheelZoomsUnlessTheHostGetsTheMouse() {
+        show(lines(100))
+        withKey(Key.CtrlLeft) { scroll(-1f) }
+        assertEquals(1.2f, display.zoom, 0.01f)
+        assertEquals(0, display.scrollOffset)
+        withKey(Key.CtrlLeft) { scroll(1f) }
+        assertEquals(1f, display.zoom, 0.01f)
+        // The host that asks for the mouse gets the wheel with Ctrl.
+        session.feed("\u001b[?1000h\u001b[?1006h".toByteArray())
+        composeRule.waitForIdle()
+        withKey(Key.CtrlLeft) {
+            moveTo(cell(2, 1))
+            scroll(-1f)
+        }
+        assertEquals(1f, display.zoom, 0.01f)
+        assertEquals("\u001b[<80;3;2M", sent.toString())
     }
 
     // --- Selection ---
@@ -1026,5 +1115,8 @@ class TerminalMouseTest {
 
     private companion object {
         const val TERMINAL = "terminal"
+
+        /** Longer than the fingers of a pan may rest before they are lifted and still fling. */
+        const val REST_MILLIS = 100L
     }
 }
