@@ -40,6 +40,9 @@ import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.input.pointer.util.VelocityTracker
+import androidx.compose.ui.input.pointer.util.addPointerInputChange
+import androidx.compose.ui.unit.Velocity
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.MouseTracking
 import com.google.vtfx.core.TerminalKey
@@ -191,8 +194,8 @@ internal fun Modifier.terminalPanAndZoom(display: TerminalDisplay, metrics: Cell
                 display.stopFling()
                 down.consume()
             }
-            val velocity = VelocityEstimator()
-            velocity.add(down.uptimeMillis, down.position)
+            val velocity = VelocityTracker()
+            velocity.addPointerInputChange(down)
             var pointer = down.id
             var pinching = false
             var scroller: SwipeScroller? = null
@@ -223,17 +226,17 @@ internal fun Modifier.terminalPanAndZoom(display: TerminalDisplay, metrics: Cell
                         continue
                     }
                     val current = scroller ?: return@awaitEachGesture
-                    velocity.add(change.uptimeMillis, change.position)
-                    val speed = velocity.velocity(viewConfiguration.maximumFlingVelocity)
+                    velocity.addPointerInputChange(change)
+                    val maximum = viewConfiguration.maximumFlingVelocity
+                    val speed = velocity.calculateVelocity(Velocity(maximum, maximum))
                     // Not zoomed, the display has no room to move across.
-                    val fling = if (display.zoom == 1f) Offset(0f, speed.y) else speed
+                    val fling =
+                        if (display.zoom == 1f) Offset(0f, speed.y) else Offset(speed.x, speed.y)
                     if (fling != Offset.Zero) display.fling = Fling(fling, current)
                     return@awaitEachGesture
                 }
-                // The moves that the platform batched into this event, as in Compose's
-                // VelocityTracker.
-                for (move in change.historical) velocity.add(move.uptimeMillis, move.position)
-                velocity.add(change.uptimeMillis, change.position)
+                // With the moves that the platform batched into this event.
+                velocity.addPointerInputChange(change)
                 if (scroller == null) {
                     // A long press selecting, which consumes the moves of its finger in the
                     // Initial pass inside the zoom.

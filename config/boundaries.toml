@@ -353,6 +353,8 @@ packages = [
     "androidx/compose/ui/graphics/drawscope",
     "androidx/compose/ui/input/key",
     "androidx/compose/ui/input/pointer",
+    # The speed of a swipe for its fling (docs/decisions/0100).
+    "androidx/compose/ui/input/pointer/util",
     "androidx/compose/ui/layout",
     "androidx/compose/ui/node",
     "androidx/compose/ui/semantics",

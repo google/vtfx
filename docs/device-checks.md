@@ -431,7 +431,7 @@ Run on a Pixel 9 (Android 14) on 2026-10-28 with touches injected with `adb shel
 
 ## 20. Zoom, fling, and the loupe
 
-Sections 2, 15, and 16 of [compose-input.md](design/compose-input.md), [decisions/0100](decisions/0100-zoom-fling-loupe-and-scrolling.md). Robolectric checks what the gestures do (`TerminalZoomTest`, `TerminalGesturesTest`, `SelectionHandlesTest`, `VelocityEstimatorTest`) and the zoomed drawing (`TerminalScreenshotTest.zoomed`), but its touches are injected at fixed intervals, and its loupe is a shadow without a window; how a fling feels, how sharp the magnified text is, and the loupe's window need a device.
+Sections 2, 15, and 16 of [compose-input.md](design/compose-input.md), [decisions/0100](decisions/0100-zoom-fling-loupe-and-scrolling.md). Robolectric checks what the gestures do (`TerminalZoomTest`, `TerminalGesturesTest`, `SelectionHandlesTest`) and the zoomed drawing (`TerminalScreenshotTest.zoomed`), but its touches are injected at fixed intervals, and its loupe is a shadow without a window; how a fling feels, how sharp the magnified text is, and the loupe's window need a device.
 
 | # | Action | Expected |
 |---|---|---|
