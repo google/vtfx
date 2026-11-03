@@ -191,7 +191,7 @@ Hardware keys go to the focused terminal. `TerminalInputView` passes the keys th
 
 ## 12. Not verified on devices
 
-What is verified only with Robolectric and the emulator is in [device-checks.md](../device-checks.md): key interception (3.1), the mouse and touchpads (7), TalkBack (4), copying all the text (12), searching (14), and the selection handles (19).
+What is verified only with Robolectric and the emulator is in [device-checks.md](../device-checks.md): key interception (3.1), the mouse and touchpads (7), TalkBack (4), copying all the text (12), searching (14), the selection handles (19), and the zoom, the fling, and the loupe (20).
 
 ## 13. Search
 

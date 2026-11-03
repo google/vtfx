@@ -11,6 +11,8 @@ Until decided, the provisional decision is implemented. The impact of reversing 
 | Item | What to decide | Related |
 |---|---|---|
 | Traces of `spec/ime` under `NO_SUGGESTIONS` | Topic 2 of [0082](decisions/0082-ime-editing-model.md) adds `NO_SUGGESTIONS` to the default `inputType`, but the traces of `spec/ime` were recorded with `TYPE_CLASS_TEXT` alone, as the header of `spec/ime/gboard.toml` says; decide whether to record them again under the new contract configuration (`CONTRACT` in `tools/ime-probe/scripts/run_scenarios.py`) and update the header. Humans own `spec/` and `tools/ime-probe/traces/` | [0082](decisions/0082-ime-editing-model.md), section 3 of [ime-contract.md](design/ime-contract.md), [research/ime-gboard-autocorrect.md](research/ime-gboard-autocorrect.md) |
+| Compose's velocity tracking for the fling | Topic 3 of [0100](decisions/0100-zoom-fling-loupe-and-scrolling.md) estimates the speed of a swipe with `VelocityEstimator` of its own, because `config/boundaries.toml` does not allow `androidx.compose.ui.input.pointer.util` (Compose's `VelocityTracker`) for `vtfx-compose`, and only a human may relax it. Decide whether to allow that package, which holds no capabilities, so that `VelocityEstimator` can be replaced | [0100](decisions/0100-zoom-fling-loupe-and-scrolling.md), [0088](decisions/0088-build-boundaries-and-tests.md), `config/boundaries.toml` |
+
 ## 2. Work only humans can do
 
 | Item | Contents | Related |
@@ -26,3 +28,4 @@ Checks that need a human: a judgment of how something looks or feels, or hardwar
 
 | Item | Section of [device-checks.md](device-checks.md) | Evidence |
 |---|---|---|
+| How the fling and the zoom feel | 20.1 and 20.4 | None yet: no real device was reachable over adb on 2026-11-03, and the emulator's injected touches do not tell how a finger feels. An agent records 20.1 to 20.6 on a real device first |

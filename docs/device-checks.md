@@ -352,6 +352,7 @@ What to tell us: the Gboard version, the device and Android version, and each ro
 | 17: throughput | Agents | — |
 | 18: colors set by the host | Agents, judging screenshots | — |
 | 19: selection handles | Agents, with touches from a virtual touchscreen | Whether dragging a handle feels right (19.2, 19.3), judged from a recording |
+| 20: zoom, fling, and the loupe | Agents, with touches from `adb shell input` and a multitouch screen made with `uinput` | Whether the fling and the zoom feel like other apps' (20.1, 20.4), judged from a recording |
 
 ## 17. Throughput
 
@@ -427,3 +428,20 @@ Section 14 of [compose-input.md](design/compose-input.md), [decisions/0097](deci
 What to tell us: the device and Android version, a recording of 19.2 to 19.4, and whether the handle stayed under the finger.
 
 Run on a Pixel 9 (Android 14) on 2026-10-28 with touches injected with `adb shell input touchscreen motionevent`: 19.1 to 19.5 as expected, judged from screenshots, except the mouse of 19.5, which was not attached. Each finger move of three cells moved the end three cells while the popup moved with the handle. Before the menu's rectangle covered the handles, the menu of a long press on the first row went below the row, over the handles; and before handles turned at the window's edge, the start handle of a selection from the first column was outside the window. A human dragged the handles by finger on a Pixel 9 Pro Fold on 2026-10-28, and they worked.
+
+## 20. Zoom, fling, and the loupe
+
+Sections 2, 15, and 16 of [compose-input.md](design/compose-input.md), [decisions/0100](decisions/0100-zoom-fling-loupe-and-scrolling.md). Robolectric checks what the gestures do (`TerminalZoomTest`, `TerminalGesturesTest`, `SelectionHandlesTest`, `VelocityEstimatorTest`) and the zoomed drawing (`TerminalScreenshotTest.zoomed`), but its touches are injected at fixed intervals, and its loupe is a shadow without a window; how a fling feels, how sharp the magnified text is, and the loupe's window need a device.
+
+| # | Action | Expected |
+|---|---|---|
+| 20.1 | In the sample app, run `colors` a few times, and flick down and up with a finger | The scrollback goes on scrolling after the finger is lifted, slowing down as other lists do, and stops at its top; a touch during the fling stops it without showing the keyboard |
+| 20.2 | `replay less`, then flick up and down | Arrow keys go on after the flick, and the pager follows |
+| 20.3 | Long-press a word and move the finger along the row, then drag a selection handle | The platform's loupe shows the row under the finger, magnified, above it, and goes when the finger is lifted |
+| 20.4 | Pinch out over text, then move one finger in every direction | The text grows about the fingers, up to 4 times, without the host being resized (`size` prints the same); one finger moves the zoomed part, and at its top or bottom edge goes on to scroll |
+| 20.5 | While zoomed, type with the software keyboard at the bottom right of the screen | The zoomed part moves to the cursor, and the IME's candidates appear at the composing text |
+| 20.6 | Tap "1×" | The whole terminal shows again |
+
+What to tell us: the device and Android version, a recording of 20.1, 20.3, and 20.4, and whether the fling and the zoom feel like other apps'.
+
+Run on the emulator (`vtfx-e2e`, API 37) on 2026-11-03, with touches from `adb shell input` and a pinch from a multitouch screen made with the `uinput` shell command: 20.1 scrolled on after a flick of 400 pixels in 60 ms and showed "Bottom"; 20.3 showed the loupe over the row while the finger was held; 20.4 zoomed about the fingers with the text sharp, and one finger moved the zoomed part to the right and up to the top edge. 20.2, 20.5, and 20.6 were not run, and no real device was reachable over adb.
