@@ -178,7 +178,7 @@ When the app arms sticky modifiers (`TerminalSession.stickyModifiers`), the comp
 - **Composing text**: Overlaid with an underline, starting at the terminal's cursor cell. The terminal model is not changed. Text beyond the right edge of the line wraps to the next row. The part beyond the bottom edge of the screen and the part exceeding the limit of combining characters per cell are not shown (the IME is not trusted, so the work per frame is bounded by the screen size).
 - **Input history**: vtfx shows nothing. Display is left to the host's echo (nothing is shown for password input without echo and the like).
 - **`updateSelection`**: When the selection or the composing range of the editing buffer changes, the IME is notified with `InputMethodManager.updateSelection`. `BaseInputConnection` does not notify automatically, so vtfx calls it.
-- **`CursorAnchorInfo`**: Sends the rectangle of the cursor cell as the insertion point, together with the rectangle of each character of the composing text. It is used to position the candidate window.
+- **`CursorAnchorInfo`**: Sends the rectangle of the cursor cell as the insertion point, together with the rectangle of each character of the composing text. It is used to position the candidate window. The rectangles are in the grid's pixels, and the matrix maps them through the zoom of the display to the screen; those that the zoomed display does not show are flagged `FLAG_HAS_INVISIBLE_REGION` (section 16 of [compose-input.md](compose-input.md)). The IME is sent them again when the zoomed display moves.
 
 ## 8. Threads
 

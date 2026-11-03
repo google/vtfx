@@ -25,11 +25,13 @@ import androidx.annotation.AnyThread
 import androidx.annotation.MainThread
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.LineSnapshot
 import com.google.vtfx.core.SearchIndex
@@ -44,9 +46,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * The state of a [Terminal] composable's display of a session: what it shows of the scrollback, the
- * selection, the search, when it redraws, and when the terminal follows its size. The session holds
- * the state of the terminal; this holds what belongs to one display of it, and goes away with the
- * composable.
+ * zoom, the selection, the search, the fling and the loupe of touches, when it redraws, and when
+ * the terminal follows its size. The session holds the state of the terminal; this holds what
+ * belongs to one display of it, and goes away with the composable.
  *
  * Confined to the main thread. The session's notifications, which come on the thread that caused
  * them, are passed to the main thread.
@@ -222,6 +224,115 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
     fun scrollToBottom() {
         stopFling()
         scrollOffset = 0
+    }
+
+    // --- Zoom (docs/decisions/0100) ---
+
+    /**
+     * How much the display is magnified, from 1 to [MAX_ZOOM]. The grid keeps its columns and rows;
+     * the display shows a part of it larger.
+     */
+    var zoom by mutableFloatStateOf(1f)
+        private set
+
+    /** The point of the grid at the top left of the display, in pixels of the grid. */
+    var pan: Offset
+        get() = panState
+        private set(value) {
+            if (value == panState) return
+            panState = value
+            // The IME places its candidates at the composing text, which moved on the screen.
+            inputHost?.onScreenChanged()
+        }
+
+    private var panState by mutableStateOf(Offset.Zero)
+
+    /** The size of the grid in pixels, which [pan] stays within, or zero before the layout. */
+    private var viewportSize = Size.Zero
+
+    /** The size of a cell in pixels, for following the cursor, or zero before the layout. */
+    private var cellSize = Size.Zero
+
+    /**
+     * Whether the display keeps the cursor in view as the zoomed display moves: from the user's
+     * input until the user pans or zooms.
+     */
+    private var followsCursor = false
+
+    /** Returns the point of the grid that [position] on the display shows. */
+    fun toGrid(position: Offset): Offset = position / zoom + pan
+
+    /** Returns where the display shows [position] of the grid. */
+    fun toDisplay(position: Offset): Offset = (position - pan) * zoom
+
+    /** Sets the size of the grid and of its cells in pixels, which the zoom stays within. */
+    fun setViewport(size: Size, cell: Size) {
+        viewportSize = size
+        cellSize = cell
+        pan = clampPan(pan, zoom)
+    }
+
+    /**
+     * Zooms by [factor] about the point of the display at [from], which moves to [to], as two
+     * fingers that pinch and move do, within 1 and [MAX_ZOOM] and the grid.
+     */
+    fun zoomBy(factor: Float, from: Offset, to: Offset) {
+        followsCursor = false
+        val anchor = toGrid(from)
+        val newZoom = (zoom * factor).coerceIn(1f, MAX_ZOOM)
+        zoom = newZoom
+        pan = clampPan(anchor - to / newZoom, newZoom)
+        inputHost?.onScreenChanged()
+    }
+
+    /**
+     * Moves the zoomed display with a finger that moved by [delta] on the display, within the grid.
+     * Returns the part of [delta] left when the display reached an edge of the grid.
+     */
+    fun panBy(delta: Offset): Offset {
+        followsCursor = false
+        val old = pan
+        pan = clampPan(old - delta / zoom, zoom)
+        return delta - (old - pan) * zoom
+    }
+
+    /** Shows the whole grid again. */
+    fun resetZoom() {
+        zoom = 1f
+        pan = Offset.Zero
+        inputHost?.onScreenChanged()
+    }
+
+    /** Sets the zoom and the pan that a saved view gives, within the grid once it is laid out. */
+    private fun setZoom(newZoom: Float, newPan: Offset) {
+        zoom = newZoom.coerceIn(1f, MAX_ZOOM)
+        pan = clampPan(newPan, zoom)
+    }
+
+    private fun clampPan(pan: Offset, zoom: Float): Offset {
+        // Before the layout, a saved pan is kept until the size is known.
+        if (viewportSize == Size.Zero) return if (zoom == 1f) Offset.Zero else pan
+        val room = viewportSize * (1 - 1 / zoom)
+        return Offset(pan.x.coerceIn(0f, room.width), pan.y.coerceIn(0f, room.height))
+    }
+
+    /**
+     * Moves the zoomed display the least that shows the cursor's cell, if it follows the cursor.
+     */
+    private fun revealCursor() {
+        if (!followsCursor || zoom == 1f || cellSize == Size.Zero) return
+        val (column, row) = session.cursorPosition()
+        val displayRow = row + if (isScrolledBack) scrollOffset else 0
+        val left = column * cellSize.width
+        val top = displayRow * cellSize.height
+        val visible = viewportSize / zoom
+        var x = pan.x
+        var y = pan.y
+        if (left + cellSize.width > x + visible.width) x = left + cellSize.width - visible.width
+        if (left < x) x = left
+        if (top + cellSize.height > y + visible.height) y = top + cellSize.height - visible.height
+        if (top < y) y = top
+        pan = clampPan(Offset(x, y), zoom)
     }
 
     /**
@@ -469,6 +580,8 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
             topLine = if (scrollOffset == 0) null else snapshot.firstLine,
             searchIndex?.query,
             currentMatch,
+            zoom,
+            pan,
         )
     }
 
@@ -491,15 +604,22 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
         // The match that the search keeps if it still matches.
         currentMatch = if (same) view.currentMatch else null
         search(view.query)
+        // The zoom belongs to the display, not to the lines, so it stays for another session too.
+        setZoom(view.zoom, view.pan)
     }
 
     /** Called after the user typed or edited. The display returns to the bottom. */
     fun notifyEditorChanged() {
         editorVersion++
-        if (!sendingScrollKey) stopFling()
+        // Not for the arrow keys of a swipe or a fling, which move the display themselves.
+        if (!sendingScrollKey) {
+            stopFling()
+            followsCursor = true
+        }
         scrollOffset = 0
         // The user moved on from the selection (docs/decisions/0085).
         selection = null
+        revealCursor()
     }
 
     /**
@@ -678,6 +798,8 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
                 version++
                 checkSelection()
                 updateSearch()
+                // The host's echo moves the cursor after the input.
+                revealCursor()
                 inputHost?.onScreenChanged()
             }
         }
@@ -767,6 +889,9 @@ private fun sameSelectedText(
     }
     return true
 }
+
+/** The most that a display magnifies the grid (docs/decisions/0100). */
+internal const val MAX_ZOOM = 4f
 
 /** The matches of a search that a display shows, and the current match, if any. */
 internal class VisibleMatches(val matches: List<SearchMatch>, val current: SearchMatch?)

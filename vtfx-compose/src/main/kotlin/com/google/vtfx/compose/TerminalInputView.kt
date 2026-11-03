@@ -110,7 +110,8 @@ internal class TerminalInputView(context: Context) : View(context), InputHost {
         val session = display.session
         val directInput = session.directInput
         session.edit { TerminalInputConnection.configure(outAttrs, it, directInput) }
-        val anchor = CursorAnchorReporter(this, session) { metrics }
+        val anchor =
+            CursorAnchorReporter(this, session, { metrics }) { GridZoom(display.zoom, display.pan) }
         reporter = anchor
         display.inputHost = this
         return TerminalInputConnection(

@@ -231,7 +231,8 @@ private class MouseHandler(
     }
 
     /** Returns [position] in the modifier's bounds as a position on the grid. */
-    private fun grid(position: Offset): Offset = position - gridOffset
+    /** The point of the grid under [position], through the zoom of the display. */
+    private fun grid(position: Offset): Offset = display.toGrid(position - gridOffset)
 
     /**
      * Whether the host gets the mouse: it asked for reports, Shift is not held, and the display

@@ -105,6 +105,7 @@ public final class com.google.vtfx.compose.TerminalState {
     public final fun copySelection(): kotlin.Boolean
     public final fun findNext(): kotlin.Unit
     public final fun findPrevious(): kotlin.Unit
+    public final fun resetZoom(): kotlin.Unit
     public final fun scrollBy(lines: kotlin.Int): kotlin.Unit
     public final fun scrollByPages(pages: kotlin.Int): kotlin.Unit
     public final fun scrollToBottom(): kotlin.Unit
@@ -114,6 +115,7 @@ public final class com.google.vtfx.compose.TerminalState {
     public final val hasSelection: kotlin.Boolean
     public final val isScrolledBack: kotlin.Boolean
     public final val searchResult: com.google.vtfx.compose.TerminalSearchResult?
+    public final val zoom: kotlin.Float
 }
 
 file com.google.vtfx.compose.TerminalStateKt {

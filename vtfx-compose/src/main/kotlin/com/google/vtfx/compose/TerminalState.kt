@@ -26,6 +26,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.SearchMatch
 import com.google.vtfx.core.SearchQuery
@@ -36,15 +37,15 @@ import java.util.WeakHashMap
 // See docs/decisions/0085.
 /**
  * The state of a [Terminal] that the app can read and change: the selection, for the app's own Copy
- * command or shortcut, the search, for the app's own search field, and the scroll position in the
- * scrollback, for the app's own commands to scroll. Create it with [rememberTerminalState] and pass
- * it to [Terminal].
+ * command or shortcut, the search, for the app's own search field, the scroll position in the
+ * scrollback, for the app's own commands to scroll, and the zoom of a pinch. Create it with
+ * [rememberTerminalState] and pass it to [Terminal].
  *
  * The state acts on the [Terminal] it is passed to while that is in the composition. Before and
- * after, there is nothing to act on: [hasSelection] and [isScrolledBack] are false, [searchResult]
- * is null, and the functions do nothing. If it is passed to two terminals at once, it acts on the
- * one that entered the composition last; when that one leaves, it acts on none until a terminal
- * enters again.
+ * after, there is nothing to act on: [hasSelection] and [isScrolledBack] are false, [zoom] is 1,
+ * [searchResult] is null, and the functions do nothing. If it is passed to two terminals at once,
+ * it acts on the one that entered the composition last; when that one leaves, it acts on none until
+ * a terminal enters again.
  *
  * When the terminal it acts on leaves the composition, as when the user switches to another tab or
  * screen, the state keeps the search and the lines of the scrollback the terminal showed, and gives
@@ -52,7 +53,8 @@ import java.util.WeakHashMap
  * same search with the same current match, as long as its session is the same and its lines were
  * not numbered again since (by resizing, clearing the scrollback, or switching between the main and
  * the alternate screen); otherwise it shows the bottom, and searches the new lines for the same
- * text. [rememberTerminalState] also saves them with the instance state, so that they survive a
+ * text. It keeps the zoom too, and the part of the terminal shown, for any session.
+ * [rememberTerminalState] also saves them with the instance state, so that they survive a
  * configuration change and a `SaveableStateHolder`, as navigation keeps the screens in the back
  * stack. The selection is not kept.
  *
@@ -198,6 +200,19 @@ public class TerminalState {
     }
 
     /**
+     * How much the user zoomed into the terminal with a pinch, from 1, the whole terminal, to 4. A
+     * snapshot state. Zooming magnifies a part of the terminal without changing its columns and
+     * rows, so the host is not told; the user moves the part shown with a finger.
+     */
+    public val zoom: Float
+        get() = display?.zoom ?: 1f
+
+    /** Shows the whole terminal again, as a pinch out does. */
+    public fun resetZoom() {
+        display?.resetZoom()
+    }
+
+    /**
      * Starts acting on [display], the display of a terminal that entered the composition, and gives
      * it the view that the last display left, if any.
      */
@@ -253,6 +268,8 @@ public fun rememberTerminalState(): TerminalState =
  *   followed the output at the bottom.
  * @property query The text that the display searched for, or null.
  * @property currentMatch The current match of the search, or null.
+ * @property zoom How much the display magnified the grid (docs/decisions/0100).
+ * @property pan The point of the grid at the top left of the zoomed display, in pixels.
  */
 internal class SavedView(
     val sessionKey: String,
@@ -260,6 +277,8 @@ internal class SavedView(
     val topLine: Long?,
     val query: SearchQuery?,
     val currentMatch: SearchMatch?,
+    val zoom: Float,
+    val pan: Offset,
 ) {
     /** Returns this as values that a `Bundle` can hold, for [fromSaveable]. */
     fun toSaveable(): ArrayList<Any?> =
@@ -273,6 +292,9 @@ internal class SavedView(
             currentMatch?.startColumn,
             currentMatch?.lastLine,
             currentMatch?.endColumn,
+            zoom,
+            pan.x,
+            pan.y,
         )
 
     companion object {
@@ -295,6 +317,8 @@ internal class SavedView(
                             values[7] as Long,
                             values[8] as Int,
                         ),
+                zoom = values[9] as Float,
+                pan = Offset(values[10] as Float, values[11] as Float),
             )
         }
     }

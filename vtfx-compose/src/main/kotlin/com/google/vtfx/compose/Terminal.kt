@@ -44,6 +44,8 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
@@ -74,6 +76,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.constrainWidth
+import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.viewinterop.AndroidView
 import com.google.vtfx.core.Hyperlink
 import com.google.vtfx.core.InternalVtfxApi
@@ -98,7 +101,10 @@ import kotlinx.coroutines.flow.collectLatest
  * [TerminalSessionListener.onResize] when the composable is first laid out, even if they are the
  * session's size, and then when they change. A tap focuses the terminal and shows the keyboard, and
  * a vertical swipe scrolls through the scrollback (or, when the host asks for them, sends mouse
- * wheel events or arrow keys), going on after a flick until a touch stops it.
+ * wheel events or arrow keys), going on after a flick until a touch stops it. A pinch zooms into a
+ * part of the terminal, up to 4 times, without changing its columns and rows; one finger then moves
+ * the zoomed part before it scrolls, and typing brings the cursor into view. [TerminalState.zoom]
+ * of [state] tells the zoom.
  *
  * A tap on a link calls [onLinkClick], unless the host asked for mouse reports, which then get the
  * tap. The [TerminalLinkClick] tells the kind of pointer and the modifier keys held, and
@@ -305,11 +311,15 @@ internal fun Terminal(
     // The menu of a selection with handles covers the row at a position of the grid and the
     // handles below it, so that the menu, placed below when there is no room above, does not cover
     // the handles, as TextView places it.
+    // The position is in pixels of the grid, which the zoom magnifies on the display.
     val handlesMenuRect = { position: Offset ->
         val top = floor(position.y / metrics.height) * metrics.height
-        val height = metrics.height + with(density) { HANDLE_SIZE.toPx() }
-        Rect(gridOrigin + Offset(position.x, top), Size(1f, height))
+        val height = metrics.height * display.zoom + with(density) { HANDLE_SIZE.toPx() }
+        Rect(gridOrigin + display.toDisplay(Offset(position.x, top)), Size(1f, height))
     }
+    // Whether to clip the zoomed grid to its bounds; not zoomed, the host's glyphs may reach into
+    // the padding, as they always could. Derived, so that a pinch recomposes only when it changes.
+    val zoomed by remember(display) { derivedStateOf { display.zoom != 1f } }
 
     Box(
         modifier
@@ -377,7 +387,11 @@ internal fun Terminal(
             },
             onRelease = { view -> view.bind(null) },
         )
-        Canvas(
+        // The grid's place in the terminal, which zooming does not change: the touches that move
+        // and the loupe are in its pixels, those of the display. Inside, the zoom magnifies the
+        // grid, and its taps, long presses, and accessibility nodes are in pixels of the grid
+        // (docs/decisions/0100).
+        Box(
             Modifier.matchParentSize()
                 .padding(style.padding)
                 .onSizeChanged { size ->
@@ -392,6 +406,7 @@ internal fun Terminal(
                     val columns = (size.width / metrics.width).toInt().coerceIn(1, max)
                     val rows = (size.height / metrics.height).toInt().coerceIn(1, max)
                     gridRows = rows
+                    display.setViewport(size.toSize(), Size(metrics.width, metrics.height))
                     // The size of a cell in pixels, for images and the host's queries
                     // (docs/decisions/0080).
                     display.resize(
@@ -403,41 +418,60 @@ internal fun Terminal(
                 }
                 .onGloballyPositioned { gridOrigin = it.positionInRoot() }
                 // The platform's text loupe, over the text that a touch selects.
-                .magnifier(sourceCenter = { display.loupeCenter ?: Offset.Unspecified })
-                .terminalGestures(
-                    display,
-                    metrics,
-                    onTap = onTap,
-                    onLinkTap = onLinkTap,
-                    onSelectionEnd = { position ->
-                        display.showHandles()
-                        showMenu(toolbar, display, handlesMenuRect(position), withHandles = true)
-                    },
+                .magnifier(
+                    sourceCenter = {
+                        display.loupeCenter?.let { display.toDisplay(it) } ?: Offset.Unspecified
+                    }
                 )
+                .terminalPanAndZoom(display, metrics)
+                .then(if (zoomed) Modifier.clipToBounds() else Modifier)
+                .graphicsLayer {
+                    val zoom = display.zoom
+                    val pan = display.pan
+                    scaleX = zoom
+                    scaleY = zoom
+                    transformOrigin = TransformOrigin(0f, 0f)
+                    translationX = -pan.x * zoom
+                    translationY = -pan.y * zoom
+                }
         ) {
-            val snapshot = display.observeVersion().let { display.displaySnapshot() }
-            val links = if (onLinkClick != null) linkFinder.find(snapshot) else emptyList()
-            with(renderer) {
-                draw(
-                    snapshot,
-                    images,
-                    links,
-                    display.observeEditorVersion().let { session.edit { it.composingText } },
-                    session.ambiguousWidth,
-                    focused,
-                    display.selection,
-                    display.visibleMatches(snapshot),
-                    cursorOn,
-                )
+            Canvas(
+                Modifier.matchParentSize()
+                    .terminalGestures(
+                        display,
+                        metrics,
+                        onTap = onTap,
+                        onLinkTap = onLinkTap,
+                        onSelectionEnd = { position ->
+                            display.showHandles()
+                            showMenu(
+                                toolbar,
+                                display,
+                                handlesMenuRect(position),
+                                withHandles = true,
+                            )
+                        },
+                    )
+            ) {
+                val snapshot = display.observeVersion().let { display.displaySnapshot() }
+                val links = if (onLinkClick != null) linkFinder.find(snapshot) else emptyList()
+                with(renderer) {
+                    draw(
+                        snapshot,
+                        images,
+                        links,
+                        display.observeEditorVersion().let { session.edit { it.composingText } },
+                        session.ambiguousWidth,
+                        focused,
+                        display.selection,
+                        display.visibleMatches(snapshot),
+                        cursorOn,
+                    )
+                }
             }
+            // Over the grid, without handling touches, so that a tap reaches the grid.
+            RowSemantics(gridRows, metrics, displayText, Modifier.matchParentSize())
         }
-        // Over the grid, without handling touches, so that a tap reaches the grid.
-        RowSemantics(
-            gridRows,
-            metrics,
-            displayText,
-            Modifier.matchParentSize().padding(style.padding),
-        )
         SelectionHandles(
             display,
             metrics,

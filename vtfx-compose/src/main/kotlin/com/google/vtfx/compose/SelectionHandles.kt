@@ -109,7 +109,10 @@ internal fun SelectionHandles(
     metrics: CellMetrics,
     /** Called when a drag of a handle starts. */
     onDragStart: () -> Unit,
-    /** Called when a drag ends with the handles shown, with the tip of the dragged handle. */
+    /**
+     * Called when a drag ends with the handles shown, with the tip of the dragged handle in pixels
+     * of the grid.
+     */
     onDragEnd: (Offset) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -148,11 +151,12 @@ internal fun SelectionHandles(
     ) {
         val bounds = visibleBounds ?: return@Box
         for (end in SelectionEnd.entries) {
+            // Where the zoomed display shows the tip.
             val tip =
                 when (end) {
                     SelectionEnd.Start -> tips?.start
                     SelectionEnd.End -> tips?.end
-                }
+                }?.let { display.toDisplay(it) }
             // On the edge is visible: the end handle of the last row points at the grid's bottom.
             if (
                 tip == null ||
@@ -172,8 +176,9 @@ internal fun SelectionHandles(
 }
 
 /**
- * The handle of [end], with its tip at [tip] of the grid that [grid] holds: left of the tip,
- * pointing at the top right, if [pointsRight], else right of the tip, pointing at the top left.
+ * The handle of [end], with its tip at [tip] of the display of the grid that [grid] holds: left of
+ * the tip, pointing at the top right, if [pointsRight], else right of the tip, pointing at the top
+ * left.
  */
 @Composable
 private fun SelectionHandle(
@@ -215,12 +220,13 @@ private fun SelectionHandle(
                         val handleCoordinates = handle.value ?: return@awaitEachGesture
                         down.consume()
                         // Through the screen: the popup moves with the handle during the drag,
-                        // and the grid does not.
-                        fun inGrid(position: Offset): Offset =
+                        // and the grid does not. In pixels of the display, which the zoom
+                        // magnifies the grid on.
+                        fun onDisplay(position: Offset): Offset =
                             gridCoordinates.screenToLocal(handleCoordinates.localToScreen(position))
                         // The tip keeps its distance from the finger, which holds the handle
                         // below the text.
-                        val grab = currentTip - inGrid(down.position)
+                        val grab = currentTip - onDisplay(down.position)
                         currentOnDragStart()
                         try {
                             drag(down.id) { change ->
@@ -235,8 +241,7 @@ private fun SelectionHandle(
                                         SelectionEnd.End -> -metrics.width / 2
                                     }
                                 val point =
-                                    inGrid(change.position) +
-                                        grab +
+                                    display.toGrid(onDisplay(change.position) + grab) +
                                         Offset(towardsCell, -metrics.height / 2)
                                 val cell = displayCell(point, metrics, snapshot)
                                 val moved = selection.withEndAt(end, snapshot, cell)
@@ -264,7 +269,7 @@ private fun SelectionHandle(
                                 SelectionEnd.Start -> tips?.start
                                 SelectionEnd.End -> tips?.end
                             }
-                        currentOnDragEnd(endTip ?: currentTip)
+                        currentOnDragEnd(endTip ?: display.toGrid(currentTip))
                     }
                 }
         )

@@ -2,7 +2,7 @@
 
 - Status: Provisional
 - Date: 2026-11-03
-- Related: Requirements 4.1 and 5.4, sections 2, 4, and 5 of [compose-input.md](../design/compose-input.md), [usage.md](../usage.md), [0084](0084-session-and-threads.md), [0085](0085-compose-interaction.md), [0095](0095-keeping-the-view.md), [0097](0097-selection-handles.md)
+- Related: Requirements 4.1 and 5.4, sections 2, 4, 5, 15, and 16 of [compose-input.md](../design/compose-input.md), section 7 of [ime-contract.md](../design/ime-contract.md), [usage.md](../usage.md), [0084](0084-session-and-threads.md), [0085](0085-compose-interaction.md), [0095](0095-keeping-the-view.md), [0097](0097-selection-handles.md)
 
 ## Background
 
@@ -59,3 +59,19 @@ While a long press selects and while a selection handle is dragged, Compose's `M
 - **Showing it also for mouse selections**: A pointer does not cover the text; Android shows no loupe for a mouse.
 
 **Impact of reversing.** Remove `TerminalDisplay.loupeCenter`, `showLoupe`, and `hideLoupe`, their calls in `TerminalGestures.kt` and `SelectionHandles.kt`, the `magnifier` modifier in `Terminal.kt`, and section 15 of [compose-input.md](../design/compose-input.md).
+
+## 5. Zooming into the display
+
+A pinch magnifies a part of the display, from 1 to 4 times, and the terminal keeps its columns and rows (section 16 of [compose-input.md](../design/compose-input.md)). One finger moves the zoomed display, and what the display cannot take at its top or bottom edge scrolls as a swipe does. The user's input moves the display to the cursor. Zooming is always on. `TerminalState` gives `zoom` and `resetZoom()` and keeps the zoom with the view.
+
+**Why.** The user decided that a pinch zooms into the display rather than change the font size: the host's size does not change, so a full-screen program is not redrawn, the scrollback is not reflowed, and the line numbers that the selection, the search, and the saved view hold stay valid. The use is reading small text for a moment; a lasting change of the size is `TerminalStyle.fontSize`, which the app already owns. Below 1, the display would show empty space around the grid. Four times is enough to read 6 sp text at 24 sp. Moving the display before scrolling is how a zoomed page in a browser behaves, and keeps a swipe meaning one thing on the unzoomed display; scrolling with the rest lets the user read on without unzooming. Following the cursor while typing keeps the text the user types in view, as a zoomed text field does; it stops when the user moves the display, so that the user can look elsewhere while output arrives. The zoom is display state, as the scroll position is, and survives leaving the composition for the same reasons ([0095](0095-keeping-the-view.md)); it does not depend on the lines, so it is kept for another session too. The magnification is a `graphicsLayer` over the grid, so that Compose maps taps, long presses, semantics, and the loupe through it, and text recorded in `RenderNode`s is redrawn at the larger size.
+
+**Alternatives considered.**
+- **Changing the font size, resizing the terminal**: Rejected by the user: the host is resized and redraws, and the scrollback reflows on each pinch.
+- **A pinch that previews a scale and changes the font size on release**: The same resize at the end, with a jump from the preview to the new layout.
+- **A parameter to turn zooming off**: The user decided that it is always on; an app that wants no zoom can call `resetZoom()`.
+- **Zooming below 1 to show more columns**: The grid has no more columns to show.
+- **One finger always moving the zoomed display, never scrolling**: The user would unzoom to scroll and zoom again.
+- **Double tap to zoom**: A tap would wait for the double-tap timeout before showing the keyboard or clicking a link.
+
+**Impact of reversing.** Remove the zoom of `TerminalDisplay` (`zoom`, `pan`, `setViewport`, `zoomBy`, `panBy`, `resetZoom`, `revealCursor`), `terminalPanAndZoom` in favor of a vertical swipe detector on the grid, the `graphicsLayer` and the conversions in `Terminal.kt`, `SelectionHandles.kt`, `TerminalMouse.kt`, and `CursorAnchorReporter.kt`, the zoom of `SavedView` and `TerminalState`, section 16 of [compose-input.md](../design/compose-input.md), and the text in section 7 of [ime-contract.md](../design/ime-contract.md) and [usage.md](../usage.md).

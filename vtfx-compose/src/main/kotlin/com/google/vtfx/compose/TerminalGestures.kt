@@ -18,21 +18,24 @@
 
 package com.google.vtfx.compose
 
+import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.awaitVerticalDragOrCancellation
-import androidx.compose.foundation.gestures.awaitVerticalTouchSlopOrCancellation
+import androidx.compose.foundation.gestures.calculateCentroid
+import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
+import androidx.compose.ui.input.pointer.changedToDownIgnoreConsumed
 import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.input.pointer.pointerInput
@@ -46,20 +49,19 @@ import com.google.vtfx.gate.MouseButton
 import com.google.vtfx.gate.MouseReport
 import com.google.vtfx.session.TerminalSession
 import kotlin.math.abs
+import kotlin.math.sign
 
 /**
- * What touches do on the grid (docs/decisions/0085); [terminalMouse] handles a mouse:
+ * What touches that stay do on the grid, in pixels of the grid, inside its zoom
+ * (docs/decisions/0085); [terminalPanAndZoom] handles touches that move, and [terminalMouse] a
+ * mouse:
  *
  * - A tap shows the keyboard, and if the host asked for mouse events, it is also a click. A tap
  *   drops the selection.
  * - A long press selects the word under it, and moving the finger then extends the selection by
  *   words. [onSelectionEnd] is called when the finger is lifted, with the position to show a menu
  *   at.
- * - A vertical swipe scrolls: as the mouse wheel if the host asked for mouse events, as the arrow
- *   keys on the alternate screen (as xterm's alternateScroll), and through the scrollback
- *   otherwise. It goes on scrolling the same way after the finger is lifted, as a fling that
- *   [FlingRunner] runs and the next touch stops (docs/decisions/0100).
- * - While the display shows the scrollback, the host does not get taps and swipes as the mouse
+ * - While the display shows the scrollback, the host does not get taps as the mouse
  *   (docs/decisions/0085): they act as if it had not asked.
  */
 internal fun Modifier.terminalGestures(
@@ -76,148 +78,221 @@ internal fun Modifier.terminalGestures(
 ): Modifier {
     val session = display.session
     return this.pointerInput(display, metrics) {
-            awaitEachGesture {
-                val down = awaitFirstDown(requireUnconsumed = false)
-                // A mouse, which terminalMouse handled and consumed.
-                if (down.isConsumed) return@awaitEachGesture
-                when (awaitPress(down)) {
-                    Press.Tap -> {
-                        display.selection = null
-                        val linkTapped =
-                            if (isReportingTouches(display)) {
-                                // The host asked for the clicks, links included.
-                                val (column, row) = cellAt(down.position, metrics, session)
-                                session.sendMouse(
-                                    MouseReport(MouseButton.Left, MouseAction.Press, column, row)
-                                )
-                                session.sendMouse(
-                                    MouseReport(MouseButton.Left, MouseAction.Release, column, row)
-                                )
-                                false
-                            } else {
-                                val snapshot = display.displaySnapshot()
-                                onLinkTap(
-                                    snapshot,
-                                    displayCell(down.position, metrics, snapshot),
-                                    down.type,
-                                    currentEvent.keyboardModifiers,
-                                )
-                            }
-                        if (!linkTapped) onTap()
-                    }
-                    Press.Moved -> {}
-                    null -> {
-                        // A long press: select the word, then follow the finger by words until
-                        // it is lifted.
-                        val snapshot = display.displaySnapshot()
-                        val pressed = displayCell(down.position, metrics, snapshot)
-                        val word = TerminalSelection.word(snapshot, pressed)
-                        var selected: TerminalSelection? = word
-                        display.selection = word
-                        var position = down.position
-                        // The loupe follows the finger until it is lifted (docs/decisions/0100).
-                        display.showLoupe(pressed, position.x, snapshot.columns, metrics)
-                        try {
-                            while (true) {
-                                // The Initial pass comes before the scroll detector, which must not
-                                // see
-                                // these moves.
-                                val change =
-                                    awaitPointerEvent(PointerEventPass.Initial)
-                                        .changes
-                                        .firstOrNull {
-                                            it.id == down.id
-                                        } ?: break
-                                // Before consuming it, which changedToUp would then not see.
-                                val lifted = change.changedToUpIgnoreConsumed()
-                                change.consume()
-                                if (lifted) break
-                                // The display drops the selection when its text changes: the rest
-                                // of
-                                // the gesture selects nothing (docs/decisions/0085).
-                                if (display.selection !== selected) selected = null
-                                if (selected == null) continue
-                                position = change.position
-                                // Output may have scrolled the text since the press: the finger is
-                                // over
-                                // what the display shows now.
-                                val now = display.displaySnapshot()
-                                if (now.generation != word.generation) {
-                                    selected = null
-                                    continue
-                                }
-                                val cell = displayCell(position, metrics, now)
-                                selected = word.extendedTo(now, cell)
-                                display.selection = selected
-                                display.showLoupe(cell, position.x, now.columns, metrics)
-                            }
-                        } finally {
-                            // Also when the gesture is cancelled.
-                            display.hideLoupe()
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = false)
+            // A mouse, which terminalMouse handled and consumed, or a touch that stopped a
+            // fling, which terminalPanAndZoom consumed.
+            if (down.isConsumed) return@awaitEachGesture
+            when (awaitPress(down)) {
+                Press.Tap -> {
+                    display.selection = null
+                    val linkTapped =
+                        if (isReportingTouches(display)) {
+                            // The host asked for the clicks, links included.
+                            val (column, row) = cellAt(down.position, metrics, session)
+                            session.sendMouse(
+                                MouseReport(MouseButton.Left, MouseAction.Press, column, row)
+                            )
+                            session.sendMouse(
+                                MouseReport(MouseButton.Left, MouseAction.Release, column, row)
+                            )
+                            false
+                        } else {
+                            val snapshot = display.displaySnapshot()
+                            onLinkTap(
+                                snapshot,
+                                displayCell(down.position, metrics, snapshot),
+                                down.type,
+                                currentEvent.keyboardModifiers,
+                            )
                         }
-                        if (selected != null && display.selection === selected)
-                            onSelectionEnd(position)
+                    if (!linkTapped) onTap()
+                }
+                Press.Moved -> {}
+                null -> {
+                    // A long press: select the word, then follow the finger by words until
+                    // it is lifted.
+                    val snapshot = display.displaySnapshot()
+                    val pressed = displayCell(down.position, metrics, snapshot)
+                    val word = TerminalSelection.word(snapshot, pressed)
+                    var selected: TerminalSelection? = word
+                    display.selection = word
+                    var position = down.position
+                    // The loupe follows the finger until it is lifted (docs/decisions/0100).
+                    display.showLoupe(pressed, position.x, snapshot.columns, metrics)
+                    try {
+                        while (true) {
+                            // Consumed in the Initial pass, so that terminalPanAndZoom, which
+                            // reads the moves in the Main pass, leaves them.
+                            val change =
+                                awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull {
+                                    it.id == down.id
+                                } ?: break
+                            // Before consuming it, which changedToUp would then not see.
+                            val lifted = change.changedToUpIgnoreConsumed()
+                            change.consume()
+                            if (lifted) break
+                            // The display drops the selection when its text changes: the rest
+                            // of
+                            // the gesture selects nothing (docs/decisions/0085).
+                            if (display.selection !== selected) selected = null
+                            if (selected == null) continue
+                            position = change.position
+                            // Output may have scrolled the text since the press: the finger is
+                            // over
+                            // what the display shows now.
+                            val now = display.displaySnapshot()
+                            if (now.generation != word.generation) {
+                                selected = null
+                                continue
+                            }
+                            val cell = displayCell(position, metrics, now)
+                            selected = word.extendedTo(now, cell)
+                            display.selection = selected
+                            display.showLoupe(cell, position.x, now.columns, metrics)
+                        }
+                    } finally {
+                        // Also when the gesture is cancelled.
+                        display.hideLoupe()
                     }
+                    if (selected != null && display.selection === selected) onSelectionEnd(position)
                 }
             }
         }
-        .pointerInput(display, metrics) {
-            awaitEachGesture {
-                // In the Main pass, this detector sees the down before the tap detector, which
-                // comes earlier in the chain of modifiers.
-                val down = awaitFirstDown(requireUnconsumed = false)
-                // A touch stops a fling, as in Android's lists, and is then neither a tap nor a
-                // long press (docs/decisions/0100). A mouse, which terminalMouse consumed, does
-                // not.
-                if (!down.isConsumed && display.fling != null) {
-                    display.stopFling()
-                    down.consume()
-                }
-                var overSlop = 0f
-                val drag =
-                    awaitVerticalTouchSlopOrCancellation(down.id) { change, over ->
-                        change.consume()
-                        overSlop = over
-                    } ?: return@awaitEachGesture
-                val velocity = VelocityEstimator()
-                velocity.add(down.uptimeMillis, down.position)
-                velocity.add(drag.uptimeMillis, drag.position)
-                // Decided when the swipe starts, so that a swipe that scrolls down to the bottom
-                // of the scrollback stops there and does not go on to scroll the host.
-                val scroller = SwipeScroller(display, metrics, isReportingTouches(display))
-                scroller.drag(overSlop, cellAt(drag.position, metrics, session))
-                var pointer = drag.id
-                while (true) {
-                    val change = awaitVerticalDragOrCancellation(pointer) ?: break
-                    pointer = change.id
-                    // The moves that the platform batched into this event, as in Compose's
-                    // VelocityTracker.
-                    for (move in change.historical) velocity.add(move.uptimeMillis, move.position)
-                    velocity.add(change.uptimeMillis, change.position)
-                    if (change.changedToUpIgnoreConsumed()) {
-                        val speed = velocity.velocity(viewConfiguration.maximumFlingVelocity).y
-                        if (speed != 0f) display.fling = Fling(speed, scroller)
-                        break
-                    }
-                    // Before consuming it, which leaves no change to read.
-                    val moved = change.positionChange().y
-                    change.consume()
-                    scroller.drag(moved, cellAt(change.position, metrics, session))
-                }
-            }
-        }
+    }
 }
 
 /**
- * A fling that goes on scrolling as [scroller] after a swipe, from the finger's [velocity] in
- * pixels per second, positive downward (docs/decisions/0100).
+ * What touches that move do on the grid, in pixels of the display, outside its zoom
+ * (docs/decisions/0100); [terminalGestures], inside the zoom, takes taps and long presses:
+ *
+ * - Two fingers zoom the display about their middle and move it with it, from 1 to [MAX_ZOOM]
+ *   times; the grid keeps its columns and rows. Lifting one finger lets the other go on moving it.
+ * - One finger moves the zoomed display first, and scrolls with the rest when the display reaches
+ *   its top or bottom: as the mouse wheel if the host asked for mouse events, as the arrow keys on
+ *   the alternate screen (as xterm's alternateScroll), and through the scrollback otherwise. Not
+ *   zoomed, only vertical moves count, so that an ancestor can take horizontal ones.
+ * - The move goes on after the finger is lifted, as a fling that [FlingRunner] runs and the next
+ *   touch stops; that touch is then neither a tap nor a long press.
+ * - A long press, which [terminalGestures] takes before its finger moves, keeps the finger.
+ * - While the display shows the scrollback, the host does not get the moves as the mouse
+ *   (docs/decisions/0085).
  */
-internal class Fling(val velocity: Float, val scroller: SwipeScroller)
+internal fun Modifier.terminalPanAndZoom(display: TerminalDisplay, metrics: CellMetrics): Modifier =
+    pointerInput(display, metrics) {
+        awaitEachGesture {
+            // In the Initial pass, which reaches this modifier, outside the zoom, before the
+            // detectors of taps and long presses inside it, so that what this consumes there
+            // keeps them from acting.
+            val down = awaitFirstDown(requireUnconsumed = false, PointerEventPass.Initial)
+            // A mouse, which terminalMouse handled and consumed.
+            if (down.isConsumed) return@awaitEachGesture
+            if (display.fling != null) {
+                display.stopFling()
+                down.consume()
+            }
+            val velocity = VelocityEstimator()
+            velocity.add(down.uptimeMillis, down.position)
+            var pointer = down.id
+            var pinching = false
+            var scroller: SwipeScroller? = null
+            while (true) {
+                val initial = awaitPointerEvent(PointerEventPass.Initial)
+                if (!pinching && initial.changes.count { it.pressed } >= 2) {
+                    // A second finger turns a swipe into a pinch, which does not fling.
+                    pinching = true
+                }
+                if (pinching) {
+                    if (initial.changes.none { it.pressed }) return@awaitEachGesture
+                    val from = initial.calculateCentroid(useCurrent = false)
+                    val to = initial.calculateCentroid(useCurrent = true)
+                    if (from.isSpecified && to.isSpecified) {
+                        display.zoomBy(initial.calculateZoom(), from, to)
+                    }
+                    initial.changes.forEach { it.consume() }
+                    continue
+                }
+                // The same event, after the detectors inside the zoom saw it.
+                val event = awaitPointerEvent(PointerEventPass.Main)
+                val change =
+                    event.changes.firstOrNull { it.id == pointer } ?: return@awaitEachGesture
+                if (change.changedToUpIgnoreConsumed()) {
+                    val other = event.changes.firstOrNull { it.pressed }
+                    if (other != null) {
+                        pointer = other.id
+                        continue
+                    }
+                    val current = scroller ?: return@awaitEachGesture
+                    velocity.add(change.uptimeMillis, change.position)
+                    val speed = velocity.velocity(viewConfiguration.maximumFlingVelocity)
+                    // Not zoomed, the display has no room to move across.
+                    val fling = if (display.zoom == 1f) Offset(0f, speed.y) else speed
+                    if (fling != Offset.Zero) display.fling = Fling(fling, current)
+                    return@awaitEachGesture
+                }
+                // The moves that the platform batched into this event, as in Compose's
+                // VelocityTracker.
+                for (move in change.historical) velocity.add(move.uptimeMillis, move.position)
+                velocity.add(change.uptimeMillis, change.position)
+                if (scroller == null) {
+                    // A long press selecting, which consumes the moves of its finger in the
+                    // Initial pass inside the zoom.
+                    if (change.isConsumed && !change.changedToDownIgnoreConsumed()) {
+                        return@awaitEachGesture
+                    }
+                    val moved = change.position - down.position
+                    val beyond = beyondSlop(moved, display.zoom != 1f, viewConfiguration.touchSlop)
+                    if (beyond == null) continue
+                    // Decided when the swipe starts, so that a swipe that scrolls down to the
+                    // bottom of the scrollback stops there and does not go on to scroll the host.
+                    val started = SwipeScroller(display, metrics, isReportingTouches(display))
+                    scroller = started
+                    change.consume()
+                    started.drag(
+                        beyond,
+                        cellAt(display.toGrid(change.position), metrics, display.session),
+                    )
+                    continue
+                }
+                // Before consuming it, which leaves no change to read.
+                val moved = change.positionChange()
+                change.consume()
+                scroller.drag(
+                    if (display.zoom == 1f) Offset(0f, moved.y) else moved,
+                    cellAt(display.toGrid(change.position), metrics, display.session),
+                )
+            }
+        }
+    }
 
 /**
- * Scrolls by the distance that a finger moves in one swipe, and in the fling after it, a line per
- * cell height: as the mouse wheel if [reporting], which the swipe decided when it started, as the
- * arrow keys on the alternate screen, and through the scrollback otherwise.
+ * Returns the part of [moved] beyond the touch slop of [slop] pixels, or null if it is within it:
+ * in any direction if [anyDirection], else only vertically, as a vertical scroller decides.
+ */
+internal fun beyondSlop(moved: Offset, anyDirection: Boolean, slop: Float): Offset? {
+    if (anyDirection) {
+        val distance = moved.getDistance()
+        if (distance <= slop) return null
+        return moved * ((distance - slop) / distance)
+    }
+    if (abs(moved.y) <= slop) return null
+    return Offset(0f, moved.y - sign(moved.y) * slop)
+}
+
+/**
+ * A fling that goes on moving as [scroller] after a swipe, from the finger's [velocity] in pixels
+ * per second, positive rightward and downward (docs/decisions/0100). Each axis decelerates by
+ * itself; [axesRunning] counts those still moving.
+ */
+internal class Fling(val velocity: Offset, val scroller: SwipeScroller) {
+    var axesRunning = (if (velocity.x != 0f) 1 else 0) + (if (velocity.y != 0f) 1 else 0)
+}
+
+/**
+ * Moves the zoomed display, and scrolls with what is left, by the distance that a finger moves in
+ * one swipe and in the fling after it, a line per cell height on the display: as the mouse wheel if
+ * [reporting], which the swipe decided when it started, as the arrow keys on the alternate screen,
+ * and through the scrollback otherwise.
  */
 internal class SwipeScroller(
     private val display: TerminalDisplay,
@@ -231,20 +306,34 @@ internal class SwipeScroller(
     private var cell = Pair(1, 1)
 
     /**
-     * Scrolls by the [pixels] that the finger moved, positive downward, with the finger at [cell]
-     * (1-based, within the screen).
+     * Moves by the [delta] that the finger moved on the display, positive rightward and downward,
+     * with the finger at [cell] (1-based, within the screen).
      */
-    fun drag(pixels: Float, cell: Pair<Int, Int>) {
+    fun drag(delta: Offset, cell: Pair<Int, Int>) {
         this.cell = cell
-        val unused = scrollBy(pixels)
+        val left = display.panBy(delta)
+        val unused = scrollBy(left.y)
     }
 
     /**
-     * Scrolls by [pixels] of a fling, positive downward, with the finger where it was lifted.
-     * Returns the pixels used: 0 at the end of the scrollback that it moves toward, which stops the
-     * fling.
+     * Moves the zoomed display across by [pixels] of a fling. Returns the pixels used: 0 at the
+     * edge of the grid, which stops the fling across.
      */
-    fun scrollBy(pixels: Float): Float {
+    fun flingAcross(pixels: Float): Float = pixels - display.panBy(Offset(pixels, 0f)).x
+
+    /**
+     * Moves the zoomed display down by [pixels] of a fling, and scrolls with what is left, with the
+     * finger where it was lifted. Returns the pixels used: 0 at the end of the scrollback that it
+     * moves toward, which stops the fling.
+     */
+    fun flingDown(pixels: Float): Float {
+        val left = display.panBy(Offset(0f, pixels)).y
+        return pixels - left + scrollBy(left)
+    }
+
+    /** Scrolls by [pixels] on the display, positive downward, and returns the pixels used. */
+    private fun scrollBy(pixels: Float): Float {
+        if (pixels == 0f) return 0f
         if (!reporting && !display.session.isAlternateScreen()) {
             val offset = display.scrollOffset
             if (
@@ -255,10 +344,12 @@ internal class SwipeScroller(
                 return 0f
             }
         }
+        // A line moves with the finger also when the display is zoomed.
+        val lineHeight = metrics.height * display.zoom
         remainder += pixels
-        val lines = (remainder / metrics.height).toInt()
+        val lines = (remainder / lineHeight).toInt()
         if (lines != 0) {
-            remainder -= lines * metrics.height
+            remainder -= lines * lineHeight
             scroll(display, lines, this.cell, reporting)
         }
         return pixels
@@ -266,23 +357,39 @@ internal class SwipeScroller(
 }
 
 /**
- * Runs [display]'s fling while it is set, with Android's deceleration ([ScrollableDefaults]), and
- * clears it at its end. A composable of its own, so that a fling starting or stopping recomposes
- * only this.
+ * Runs [display]'s fling while it is set, each axis with Android's deceleration
+ * ([ScrollableDefaults]), and clears it when both stop. A composable of its own, so that a fling
+ * starting or stopping recomposes only this.
  */
 @Composable
 internal fun FlingRunner(display: TerminalDisplay) {
     val behavior = ScrollableDefaults.flingBehavior()
     val fling = display.fling
+    // One effect per axis, as the module launches no coroutines of its own (docs/decisions/0100).
     LaunchedEffect(display, fling, behavior) {
-        if (fling == null) return@LaunchedEffect
-        val scope =
-            object : ScrollScope {
-                override fun scrollBy(pixels: Float): Float = fling.scroller.scrollBy(pixels)
-            }
-        val unused = with(behavior) { scope.performFling(fling.velocity) }
-        if (display.fling === fling) display.fling = null
+        if (fling == null || fling.velocity.y == 0f) return@LaunchedEffect
+        runAxis(display, fling, behavior, fling.velocity.y, fling.scroller::flingDown)
     }
+    LaunchedEffect(display, fling, behavior) {
+        if (fling == null || fling.velocity.x == 0f) return@LaunchedEffect
+        runAxis(display, fling, behavior, fling.velocity.x, fling.scroller::flingAcross)
+    }
+}
+
+private suspend fun runAxis(
+    display: TerminalDisplay,
+    fling: Fling,
+    behavior: FlingBehavior,
+    velocity: Float,
+    move: (Float) -> Float,
+) {
+    val scope =
+        object : ScrollScope {
+            override fun scrollBy(pixels: Float): Float = move(pixels)
+        }
+    val unused = with(behavior) { scope.performFling(velocity) }
+    fling.axesRunning--
+    if (fling.axesRunning == 0 && display.fling === fling) display.fling = null
 }
 
 /**

@@ -20,6 +20,8 @@ package com.google.vtfx.compose
 
 import android.graphics.Matrix
 import android.graphics.RectF
+import android.view.inputmethod.CursorAnchorInfo
+import androidx.compose.ui.geometry.Offset
 import com.google.vtfx.core.AmbiguousWidth
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.input.HostInput
@@ -47,7 +49,7 @@ class CursorAnchorInfoTest {
         )
     private val metrics = CellMetrics(width = 10f, height = 20f, baseline = 15f)
 
-    private fun info(columns: Int, cursor: Pair<Int, Int>) =
+    private fun info(columns: Int, cursor: Pair<Int, Int>, zoom: GridZoom = GridZoom.None) =
         cursorAnchorInfo(
             editor,
             AmbiguousWidth.Narrow,
@@ -55,6 +57,7 @@ class CursorAnchorInfoTest {
             cursor,
             100f,
             200f,
+            zoom,
         )
 
     @Test
@@ -92,5 +95,24 @@ class CursorAnchorInfoTest {
         assertEquals(null, info.getCharacterBounds(0))
         assertEquals(25f, info.insertionMarkerHorizontal)
         assertEquals(7f, info.insertionMarkerTop)
+    }
+
+    @Test
+    fun theMatrixMapsTheBoundsThroughTheZoom() {
+        editor.setComposingText("日本")
+        // Twice as large, from the point (20, 10) of the grid, which shows 50 by 50 pixels of it.
+        val zoom = GridZoom(2f, Offset(20f, 10f))
+        val info = info(columns = 10, cursor = Pair(3, 1), zoom = zoom)
+        val bounds = RectF(info.getCharacterBounds(0))
+        info.matrix.mapRect(bounds)
+        // (30, 20) of the grid is (20, 20) on the display, from the grid's corner at (105, 207)
+        // on the screen.
+        assertEquals(RectF(125f, 227f, 165f, 267f), bounds)
+        assertEquals(CursorAnchorInfo.FLAG_HAS_VISIBLE_REGION, info.getCharacterBoundsFlags(0))
+        assertEquals(CursorAnchorInfo.FLAG_HAS_VISIBLE_REGION, info.getCharacterBoundsFlags(1))
+        // Right of and below what the display shows.
+        val far = info(columns = 10, cursor = Pair(8, 3), zoom = zoom)
+        assertEquals(CursorAnchorInfo.FLAG_HAS_INVISIBLE_REGION, far.getCharacterBoundsFlags(0))
+        assertEquals(CursorAnchorInfo.FLAG_HAS_INVISIBLE_REGION, far.insertionMarkerFlags)
     }
 }

@@ -124,7 +124,9 @@ public final class com/google/vtfx/compose/TerminalState {
 	public final fun findPrevious ()V
 	public final fun getHasSelection ()Z
 	public final fun getSearchResult ()Lcom/google/vtfx/compose/TerminalSearchResult;
+	public final fun getZoom ()F
 	public final fun isScrolledBack ()Z
+	public final fun resetZoom ()V
 	public final fun scrollBy (I)V
 	public final fun scrollByPages (I)V
 	public final fun scrollToBottom ()V

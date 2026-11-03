@@ -23,6 +23,7 @@ import android.view.View
 import android.view.inputmethod.CursorAnchorInfo
 import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputMethodManager
+import androidx.compose.ui.geometry.Offset
 import com.google.vtfx.core.AmbiguousWidth
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.input.ImeEditor
@@ -49,6 +50,8 @@ internal class CursorAnchorReporter(
     private val session: TerminalSession,
     /** Returns the size of the cells of [view], or null if not laid out. */
     private val metrics: () -> CellMetrics?,
+    /** Returns how the display magnifies the grid of [view] (docs/decisions/0100). */
+    private val zoom: () -> GridZoom,
 ) {
     private val inputMethodManager = view.context.getSystemService(InputMethodManager::class.java)
     private var monitoring = false
@@ -90,16 +93,34 @@ internal class CursorAnchorReporter(
                 cursor,
                 location[0].toFloat(),
                 location[1].toFloat(),
+                zoom(),
             )
         }
+    }
+}
+
+/** How the display magnifies the grid: [zoom] times, from the point [pan] of the grid. */
+internal class GridZoom(val zoom: Float, val pan: Offset) {
+    /** Whether the display shows any of the rectangle from [left], [top] to [right], [bottom]. */
+    fun shows(left: Float, top: Float, right: Float, bottom: Float, grid: GridGeometry): Boolean {
+        val width = grid.columns * grid.metrics.width / zoom
+        val height = grid.rows * grid.metrics.height / zoom
+        val x = pan.x + grid.left
+        val y = pan.y + grid.top
+        return right > x && left < x + width && bottom > y && top < y + height
+    }
+
+    companion object {
+        val None = GridZoom(1f, Offset.Zero)
     }
 }
 
 /**
  * Returns where the composing text and the insertion point of [editor] are drawn: on [grid], from
  * the terminal [cursor] (column, row), wrapped as the display wraps it. The bounds are in view
- * coordinates, and the matrix translates them by the view's position on the screen, ([screenLeft],
- * [screenTop]).
+ * coordinates of the grid, and the matrix maps them through the display's [zoom] and translates
+ * them by the view's position on the screen, ([screenLeft], [screenTop]). Bounds that the zoomed
+ * display does not show are flagged as invisible.
  */
 internal fun cursorAnchorInfo(
     editor: ImeEditor,
@@ -108,8 +129,12 @@ internal fun cursorAnchorInfo(
     cursor: Pair<Int, Int>,
     screenLeft: Float,
     screenTop: Float,
+    zoom: GridZoom,
 ): CursorAnchorInfo {
     val metrics = grid.metrics
+    fun flags(left: Float, top: Float, right: Float, bottom: Float): Int =
+        if (zoom.shows(left, top, right, bottom, grid)) CursorAnchorInfo.FLAG_HAS_VISIBLE_REGION
+        else CursorAnchorInfo.FLAG_HAS_INVISIBLE_REGION
     val composing = editor.composingText
     val layout =
         ComposingLayout(
@@ -135,7 +160,7 @@ internal fun cursorAnchorInfo(
                     top,
                     right,
                     top + metrics.height,
-                    CursorAnchorInfo.FLAG_HAS_VISIBLE_REGION,
+                    flags(left, top, right, top + metrics.height),
                 )
             }
         }
@@ -147,8 +172,15 @@ internal fun cursorAnchorInfo(
         top,
         top + metrics.baseline,
         top + metrics.height,
-        CursorAnchorInfo.FLAG_HAS_VISIBLE_REGION,
+        flags(x, top, x + 1, top + metrics.height),
     )
-    builder.setMatrix(Matrix().apply { setTranslate(screenLeft, screenTop) })
+    builder.setMatrix(
+        Matrix().apply {
+            // Magnified about the grid's top left corner, from the point pan of the grid.
+            setTranslate(screenLeft + grid.left, screenTop + grid.top)
+            preScale(zoom.zoom, zoom.zoom)
+            preTranslate(-grid.left - zoom.pan.x, -grid.top - zoom.pan.y)
+        }
+    )
     return builder.build()
 }

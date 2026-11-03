@@ -51,7 +51,7 @@ class TerminalInputConnectionTest {
         TerminalInputConnection(
             view = view,
             session = session,
-            cursorAnchor = CursorAnchorReporter(view, session) { null },
+            cursorAnchor = CursorAnchorReporter(view, session, { null }) { GridZoom.None },
             onPaste = { pastes++ },
             onEditorChanged = { changes++ },
         )
@@ -250,7 +250,7 @@ class TerminalInputConnectionTest {
             TerminalInputConnection(
                 view = view,
                 session = session,
-                cursorAnchor = CursorAnchorReporter(view, session) { null },
+                cursorAnchor = CursorAnchorReporter(view, session, { null }) { GridZoom.None },
                 onPaste = { session.paste("x") },
                 onEditorChanged = {},
             )

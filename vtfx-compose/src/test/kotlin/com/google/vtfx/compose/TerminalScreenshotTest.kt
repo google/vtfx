@@ -21,6 +21,7 @@ package com.google.vtfx.compose
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
@@ -327,6 +328,24 @@ class TerminalScreenshotTest {
     fun selection() {
         show(output = "first line\r\nsecond 日本語 line\r\nthird\r\n")
         display.selection = display.selectionOf(Cell(6, 0), Cell(10, 1))
+        composeRule.waitForIdle()
+        composeRule.onRoot().captureRoboImage()
+    }
+
+    /**
+     * The display zoomed twice, from 10 by 15 pixels into the grid: the rows cut at the top and
+     * left edges, and the text, the selection over "日本", and the cursor twice as large and sharp
+     * (docs/decisions/0100).
+     */
+    @Test
+    fun zoomed() {
+        show(output = "first line\r\nsecond \u001b[1;31m日本語\u001b[0m line\r\nthird\r\n")
+        display.selection = display.selectionOf(Cell(7, 1), Cell(10, 1))
+        composeRule.waitForIdle()
+        composeRule.runOnIdle {
+            display.zoomBy(2f, Offset.Zero, Offset.Zero)
+            display.panBy(Offset(-20f, -30f))
+        }
         composeRule.waitForIdle()
         composeRule.onRoot().captureRoboImage()
     }
