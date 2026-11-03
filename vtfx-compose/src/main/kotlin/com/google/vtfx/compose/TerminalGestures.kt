@@ -199,6 +199,8 @@ internal fun Modifier.terminalPanAndZoom(display: TerminalDisplay, metrics: Cell
             var pointer = down.id
             var pinching = false
             var scroller: SwipeScroller? = null
+            // The cell of the finger, which a wheel report carries.
+            var cell = Pair(1, 1)
             while (true) {
                 val initial = awaitPointerEvent(PointerEventPass.Initial)
                 if (!pinching && initial.changes.count { it.pressed } >= 2) {
@@ -248,22 +250,22 @@ internal fun Modifier.terminalPanAndZoom(display: TerminalDisplay, metrics: Cell
                     if (beyond == null) continue
                     // Decided when the swipe starts, so that a swipe that scrolls down to the
                     // bottom of the scrollback stops there and does not go on to scroll the host.
-                    val started = SwipeScroller(display, metrics, isReportingTouches(display))
+                    val reporting = isReportingTouches(display)
+                    val started =
+                        SwipeScroller(display, metrics, reporting) { lines ->
+                            scroll(display, lines, cell, reporting)
+                        }
                     scroller = started
                     change.consume()
-                    started.drag(
-                        beyond,
-                        cellAt(display.toGrid(change.position), metrics, display.session),
-                    )
+                    cell = cellAt(display.toGrid(change.position), metrics, display.session)
+                    started.drag(beyond)
                     continue
                 }
                 // Before consuming it, which leaves no change to read.
                 val moved = change.positionChange()
                 change.consume()
-                scroller.drag(
-                    if (display.zoom == 1f) Offset(0f, moved.y) else moved,
-                    cellAt(display.toGrid(change.position), metrics, display.session),
-                )
+                cell = cellAt(display.toGrid(change.position), metrics, display.session)
+                scroller.drag(if (display.zoom == 1f) Offset(0f, moved.y) else moved)
             }
         }
     }
@@ -293,27 +295,24 @@ internal class Fling(val velocity: Offset, val scroller: SwipeScroller) {
 
 /**
  * Moves the zoomed display, and scrolls with what is left, by the distance that a finger moves in
- * one swipe and in the fling after it, a line per cell height on the display: as the mouse wheel if
- * [reporting], which the swipe decided when it started, as the arrow keys on the alternate screen,
- * and through the scrollback otherwise.
+ * one swipe and in the fling after it, a line per cell height on the display, with [scrollLines]:
+ * positive toward earlier content. It scrolls as the mouse wheel if [reporting], which the swipe
+ * decided when it started, as the arrow keys on the alternate screen, and through the scrollback
+ * otherwise; this stops at the ends of the scrollback.
  */
 internal class SwipeScroller(
     private val display: TerminalDisplay,
     private val metrics: CellMetrics,
     private val reporting: Boolean,
+    private val scrollLines: (lines: Int) -> Unit,
 ) {
     /** The distance moved since the last whole line. */
     private var remainder = 0f
 
-    /** The cell of the finger, which a wheel report carries. */
-    private var cell = Pair(1, 1)
-
     /**
-     * Moves by the [delta] that the finger moved on the display, positive rightward and downward,
-     * with the finger at [cell] (1-based, within the screen).
+     * Moves by the [delta] that the finger moved on the display, positive rightward and downward.
      */
-    fun drag(delta: Offset, cell: Pair<Int, Int>) {
-        this.cell = cell
+    fun drag(delta: Offset) {
         val left = display.panBy(delta)
         val unused = scrollBy(left.y)
     }
@@ -353,7 +352,7 @@ internal class SwipeScroller(
         val lines = (remainder / lineHeight).toInt()
         if (lines != 0) {
             remainder -= lines * lineHeight
-            scroll(display, lines, this.cell, reporting)
+            scrollLines(lines)
         }
         return pixels
     }
@@ -444,7 +443,7 @@ private fun displayCell(position: Offset, metrics: CellMetrics, columns: Int, ro
 
 /**
  * Scrolls by [lines]: positive when the finger moves down, which shows earlier content, as a scroll
- * wheel turned up does. As the mouse wheel if [reporting].
+ * wheel turned up does. As the mouse wheel at [cell] if [reporting].
  */
 private fun scroll(display: TerminalDisplay, lines: Int, cell: Pair<Int, Int>, reporting: Boolean) {
     val session = display.session
