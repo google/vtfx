@@ -351,4 +351,78 @@ class TerminalStateTest {
         // Copying from the menu drops the selection, as the menu goes away.
         assertNull(display.selection)
     }
+
+    @Test
+    fun scrollingMovesThroughTheScrollbackWithinItsEnds() {
+        show(lines(100))
+        val rows = display.displaySnapshot().rows
+        composeRule.runOnIdle {
+            state.scrollBy(-3)
+            assertEquals(3, display.scrollOffset)
+            state.scrollBy(1)
+            assertEquals(2, display.scrollOffset)
+            state.scrollByPages(-1)
+            assertEquals(2 + rows, display.scrollOffset)
+            state.scrollByPages(1)
+            assertEquals(2, display.scrollOffset)
+            state.scrollToTop()
+            assertEquals(session.scrollbackSize, display.scrollOffset)
+            assertEquals("line 1", display.displaySnapshot().line(0).text().trim())
+            state.scrollBy(Int.MIN_VALUE)
+            assertEquals(session.scrollbackSize, display.scrollOffset)
+            state.scrollToBottom()
+            assertEquals(0, display.scrollOffset)
+            state.scrollBy(Int.MAX_VALUE)
+            assertEquals(0, display.scrollOffset)
+            state.scrollByPages(Int.MIN_VALUE)
+            assertEquals(session.scrollbackSize, display.scrollOffset)
+        }
+    }
+
+    @Test
+    fun isScrolledBackRecomposesWhenTheDisplayLeavesTheBottom() {
+        var observed: Boolean? = null
+        composeRule.setContent {
+            observed = state.isScrolledBack
+            Terminal(display, Modifier.size(300.dp, 200.dp), state)
+        }
+        composeRule.waitForIdle()
+        session.feed(lines(100).toByteArray())
+        composeRule.waitForIdle()
+        assertEquals(false, observed)
+        composeRule.runOnIdle { state.scrollBy(-1) }
+        composeRule.waitForIdle()
+        assertEquals(true, observed)
+        // The alternate screen has no scrollback to show.
+        session.feed("\u001b[?1049h".toByteArray())
+        composeRule.waitForIdle()
+        assertEquals(false, observed)
+        session.feed("\u001b[?1049l".toByteArray())
+        composeRule.waitForIdle()
+        assertEquals(true, observed)
+        composeRule.runOnIdle { state.scrollToBottom() }
+        composeRule.waitForIdle()
+        assertEquals(false, observed)
+    }
+
+    @Test
+    fun scrollingDoesNothingOnTheAlternateScreenOrWithoutATerminal() {
+        composeRule.runOnIdle {
+            state.scrollBy(-1)
+            assertFalse(state.isScrolledBack)
+        }
+        val sent = StringBuilder()
+        val session = TerminalSession({ sent.append(String(it, Charsets.UTF_8)) })
+        val display = TerminalDisplay(session)
+        composeRule.setContent { Terminal(display, Modifier.size(300.dp, 200.dp), state) }
+        composeRule.waitForIdle()
+        session.feed((lines(100) + "\u001b[?1049h").toByteArray())
+        composeRule.waitForIdle()
+        composeRule.runOnIdle {
+            state.scrollBy(-1)
+            state.scrollToTop()
+            assertFalse(state.isScrolledBack)
+        }
+        assertEquals("", sent.toString())
+    }
 }

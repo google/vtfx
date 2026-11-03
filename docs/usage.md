@@ -125,6 +125,24 @@ IconButton(onClick = { state.findNext() }) { /* Down */ }
 - The highlight colors are `TerminalColors.searchMatch` and `searchCurrentMatch`.
 - Keys such as Ctrl+Shift+F, Enter, and Shift+Enter are the app's: handle them with `onPreImeKeyEvent` and the search field.
 
+### Scrolling
+
+The same `TerminalState` scrolls the terminal for the app's own commands, such as a button that jumps to the bottom or Shift+Page Up (section 5 of [compose-input.md](design/compose-input.md)).
+
+```kotlin
+if (state.isScrolledBack) {
+    SmallFloatingActionButton(onClick = { state.scrollToBottom() }) { /* Down */ }
+}
+// In onPreImeKeyEvent, for Shift+Page Up and Shift+Page Down:
+state.scrollByPages(-1)
+state.scrollByPages(1)
+```
+
+- `scrollBy(lines)` and `scrollByPages(pages)` scroll back with negative numbers and forward with positive ones, as `LazyListState` counts, within the scrollback. `scrollToTop()` shows the oldest line, and `scrollToBottom()` the screen, which then follows the output.
+- `isScrolledBack` is Compose state: it tells whether the terminal shows lines of the scrollback instead of following the output.
+- On the alternate screen (vim, less, htop), there is no scrollback: the functions do nothing, and `isScrolledBack` is false. They never send keys to the host, unlike a swipe there.
+- To clear the scrollback, call `session.clearScrollback()` (section 7).
+
 ### Fonts
 
 `TerminalStyle.font` takes system fonts (`TerminalFont.System("monospace")` and so on), fonts bundled in the app's `res/font` (`TerminalFont.Resources`), and fonts that users choose, sanitized (`TerminalFont.Sanitized`). Use a monospace font (the cell size is measured from the width of `M`).

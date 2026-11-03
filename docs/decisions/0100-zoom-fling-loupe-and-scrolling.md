@@ -20,3 +20,16 @@ Users of terminal apps on phones ask for what other touch UIs give: a pinch that
 - **Clearing the screen too, as some terminals' "Clear" does**: The host does not know that its screen was cleared, and a full-screen program would be left with a blank screen until it redraws. Ctrl+L asks the host itself.
 
 **Impact of reversing.** Remove `TerminalSession.clearScrollback` and `Terminal.clearScrollback` in `vtfx-core`, the mention in `SessionObserver.onOutput`, and the lines in [usage.md](../usage.md) and section 3 of [emulation.md](../design/emulation.md).
+
+## 2. Scrolling from the app
+
+`TerminalState` scrolls the display: `scrollBy(lines)`, `scrollByPages(pages)`, `scrollToTop()`, `scrollToBottom()`, and `isScrolledBack` as snapshot state (section 5 of [compose-input.md](../design/compose-input.md)). Negative numbers scroll back. On the alternate screen, they do nothing.
+
+**Why.** The scroll position is display state, which `TerminalState` already gives the app for the selection and the search; a session shown by two terminals has two positions. Negative numbers toward earlier lines follow `LazyListState.scrollBy` and `ScrollState`, which count toward the end of the content, so an app's code reads the same; `TerminalDisplay` counts lines back from the bottom internally, which is not exposed. Pages are offered because the app cannot read the number of rows of the display (`TerminalSession.size` is internal), and Shift+Page Up and Down are the most common bindings of desktop terminals. `isScrolledBack` lets an app show a button to the bottom only when it does something. A swipe on the alternate screen sends arrow keys as xterm's alternateScroll does, but an app command that sends input to the host would be a key the user did not type; the app can send keys with `TerminalSession.sendKey` if it means to.
+
+**Alternatives considered.**
+- **Exposing the scroll offset and the size of the scrollback**: Enough for a scrollbar, but the offset changes as output arrives while scrolled back, and the app would scroll by lines counted from the bottom, the opposite of Compose's states. It can be added when an app needs a scrollbar.
+- **`scrollTo(line)` with line numbers**: Line numbers change on resizing and clearing the scrollback, which the app cannot see.
+- **Positive numbers scrolling back, as the display counts internally**: Opposite to Compose's scroll states.
+
+**Impact of reversing.** Remove the functions and `isScrolledBack` from `TerminalState`, `scrolledBackState`, `scrollByPages`, `scrollToTop`, and `scrollToBottom` from `TerminalDisplay`, and the text in section 5 of [compose-input.md](../design/compose-input.md) and [usage.md](../usage.md).

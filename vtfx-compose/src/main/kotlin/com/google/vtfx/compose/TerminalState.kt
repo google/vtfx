@@ -36,13 +36,15 @@ import java.util.WeakHashMap
 // See docs/decisions/0085.
 /**
  * The state of a [Terminal] that the app can read and change: the selection, for the app's own Copy
- * command or shortcut, and the search, for the app's own search field. Create it with
- * [rememberTerminalState] and pass it to [Terminal].
+ * command or shortcut, the search, for the app's own search field, and the scroll position in the
+ * scrollback, for the app's own commands to scroll. Create it with [rememberTerminalState] and pass
+ * it to [Terminal].
  *
  * The state acts on the [Terminal] it is passed to while that is in the composition. Before and
- * after, there is nothing to act on: [hasSelection] is false, [searchResult] is null, and the
- * functions do nothing. If it is passed to two terminals at once, it acts on the one that entered
- * the composition last; when that one leaves, it acts on none until a terminal enters again.
+ * after, there is nothing to act on: [hasSelection] and [isScrolledBack] are false, [searchResult]
+ * is null, and the functions do nothing. If it is passed to two terminals at once, it acts on the
+ * one that entered the composition last; when that one leaves, it acts on none until a terminal
+ * enters again.
  *
  * When the terminal it acts on leaves the composition, as when the user switches to another tab or
  * screen, the state keeps the search and the lines of the scrollback the terminal showed, and gives
@@ -153,6 +155,44 @@ public class TerminalState {
     /** Ends the search, if any, and removes its highlights. */
     public fun clearSearch() {
         display?.search(null)
+    }
+
+    /**
+     * Whether the terminal shows lines of the scrollback, rather than the screen at the bottom,
+     * which follows the output. False on the alternate screen, which has no scrollback. A snapshot
+     * state: composables that read it, such as a button that scrolls to the bottom, are recomposed
+     * when it changes.
+     */
+    public val isScrolledBack: Boolean
+        get() = display?.scrolledBackState?.value ?: false
+
+    /**
+     * Scrolls the terminal by [lines] lines, within the scrollback: a negative number shows earlier
+     * lines, and a positive one later lines, up to the screen at the bottom. Does nothing on the
+     * alternate screen, which has no scrollback; unlike a swipe there, it sends no keys. The
+     * selection stays on its text.
+     */
+    public fun scrollBy(lines: Int) {
+        // The display counts lines back into the scrollback.
+        display?.scrollBy(if (lines == Int.MIN_VALUE) Int.MAX_VALUE else -lines)
+    }
+
+    /**
+     * Scrolls the terminal by [pages] times its rows, as [scrollBy] does: for example by -1 for
+     * Shift+Page Up and 1 for Shift+Page Down.
+     */
+    public fun scrollByPages(pages: Int) {
+        display?.scrollByPages(if (pages == Int.MIN_VALUE) Int.MAX_VALUE else -pages)
+    }
+
+    /** Scrolls the terminal to the oldest line of the scrollback. */
+    public fun scrollToTop() {
+        display?.scrollToTop()
+    }
+
+    /** Scrolls the terminal to the screen at the bottom, where it follows the output. */
+    public fun scrollToBottom() {
+        display?.scrollToBottom()
     }
 
     /**

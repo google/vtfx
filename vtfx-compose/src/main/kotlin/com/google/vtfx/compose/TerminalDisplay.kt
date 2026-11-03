@@ -23,6 +23,7 @@ import android.os.Handler
 import android.os.Looper
 import androidx.annotation.AnyThread
 import androidx.annotation.MainThread
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -70,6 +71,13 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
      */
     val isScrolledBack: Boolean
         get() = scrollOffset > 0 && session.scrollbackSize > 0
+
+    /**
+     * [isScrolledBack] as a snapshot state, for the app: also changed by the screen, which may
+     * switch to the alternate screen or lose its scrollback, without recomposing its readers on
+     * every output.
+     */
+    val scrolledBackState = derivedStateOf { observeVersion().let { isScrolledBack } }
 
     /**
      * The text the user selected, or null. It stays on its text as the text scrolls, and is dropped
@@ -170,7 +178,23 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
      */
     fun scrollBy(lines: Int) {
         val limit = session.scrollbackSize
-        scrollOffset = (scrollOffset + lines).coerceIn(0, limit)
+        scrollOffset = (scrollOffset.toLong() + lines).coerceIn(0L, limit.toLong()).toInt()
+    }
+
+    /** Scrolls the display [pages] screens back into the scrollback (or forward, if negative). */
+    fun scrollByPages(pages: Int) {
+        val rows = session.size().second.toLong()
+        scrollBy((pages * rows).coerceIn(Int.MIN_VALUE.toLong(), Int.MAX_VALUE.toLong()).toInt())
+    }
+
+    /** Shows the oldest lines of the scrollback. */
+    fun scrollToTop() {
+        scrollOffset = session.scrollbackSize
+    }
+
+    /** Shows the screen, following the output. */
+    fun scrollToBottom() {
+        scrollOffset = 0
     }
 
     /**

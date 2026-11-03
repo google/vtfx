@@ -105,9 +105,14 @@ public final class com.google.vtfx.compose.TerminalState {
     public final fun copySelection(): kotlin.Boolean
     public final fun findNext(): kotlin.Unit
     public final fun findPrevious(): kotlin.Unit
+    public final fun scrollBy(lines: kotlin.Int): kotlin.Unit
+    public final fun scrollByPages(pages: kotlin.Int): kotlin.Unit
+    public final fun scrollToBottom(): kotlin.Unit
+    public final fun scrollToTop(): kotlin.Unit
     public final fun search(text: kotlin.String, ignoreCase: kotlin.Boolean): kotlin.Unit
     public final fun selectAll(): kotlin.Unit
     public final val hasSelection: kotlin.Boolean
+    public final val isScrolledBack: kotlin.Boolean
     public final val searchResult: com.google.vtfx.compose.TerminalSearchResult?
 }
 
