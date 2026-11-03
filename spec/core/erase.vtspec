@@ -97,3 +97,52 @@ screen
   |     |
 cursor 1,2
 ref ctlseqs: CSI Ps M (DL)
+
+=== IL resets the cursor column to the first column
+size 6x3
+input "111111\r\n222222\e[2;4H\e[LX"
+screen
+  |111111|
+  |X     |
+  |222222|
+cursor 2,2
+ref DEC STD 070 (IL moves to column 1; xterm matches, ECMA-48 8.3.67 and alacritty_terminal keep the column)
+
+=== DL resets the cursor column to the first column
+size 6x3
+input "111111\r\n222222\r\n333333\e[2;4H\e[MX"
+screen
+  |111111|
+  |X33333|
+  |      |
+cursor 2,2
+ref DEC STD 070 (DL moves to column 1; xterm matches, ECMA-48 8.3.32 and alacritty_terminal keep the column)
+
+=== EL 0, 1, and 2 cancel a pending wrap
+size 6x3
+input "abcdef\e[0KX\r\nabcdef\e[1KY\r\nabcdef\e[2KZ"
+screen
+  |abcdeX|
+  |     Y|
+  |     Z|
+cursor 6,3
+ref ctlseqs: CSI Ps K (EL); xterm and tmux cancel pending wrap on EL 0, 1, and 2
+
+=== ED 0, 1, and 2 cancel a pending wrap while ED 3 keeps it
+size 6x2
+input "abcdef\e[0JX\e[1;1Habcdef\e[3JY"
+screen
+  |abcdef|
+  |Y     |
+cursor 2,2
+ref ctlseqs: CSI Ps J (ED); xterm and tmux cancel pending wrap on ED 0, 1, and 2, and keep it on ED 3
+
+=== ICH, DCH, and ECH cancel a pending wrap
+size 6x3
+input "abcdef\e[1@X\r\nabcdef\e[1PY\r\nabcdef\e[1XZ"
+screen
+  |abcdeX|
+  |abcdeY|
+  |abcdeZ|
+cursor 6,3
+ref ctlseqs: CSI Ps @ (ICH), CSI Ps P (DCH), CSI Ps X (ECH)

@@ -119,3 +119,40 @@ screen
   |Xabc      |
 cursor 2,1
 ref ctlseqs: CSI 4 h (IRM)
+
+=== LF, IND, and RI cancel a pending wrap
+size 6x3
+input "123456\nX\r\n123456\eMY"
+screen
+  |123456|
+  |     Y|
+  |123456|
+cursor 6,2
+ref xterm 409 (LF, IND, and RI move vertically from the last column and cancel pending wrap; alacritty_terminal keeps pending wrap)
+
+=== HT at a pending wrap stays on the same row
+size 6x2
+input "123456\t\rX"
+screen
+  |X23456|
+  |      |
+cursor 2,1
+ref xterm 409 and tmux (HT stops at the right margin without wrapping to the next row; alacritty_terminal wraps on HT)
+
+=== A combining character at the first column without a preceding character is dropped
+size 6x2
+input "\u0301\e[CX"
+screen
+  | X    |
+  |      |
+cursor 3,1
+ref docs/design/emulation.md section 7.2 (xterm -u8 drops combining marks on blank cells; alacritty_terminal attaches them to a space)
+
+=== Without autowrap, a wide character at the right margin is dropped
+size 5x2
+input "\e[?7labcd\u3042"
+screen
+  |abcd |
+  |     |
+cursor 5,1
+ref ctlseqs: CSI ? 7 l (DECAWM); xterm and tmux ignore a two-cell character that does not fit at the right margin

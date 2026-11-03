@@ -95,6 +95,7 @@ The reasons for each are in [decisions/0079](../decisions/0079-emulation-scope.m
 | DECSCUSR 0 | Blinking block (ctlseqs) | Returns to the app's default (`TerminalStyle.cursorShape`, `cursorBlinking`), as in VTE, kitty, and Windows Terminal. RIS does the same. The app's default is shown until the host sets DECSCUSR 1–6 or mode 12 | [decisions/0079](../decisions/0079-emulation-scope.md) |
 | OSC 4 pairs with an index out of range or a color that does not parse | xterm stops at the pair | The pair is skipped and the rest apply | [decisions/0096](../decisions/0096-host-colors.md) |
 | Window title (OSC 0, 2) | Passed as sent | Cut to 1024 UTF-16 units, without C0 and C1 controls, DEL, U+2028, U+2029, and the bidirectional formatting characters, so that an app can show it outside the terminal | [decisions/0081](../decisions/0081-resource-limits.md) |
+| CBT at a pending wrap | xterm keeps the pending wrap | Cancels it and moves to the previous tab stop, as tmux does and as the other cursor movements do | [decisions/0094](../decisions/0094-differential-testing.md) |
 
 The deviations of the syntax are in section 2.
 

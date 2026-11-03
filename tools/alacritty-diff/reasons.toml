@@ -49,13 +49,13 @@ kind = "Bug in alacritty_terminal"
 detail = "Term::clear_screen(ClearMode::Above) clears rows above the cursor only when cursor.line > 1 instead of cursor.line > 0, leaving row 0 intact when the cursor is on row 1 (0-based)."
 
 [[reason]]
-cases = "^(spec-proposals/differential\\.vtspec:(EL 0|ICH)|generated/erase/el-0-pending-wrap$|generated/edit/(ich|dch)-pending-wrap$)"
+cases = "^(spec/erase\\.vtspec:(EL 0, 1, and 2|ICH, DCH, and ECH) cancel a pending wrap|generated/erase/el-0-pending-wrap$|generated/edit/(ich|dch)-pending-wrap$)"
 summary = "EL 0, ICH, and DCH do not clear pending wrap in alacritty_terminal"
 kind = "Bug in alacritty_terminal"
 detail = "LineClearMode::Right, insert_blank, and delete_chars in alacritty_terminal leave cursor.input_needs_wrap set (and EL 0 advances past the last cell when input_needs_wrap is set, leaving the last column unerased). xterm, tmux, and vtfx-core clear pendingWrap."
 
 [[reason]]
-cases = "^(spec-proposals/differential\\.vtspec:(LF, IND, and RI|HT at a pending wrap)|generated/c0/(lf-ind-ri|ht-cr)-at-pending-wrap$)"
+cases = "^(spec/text\\.vtspec:(LF, IND, and RI|HT at a pending wrap)|generated/c0/(lf-ind-ri|ht-cr)-at-pending-wrap$)"
 summary = "LF, IND, and RI keep pending wrap and HT wraps at the right margin in alacritty_terminal"
 kind = "Bug in alacritty_terminal"
 detail = "linefeed and reverse_index in alacritty_terminal keep cursor.input_needs_wrap set on the target row so the next character wraps an extra line, and put_tab wraps immediately to the next row when input_needs_wrap is set. xterm and vtfx-core clear pendingWrap on vertical index controls and keep HT on the current row."
@@ -146,33 +146,31 @@ summary = "SGR 21 (double underline) and SGR 53/55 (overline)"
 kind = "Unsupported by alacritty_terminal"
 detail = "vtfx-core supports ECMA-48 SGR 21 for double underline and SGR 53/55 for overline; alacritty_terminal only accepts CSI 4:2 m for double underline and has no overline cell flag."
 
-# --- Open specification questions (proposed in spec-proposals/core/differential.vtspec) ---
-
-[[reason]]
-cases = "^(spec-proposals/differential\\.vtspec:(IL|DL) resets the cursor column|generated/edit/il-dl-)"
-summary = "Whether IL and DL reset the cursor column to column 0"
-kind = "Open question"
-detail = "DEC STD 070 and xterm move the cursor to column 1 on IL (CSI Ps L) and DL (CSI Ps M), as vtfx-core does; ECMA-48 sections 8.3.67 / 8.3.32, tmux, and alacritty_terminal preserve the cursor column. Proposed in spec-proposals/core/differential.vtspec."
-
-[[reason]]
-cases = "^(spec-proposals/differential\\.vtspec:CBT cancels a pending wrap|generated/cursor/cbt-from-pending-wrap$)"
-summary = "Whether CBT (CSI Ps Z) cancels a pending wrap"
-kind = "Open question"
-detail = "vtfx-core and tmux clear pendingWrap when CBT moves left to the previous tab stop (keeping pendingWrap only at the right margin); xterm and alacritty_terminal leave pendingWrap set. Proposed in spec-proposals/core/differential.vtspec."
-
-[[reason]]
-cases = "^spec-proposals/differential\\.vtspec:Mode 1049 (reset on the main screen|set on the alternate screen)"
-summary = "Whether CSI ? 1049 h/l saves or restores the cursor when already on the target screen"
-kind = "Open question"
-detail = "xterm and vtfx-core execute the DECSC / DECRC step of mode 1049 even when already on the alternate or main screen; alacritty_terminal returns early when the active screen does not change. Proposed in spec-proposals/core/differential.vtspec."
-
-[[reason]]
-cases = "^spec-proposals/differential\\.vtspec:A combining character at the first column"
-summary = "Whether a combining character on a blank cell is dropped or attached to a space"
-kind = "Open question"
-detail = "vtfx-core and xterm -u8 ignore combining marks when there is no preceding graphic character; alacritty_terminal attaches them to the blank cell's space character. Proposed in spec-proposals/core/differential.vtspec."
-
 # --- Intentional design differences ---
+
+[[reason]]
+cases = "^(spec/erase\\.vtspec:(IL|DL) resets the cursor column|generated/edit/il-dl-)"
+summary = "IL and DL reset the cursor column to the first column"
+kind = "Intentional difference"
+detail = "vtfx-core moves the cursor to column 1 on IL (CSI Ps L) and DL (CSI Ps M) as DEC STD 070 and xterm do (docs/decisions/0094, topic 3); ECMA-48 sections 8.3.67 / 8.3.32, tmux, and alacritty_terminal preserve the cursor column."
+
+[[reason]]
+cases = "^(spec/cursor\\.vtspec:CBT cancels a pending wrap|generated/cursor/cbt-from-pending-wrap$)"
+summary = "CBT (CSI Ps Z) cancels a pending wrap"
+kind = "Intentional difference"
+detail = "vtfx-core clears pendingWrap when CBT moves left to the previous tab stop (keeping pendingWrap only at the right margin), as tmux does and as other cursor movements do (docs/decisions/0094, topic 3); xterm and alacritty_terminal leave pendingWrap set."
+
+[[reason]]
+cases = "^spec/scroll\\.vtspec:Mode 1049 (reset on the main screen|set on the alternate screen)"
+summary = "CSI ? 1049 h/l save or restore the cursor even when already on the target screen"
+kind = "Intentional difference"
+detail = "vtfx-core executes the DECSC / DECRC step of mode 1049 even when already on the alternate or main screen, as xterm does (docs/decisions/0094, topic 3); alacritty_terminal returns early when the active screen does not change."
+
+[[reason]]
+cases = "^spec/text\\.vtspec:A combining character at the first column"
+summary = "A combining character on a blank cell without a preceding character is dropped"
+kind = "Intentional difference"
+detail = "vtfx-core ignores combining marks when there is no preceding graphic character, as xterm -u8 does (docs/design/emulation.md section 7.2, docs/decisions/0094 topic 3); alacritty_terminal attaches them to the blank cell's space character."
 
 [[reason]]
 cases = "^(fuzz-core/invalid-utf8|fuzz-core/crash-(43c0d2250f95bf20a9a43e2ccfd64707da701882|5d1659dbf40ef6a4d3b7985a239e44d08c929ce0)|fuzz-gate/crash-fca1421b90070b20c12e4b4c4014444c0b453b4a|generated/unicode/utf8-malformed-maximal-subpart)$"
@@ -209,6 +207,6 @@ detail = "Compound fixed-seed sequence mixing resize operations with control seq
 
 [[reason]]
 cases = "^generated/random/seed-"
-summary = "Seeded random stress sequences exercising open specification questions (mode 1049, IL/DL)"
-kind = "Open question"
-detail = "Compound fixed-seed sequence without resize that exercises CSI ? 1049 l on the main screen or IL/DL cursor column handling, covered individually in spec-proposals/core/differential.vtspec."
+summary = "Seeded random stress sequences exercising mode 1049 and IL/DL cursor column handling"
+kind = "Intentional difference"
+detail = "Compound fixed-seed sequence without resize that exercises CSI ? 1049 l on the main screen or IL/DL cursor column handling, decided in docs/decisions/0094 (topic 3) and covered individually in spec/core/scroll.vtspec and spec/core/erase.vtspec."

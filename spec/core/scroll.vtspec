@@ -86,3 +86,21 @@ screen
   |          |
 cursor 4,1
 ref ctlseqs: CSI ? 1049 l
+
+=== Mode 1049 reset on the main screen restores the saved cursor
+size 8x2
+input "\e[2;4H\e7\e[1;1Habc\e[?1049lX"
+screen
+  |abc     |
+  |   X    |
+cursor 5,2
+ref ctlseqs: CSI ? 1049 l (combines mode 1047 reset and DECRC; xterm matches, alacritty_terminal ignores it on the main screen)
+
+=== Mode 1049 set on the alternate screen saves the cursor
+size 8x2
+input "\e[?1049h\e[2;4H\e[?1049h\e[1;1Habc\e8X"
+screen
+  |abc     |
+  |   X    |
+cursor 5,2
+ref ctlseqs: CSI ? 1049 h (combines DECSC and mode 1047 set; xterm matches, alacritty_terminal ignores it on the alternate screen)

@@ -2,7 +2,7 @@
 
 - Status: Approved
 - Date: 2026-10-27
-- Related: Requirements 5.1, 6.1, and 7.2, section 6 of [architecture.md](../design/architecture.md), section 11 of [emulation.md](../design/emulation.md), sections 1, 2, 10, and 15 of [testing.md](../design/testing.md), [review-queue.md](../review-queue.md), [0079](0079-emulation-scope.md), [0080](0080-kitty-graphics.md), [0081](0081-resource-limits.md), [0084](0084-session-and-threads.md), [0088](0088-build-boundaries-and-tests.md), `scripts/alacritty_diff.py`, `tools/alacritty-diff`, `spec-proposals/core/differential.vtspec`
+- Related: Requirements 5.1, 6.1, and 7.2, section 6 of [architecture.md](../design/architecture.md), section 11 of [emulation.md](../design/emulation.md), sections 1, 2, 10, and 15 of [testing.md](../design/testing.md), [review-queue.md](../review-queue.md), [0079](0079-emulation-scope.md), [0080](0080-kitty-graphics.md), [0081](0081-resource-limits.md), [0084](0084-session-and-threads.md), [0088](0088-build-boundaries-and-tests.md), `scripts/alacritty_diff.py`, `tools/alacritty-diff`, `spec/core`, section 5 of [emulation.md](../design/emulation.md)
 
 ## Background
 
@@ -37,3 +37,20 @@ Hand-written cases in `spec/core`, `esctest2`, and recorded app sessions check i
 - **Keep open behavioral questions only in Kotlin unit tests**: unit tests catch regressions, whereas `.vtspec` files in `spec-proposals/core/` already use the oracle format so a human can promote them directly into `spec/core/`.
 
 **Impact of reversing.** To drop `ProposedSpecTest` and `spec-proposals/core/`, move their cases into `TerminalTest`, delete `ProposedSpecTest.kt` and `spec-proposals/core/`, and remove `specProposals` and `vtfx.specProposalsDir` from `vtfx-core/build.gradle.kts`.
+
+## 3. Expected behavior of the first proposals
+
+The first run left twelve cases in `spec-proposals/core/`. A human approved all of them and promoted them to `spec/core/` (`cursor.vtspec`, `erase.vtspec`, `scroll.vtspec`, `text.vtspec`). Eight of them only fixed behavior on which the references and other emulators agree (pending wrap cancelled by `EL`, `ED` 0 to 2, `ICH`, `DCH`, `ECH`, `LF`, `IND`, and `RI`, `HT` at a pending wrap staying on the row, and a wide character dropped at the right margin without autowrap). The other four were open questions, decided as follows; `tools/alacritty-diff/reasons.toml` lists them as intentional differences.
+
+1. **`IL` and `DL` move the cursor to column 1**, as DEC STD 070 and xterm do. ECMA-48 (8.3.67, 8.3.32), tmux, and `alacritty_terminal` keep the column, but DEC STD 070 is the reference for the meaning of DEC features (section 1 of [emulation.md](../design/emulation.md)), and apps written against xterm's terminfo expect it.
+2. **`CBT` cancels a pending wrap**, as tmux does. xterm and `alacritty_terminal` keep it. Every other cursor movement away from the right margin cancels the pending wrap, so a pending wrap that survived a move to the left would wrap a later character from the middle of a row; this is a deviation from xterm (section 5 of [emulation.md](../design/emulation.md)).
+3. **`CSI ? 1049 h` and `l` save and restore the cursor even when already on that screen**, as xterm does: the mode is defined as DECSC or DECRC combined with mode 1047 (xterm ctlseqs), and `alacritty_terminal`'s early return when the screen does not change is not in the reference.
+4. **A combining mark on a blank cell with no preceding character is dropped**, as xterm -u8 does and section 7.2 of [emulation.md](../design/emulation.md) already said. Attaching it to a space, as `alacritty_terminal` does, would show a mark the app did not place on a character.
+
+**Why.** Following the reference layers and xterm, with tmux's choice only where it keeps the pending wrap consistent, is the rule of [0079](0079-emulation-scope.md); `alacritty_terminal` is a comparison, not an oracle (topic 2).
+
+**Alternatives considered.**
+- **Follow ECMA-48 for `IL` and `DL`**: matches tmux and `alacritty_terminal`, but not DEC STD 070 or xterm, which the references put first.
+- **Keep the pending wrap on `CBT`, as xterm does**: would make `CBT` the only cursor movement that leaves the pending wrap set away from the right margin.
+
+**Impact of reversing.** Change `vtfx-core` and the cases in `spec/core/` (which only a human may change), and move the reasons in `tools/alacritty-diff/reasons.toml` accordingly.

@@ -160,3 +160,12 @@ input "\e[99999999999999999999CX"
 screen
   |         X|
 cursor 10,1
+
+=== CBT cancels a pending wrap and moves to the previous tab stop
+size 10x2
+input "abcdefghij\e[ZX"
+screen
+  |abcdefghXj|
+  |          |
+cursor 10,1
+ref ctlseqs: CSI Ps Z (CBT); tmux cancels pending wrap, while xterm and alacritty_terminal keep it
