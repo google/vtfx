@@ -18,24 +18,29 @@
 
 package com.google.vtfx.core.spec
 
-import com.google.testing.junit.testparameterinjector.TestParameter
-import com.google.testing.junit.testparameterinjector.TestParameterInjector
-import com.google.testing.junit.testparameterinjector.TestParameterValuesProvider
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.Terminal
 import java.io.File
 import org.junit.ComparisonFailure
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
+import org.junit.runners.Parameterized.Parameters
 
 /**
  * Runs the proposed terminal emulation specs in `spec-proposals/core` (docs/design/testing.md
  * section 2).
+ *
+ * Runs with JUnit's `Parameterized` rather than `TestParameterInjector`, because there may be no
+ * open proposals, and `TestParameterInjector` fails on an empty list of values.
  */
-@RunWith(TestParameterInjector::class)
-class ProposedSpecTest {
+@RunWith(Parameterized::class)
+class ProposedSpecTest(
+    @Suppress("unused") private val id: String,
+    private val case: VtSpecCase,
+) {
     @Test
-    fun spec(@TestParameter(valuesProvider = Cases::class) case: VtSpecCase) {
+    fun spec() {
         case.error?.let { throw AssertionError("${case.id}: $it") }
         val terminal = Terminal(case.columns, case.rows)
         for (input in case.inputs) terminal.write(input)
@@ -63,13 +68,13 @@ class ProposedSpecTest {
         }
     }
 
-    private class Cases : TestParameterValuesProvider() {
-        override fun provideValues(context: Context): List<*> =
-            cases().map { value(it).withName(it.id) }
-    }
+    companion object {
+        /** The id names the test; the case is the second argument of the constructor. */
+        @JvmStatic
+        @Parameters(name = "{0}")
+        fun parameters(): List<Array<Any>> = cases().map { arrayOf(it.id, it) }
 
-    private companion object {
-        fun cases(): List<VtSpecCase> {
+        private fun cases(): List<VtSpecCase> {
             val root = System.getProperty("vtfx.specProposalsDir", "../spec-proposals")
             val directory = File(root, "core")
             if (!directory.isDirectory) return emptyList()
