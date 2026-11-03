@@ -27,4 +27,4 @@ Checks that need a human: a judgment of how something looks or feels, or hardwar
 
 | Item | Section of [device-checks.md](device-checks.md) | Evidence |
 |---|---|---|
-| How the fling and the zoom feel | 20.1 and 20.4 | None yet: no real device was reachable over adb on 2026-11-03, and the emulator's injected touches do not tell how a finger feels. An agent records 20.1 to 20.6 on a real device first |
+| How the fling and the zoom feel, and a real touchpad's pinch | 20.1, 20.4, and 20.7 | Section 20 records the run on a real device (API 36) with injected touches, which do not tell how a finger feels; a virtual touchpad's pinch reached no app, so 20.7 needs a real touchpad |
