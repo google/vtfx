@@ -3,6 +3,7 @@ public final class com/google/vtfx/session/TerminalSession {
 	public fun <init> (Lcom/google/vtfx/gate/HostConnection;IILcom/google/vtfx/core/TerminalLimits;Lcom/google/vtfx/core/AmbiguousWidth;Lcom/google/vtfx/gate/GatePolicy;Lcom/google/vtfx/gate/ClipboardAccess;Lcom/google/vtfx/gate/UrlOpener;Lcom/google/vtfx/session/TerminalSessionListener;)V
 	public synthetic fun <init> (Lcom/google/vtfx/gate/HostConnection;IILcom/google/vtfx/core/TerminalLimits;Lcom/google/vtfx/core/AmbiguousWidth;Lcom/google/vtfx/gate/GatePolicy;Lcom/google/vtfx/gate/ClipboardAccess;Lcom/google/vtfx/gate/UrlOpener;Lcom/google/vtfx/session/TerminalSessionListener;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun canOpenUrl (Ljava/lang/String;)Z
+	public final fun clearScrollback ()V
 	public final fun feed ([BII)V
 	public static synthetic fun feed$default (Lcom/google/vtfx/session/TerminalSession;[BIIILjava/lang/Object;)V
 	public final fun getDirectInput ()Z

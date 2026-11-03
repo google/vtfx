@@ -44,7 +44,7 @@ The lower bound of the supported scope is the features of the terminfo entry `xt
 | ESC | DECSC, DECRC, IND, NEL, HTS, RI, RIS, DECKPAM, DECKPNM, DECALN, DECID, character set designation (ASCII, DEC Special Graphics, UK into G0–G3; SO and SI select G1 and G0) | Same as above |
 | Cursor | CUU, CUD, CUF, CUB, CNL, CPL, CHA, HPA, HPR, CUP, HVP, VPA, VPR, CHT, CBT, TBC | `spec/core` |
 | Erasing and editing | ED (0–3), EL, DECSED, DECSEL (selective erase is a normal erase), ECH, ICH, DCH, IL, DL, REP | `spec/core`, `TerminalTest` |
-| Scrolling | DECSTBM, SU, SD, the scrollback (main screen only, saved on scrolling from the top edge; ED 3 clears it) | `spec/core`, `TerminalTest` |
+| Scrolling | DECSTBM, SU, SD, the scrollback (main screen only, saved on scrolling from the top edge; ED 3 and `TerminalSession.clearScrollback` clear it) | `spec/core`, `TerminalTest` |
 | SGR | 0–9, 21–25, 27–29, 30–49, 53, 55, 58, 59, 90–97, 100–107. 256 colors and truecolor (both the `;` and `:` forms). Underline styles (4:0–4:5) and the underline color (58, 59; section 8) | `TerminalTest` |
 | ANSI modes | IRM (4), LNM (20) | `spec/core`, `TerminalTest` |
 | DEC modes | 1, 5, 6, 7, 9, 12, 25, 47, 66, 1000, 1002, 1003, 1004, 1005, 1006, 1015, 1047, 1048, 1049, 2004, 2026 | `TerminalTest`, `EmulationCoverageTest` |

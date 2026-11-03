@@ -615,6 +615,22 @@ public class TerminalSession(
         get() = lock.withLock { if (terminal.isAlternateScreen) 0 else terminal.scrollbackSize }
 
     /**
+     * Clears the scrollback, as the host clears it with `CSI 3 J`: its lines go, with their images,
+     * and the screen stays, on the main and the alternate screen alike. A display that showed lines
+     * of the scrollback shows the screen, and its selection is dropped; its search searches the
+     * screen again. For the user's action, such as a menu item of the app; the host is not told.
+     */
+    public fun clearScrollback() {
+        lock.withLock { terminal.clearScrollback() }
+        // Drawn at once, even during a synchronized update of the host: the user asked for it.
+        for (observer in observers) observer.onOutput(
+            scrolledLines = 0,
+            scrollbackShrank = true,
+            synchronizing = false,
+        )
+    }
+
+    /**
      * Resizes the terminal to [columns] and [rows] at once, and calls
      * [TerminalSessionListener.onResize] if the size changed, or if this is the first resize of the
      * session, even when the size is the one it was created with. A Compose `Terminal` resizes the
@@ -912,7 +928,8 @@ public interface SessionObserver {
     /**
      * The host's output changed the screen: [scrolledLines] lines entered the scrollback, and
      * [scrollbackShrank] if lines left it. While [synchronizing], the host is in the middle of a
-     * synchronized update (mode 2026), which should be drawn when it ends.
+     * synchronized update (mode 2026), which should be drawn when it ends. Also called when the app
+     * clears the scrollback ([clearScrollback]), with no lines scrolled.
      */
     public fun onOutput(scrolledLines: Long, scrollbackShrank: Boolean, synchronizing: Boolean)
 

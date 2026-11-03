@@ -237,6 +237,7 @@ Host output can contain secrets (displayed API keys, keys, and so on). vtfx hand
 - `session.title`: the window title set by the host. It may also go back to a title the host had saved (XTWINOPS 22, 23), such as when vim exits. It is an untrusted string, though at most 1024 UTF-16 units long and without control, line separator, and bidirectional formatting characters ([decisions/0081](decisions/0081-resource-limits.md)). Changes are notified with `TerminalSessionListener.onTitleChanged`, on the thread that called `feed`. Of the titles set in one `feed`, only the last one is notified.
 - `TerminalSessionListener.onBell`: the bell. Many BELs contained in one `feed` are batched into one notification on the thread that called `feed`. An app that passes bells or titles to the main thread should keep at most one of each waiting there, so that its queue does not grow with the host's output.
 - `session.snapshot()`: a copy of the screen. Can be read on any thread.
+- `session.clearScrollback()`: clears the scrollback for the user's action, such as a "Clear scrollback" menu item, as the host's `CSI 3 J` does: its lines and images go, and the screen stays. A `Terminal` that showed the scrollback then shows the screen, and its selection is dropped. The host is not told; to clear the screen as well, the host has to redraw it (Ctrl+L in a shell).
 
 ## 8. Using without a UI
 

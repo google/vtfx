@@ -141,6 +141,14 @@ public class Terminal(
     }
 
     /**
+     * Clears the scrollback, as the host's ED 3 (`CSI 3 J`) does: its lines go, with their image
+     * placements, and the lines are numbered again ([SearchLines.generation]). The screen stays.
+     */
+    public fun clearScrollback() {
+        runGuarded { emulator.scrollback.clear() }
+    }
+
+    /**
      * Returns copies of the last [maxLines] lines of the scrollback and the screen, oldest first,
      * or all of them if there are fewer. The alternate screen has no scrollback, so there they are
      * the screen's rows. Lines of the scrollback are resized to [columns], as in [snapshot].

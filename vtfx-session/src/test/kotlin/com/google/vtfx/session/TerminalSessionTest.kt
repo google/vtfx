@@ -681,6 +681,39 @@ class TerminalSessionTest {
     }
 
     @Test
+    fun clearScrollbackLeavesTheScreenAndTellsTheDisplays() {
+        val outputs = mutableListOf<Triple<Long, Boolean, Boolean>>()
+        session.addObserver(
+            object : SessionObserver {
+                override fun onOutput(
+                    scrolledLines: Long,
+                    scrollbackShrank: Boolean,
+                    synchronizing: Boolean,
+                ) {
+                    outputs += Triple(scrolledLines, scrollbackShrank, synchronizing)
+                }
+
+                override fun onScreenChanged() {}
+
+                override fun onUserInput() {}
+
+                override fun onRestartInput() {}
+            }
+        )
+        // The session has 5 rows; 8 lines leave the first 3 in the scrollback. The host is in the
+        // middle of a synchronized update, which the clearing does not wait for.
+        feed((1..8).joinToString("\r\n") { "line $it" } + "\u001b[?2026h")
+        outputs.clear()
+
+        session.clearScrollback()
+
+        assertEquals(0, session.scrollbackSize)
+        assertEquals("line 4", session.snapshot().line(0).text().trim())
+        assertEquals(listOf(Triple(0L, true, false)), outputs)
+        assertEquals("", sent.toString())
+    }
+
+    @Test
     fun theScrollbackCanBeReadWithoutADisplay() {
         // The session has 5 rows; 8 lines leave the first 3 in the scrollback.
         feed((1..8).joinToString("\r\n") { "line $it" })

@@ -22,6 +22,7 @@ import kotlin.random.Random
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.junit.Test
@@ -396,6 +397,19 @@ class TerminalTest {
         t.write("\u001b[3J")
         assertEquals(0, t.scrollbackSize)
         assertEquals(3L, t.scrollbackPushes)
+    }
+
+    @Test
+    fun clearScrollbackClearsItAsEd3Does() {
+        val t = terminal(3, 2)
+        t.write("1\r\n2\r\n3\r\n4")
+        val generation = t.searchLines(Long.MAX_VALUE, 1).generation
+        t.clearScrollback()
+        assertEquals(0, t.scrollbackSize)
+        assertEquals(2L, t.scrollbackPushes)
+        assertEquals(listOf("3  ", "4  "), t.lines())
+        assertEquals(CursorState(1, 1), t.cursor)
+        assertNotEquals(generation, t.searchLines(Long.MAX_VALUE, 1).generation)
     }
 
     @Test

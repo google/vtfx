@@ -291,4 +291,16 @@ class TerminalDisplayTest {
         assertEquals(0, full.scrollOffset)
         assertEquals("5", full.topDisplayedLine())
     }
+
+    @Test
+    fun clearingTheScrollbackFromTheAppReturnsToTheBottomAndDropsTheSelection() {
+        val full = fullScrollbackDisplay()
+        full.selection = full.selectionOf(Cell(0, 0), Cell(0, 1))
+
+        full.session.clearScrollback()
+
+        assertEquals(0, full.scrollOffset)
+        assertEquals("4", full.topDisplayedLine())
+        assertEquals(null, full.selection)
+    }
 }
