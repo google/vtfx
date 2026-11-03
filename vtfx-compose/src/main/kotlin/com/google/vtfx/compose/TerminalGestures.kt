@@ -18,9 +18,14 @@
 
 package com.google.vtfx.compose
 
+import androidx.compose.foundation.gestures.ScrollScope
+import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.gestures.awaitVerticalDragOrCancellation
+import androidx.compose.foundation.gestures.awaitVerticalTouchSlopOrCancellation
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
@@ -31,6 +36,7 @@ import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.MouseTracking
 import com.google.vtfx.core.TerminalKey
@@ -51,7 +57,8 @@ import kotlin.math.abs
  *   at.
  * - A vertical swipe scrolls: as the mouse wheel if the host asked for mouse events, as the arrow
  *   keys on the alternate screen (as xterm's alternateScroll), and through the scrollback
- *   otherwise.
+ *   otherwise. It goes on scrolling the same way after the finger is lifted, as a fling that
+ *   [FlingRunner] runs and the next touch stops (docs/decisions/0100).
  * - While the display shows the scrollback, the host does not get taps and swipes as the mouse
  *   (docs/decisions/0085): they act as if it had not asked.
  */
@@ -141,26 +148,127 @@ internal fun Modifier.terminalGestures(
             }
         }
         .pointerInput(display, metrics) {
-            var remainder = 0f
-            // Decided when the swipe starts, so that a swipe that scrolls down to the bottom of
-            // the scrollback stops there and does not go on to scroll the host.
-            var reporting = false
-            detectVerticalDragGestures(
-                onDragStart = {
-                    remainder = 0f
-                    reporting = isReportingTouches(display)
-                },
-                onVerticalDrag = { change, dragAmount ->
-                    change.consume()
-                    remainder += dragAmount
-                    val lines = (remainder / metrics.height).toInt()
-                    if (lines != 0) {
-                        remainder -= lines * metrics.height
-                        scroll(display, lines, cellAt(change.position, metrics, session), reporting)
+            awaitEachGesture {
+                // In the Main pass, this detector sees the down before the tap detector, which
+                // comes earlier in the chain of modifiers.
+                val down = awaitFirstDown(requireUnconsumed = false)
+                // A touch stops a fling, as in Android's lists, and is then neither a tap nor a
+                // long press (docs/decisions/0100). A mouse, which terminalMouse consumed, does
+                // not.
+                if (!down.isConsumed && display.fling != null) {
+                    display.stopFling()
+                    down.consume()
+                }
+                var overSlop = 0f
+                val drag =
+                    awaitVerticalTouchSlopOrCancellation(down.id) { change, over ->
+                        change.consume()
+                        overSlop = over
+                    } ?: return@awaitEachGesture
+                val velocity = VelocityEstimator()
+                velocity.add(down.uptimeMillis, down.position)
+                velocity.add(drag.uptimeMillis, drag.position)
+                // Decided when the swipe starts, so that a swipe that scrolls down to the bottom
+                // of the scrollback stops there and does not go on to scroll the host.
+                val scroller = SwipeScroller(display, metrics, isReportingTouches(display))
+                scroller.drag(overSlop, cellAt(drag.position, metrics, session))
+                var pointer = drag.id
+                while (true) {
+                    val change = awaitVerticalDragOrCancellation(pointer) ?: break
+                    pointer = change.id
+                    // The moves that the platform batched into this event, as in Compose's
+                    // VelocityTracker.
+                    for (move in change.historical) velocity.add(move.uptimeMillis, move.position)
+                    velocity.add(change.uptimeMillis, change.position)
+                    if (change.changedToUpIgnoreConsumed()) {
+                        val speed = velocity.velocity(viewConfiguration.maximumFlingVelocity).y
+                        if (speed != 0f) display.fling = Fling(speed, scroller)
+                        break
                     }
-                },
-            )
+                    // Before consuming it, which leaves no change to read.
+                    val moved = change.positionChange().y
+                    change.consume()
+                    scroller.drag(moved, cellAt(change.position, metrics, session))
+                }
+            }
         }
+}
+
+/**
+ * A fling that goes on scrolling as [scroller] after a swipe, from the finger's [velocity] in
+ * pixels per second, positive downward (docs/decisions/0100).
+ */
+internal class Fling(val velocity: Float, val scroller: SwipeScroller)
+
+/**
+ * Scrolls by the distance that a finger moves in one swipe, and in the fling after it, a line per
+ * cell height: as the mouse wheel if [reporting], which the swipe decided when it started, as the
+ * arrow keys on the alternate screen, and through the scrollback otherwise.
+ */
+internal class SwipeScroller(
+    private val display: TerminalDisplay,
+    private val metrics: CellMetrics,
+    private val reporting: Boolean,
+) {
+    /** The distance moved since the last whole line. */
+    private var remainder = 0f
+
+    /** The cell of the finger, which a wheel report carries. */
+    private var cell = Pair(1, 1)
+
+    /**
+     * Scrolls by the [pixels] that the finger moved, positive downward, with the finger at [cell]
+     * (1-based, within the screen).
+     */
+    fun drag(pixels: Float, cell: Pair<Int, Int>) {
+        this.cell = cell
+        val unused = scrollBy(pixels)
+    }
+
+    /**
+     * Scrolls by [pixels] of a fling, positive downward, with the finger where it was lifted.
+     * Returns the pixels used: 0 at the end of the scrollback that it moves toward, which stops the
+     * fling.
+     */
+    fun scrollBy(pixels: Float): Float {
+        if (!reporting && !display.session.isAlternateScreen()) {
+            val offset = display.scrollOffset
+            if (
+                (pixels > 0 && offset >= display.session.scrollbackSize) ||
+                    (pixels < 0 && offset == 0)
+            ) {
+                remainder = 0f
+                return 0f
+            }
+        }
+        remainder += pixels
+        val lines = (remainder / metrics.height).toInt()
+        if (lines != 0) {
+            remainder -= lines * metrics.height
+            scroll(display, lines, this.cell, reporting)
+        }
+        return pixels
+    }
+}
+
+/**
+ * Runs [display]'s fling while it is set, with Android's deceleration ([ScrollableDefaults]), and
+ * clears it at its end. A composable of its own, so that a fling starting or stopping recomposes
+ * only this.
+ */
+@Composable
+internal fun FlingRunner(display: TerminalDisplay) {
+    val behavior = ScrollableDefaults.flingBehavior()
+    val fling = display.fling
+    LaunchedEffect(display, fling, behavior) {
+        if (fling == null) return@LaunchedEffect
+        val scope =
+            object : ScrollScope {
+                override fun scrollBy(pixels: Float): Float = fling.scroller.scrollBy(pixels)
+            }
+        val unused = with(behavior) { scope.performFling(fling.velocity) }
+        if (display.fling === fling) display.fling = null
+    }
 }
 
 /**
@@ -224,7 +332,7 @@ private fun scroll(display: TerminalDisplay, lines: Int, cell: Pair<Int, Int>, r
             }
         session.isAlternateScreen() ->
             repeat(abs(lines)) {
-                session.sendScrollKey(if (lines > 0) TerminalKey.Up else TerminalKey.Down)
+                display.sendScrollKey(if (lines > 0) TerminalKey.Up else TerminalKey.Down)
             }
         else -> display.scrollBy(lines)
     }

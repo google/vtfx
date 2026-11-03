@@ -35,6 +35,7 @@ import com.google.vtfx.core.SearchIndex
 import com.google.vtfx.core.SearchLines
 import com.google.vtfx.core.SearchMatch
 import com.google.vtfx.core.SearchQuery
+import com.google.vtfx.core.TerminalKey
 import com.google.vtfx.core.TerminalSnapshot
 import com.google.vtfx.session.SessionObserver
 import com.google.vtfx.session.TerminalSession
@@ -181,20 +182,55 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
         scrollOffset = (scrollOffset.toLong() + lines).coerceIn(0L, limit.toLong()).toInt()
     }
 
-    /** Scrolls the display [pages] screens back into the scrollback (or forward, if negative). */
+    /**
+     * Scrolls the display [pages] screens back into the scrollback (or forward, if negative), and
+     * stops a fling.
+     */
     fun scrollByPages(pages: Int) {
+        stopFling()
         val rows = session.size().second.toLong()
         scrollBy((pages * rows).coerceIn(Int.MIN_VALUE.toLong(), Int.MAX_VALUE.toLong()).toInt())
     }
 
-    /** Shows the oldest lines of the scrollback. */
+    /** Shows the oldest lines of the scrollback, and stops a fling. */
     fun scrollToTop() {
+        stopFling()
         scrollOffset = session.scrollbackSize
     }
 
-    /** Shows the screen, following the output. */
+    /** Shows the screen, following the output, and stops a fling. */
     fun scrollToBottom() {
+        stopFling()
         scrollOffset = 0
+    }
+
+    /**
+     * The fling that goes on scrolling after a swipe, which `Terminal` runs while it is set, or
+     * null. Set to stop a running fling; compared by identity, so that a fling equal to the last
+     * one starts again.
+     */
+    var fling: Fling? by mutableStateOf(null, referentialEqualityPolicy())
+
+    /** Stops the fling, if one is running. */
+    fun stopFling() {
+        fling = null
+    }
+
+    /** Whether [sendScrollKey] is sending a key, which then does not stop the fling. */
+    private var sendingScrollKey = false
+
+    /**
+     * Sends an arrow key of a scroll gesture on the alternate screen. The session tells the display
+     * of it as of the user's input, which returns to the bottom and drops the selection as other
+     * input does, but does not stop the fling that may be sending it.
+     */
+    fun sendScrollKey(key: TerminalKey) {
+        sendingScrollKey = true
+        try {
+            session.sendScrollKey(key)
+        } finally {
+            sendingScrollKey = false
+        }
     }
 
     /**
@@ -380,6 +416,7 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
         val snapshot = displaySnapshot()
         val top = snapshot.firstLine
         if (match.firstLine >= top && match.lastLine < top + snapshot.rows) return
+        stopFling()
         val offset = index.screenLine - (match.firstLine - snapshot.rows / 2)
         scrollBy(offset.coerceIn(0L, session.scrollbackSize.toLong()).toInt() - scrollOffset)
     }
@@ -439,6 +476,7 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
     /** Called after the user typed or edited. The display returns to the bottom. */
     fun notifyEditorChanged() {
         editorVersion++
+        if (!sendingScrollKey) stopFling()
         scrollOffset = 0
         // The user moved on from the selection (docs/decisions/0085).
         selection = null

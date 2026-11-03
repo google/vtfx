@@ -457,7 +457,7 @@ private class MouseHandler(
             }
             session.isAlternateScreen() ->
                 repeat(abs(lines)) {
-                    session.sendScrollKey(if (lines > 0) TerminalKey.Up else TerminalKey.Down)
+                    display.sendScrollKey(if (lines > 0) TerminalKey.Up else TerminalKey.Down)
                 }
             else -> {
                 display.scrollBy(lines)

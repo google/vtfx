@@ -380,6 +380,109 @@ class TerminalGesturesTest {
         assertEquals(0, display.scrollOffset)
     }
 
+    /**
+     * Moves a finger 150 pixels down from y = 20, in 5 moves [moveMillis] apart, and lifts it
+     * [restMillis] after the last.
+     */
+    private fun drag(moveMillis: Long, restMillis: Long = 0) {
+        composeRule.onRoot().performTouchInput {
+            down(Offset(150f, 20f))
+            for (step in 1..5) {
+                advanceEventTime(moveMillis)
+                moveTo(Offset(150f, 20f + step * 30f))
+            }
+            advanceEventTime(restMillis)
+            up()
+        }
+    }
+
+    @Test
+    fun aQuickSwipeGoesOnScrollingAfterTheFingerIsLifted() {
+        show(lines(500))
+        drag(moveMillis = 100, restMillis = 100)
+        composeRule.waitForIdle()
+        val dragged = display.scrollOffset
+        assertTrue("$dragged", dragged > 0)
+        composeRule.runOnIdle { display.scrollToBottom() }
+        drag(moveMillis = 20)
+        composeRule.waitForIdle()
+        // The same distance, flung.
+        assertTrue(
+            "${display.scrollOffset} after a fling, $dragged after a drag",
+            display.scrollOffset > dragged * 3 / 2,
+        )
+        assertEquals(null, display.fling)
+        assertEquals("", sent.toString())
+    }
+
+    @Test
+    fun aFlingStopsAtTheTopOfTheScrollback() {
+        // 12 lines in the scrollback, which the swipe alone does not reach the top of.
+        show(lines(24))
+        drag(moveMillis = 20)
+        composeRule.waitForIdle()
+        assertEquals(session.scrollbackSize, display.scrollOffset)
+        assertEquals(null, display.fling)
+    }
+
+    @Test
+    fun aTouchStopsAFlingAndIsNotATap() {
+        show(lines(500))
+        composeRule.runOnIdle {
+            display.scrollToTop()
+            // A tap would drop it.
+            display.selection = display.selectionOf(Cell(0, 0), Cell(3, 0))
+        }
+        composeRule.mainClock.autoAdvance = false
+        composeRule.onRoot().performTouchInput { swipeUp(durationMillis = 40) }
+        composeRule.mainClock.advanceTimeBy(100)
+        assertTrue(display.fling != null)
+        val flung = display.scrollOffset
+        composeRule.onRoot().performTouchInput { click(Offset(1f, 5f)) }
+        composeRule.mainClock.advanceTimeBy(1000)
+        assertEquals(null, display.fling)
+        val stopped = display.scrollOffset
+        assertTrue("$stopped after $flung", stopped > 0)
+        composeRule.mainClock.advanceTimeBy(1000)
+        assertEquals(stopped, display.scrollOffset)
+        assertTrue(display.selection != null)
+        // The next tap is a tap.
+        composeRule.onRoot().performTouchInput { click(Offset(1f, 5f)) }
+        composeRule.mainClock.advanceTimeBy(1000)
+        assertEquals(null, display.selection)
+    }
+
+    @Test
+    fun typingStopsAFling() {
+        show(lines(500))
+        composeRule.mainClock.autoAdvance = false
+        drag(moveMillis = 20)
+        composeRule.mainClock.advanceTimeBy(50)
+        assertTrue(display.fling != null)
+        composeRule.runOnIdle { session.sendText("x") }
+        composeRule.mainClock.advanceTimeBy(1000)
+        assertEquals(null, display.fling)
+        assertEquals(0, display.scrollOffset)
+    }
+
+    @Test
+    fun aFlingOnTheAlternateScreenSendsMoreArrowKeys() {
+        show("\u001b[?1049h")
+        drag(moveMillis = 100, restMillis = 100)
+        composeRule.waitForIdle()
+        val dragged = sent.toString()
+        assertTrue(dragged, dragged.isNotEmpty() && dragged.replace("\u001b[A", "").isEmpty())
+        sent.setLength(0)
+        drag(moveMillis = 20)
+        composeRule.waitForIdle()
+        val flung = sent.toString()
+        assertTrue(flung, flung.replace("\u001b[A", "").isEmpty())
+        assertTrue(
+            "$flung after a fling, $dragged after a drag",
+            flung.length > dragged.length * 3 / 2,
+        )
+    }
+
     @Test
     fun swipeOnTheAlternateScreenLeavesTheStickyModifiers() {
         show("\u001b[?1049h")

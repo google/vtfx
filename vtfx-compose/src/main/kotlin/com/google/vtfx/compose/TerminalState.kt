@@ -173,8 +173,10 @@ public class TerminalState {
      * selection stays on its text.
      */
     public fun scrollBy(lines: Int) {
+        val display = display ?: return
+        display.stopFling()
         // The display counts lines back into the scrollback.
-        display?.scrollBy(if (lines == Int.MIN_VALUE) Int.MAX_VALUE else -lines)
+        display.scrollBy(if (lines == Int.MIN_VALUE) Int.MAX_VALUE else -lines)
     }
 
     /**

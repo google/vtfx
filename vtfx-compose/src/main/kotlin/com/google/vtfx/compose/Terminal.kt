@@ -97,7 +97,7 @@ import kotlinx.coroutines.flow.collectLatest
  * [TerminalSessionListener.onResize] when the composable is first laid out, even if they are the
  * session's size, and then when they change. A tap focuses the terminal and shows the keyboard, and
  * a vertical swipe scrolls through the scrollback (or, when the host asks for them, sends mouse
- * wheel events or arrow keys).
+ * wheel events or arrow keys), going on after a flick until a touch stops it.
  *
  * A tap on a link calls [onLinkClick], unless the host asked for mouse reports, which then get the
  * tap. The [TerminalLinkClick] tells the kind of pointer and the modifier keys held, and
@@ -445,6 +445,7 @@ internal fun Terminal(
             },
             Modifier.matchParentSize().padding(style.padding),
         )
+        FlingRunner(display)
     }
 }
 
