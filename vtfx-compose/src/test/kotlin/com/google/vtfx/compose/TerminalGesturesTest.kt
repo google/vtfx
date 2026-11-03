@@ -196,6 +196,34 @@ class TerminalGesturesTest {
     }
 
     @Test
+    fun theLoupeFollowsTheFingerOfALongPressUntilItIsLifted() {
+        show("hello world\r\nsecond line")
+        val snapshot = session.snapshot()
+        val size = composeRule.onRoot().fetchSemanticsNode().size
+        val cellWidth = size.width.toFloat() / snapshot.columns
+        // About the height of a row: the grid may leave a part of a row below the last.
+        val rowHeight = size.height.toFloat() / snapshot.rows
+        pressAndHold(Offset(2.5f * cellWidth, 0.2f * rowHeight))
+        // Over the middle of the row, at the finger.
+        val first = display.loupeCenter!!
+        assertEquals(2.5f * cellWidth, first.x, 0.01f)
+        assertEquals(0.5f * rowHeight, first.y, 0.1f * rowHeight)
+        // The platform's loupe, at the same place of the root, which the grid fills.
+        assertEquals(first, ShadowMagnifier.shownAt)
+        composeRule.onRoot().performTouchInput {
+            moveTo(Offset(4.5f * cellWidth, 1.9f * rowHeight))
+        }
+        composeRule.waitForIdle()
+        val second = display.loupeCenter!!
+        assertEquals(4.5f * cellWidth, second.x, 0.01f)
+        assertEquals(1.5f * rowHeight, second.y, 0.1f * rowHeight)
+        composeRule.onRoot().performTouchInput { up() }
+        composeRule.waitForIdle()
+        assertEquals(null, display.loupeCenter)
+        assertEquals(null, ShadowMagnifier.shownAt)
+    }
+
+    @Test
     fun liftingTheFingerAfterALongPressShowsTheMenu() {
         val toolbar = FakeTextToolbar()
         composeRule.setContent {

@@ -17,7 +17,7 @@ A pointer whose `PointerType` is `Mouse` is handled by `terminalMouse` (section 
 |---|---|---|---|
 | Tap | Drops the selection. On a link, calls `onLinkClick` (section 6); unless it takes the tap, hides the menu, focuses the terminal, and shows the software keyboard | Same as left | Drops the selection, reports a left press and release at the cell (links included), and shows the keyboard |
 | Vertical swipe | Scrolls through the scrollback, a line per cell height moved | Sends Up or Down arrow keys, one per cell height moved (as xterm's alternateScroll) | Reports the wheel (buttons 64 and 65), one report per cell height moved, at the finger's cell |
-| Long press | Selects the word under it; moving the finger extends the selection by words; lifting it shows the menu (section 4) at the finger and the selection handles (section 14) | Same as left | Same as left; drags are not reported |
+| Long press | Selects the word under it, with the loupe over the finger (section 15); moving the finger extends the selection by words; lifting it shows the menu (section 4) at the finger and the selection handles (section 14) | Same as left | Same as left; drags are not reported |
 
 - A long press is a press held for the long-press timeout without moving beyond the touch slop. Moving the finger extends the selection by words, as a mouse drag after a double click does (section 3): from the end of the pressed word farther from the finger to the far end of the word under the finger, a blank being a word of its own.
 - Moving the finger down shows earlier content, the same direction as turning a wheel up.
@@ -213,3 +213,11 @@ What is verified only with Robolectric and the emulator is in [device-checks.md]
 - **Dragging.** A handle moves its end by cells, to the cell whose edge is nearest to the tip, on the row above the tip; the tip keeps the distance from the finger that the press had. The finger's position is taken through the screen's coordinates, as the popup moves with the handle. The end does not pass the other end, so at least one cell stays selected, and a wide character is taken whole at the moved end (`TerminalSelection.withEndAt`). The selection then extends by cells (section 3). Each move to another cell gives the haptic feedback `TextHandleMove`, as Compose's handles do. Beyond the top or bottom of the display, the end stops at the first or last row, and the display does not scroll: a swipe scrolls it, and the selection stays.
 - **The menu.** A drag hides the menu, and lifting the handle shows it again at the row of the dragged end. While the handles show, the rectangle given to the text toolbar covers the row and the handles below it, so that a menu placed below the row, when there is no room above, does not cover the handles, as in `TextView`.
 - **Reporting.** The handles act the same when the host asks for the mouse, as the long press does (section 2); their drags are not reported.
+
+## 15. Loupe
+
+[decisions/0100](../decisions/0100-zoom-fling-loupe-and-scrolling.md) explains this section. While a touch selects, the platform's text loupe shows the text under the finger magnified, as in Android's text fields, so that the finger does not hide the cell it selects.
+
+- **When.** From the moment a long press selects its word until its finger is lifted (section 2), and while a selection handle is dragged (section 14). A gesture that is cancelled hides it too. A mouse selection shows none.
+- **Where.** Over the middle of the row under the finger, at the finger's position along the row, kept within the cells of the row; for a handle, over the row of the moved end, at the handle's tip. The display holds the center (`TerminalDisplay.loupeCenter`), in pixels of the grid, and `Modifier.magnifier` of Compose on the grid shows it, with the platform's look and magnification and its placement above the finger.
+- **Platform.** `Modifier.magnifier` uses `android.widget.Magnifier`, available from API 28, below the minSdk of 29; it magnifies what the window draws, so the loupe shows the selection highlight, the cursor, and images as drawn.

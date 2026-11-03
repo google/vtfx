@@ -115,31 +115,45 @@ internal fun Modifier.terminalGestures(
                         var selected: TerminalSelection? = word
                         display.selection = word
                         var position = down.position
-                        while (true) {
-                            // The Initial pass comes before the scroll detector, which must not see
-                            // these moves.
-                            val change =
-                                awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull {
-                                    it.id == down.id
-                                } ?: break
-                            // Before consuming it, which changedToUp would then not see.
-                            val lifted = change.changedToUpIgnoreConsumed()
-                            change.consume()
-                            if (lifted) break
-                            // The display drops the selection when its text changes: the rest of
-                            // the gesture selects nothing (docs/decisions/0085).
-                            if (display.selection !== selected) selected = null
-                            if (selected == null) continue
-                            position = change.position
-                            // Output may have scrolled the text since the press: the finger is over
-                            // what the display shows now.
-                            val now = display.displaySnapshot()
-                            if (now.generation != word.generation) {
-                                selected = null
-                                continue
+                        // The loupe follows the finger until it is lifted (docs/decisions/0100).
+                        display.showLoupe(pressed, position.x, snapshot.columns, metrics)
+                        try {
+                            while (true) {
+                                // The Initial pass comes before the scroll detector, which must not
+                                // see
+                                // these moves.
+                                val change =
+                                    awaitPointerEvent(PointerEventPass.Initial)
+                                        .changes
+                                        .firstOrNull {
+                                            it.id == down.id
+                                        } ?: break
+                                // Before consuming it, which changedToUp would then not see.
+                                val lifted = change.changedToUpIgnoreConsumed()
+                                change.consume()
+                                if (lifted) break
+                                // The display drops the selection when its text changes: the rest
+                                // of
+                                // the gesture selects nothing (docs/decisions/0085).
+                                if (display.selection !== selected) selected = null
+                                if (selected == null) continue
+                                position = change.position
+                                // Output may have scrolled the text since the press: the finger is
+                                // over
+                                // what the display shows now.
+                                val now = display.displaySnapshot()
+                                if (now.generation != word.generation) {
+                                    selected = null
+                                    continue
+                                }
+                                val cell = displayCell(position, metrics, now)
+                                selected = word.extendedTo(now, cell)
+                                display.selection = selected
+                                display.showLoupe(cell, position.x, now.columns, metrics)
                             }
-                            selected = word.extendedTo(now, displayCell(position, metrics, now))
-                            display.selection = selected
+                        } finally {
+                            // Also when the gesture is cancelled.
+                            display.hideLoupe()
                         }
                         if (selected != null && display.selection === selected)
                             onSelectionEnd(position)

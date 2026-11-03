@@ -25,6 +25,7 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.magnifier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -119,9 +120,10 @@ import kotlinx.coroutines.flow.collectLatest
  * keyboard and sends them itself.
  *
  * A long press selects the word under it, a drag after it going on by words, and shows a menu to
- * copy, paste, and select all, and handles that move the ends of the selection by cells. The app
- * reads and changes the selection through [state], for its own Copy command or shortcut, and
- * searches the text through it, for its own search field.
+ * copy, paste, and select all, and handles that move the ends of the selection by cells; while the
+ * finger selects, the platform's loupe shows the text under it. The app reads and changes the
+ * selection through [state], for its own Copy command or shortcut, and searches the text through
+ * it, for its own search field.
  *
  * With a mouse, the primary button selects: a drag selects the text it goes over, a double click a
  * word, and a triple click a line, a drag after either going on by words or lines, and Shift+click
@@ -400,6 +402,8 @@ internal fun Terminal(
                     )
                 }
                 .onGloballyPositioned { gridOrigin = it.positionInRoot() }
+                // The platform's text loupe, over the text that a touch selects.
+                .magnifier(sourceCenter = { display.loupeCenter ?: Offset.Unspecified })
                 .terminalGestures(
                     display,
                     metrics,

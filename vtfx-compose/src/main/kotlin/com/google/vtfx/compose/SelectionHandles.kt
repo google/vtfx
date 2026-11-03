@@ -222,32 +222,39 @@ private fun SelectionHandle(
                         // below the text.
                         val grab = currentTip - inGrid(down.position)
                         currentOnDragStart()
-                        drag(down.id) { change ->
-                            change.consume()
-                            val selection = display.selection ?: return@drag
-                            val snapshot = display.displaySnapshot()
-                            if (snapshot.generation != selection.generation) return@drag
-                            // The cell whose edge is nearest to the tip, on the row above it.
-                            val towardsCell =
-                                when (end) {
-                                    SelectionEnd.Start -> metrics.width / 2
-                                    SelectionEnd.End -> -metrics.width / 2
-                                }
-                            val point =
-                                inGrid(change.position) +
-                                    grab +
-                                    Offset(towardsCell, -metrics.height / 2)
-                            val moved =
-                                selection.withEndAt(
-                                    end,
-                                    snapshot,
-                                    displayCell(point, metrics, snapshot),
+                        try {
+                            drag(down.id) { change ->
+                                change.consume()
+                                val selection = display.selection ?: return@drag
+                                val snapshot = display.displaySnapshot()
+                                if (snapshot.generation != selection.generation) return@drag
+                                // The cell whose edge is nearest to the tip, on the row above it.
+                                val towardsCell =
+                                    when (end) {
+                                        SelectionEnd.Start -> metrics.width / 2
+                                        SelectionEnd.End -> -metrics.width / 2
+                                    }
+                                val point =
+                                    inGrid(change.position) +
+                                        grab +
+                                        Offset(towardsCell, -metrics.height / 2)
+                                val cell = displayCell(point, metrics, snapshot)
+                                val moved = selection.withEndAt(end, snapshot, cell)
+                                // Over the row of the end, at the tip (docs/decisions/0100).
+                                display.showLoupe(
+                                    cell,
+                                    point.x - towardsCell,
+                                    snapshot.columns,
+                                    metrics,
                                 )
-                            if (moved != selection) {
-                                display.selection = moved
-                                display.showHandles()
-                                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                if (moved != selection) {
+                                    display.selection = moved
+                                    display.showHandles()
+                                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                }
                             }
+                        } finally {
+                            display.hideLoupe()
                         }
                         val selection = display.selection
                         if (!display.showsHandles || selection == null) return@awaitEachGesture

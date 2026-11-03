@@ -29,6 +29,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
 import com.google.vtfx.core.InternalVtfxApi
 import com.google.vtfx.core.LineSnapshot
 import com.google.vtfx.core.SearchIndex
@@ -101,6 +102,25 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
      */
     val showsHandles: Boolean
         get() = handlesShown && selectionState != null
+
+    /**
+     * Where the loupe shows the grid magnified while a touch selects, in pixels of the grid, or
+     * null to hide it (docs/decisions/0100).
+     */
+    var loupeCenter: Offset? by mutableStateOf(null)
+
+    /**
+     * Shows the loupe over the row of [cell], at [x] within the [columns] of cells of [metrics].
+     */
+    fun showLoupe(cell: Cell, x: Float, columns: Int, metrics: CellMetrics) {
+        loupeCenter =
+            Offset(x.coerceIn(0f, columns * metrics.width), (cell.row + 0.5f) * metrics.height)
+    }
+
+    /** Hides the loupe. */
+    fun hideLoupe() {
+        loupeCenter = null
+    }
 
     /** Shows the handles of the current selection, until [selection] is set again. */
     fun showHandles() {

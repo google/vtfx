@@ -87,6 +87,29 @@ class SelectionHandlesTest {
     }
 
     @Test
+    fun draggingAHandle_showsTheLoupeOverTheRowOfTheEndUntilLifted() {
+        show("hello big world")
+        longPress(7)
+        val rowHeight =
+            composeRule.onNodeWithTag(TERMINAL).fetchSemanticsNode().size.height.toFloat() /
+                session.snapshot().rows
+
+        composeRule.onNodeWithTag(END_HANDLE_TAG).performTouchInput {
+            down(center)
+            moveBy(Offset(4 * cellWidth, 0f))
+        }
+        composeRule.waitForIdle()
+
+        val loupe = display.loupeCenter!!
+        // At the tip, the right edge of the end's cell, on the first row.
+        assertEquals(13 * cellWidth, loupe.x, cellWidth / 2)
+        assertEquals(rowHeight / 2, loupe.y, rowHeight / 4)
+        composeRule.onNodeWithTag(END_HANDLE_TAG).performTouchInput { up() }
+        composeRule.waitForIdle()
+        assertEquals(null, display.loupeCenter)
+    }
+
+    @Test
     fun longPress_showsTheStartHandle() {
         show("hello world")
 

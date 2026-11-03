@@ -47,3 +47,15 @@ A swipe goes on as a fling after the finger is lifted, in every mode that the sw
 - **Flinging a touchpad's pan**: Android reports the end of a pan without a speed, so the speed would be estimated from its moves too, and how touchpads report their moves is not verified on devices (section 12 of [compose-input.md](../design/compose-input.md)). It can be added after the checks on devices.
 
 **Impact of reversing.** Remove `VelocityEstimator`, `Fling`, `SwipeScroller`'s use by a fling, `FlingRunner`, `TerminalDisplay.fling`, `stopFling`, and `sendScrollKey`, and the text in section 2 of [compose-input.md](../design/compose-input.md).
+
+## 4. The loupe
+
+While a long press selects and while a selection handle is dragged, Compose's `Modifier.magnifier` shows the platform's text loupe over the row under the finger (section 15 of [compose-input.md](../design/compose-input.md)).
+
+**Why.** The finger covers the cells it selects, more so in a grid of small monospaced cells than in a text field; Android's text fields show the loupe for the same gestures, so users expect it there. `Modifier.magnifier` is in `androidx.compose.foundation`, which the boundaries allow, and it gives the platform's look, magnification, and placement, as Compose's own text fields use it; vtfx only says where. Centering it on the row, not on the finger, keeps the row level in the loupe as the finger wobbles, as `TextView` does.
+
+**Alternatives considered.**
+- **Drawing a loupe of vtfx's own in a popup**: The terminal could draw its rows larger without the platform, but it would not match the device's other loupes, and would need a window of its own, as the handles do.
+- **Showing it also for mouse selections**: A pointer does not cover the text; Android shows no loupe for a mouse.
+
+**Impact of reversing.** Remove `TerminalDisplay.loupeCenter`, `showLoupe`, and `hideLoupe`, their calls in `TerminalGestures.kt` and `SelectionHandles.kt`, the `magnifier` modifier in `Terminal.kt`, and section 15 of [compose-input.md](../design/compose-input.md).
