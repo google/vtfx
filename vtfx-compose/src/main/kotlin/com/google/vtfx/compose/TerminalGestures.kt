@@ -62,8 +62,8 @@ import kotlin.math.sign
  * - A tap shows the keyboard, and if the host asked for mouse events, it is also a click. A tap
  *   drops the selection.
  * - A long press selects the word under it, and moving the finger then extends the selection by
- *   words. [onSelectionEnd] is called when the finger is lifted, with the position to show a menu
- *   at.
+ *   words. [onSelectionStart] is called when it selects, and [onSelectionEnd] when the finger is
+ *   lifted, with the position to show a menu at.
  * - While the display shows the scrollback, the host does not get taps as the mouse
  *   (docs/decisions/0085): they act as if it had not asked.
  */
@@ -77,6 +77,7 @@ internal fun Modifier.terminalGestures(
      * the tap; if not, [onTap] is called.
      */
     onLinkTap: (TerminalSnapshot, Cell, PointerType, PointerKeyboardModifiers) -> Boolean,
+    onSelectionStart: () -> Unit,
     onSelectionEnd: (Offset) -> Unit,
 ): Modifier {
     val session = display.session
@@ -120,6 +121,7 @@ internal fun Modifier.terminalGestures(
                     val word = TerminalSelection.word(snapshot, pressed)
                     var selected: TerminalSelection? = word
                     display.selection = word
+                    onSelectionStart()
                     var position = down.position
                     // The loupe follows the finger until it is lifted (docs/decisions/0100).
                     display.showLoupe(pressed, position.x, snapshot.columns, metrics)

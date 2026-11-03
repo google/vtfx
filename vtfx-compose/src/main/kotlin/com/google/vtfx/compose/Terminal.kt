@@ -91,6 +91,7 @@ import kotlin.math.floor
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.drop
 
 // The touch input follows docs/decisions/0085, and the links and the keys docs/decisions/0087.
 /**
@@ -242,6 +243,15 @@ internal fun Terminal(
                 focused && display.observeVersion().let { session.modes().cursorBlinking }
             }
         }
+    // The menu points at the text that it was shown for: when the display zooms, moves, or scrolls,
+    // it would point elsewhere, so it goes, as TextView hides its menu while it scrolls
+    // (docs/decisions/0100). Collected rather than read in the composition, so that a pinch does
+    // not recompose the terminal.
+    LaunchedEffect(display, toolbar) {
+        snapshotFlow { Triple(display.zoom, display.pan, display.scrollOffset) }
+            .drop(1)
+            .collectLatest { toolbar.hide() }
+    }
     LaunchedEffect(blinking) {
         cursorOn = true
         if (!blinking) return@LaunchedEffect
@@ -442,6 +452,9 @@ internal fun Terminal(
                         metrics,
                         onTap = onTap,
                         onLinkTap = onLinkTap,
+                        // The menu of the last selection would cover the loupe, and point at the
+                        // last selection, until the finger is lifted (docs/decisions/0100).
+                        onSelectionStart = { toolbar.hide() },
                         onSelectionEnd = { position ->
                             display.showHandles()
                             showMenu(

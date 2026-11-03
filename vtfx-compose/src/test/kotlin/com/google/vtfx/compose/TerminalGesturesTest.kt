@@ -244,6 +244,70 @@ class TerminalGesturesTest {
         assertEquals(listOf("hello"), copied)
     }
 
+    /**
+     * Shows [output] with [toolbar] as the text toolbar, and returns the terminal's node: the
+     * selection handles of a long press are popups, other roots.
+     */
+    private fun showWithToolbar(
+        output: String,
+        toolbar: FakeTextToolbar,
+    ): androidx.compose.ui.test.SemanticsNodeInteraction {
+        composeRule.setContent {
+            CompositionLocalProvider(LocalTextToolbar provides toolbar) {
+                Terminal(display, Modifier.size(300.dp, 200.dp).testTag("terminal"))
+            }
+        }
+        composeRule.waitForIdle()
+        session.feed(output.toByteArray())
+        composeRule.waitForIdle()
+        return composeRule.onNodeWithTag("terminal")
+    }
+
+    @Test
+    fun aLongPressHidesTheMenuOfTheLastOneUntilItsFingerIsLifted() {
+        // The menu would cover the loupe, and point at the last selection.
+        val toolbar = FakeTextToolbar()
+        val terminal = showWithToolbar("hello world", toolbar)
+        terminal.performTouchInput { longClick(Offset(1f, 5f)) }
+        composeRule.waitForIdle()
+        assertEquals(TextToolbarStatus.Shown, toolbar.status)
+
+        terminal.performTouchInput {
+            down(Offset(80f, 5f))
+            advanceEventTime(LONG_PRESS_MILLIS)
+        }
+        composeRule.mainClock.advanceTimeBy(LONG_PRESS_MILLIS)
+        composeRule.waitForIdle()
+
+        assertEquals(TextToolbarStatus.Hidden, toolbar.status)
+        terminal.performTouchInput { up() }
+        composeRule.waitForIdle()
+        assertEquals(TextToolbarStatus.Shown, toolbar.status)
+    }
+
+    @Test
+    fun movingTheDisplayHidesTheMenu() {
+        // The menu points at the text it was shown for, which the display moves away.
+        val toolbar = FakeTextToolbar()
+        val terminal = showWithToolbar(lines(100), toolbar)
+        val moves =
+            listOf<() -> Unit>(
+                { display.zoomBy(2f, Offset.Zero, Offset.Zero) },
+                {
+                    val unused = display.panBy(Offset(-20f, -20f))
+                },
+                { display.scrollBy(3) },
+            )
+        for (move in moves) {
+            terminal.performTouchInput { longClick(Offset(1f, 5f)) }
+            composeRule.waitForIdle()
+            assertEquals(TextToolbarStatus.Shown, toolbar.status)
+            composeRule.runOnIdle { move() }
+            composeRule.waitForIdle()
+            assertEquals(TextToolbarStatus.Hidden, toolbar.status)
+        }
+    }
+
     @Test
     fun movesWithinACellLetTheFingerGoOnExtending() {
         val toolbar = FakeTextToolbar()
