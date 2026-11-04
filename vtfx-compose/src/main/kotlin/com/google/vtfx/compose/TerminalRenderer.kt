@@ -460,7 +460,8 @@ internal class TerminalRenderer(
                 continue
             }
             if (BuiltinGlyphs.isDrawn(text)) {
-                val color = foreground(cellStyle, defaultForeground, defaultBackground)
+                // In the color of the text, with faint, as a glyph of a font is drawn.
+                val color = textColor(cellStyle, defaultForeground, defaultBackground)
                 // Over both cells of a wide one: box drawing characters are East Asian Ambiguous,
                 // two cells wide when the session takes them so.
                 val width = line.widthAt(column)
@@ -748,7 +749,9 @@ internal class TerminalRenderer(
         line.textAt(column)?.let { text ->
             // Drawn as drawText draws it, as geometry over the cell (both cells if wide).
             if (BuiltinGlyphs.isDrawn(text)) {
-                with(BuiltinGlyphs) { draw(text, topLeft, size, cursorTextColor, fill) }
+                val color =
+                    textColor(cellStyle, defaultForeground, defaultBackground, cursorTextColor)
+                with(BuiltinGlyphs) { draw(text, topLeft, size, color, fill) }
             } else {
                 drawCell(
                     text,
