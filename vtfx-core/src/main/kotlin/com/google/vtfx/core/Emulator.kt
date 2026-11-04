@@ -59,7 +59,11 @@ internal class Emulator(
     var cursorY: Int = 0
         private set
 
-    /** Set after writing the last column with autowrap on: the next character wraps first. */
+    /**
+     * Set after writing the last column: the cursor stays there, past the character written. With
+     * autowrap on, the next character wraps first; with it off, the next character overwrites the
+     * last column, and a combining character joins the character written there, as in xterm.
+     */
     var pendingWrap: Boolean = false
         private set
 
@@ -178,7 +182,7 @@ internal class Emulator(
             if (i < to) {
                 // The last column: the next character wraps first, as print does.
                 line.setNarrow(cursorX, bytes[i].toInt(), styleBits, activeLink, underlineColor)
-                pendingWrap = autowrap
+                pendingWrap = true
                 i++
             }
         }
@@ -218,13 +222,13 @@ internal class Emulator(
 
     /**
      * Moves the cursor past [cells] just written, stopping at the last column, where the next
-     * character wraps first if autowrap is on.
+     * character wraps first if autowrap is on ([pendingWrap]).
      */
     private fun advanceCursor(cells: Int) {
         val next = cursorX + cells
         if (next >= columns) {
             cursorX = columns - 1
-            pendingWrap = autowrap
+            pendingWrap = true
         } else {
             cursorX = next
         }
@@ -889,8 +893,10 @@ internal class Emulator(
                 cursorPosition(1, 1)
             }
             7 -> {
+                // As in xterm, a character written at the last column while autowrap was off is
+                // overwritten by the next one, rather than wrapped, after autowrap is set again.
+                if (enabled && !autowrap) pendingWrap = false
                 autowrap = enabled
-                if (!enabled) pendingWrap = false
             }
             9 -> setMouseTracking(MouseTracking.X10, enabled)
             12 -> {

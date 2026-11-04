@@ -108,6 +108,28 @@ class TerminalTest {
     }
 
     @Test
+    fun combiningCharacterAtTheLastColumnWithoutAutowrapJoinsTheCharacterWrittenThere() {
+        val t = terminal(3, 1)
+        t.write("\u001b[?7labce\u0301")
+        val line = t.snapshot().line(0)
+        assertEquals("b", line.textAt(1))
+        assertEquals("e\u0301", line.textAt(2))
+        // The same for a character beyond ASCII, which is not printed as a run of ASCII.
+        t.write("\u001b[1;3H\u00e9\u0323")
+        assertEquals("b", t.snapshot().line(0).textAt(1))
+        assertEquals("\u00e9\u0323", t.snapshot().line(0).textAt(2))
+    }
+
+    @Test
+    fun aRegionalIndicatorAtTheLastColumnWithoutAutowrapDoesNotPairBeforeTheCharacterThere() {
+        val t = terminal(3, 1)
+        t.write("\u001b[?7la\uD83C\uDDEFx\uD83C\uDDF5")
+        val line = t.snapshot().line(0)
+        assertEquals("\uD83C\uDDEF", line.textAt(1))
+        assertEquals("\uD83C\uDDF5", line.textAt(2))
+    }
+
+    @Test
     fun combiningCharactersAreBounded() {
         val t = terminal(2, 1)
         t.write("e" + "́".repeat(1000))
