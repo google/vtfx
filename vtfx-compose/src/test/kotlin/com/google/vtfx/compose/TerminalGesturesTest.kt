@@ -558,6 +558,41 @@ class TerminalGesturesTest {
     }
 
     @Test
+    fun aFlingThroughTheScrollbackSendsNothingWhenTheHostSwitchesToTheAlternateScreen() {
+        show(lines(500))
+        composeRule.mainClock.autoAdvance = false
+        drag(moveMillis = 20)
+        composeRule.mainClock.advanceTimeBy(50)
+        assertTrue(display.fling != null)
+        // Output, not the user's input, which would stop the fling.
+        composeRule.runOnIdle { session.feed("\u001b[?1049h".toByteArray()) }
+        composeRule.mainClock.advanceTimeBy(1000)
+        // Arrow keys would be input that the user did not give to the program that took the
+        // screen.
+        assertEquals("", sent.toString())
+        assertEquals(null, display.fling)
+    }
+
+    @Test
+    fun aFlingOfArrowKeysStopsWhenTheHostLeavesTheAlternateScreen() {
+        show("${lines(500)}\u001b[?1049h")
+        composeRule.mainClock.autoAdvance = false
+        drag(moveMillis = 20)
+        composeRule.mainClock.advanceTimeBy(50)
+        assertTrue(display.fling != null)
+        composeRule.runOnIdle {
+            session.feed("\u001b[?1049l".toByteArray())
+            sent.setLength(0)
+        }
+        composeRule.mainClock.advanceTimeBy(1000)
+        // The arrow keys would reach the shell on the main screen, which takes them as its
+        // history, and the scrollback, which the swipe did not scroll, stays at the bottom.
+        assertEquals("", sent.toString())
+        assertEquals(null, display.fling)
+        assertEquals(0, display.scrollOffset)
+    }
+
+    @Test
     fun aFlingOnTheAlternateScreenSendsMoreArrowKeys() {
         show("\u001b[?1049h")
         drag(moveMillis = 100, restMillis = 100)

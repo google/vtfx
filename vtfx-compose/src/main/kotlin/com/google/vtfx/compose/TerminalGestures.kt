@@ -252,10 +252,10 @@ internal fun Modifier.terminalPanAndZoom(display: TerminalDisplay, metrics: Cell
                     if (beyond == null) continue
                     // Decided when the swipe starts, so that a swipe that scrolls down to the
                     // bottom of the scrollback stops there and does not go on to scroll the host.
-                    val reporting = isReportingTouches(display)
+                    val scrolling = SwipeScrolling.of(display.session, isReportingTouches(display))
                     val started =
-                        SwipeScroller(display, metrics, reporting) { lines ->
-                            scroll(display, lines, cell, reporting)
+                        SwipeScroller(display, metrics, scrolling) { lines ->
+                            scroll(display, lines, cell, scrolling)
                         }
                     scroller = started
                     change.consume()
@@ -296,16 +296,45 @@ internal class Fling(val velocity: Offset, val scroller: SwipeScroller) {
 }
 
 /**
+ * How a swipe, and the fling after it, scroll once the zoomed display reaches its top or bottom,
+ * decided when the swipe starts (docs/design/compose-input.md section 2).
+ */
+internal enum class SwipeScrolling {
+    /** As the mouse wheel, which the host asked for. */
+    Wheel,
+
+    /** As the arrow keys, on the alternate screen, as xterm's alternateScroll. */
+    ArrowKeys,
+
+    /** Through the scrollback of the main screen. */
+    Scrollback;
+
+    companion object {
+        /**
+         * How a swipe that starts now on [session]'s screen scrolls, as the wheel if [reporting].
+         */
+        fun of(session: TerminalSession, reporting: Boolean): SwipeScrolling =
+            when {
+                reporting -> Wheel
+                session.isAlternateScreen() -> ArrowKeys
+                else -> Scrollback
+            }
+    }
+}
+
+/**
  * Moves the zoomed display, and scrolls with what is left, by the distance that a finger, or two on
  * a touchpad, move in one swipe and in the fling after it, a line per cell height on the display,
- * with [scrollLines]: positive toward earlier content. It scrolls as the mouse wheel if
- * [reporting], which the swipe decided when it started, as the arrow keys on the alternate screen,
- * and through the scrollback otherwise; this stops at the ends of the scrollback.
+ * with [scrollLines]: positive toward earlier content. It scrolls as [scrolling], which the swipe
+ * decided when it started. Through the scrollback, it stops at the ends of the scrollback. As the
+ * arrow keys or through the scrollback, it stops when the host switches to the other screen, which
+ * the swipe did not scroll: arrow keys would be input that the user did not give to the program on
+ * the main screen, or to the one that took the alternate screen.
  */
 internal class SwipeScroller(
     private val display: TerminalDisplay,
     private val metrics: CellMetrics,
-    private val reporting: Boolean,
+    private val scrolling: SwipeScrolling,
     private val scrollLines: (lines: Int) -> Unit,
 ) {
     /** The distance moved since the last whole line. */
@@ -338,15 +367,21 @@ internal class SwipeScroller(
     /** Scrolls by [pixels] on the display, positive downward, and returns the pixels used. */
     private fun scrollBy(pixels: Float): Float {
         if (pixels == 0f) return 0f
-        if (!reporting && !display.session.isAlternateScreen()) {
-            val offset = display.scrollOffset
-            if (
-                (pixels > 0 && offset >= display.session.scrollbackSize) ||
-                    (pixels < 0 && offset == 0)
-            ) {
-                remainder = 0f
-                return 0f
+        val session = display.session
+        val stopped =
+            when (scrolling) {
+                SwipeScrolling.Wheel -> false
+                SwipeScrolling.ArrowKeys -> !session.isAlternateScreen()
+                SwipeScrolling.Scrollback -> {
+                    val offset = display.scrollOffset
+                    session.isAlternateScreen() ||
+                        (pixels > 0 && offset >= session.scrollbackSize) ||
+                        (pixels < 0 && offset == 0)
+                }
             }
+        if (stopped) {
+            remainder = 0f
+            return 0f
         }
         // A line moves with the finger also when the display is zoomed.
         val lineHeight = metrics.height * display.zoom
@@ -444,22 +479,27 @@ private fun displayCell(position: Offset, metrics: CellMetrics, columns: Int, ro
     )
 
 /**
- * Scrolls by [lines]: positive when the finger moves down, which shows earlier content, as a scroll
- * wheel turned up does. As the mouse wheel at [cell] if [reporting].
+ * Scrolls by [lines] as [scrolling]: positive when the finger moves down, which shows earlier
+ * content, as a scroll wheel turned up does. As the mouse wheel at [cell].
  */
-private fun scroll(display: TerminalDisplay, lines: Int, cell: Pair<Int, Int>, reporting: Boolean) {
+private fun scroll(
+    display: TerminalDisplay,
+    lines: Int,
+    cell: Pair<Int, Int>,
+    scrolling: SwipeScrolling,
+) {
     val session = display.session
-    when {
-        reporting ->
+    when (scrolling) {
+        SwipeScrolling.Wheel ->
             repeat(abs(lines)) {
                 val button = if (lines > 0) MouseButton.WheelUp else MouseButton.WheelDown
                 session.sendMouse(MouseReport(button, MouseAction.Press, cell.first, cell.second))
             }
-        session.isAlternateScreen() ->
+        SwipeScrolling.ArrowKeys ->
             repeat(abs(lines)) {
                 display.sendScrollKey(if (lines > 0) TerminalKey.Up else TerminalKey.Down)
             }
-        else -> display.scrollBy(lines)
+        SwipeScrolling.Scrollback -> display.scrollBy(lines)
     }
 }
 

@@ -309,7 +309,12 @@ class TerminalDisplayTest {
 
     @Test
     fun aFlingWithoutSpeedDoesNotStart() {
-        val scroller = SwipeScroller(display, CellMetrics(10f, 20f, 15f), reporting = false) {}
+        val scroller =
+            SwipeScroller(
+                display,
+                CellMetrics(10f, 20f, 15f),
+                SwipeScrolling.Scrollback,
+            ) {}
         display.startFling(-Offset(0f, 0f), scroller)
         assertEquals(null, display.fling)
         display.startFling(Offset(0f, -300f), scroller)

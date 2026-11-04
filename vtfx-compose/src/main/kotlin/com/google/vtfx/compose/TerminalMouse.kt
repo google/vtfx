@@ -204,17 +204,17 @@ private class MouseHandler(
      * grid does, with [scroller], and flings at its end with the speed that [velocity] measures of
      * the fingers' [position] (docs/decisions/0100).
      */
-    private inner class TouchpadPan(reporting: Boolean) {
+    private inner class TouchpadPan(scrolling: SwipeScrolling) {
         /** The last event of the swipe, with the pointer's position for wheel reports. */
         var change: PointerInputChange? = null
         var modifiers: PointerKeyboardModifiers? = null
 
         val scroller =
-            SwipeScroller(display, metrics, reporting) { lines ->
+            SwipeScroller(display, metrics, scrolling) { lines ->
                 scroll(
                     checkNotNull(change),
                     checkNotNull(modifiers),
-                    reporting,
+                    scrolling,
                     reports = lines,
                     lines = lines,
                 )
@@ -473,7 +473,13 @@ private class MouseHandler(
             (notches.toLong() * WHEEL_LINES)
                 .coerceIn(Int.MIN_VALUE.toLong(), Int.MAX_VALUE.toLong())
                 .toInt()
-        scroll(change, modifiers, reporting, reports = notches, lines = lines)
+        scroll(
+            change,
+            modifiers,
+            SwipeScrolling.of(session, reporting),
+            reports = notches,
+            lines = lines,
+        )
     }
 
     /**
@@ -483,7 +489,7 @@ private class MouseHandler(
      * scroll the host.
      */
     private fun startPan(modifiers: PointerKeyboardModifiers): TouchpadPan =
-        TouchpadPan(isReporting(modifiers))
+        TouchpadPan(SwipeScrolling.of(session, isReporting(modifiers)))
 
     /** Moves [pan] by the moves of [change], as a swipe on the grid moves. */
     private fun pan(
@@ -527,28 +533,27 @@ private class MouseHandler(
     }
 
     /**
-     * Scrolls toward earlier content if positive: [reports] wheel reports at the pointer's cell if
-     * [reporting], else [lines] arrow keys on the alternate screen, or [lines] lines through the
-     * scrollback.
+     * Scrolls toward earlier content if positive, as [scrolling]: [reports] wheel reports at the
+     * pointer's cell, [lines] arrow keys, or [lines] lines through the scrollback.
      */
     private fun scroll(
         change: PointerInputChange,
         modifiers: PointerKeyboardModifiers,
-        reporting: Boolean,
+        scrolling: SwipeScrolling,
         reports: Int,
         lines: Int,
     ) {
-        when {
-            reporting -> {
+        when (scrolling) {
+            SwipeScrolling.Wheel -> {
                 val button = if (reports > 0) MouseButton.WheelUp else MouseButton.WheelDown
                 val cell = cellAt(grid(change.position), metrics, session)
                 repeat(abs(reports)) { report(button, MouseAction.Press, cell, modifiers) }
             }
-            session.isAlternateScreen() ->
+            SwipeScrolling.ArrowKeys ->
                 repeat(abs(lines)) {
                     display.sendScrollKey(if (lines > 0) TerminalKey.Up else TerminalKey.Down)
                 }
-            else -> {
+            SwipeScrolling.Scrollback -> {
                 display.scrollBy(lines)
                 // The pointer did not move, but what is under it did, and the host may get the
                 // mouse again at the bottom: the pointer icon follows.
