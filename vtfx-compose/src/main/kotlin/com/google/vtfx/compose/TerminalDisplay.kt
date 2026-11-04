@@ -602,6 +602,7 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
      * the display follows the scrollback.
      */
     fun restore(view: SavedView) {
+        if (!sized) restoredBeforeSize = view
         val lines = session.searchLines(Long.MAX_VALUE, 1)
         val same = view.sessionKey == sessionKey(session) && view.generation == lines.generation
         val top = view.topLine
@@ -707,6 +708,13 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
     /** The size waiting for [applyPendingSize], or null. */
     private var pendingSize: GridSize? = null
     private var sized = false
+
+    /**
+     * The view that [restore] gave before the first size, which a display recreated after a
+     * rotation takes before its layout: the first size may then reflow the lines, and the view is
+     * restored again for the lines numbered again, which shows the bottom (docs/decisions/0095).
+     */
+    private var restoredBeforeSize: SavedView? = null
     private val applyPendingSize = Runnable {
         val size = pendingSize ?: return@Runnable
         pendingSize = null
@@ -726,6 +734,14 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
         if (!sized) {
             sized = true
             session.resize(columns, rows, cellWidth, cellHeight)
+            val restored = restoredBeforeSize
+            restoredBeforeSize = null
+            if (
+                restored != null &&
+                    restored.generation != session.searchLines(Long.MAX_VALUE, 1).generation
+            ) {
+                restore(restored)
+            }
             return
         }
         pendingSize = GridSize(columns, rows, cellWidth, cellHeight)

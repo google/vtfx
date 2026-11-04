@@ -227,6 +227,29 @@ class TerminalStateRestorationTest {
     }
 
     @Test
+    fun aTerminalRecreatedAtAnotherSizeShowsTheBottom() {
+        // As across a rotation, which resizes the terminal and so reflows and numbers its lines
+        // again, after the recreated terminal took the saved view.
+        var width by mutableStateOf(300.dp)
+        val restoration = StateRestorationTester(composeRule)
+        restoration.setContent {
+            state = rememberTerminalState()
+            Terminal(session, Modifier.size(width, 200.dp), state = state)
+        }
+        composeRule.waitForIdle()
+        feed("old\r\n" + "\r\n".repeat(40) + "new")
+        scrollTo("old")
+        assertEquals(true, state.isScrolledBack)
+
+        width = 200.dp
+        restoration.emulateSavedInstanceStateRestore()
+        composeRule.waitForIdle()
+
+        assertEquals(false, state.isScrolledBack)
+        assertShown("new")
+    }
+
+    @Test
     fun aStateRestoredWithAnotherSessionShowsTheBottom() {
         // As after the process was killed: the new session has the same lines and numbers.
         var session by mutableStateOf(session)
