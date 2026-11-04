@@ -368,8 +368,10 @@ internal class TerminalRenderer(
         val y = underlineCenter
         for (link in links) {
             for (span in link.spans) {
+                // In the color of the text, with faint, as other underlines (section 8.2 of
+                // emulation.md).
                 val color =
-                    foreground(
+                    textColor(
                         snapshot.line(span.row).styleAt(span.start),
                         defaultForeground,
                         defaultBackground,

@@ -86,9 +86,22 @@ class TerminalAttributesDrawingTest {
         assertFalse(RED.toArgb() in pixels("$HIDE_CURSOR$SGR_RED\u001b[2m\u2588"))
     }
 
+    @Test
+    fun theUnderlineOfALinkInTheTextIsDrawnInTheTextColor() {
+        assertTrue(RED.toArgb() in pixels("$HIDE_CURSOR$SGR_RED$URL"))
+    }
+
+    @Test
+    fun theUnderlineOfAFaintLinkInTheTextIsDrawnFaint() {
+        // The underline takes the color of the text with faint applied; the faint text has no
+        // pixel of the full color either.
+        assertFalse(RED.toArgb() in pixels("$HIDE_CURSOR$SGR_RED\u001b[2m$URL"))
+    }
+
     private companion object {
         val RED = Color(0xFFFF0000)
         const val HIDE_CURSOR = "\u001b[?25l"
         const val SGR_RED = "\u001b[38;2;255;0;0m"
+        const val URL = "https://example.com/"
     }
 }
