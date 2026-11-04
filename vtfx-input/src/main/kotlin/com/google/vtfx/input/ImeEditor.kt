@@ -239,17 +239,17 @@ public class ImeEditor(
     }
 
     /**
-     * Deletes [beforeLength] code units before the cursor. What reaches before the input history is
-     * sent as DEL, since it is what the user meant by pressing BS. [afterLength] is ignored: there
-     * is no text after the cursor.
+     * Deletes [beforeLength] code units before the composing text, or before the cursor if there is
+     * none, as `BaseInputConnection` does: the composing text stays. What reaches before the input
+     * history is sent as DEL, since it is what the user meant by pressing BS. [afterLength] is
+     * ignored: there is no text after the cursor.
      */
     public fun deleteSurroundingText(beforeLength: Int, afterLength: Int): Boolean {
         if (beforeLength < 0 || afterLength < 0) return false
         selectionFrom = -1
-        val buffer = text
-        var cut = maxOf(0, buffer.length - beforeLength)
-        if (splitsSurrogatePair(buffer, cut)) cut--
-        deleteBufferFrom(cut, outside = maxOf(0, beforeLength - buffer.length))
+        var cut = maxOf(0, history.length - beforeLength)
+        if (splitsSurrogatePair(history, cut)) cut--
+        deleteHistoryFrom(cut, outside = maxOf(0, beforeLength - history.length))
         return true
     }
 
@@ -257,21 +257,28 @@ public class ImeEditor(
     public fun deleteSurroundingTextInCodePoints(beforeLength: Int, afterLength: Int): Boolean {
         if (beforeLength < 0 || afterLength < 0) return false
         selectionFrom = -1
-        val buffer = text
-        val available = buffer.codePointCount(0, buffer.length)
+        val available = history.codePointCount(0, history.length)
         val count = minOf(beforeLength, available)
-        val cut = buffer.offsetByCodePoints(buffer.length, -count)
-        deleteBufferFrom(cut, outside = beforeLength - count)
+        val cut = history.offsetByCodePoints(history.length, -count)
+        deleteHistoryFrom(cut, outside = beforeLength - count)
         return true
     }
 
-    private fun deleteBufferFrom(cut: Int, outside: Int) {
-        if (cut < history.length) {
-            history = history.substring(0, cut)
-            composing = ""
-        } else {
-            composing = composing.substring(0, cut - history.length)
+    /**
+     * Deletes the input history from [cut], keeping the composing text after it, and [outside] code
+     * units before the input history as DELs.
+     */
+    private fun deleteHistoryFrom(cut: Int, outside: Int) {
+        // A character whose halves are split between the input history and the composing text is
+        // one character in the edit buffer that the IME sees, so it goes whole.
+        if (
+            cut < history.length &&
+                history.last().isHighSurrogate() &&
+                composing.firstOrNull()?.isLowSurrogate() == true
+        ) {
+            composing = composing.substring(1)
         }
+        history = history.substring(0, cut)
         // Added as Long, since both may be near Int.MAX_VALUE.
         pendingDeletes = minOf(pendingDeletes.toLong() + outside, maxHistoryLength.toLong()).toInt()
         endOperation()

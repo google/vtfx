@@ -152,13 +152,24 @@ class ImeEditorTest {
     }
 
     @Test
-    fun deleteRemovesComposingTextFirst() {
-        editor.commitText("a")
+    fun deleteKeepsTheComposingTextAndDeletesBeforeIt() {
+        // As BaseInputConnection does, which IMEs are written against.
+        editor.commitText("ab")
         editor.setComposingText("かな")
         sent.clear()
         assertTrue(editor.deleteSurroundingText(1, 0))
-        assertEquals(emptyList<HostInput>(), sent)
-        assertEquals("aか", editor.text)
+        assertEquals(listOf<HostInput>(delete(1)), sent)
+        assertEquals("aかな", editor.text)
+        assertEquals(1, editor.composingStart)
+        assertTrue(editor.deleteSurroundingTextInCodePoints(1, 0))
+        assertEquals(listOf<HostInput>(delete(1), delete(1)), sent)
+        assertEquals("かな", editor.text)
+        // Before the input history, as BS.
+        assertTrue(editor.deleteSurroundingText(2, 0))
+        assertEquals(listOf<HostInput>(delete(1), delete(1), delete(2)), sent)
+        assertEquals("かな", editor.text)
+        editor.finishComposingText()
+        assertEquals(listOf<HostInput>(delete(1), delete(1), delete(2), text("かな")), sent)
     }
 
     @Test

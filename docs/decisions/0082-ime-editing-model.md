@@ -53,14 +53,17 @@ The IME connects to a `View` placed behind the terminal (`TerminalInputView`), w
 3. `setSelection` accepts ranges that end at the cursor, and the next `commitText` or `setComposingText` replaces the selected text (section 6.1).
 4. `replaceText` while there is composing text commits the composing text, then replaces the range; the result becomes the input history, unless it is a paste (topic 8) (section 11).
 5. The part of `deleteSurroundingText` before the input history is sent as one DEL per UTF-16 code unit, up to the limit of the input history in total (sections 6.1 and 11).
+6. `deleteSurroundingText` deletes before the composing text and keeps it, as `BaseInputConnection` does; without composing text, before the cursor (section 6.1).
 
 **Why.**
 - Making a range that does not end at the cursor into composing text would leave committed text after the composing text, breaking invariant 1. An empty range is handled as `BaseInputConnection` handles it.
 - A selection that ends at the cursor keeps invariant 1 (no text after the cursor). Since topic 3, Gboard's path no longer selects to replace, but accepting such selections lets vtfx respond correctly to IMEs that replace by selecting and committing.
 - `replaceText` is used to correct committed text (autocorrect, double-space period); no case in which the replaced range touches composing text has been observed.
 - The content of the text before the input history is unknown, so it cannot be counted in code points. When an IME erases outside the range, it is in place of BS, and, as observed, one unit at a time.
+- IMEs are written against `BaseInputConnection`, which every `TextView` uses: it widens the selection to the composing text and deletes before both. An IME that deletes while composing, for example to remove a space before the word it composes, means the text before the composing text; deleting from the end of the composing text instead would lose that deletion on the host and change the composing text behind the IME's back. No trace shows an IME doing either (the human owner chose to follow the platform).
 
 **Alternatives considered.**
+- **Count `deleteSurroundingText` from the end of the edit buffer, composing text included**: simpler, but it differs from the platform that IMEs expect.
 - **Accept ranges other than at the end in `setComposingRegion`, and hold the text after it as a continuation of the input history**: the buffer would become "history + composing + history", complicating the computation of differences and of the DELs sent. Not taken until a need is observed.
 
 **Impact of reversing.** Change the corresponding methods of `ImeEditor`, the tests in `ImeEditorTest`, and sections 6.1 and 11 of [ime-contract.md](../design/ime-contract.md).
