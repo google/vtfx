@@ -22,3 +22,11 @@ For each item, write why it is worth doing, what to do, and when it is done. Kee
 
 **Done when.** Each range is drawn, with a screenshot golden of every code point and tests of the joins, and section 7.3 lists it.
 
+
+### 1.5 Type the characters of AltGr on hardware keyboards
+
+**Why.** `KeyEventHandler` takes the character of a key from `KeyEvent.getUnicodeChar` with every Alt bit of the meta state removed, and sends Alt as a modifier (section 7.1 of [compose-input.md](design/compose-input.md)). On layouts that type characters with AltGr, the right Alt, such as German or French, AltGr+Q should type `@`, but sends `ESC q`. Robolectric's virtual key character map has no AltGr, so only a real device with such a layout shows it; the human owner is getting one. It matters only for keys that the IME does not consume and passes to the view.
+
+**What.** On the device, check what AltGr+Q on a German layout and AltGr+2 on a French layout send, with Gboard and with no IME consuming the keys. If it is `ESC` and the base character, treat `META_ALT_RIGHT_ON` as AltGr: take the character with the right Alt kept in the meta state, and when it differs from the one without, send it as text without Alt, as xterm and the platform's text fields do. Left Alt stays a modifier. Update section 7.1 and record the choice in a decision.
+
+**Done when.** A test of `KeyEventHandler` with a key character map that has AltGr covers it, the device sends `@` for AltGr+Q on a German layout, and section 7.1 says how AltGr is told from Alt.
