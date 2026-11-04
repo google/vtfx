@@ -98,8 +98,29 @@ class TerminalAttributesDrawingTest {
         assertFalse(RED.toArgb() in pixels("$HIDE_CURSOR$SGR_RED\u001b[2m$URL"))
     }
 
+    @Test
+    fun theUnderlineOfAHyperlinkIsDrawnAgainOverTheBlockCursor() {
+        // A space with a hyperlink under the cursor: only its underline can have the color of the
+        // text under the cursor.
+        val style =
+            TerminalStyle(
+                colors = TerminalColors.Dark.copy(cursor = CURSOR, cursorText = CURSOR_TEXT),
+                fontSize = 40.sp,
+            )
+        val pixels =
+            pixels("\u001b]8;;https://example.com/\u001b\\ \u001b]8;;\u001b\\\u001b[D", style)
+        assertTrue(CURSOR.toArgb() in pixels)
+        assertTrue(pixels.any { it.green() > 0x80 && it.red() < 0x40 })
+    }
+
+    private fun Int.red() = (this shr 16) and 0xFF
+
+    private fun Int.green() = (this shr 8) and 0xFF
+
     private companion object {
         val RED = Color(0xFFFF0000)
+        val CURSOR = Color(0xFF0000FF)
+        val CURSOR_TEXT = Color(0xFF00FF00)
         const val HIDE_CURSOR = "\u001b[?25l"
         const val SGR_RED = "\u001b[38;2;255;0;0m"
         const val URL = "https://example.com/"

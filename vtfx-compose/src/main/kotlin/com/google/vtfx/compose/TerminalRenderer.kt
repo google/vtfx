@@ -767,15 +767,17 @@ internal class TerminalRenderer(
                 )
             }
         }
-        // The block hides the cell's underline and overline; they are drawn again over it.
-        if (cellStyle.underline != UnderlineStyle.None || cellStyle.isOverlined) {
+        // The block hides the cell's underline and overline, and the underline of its hyperlink;
+        // they are drawn again over it.
+        val linked = line.hyperlinkAt(column) != null
+        if (cellStyle.underline != UnderlineStyle.None || cellStyle.isOverlined || linked) {
             drawDecorations(
                 column,
                 column + width,
                 cursorRow,
                 cellStyle,
                 line.underlineColorAt(column),
-                linked = false,
+                linked,
                 defaultForeground,
                 defaultBackground,
                 colorOverride = cursorTextColor,
