@@ -173,6 +173,8 @@ class TerminalDisplayTest {
                 }
 
                 override fun onScreenChanged() {}
+
+                override fun onUserInput() {}
             }
         val other = Thread {
             repeat(100) {

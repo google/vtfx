@@ -22,6 +22,8 @@ import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.widget.LinearLayout
+import com.google.vtfx.core.KeyModifiers
+import com.google.vtfx.core.KeyStroke
 import com.google.vtfx.session.TerminalSession
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -219,4 +221,32 @@ class TerminalInputViewTest {
 
     private fun key(action: Int, keyCode: Int, metaState: Int) =
         KeyEvent(0, 0, action, keyCode, 0, metaState)
+
+    /**
+     * Keys that change the edit buffer without a call of the IME tell it the new selection, as
+     * every change does (docs/design/ime-contract.md section 7): a hardware key that the IME did
+     * not consume, and a key of the app's key bar. Otherwise the IME keeps the old cursor.
+     */
+    @Test
+    @Config(shadows = [RecordingInputMethodManager::class])
+    fun keysOutsideTheImeReportTheSelection() {
+        first.display.attach()
+        val input = focusAndType(first)
+        val selections = RecordingInputMethodManager.selections
+        // The IME's own commit is reported by the connection.
+        assertEquals(RecordingInputMethodManager.ReportedSelection(3, 3, -1, -1), selections.last())
+        selections.clear()
+        for (action in listOf(KeyEvent.ACTION_DOWN, KeyEvent.ACTION_UP)) {
+            view.dispatchKeyEvent(key(action, KeyEvent.KEYCODE_A, 0))
+        }
+        assertEquals("a", first.take())
+        assertEquals("olda", input.getTextBeforeCursor(100, 0).toString())
+        assertEquals(RecordingInputMethodManager.ReportedSelection(4, 4, -1, -1), selections.last())
+        view.dispatchKeyEvent(key(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL, 0))
+        assertEquals("\u007f", first.take())
+        assertEquals(RecordingInputMethodManager.ReportedSelection(3, 3, -1, -1), selections.last())
+        first.session.sendKey(KeyStroke.Character('b'.code, KeyModifiers.None, 'b'.code, null))
+        assertEquals("b", first.take())
+        assertEquals(RecordingInputMethodManager.ReportedSelection(4, 4, -1, -1), selections.last())
+    }
 }

@@ -770,7 +770,14 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
 
     @AnyThread override fun onScreenChanged() = invalidate()
 
-    @AnyThread override fun onUserInput() = runOnMain { notifyEditorChanged() }
+    // The edit buffer may have changed without a call of the IME (a hardware key that the IME did
+    // not consume, or a key of the app's key bar), which the IME must be told of too
+    // (docs/design/ime-contract.md section 7).
+    @AnyThread
+    override fun onUserInput() = runOnMain {
+        notifyEditorChanged()
+        inputHost?.onUserInput()
+    }
 
     @AnyThread
     override fun onRestartInput() {
@@ -912,4 +919,7 @@ internal interface InputHost {
 
     /** The screen changed, so the cursor may have moved. */
     fun onScreenChanged()
+
+    /** The user's input was sent, so the edit buffer may have changed outside the IME's calls. */
+    fun onUserInput()
 }

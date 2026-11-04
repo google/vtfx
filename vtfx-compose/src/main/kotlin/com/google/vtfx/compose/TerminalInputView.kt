@@ -47,6 +47,9 @@ internal class TerminalInputView(context: Context) : View(context), InputHost {
 
     private var reporter: CursorAnchorReporter? = null
 
+    /** The connection last made for the bound session, or null. */
+    private var connection: TerminalInputConnection? = null
+
     /** Whether the window has the focus, as last dispatched to this view. */
     private var windowFocused = false
 
@@ -78,6 +81,8 @@ internal class TerminalInputView(context: Context) : View(context), InputHost {
         if (display === this.display) return
         this.display?.let { if (it.inputHost === this) it.inputHost = null }
         this.display = display
+        // The connection edits the previous session until the IME restarts.
+        connection = null
         if (display != null && hasFocus()) display.inputHost = this
         updateSessionFocus()
         inputMethodManager.restartInput(this)
@@ -115,15 +120,16 @@ internal class TerminalInputView(context: Context) : View(context), InputHost {
         reporter = anchor
         display.inputHost = this
         return TerminalInputConnection(
-            view = this,
-            session = session,
-            cursorAnchor = anchor,
-            onPaste = { session.pasteFromClipboard() },
-            onEditorChanged = {
-                anchor.onEditorChanged()
-                display.notifyEditorChanged()
-            },
-        )
+                view = this,
+                session = session,
+                cursorAnchor = anchor,
+                onPaste = { session.pasteFromClipboard() },
+                onEditorChanged = {
+                    anchor.onEditorChanged()
+                    display.notifyEditorChanged()
+                },
+            )
+            .also { connection = it }
     }
 
     /**
@@ -186,5 +192,9 @@ internal class TerminalInputView(context: Context) : View(context), InputHost {
 
     override fun onScreenChanged() {
         reporter?.onEditorChanged()
+    }
+
+    override fun onUserInput() {
+        connection?.onUserInput()
     }
 }

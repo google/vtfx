@@ -254,6 +254,16 @@ internal class TerminalInputConnection(
         super.closeConnection()
     }
 
+    /**
+     * Tells the IME about a change of the edit buffer that may have come from outside its calls,
+     * after the session sent the user's input: a hardware key that the IME did not consume, or a
+     * key of the app's key bar, which types into the input history without a restart (section 7).
+     * Not during a batch edit, after which the IME is told anyway.
+     */
+    fun onUserInput() {
+        if (!session.edit { it.isBatchEditInProgress }) reportSelection()
+    }
+
     /** Runs [operation], and reports the selection unless a batch edit is in progress. */
     private fun edit(operation: (ImeEditor) -> Boolean): Boolean {
         val (result, inBatch) = session.edit { operation(it) to it.isBatchEditInProgress }
