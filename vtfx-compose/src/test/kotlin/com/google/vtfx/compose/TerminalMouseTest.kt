@@ -189,6 +189,14 @@ class TerminalMouseTest {
         assertEquals(3, display.scrollOffset)
     }
 
+    /** A delta of more notches than three lines each can count still scrolls up, to the top. */
+    @Test
+    fun aHugeWheelDeltaScrollsToTheTop() {
+        show(lines(100))
+        mouse { scroll(-1e9f) }
+        assertEquals(session.scrollbackSize, display.scrollOffset)
+    }
+
     @Test
     fun wheelOnTheAlternateScreenSendsArrowKeys() {
         show("\u001b[?1049h")

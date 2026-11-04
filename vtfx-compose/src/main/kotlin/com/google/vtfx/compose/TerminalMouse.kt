@@ -467,7 +467,13 @@ private class MouseHandler(
         val notches = wheelRemainder.toInt()
         if (notches == 0) return
         wheelRemainder -= notches
-        scroll(change, modifiers, reporting, reports = notches, lines = notches * WHEEL_LINES)
+        // Saturated, so that a delta of more notches than lines can count does not overflow and
+        // scroll the other way, as scrollByPages does.
+        val lines =
+            (notches.toLong() * WHEEL_LINES)
+                .coerceIn(Int.MIN_VALUE.toLong(), Int.MAX_VALUE.toLong())
+                .toInt()
+        scroll(change, modifiers, reporting, reports = notches, lines = lines)
     }
 
     /**
