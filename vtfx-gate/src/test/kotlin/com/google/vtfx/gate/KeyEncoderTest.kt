@@ -190,6 +190,12 @@ class KeyEncoderTest {
                 case(char('_', ctrl), "\u001f"),
                 case(char('?', ctrl), "\u007f"),
                 case(char('2', ctrl), "\u0000"),
+                // As X maps Ctrl with every character from @ to ~, which xterm sends.
+                case(char('`', ctrl), "\u0000"),
+                case(char('{', ctrl), "\\e"),
+                case(char('|', ctrl), "\u001c"),
+                case(char('}', ctrl), "\u001d"),
+                case(char('~', ctrl), "\u001e"),
                 case(char('x', alt), "\\ex"),
                 case(char('c', KeyModifiers.of(ctrl = true, alt = true)), "\\e\u0003"),
                 case(char('é', ctrl), "é"),

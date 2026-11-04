@@ -157,11 +157,14 @@ internal object KeyEncoder {
 
     private fun isControl(codePoint: Int): Boolean = codePoint < 0x20 || codePoint in 0x7F..0x9F
 
-    /** Returns the C0 control that Ctrl with [codePoint] produces, as in xterm, or null. */
+    /**
+     * Returns the C0 control that Ctrl with [codePoint] produces, as in xterm, or null. As X maps
+     * Ctrl with the characters from `@` to `~` to their low five bits, Ctrl+` is NUL and Ctrl+{ to
+     * Ctrl+~ are ESC to RS, as Ctrl+[ to Ctrl+^ are.
+     */
     private fun controlCharacter(codePoint: Int): Int? =
         when (codePoint) {
-            in 'a'.code..'z'.code -> codePoint - 'a'.code + 1
-            in '@'.code..'_'.code -> codePoint - '@'.code
+            in '@'.code..'~'.code -> codePoint and 0x1F
             ' '.code,
             '2'.code -> 0x00
             '3'.code -> 0x1B
