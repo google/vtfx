@@ -218,14 +218,21 @@ public class TerminalColors(
     }
 }
 
-/** The appearance of a terminal. Immutable, and equal to a style with the same values. */
+/**
+ * The appearance of a terminal. Immutable, and equal to a style with the same values.
+ *
+ * @throws IllegalArgumentException if [fontSize] is not a finite, positive size in sp.
+ */
 @Immutable
 public class TerminalStyle(
     /** The colors of text, background, and cursor. */
     public val colors: TerminalColors = TerminalColors.Dark,
     /** The font, which should be monospaced: the cell size is measured from it. */
     public val font: TerminalFont = TerminalFont.System(),
-    /** The font size, which sets the cell size and thus the number of columns and rows. */
+    /**
+     * The font size, which sets the cell size and thus the number of columns and rows. It must be
+     * in sp, finite, and positive.
+     */
     public val fontSize: TextUnit = 14.sp,
     /**
      * The locale that selects the glyphs of Han characters, which differ between Japanese, Chinese,
@@ -247,6 +254,14 @@ public class TerminalStyle(
      */
     public val padding: PaddingValues = PaddingValues(0.dp),
 ) {
+    init {
+        // A size of zero would make cells of no size, and the grid as many columns and rows as
+        // the session allows; a unit other than sp cannot be converted to pixels.
+        require(fontSize.isSp && fontSize.value.isFinite() && fontSize.value > 0f) {
+            "fontSize must be a finite, positive size in sp: $fontSize"
+        }
+    }
+
     /** Returns this style with the given values replaced. */
     public fun copy(
         colors: TerminalColors = this.colors,

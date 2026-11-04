@@ -38,7 +38,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.ResourceFont
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.google.vtfx.core.CursorShape
 import com.google.vtfx.font.gate.FontLimits
@@ -81,6 +83,29 @@ class TerminalStyleTest {
 
     private fun cursorStyle() =
         session.snapshot().modes.let { Pair(it.cursorShape, it.cursorBlinking) }
+
+    @Test
+    fun aFontSizeThatMakesNoCellsIsRejected() {
+        // A size of zero made cells of no size: a terminal of 300 by 200 dp told the host 2048
+        // columns.
+        for (size in
+            listOf(
+                0.sp,
+                (-1).sp,
+                Float.POSITIVE_INFINITY.sp,
+                Float.NaN.sp,
+                1.em,
+                TextUnit.Unspecified,
+            )) {
+            assertThrows(IllegalArgumentException::class.java) {
+                val unused = TerminalStyle(fontSize = size)
+            }
+            assertThrows(IllegalArgumentException::class.java) {
+                val unused = TerminalStyle().copy(fontSize = size)
+            }
+        }
+        assertEquals(0.5.sp, TerminalStyle(fontSize = 0.5.sp).fontSize)
+    }
 
     @Test
     fun stylesWithTheSameValuesAreEqual() {

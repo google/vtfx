@@ -168,6 +168,7 @@ Hardware keys go to the focused terminal. `TerminalInputView` passes the keys th
 
 - A grid with no width or height: `Terminal` logs a warning with `android.util.Log` (tag `vtfx`) and does not resize the session, which keeps its size. A size that is not zero but holds less than one cell gives one column or row.
 - How the session follows the size, after a delay, is in section 3.5 of [architecture.md](architecture.md) ([decisions/0084](../decisions/0084-session-and-threads.md)).
+- The cell size comes from `TerminalStyle.fontSize`, which must be a finite, positive size in sp: the constructor of `TerminalStyle` throws `IllegalArgumentException` otherwise, since a size of zero would make cells of no size and the grid as large as the session allows ([decisions/0101](../decisions/0101-bounds-on-the-app-and-the-device.md)).
 
 ### 10.2 Inner padding
 
