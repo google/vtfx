@@ -197,6 +197,25 @@ class TerminalMouseTest {
         assertEquals(session.scrollbackSize, display.scrollOffset)
     }
 
+    /**
+     * A huge delta sends at most a screen of reports or arrow keys, where one a notch would keep
+     * the main thread busy for ever.
+     */
+    @Test
+    fun aHugeWheelDeltaSendsAtMostAScreenOfEvents() {
+        show("\u001b[?1049h")
+        val rows = session.snapshot().rows
+        mouse { scroll(-1e9f) }
+        assertEquals("\u001b[A".repeat(rows), sent.toString())
+        sent.setLength(0)
+        composeRule.runOnIdle { session.feed("\u001b[?1000h\u001b[?1006h".toByteArray()) }
+        mouse {
+            moveTo(cell(2, 1))
+            scroll(1e9f)
+        }
+        assertEquals("\u001b[<65;3;2M".repeat(rows), sent.toString())
+    }
+
     @Test
     fun wheelOnTheAlternateScreenSendsArrowKeys() {
         show("\u001b[?1049h")

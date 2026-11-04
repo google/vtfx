@@ -491,17 +491,26 @@ private fun scroll(
     val session = display.session
     when (scrolling) {
         SwipeScrolling.Wheel ->
-            repeat(abs(lines)) {
+            repeat(session.scrollEventsFor(lines)) {
                 val button = if (lines > 0) MouseButton.WheelUp else MouseButton.WheelDown
                 session.sendMouse(MouseReport(button, MouseAction.Press, cell.first, cell.second))
             }
         SwipeScrolling.ArrowKeys ->
-            repeat(abs(lines)) {
+            repeat(session.scrollEventsFor(lines)) {
                 display.sendScrollKey(if (lines > 0) TerminalKey.Up else TerminalKey.Down)
             }
         SwipeScrolling.Scrollback -> display.scrollBy(lines)
     }
 }
+
+/**
+ * The wheel reports or arrow keys that one event of the user sends for [count] notches or lines: as
+ * many, but at most the rows of the screen, so that a device that reports a huge move does not make
+ * the main thread send reports for ever (docs/design/compose-input.md section 3). The host can do
+ * nothing with more than a screen of scrolling at once.
+ */
+internal fun TerminalSession.scrollEventsFor(count: Int): Int =
+    abs(count.toLong()).coerceAtMost(size().second.toLong()).toInt()
 
 /** Returns the 1-based column and row of the cell at [position], within the screen. */
 internal fun cellAt(

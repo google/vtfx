@@ -44,7 +44,6 @@ import com.google.vtfx.core.TerminalSnapshot
 import com.google.vtfx.gate.MouseAction
 import com.google.vtfx.gate.MouseButton
 import com.google.vtfx.gate.MouseReport
-import kotlin.math.abs
 import kotlin.math.pow
 
 /**
@@ -547,10 +546,12 @@ private class MouseHandler(
             SwipeScrolling.Wheel -> {
                 val button = if (reports > 0) MouseButton.WheelUp else MouseButton.WheelDown
                 val cell = cellAt(grid(change.position), metrics, session)
-                repeat(abs(reports)) { report(button, MouseAction.Press, cell, modifiers) }
+                repeat(session.scrollEventsFor(reports)) {
+                    report(button, MouseAction.Press, cell, modifiers)
+                }
             }
             SwipeScrolling.ArrowKeys ->
-                repeat(abs(lines)) {
+                repeat(session.scrollEventsFor(lines)) {
                     display.sendScrollKey(if (lines > 0) TerminalKey.Up else TerminalKey.Down)
                 }
             SwipeScrolling.Scrollback -> {
