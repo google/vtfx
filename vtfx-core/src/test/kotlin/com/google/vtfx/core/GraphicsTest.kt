@@ -797,12 +797,41 @@ class GraphicsTest {
         }
 
         @Test
+        fun commandsWithoutDataAllocateLittle() {
+            val terminal = terminal()
+            // Commands without a payload, which fail without a reply.
+            val command = "\u001b_Gf=24\u001b\\"
+            val output = command.repeat(10_000).toByteArray()
+            terminal.write(output.copyOf(command.length * 100))
+            val threads = ManagementFactory.getThreadMXBean() as com.sun.management.ThreadMXBean
+            @Suppress("DEPRECATION") val thread = Thread.currentThread().id
+            val before = threads.getThreadAllocatedBytes(thread)
+            terminal.write(output)
+            val allocated = threads.getThreadAllocatedBytes(thread) - before
+            // A buffer of 64 KiB for each command took over 6000 times the output.
+            assertTrue(
+                allocated < 100L * output.size,
+                "$allocated bytes allocated for ${output.size} bytes of commands",
+            )
+        }
+
+        @Test
         fun theDataOfATransmissionIsBounded() {
             val terminal = terminal(limits = TerminalLimits(maxImageBytes = 1000))
             val chunk = "A".repeat(4096)
             terminal.write("\u001b_Ga=t,i=1,f=100,m=1;$chunk\u001b\\")
             terminal.write("\u001b_Gm=0;$chunk\u001b\\")
             assertEquals(listOf(reply(1, GraphicsStatus.TooLarge)), replies())
+        }
+
+        @Test
+        fun dataUpToTheLimitIsTakenInChunks() {
+            val terminal = terminal(limits = TerminalLimits(maxImageBytes = 400))
+            val data = Base64.getEncoder().encodeToString(rgba(10, 10))
+            terminal.write("\u001b_Ga=t,i=1,f=32,s=10,v=10,m=1;${data.take(8)}\u001b\\")
+            terminal.write("\u001b_Gm=1;${data.substring(8, 400)}\u001b\\")
+            terminal.write("\u001b_Gm=0;${data.substring(400)}\u001b\\")
+            assertEquals(listOf(reply(1, GraphicsStatus.Ok)), replies())
         }
 
         @Test

@@ -492,7 +492,9 @@ internal class Graphics(
         /** The most bytes kept; beyond it, the transmission fails. */
         val limit: Int,
     ) {
-        var data = ByteArray(minOf(limit, INITIAL_CAPACITY))
+        // Grown as chunks arrive, to fit them: a buffer of a fixed size allocated for every
+        // command would make a flood of commands without data allocate far more than its bytes.
+        var data = ByteArray(0)
             private set
 
         var size = 0
@@ -506,6 +508,8 @@ internal class Graphics(
          * own, with or without padding, up to the first character that is not base64.
          */
         fun append(payload: CharSequence, from: Int) {
+            // Every 4 characters decode to 3 bytes, and 2 or 3 left over to 1 or 2.
+            reserve((payload.length - from).toLong() / 4 * 3 + 2)
             var bits = 0
             var count = 0
             for (i in from until payload.length) {
@@ -530,16 +534,26 @@ internal class Graphics(
             }
         }
 
+        /**
+         * Makes room for [more] bytes, up to the limit, at least doubling the buffer when it grows,
+         * so that the bytes of many chunks are copied a bounded number of times.
+         */
+        private fun reserve(more: Long) {
+            if (overflowed) return
+            val needed = minOf(size + more, limit.toLong())
+            if (needed <= data.size) return
+            data = data.copyOf(maxOf(needed, minOf(limit.toLong(), data.size * 2L)).toInt())
+        }
+
         private fun put(byte: Int) {
             if (overflowed) return
+            // append reserved room for every byte of the chunk up to the limit, so a full buffer
+            // is at the limit.
             if (size == data.size) {
-                if (size >= limit) {
-                    overflowed = true
-                    data = ByteArray(0)
-                    size = 0
-                    return
-                }
-                data = data.copyOf(minOf(limit.toLong(), size * 2L).toInt())
+                overflowed = true
+                data = ByteArray(0)
+                size = 0
+                return
             }
             data[size++] = byte.toByte()
         }
@@ -553,10 +567,6 @@ internal class Graphics(
                 '/' -> 63
                 else -> -1
             }
-
-        companion object {
-            private const val INITIAL_CAPACITY = 64 * 1024
-        }
     }
 
     companion object {
