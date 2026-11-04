@@ -77,6 +77,25 @@ class TerminalInputConnectionTest {
         assertEquals("ab", info.getInitialTextBeforeCursor(10, 0).toString())
     }
 
+    /**
+     * An IME that connects while the edit buffer holds a selection, as after switching IMEs right
+     * after Gboard selected a trailing space, is given that selection: the next commit replaces it,
+     * so an IME told of a collapsed cursor would delete text it never selected.
+     */
+    @Test
+    fun editorInfoHasTheSelection() {
+        session.edit {
+            it.commitText("ok ")
+            assertTrue(it.setSelection(2, 3))
+        }
+        val info = EditorInfo()
+        session.edit { TerminalInputConnection.configure(info, it, directInput = false) }
+        assertEquals(2, info.initialSelStart)
+        assertEquals(3, info.initialSelEnd)
+        assertEquals("ok", info.getInitialTextBeforeCursor(10, 0).toString())
+        assertEquals(" ", info.getInitialSelectedText(0).toString())
+    }
+
     @Test
     @Config(sdk = [MIN_SDK])
     fun editorInfoBeforeApi30HasNoInitialSurroundingText() {

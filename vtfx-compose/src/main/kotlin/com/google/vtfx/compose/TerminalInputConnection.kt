@@ -315,7 +315,10 @@ internal class TerminalInputConnection(
                     EditorInfo.IME_FLAG_NO_FULLSCREEN or
                     EditorInfo.IME_FLAG_NO_EXTRACT_UI or
                     EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING
-            outAttrs.initialSelStart = editor.cursor
+            // The selection, which ends at the cursor, is usually empty; it is not after an IME
+            // connects while the edit buffer holds the selection of the IME before it, whose next
+            // commit replaces it.
+            outAttrs.initialSelStart = editor.selectionStart
             outAttrs.initialSelEnd = editor.cursor
             // Before API 30, the IME asks for the input history with getTextBeforeCursor instead.
             if (Build.VERSION.SDK_INT >= 30) outAttrs.setInitialSurroundingText(editor.text)
