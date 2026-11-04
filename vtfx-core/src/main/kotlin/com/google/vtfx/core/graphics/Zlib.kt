@@ -32,6 +32,15 @@ internal object Zlib {
     private const val INITIAL_BUFFER_SIZE = 4096
 
     /**
+     * The shortest zlib stream: a 2-byte header, an empty final stored or fixed block (2 bytes),
+     * and the 4-byte Adler-32.
+     */
+    private const val MIN_STREAM_LENGTH = 8
+
+    /** The first buffer for input in one piece, in bytes per byte of input. */
+    private const val INITIAL_RATIO = 4L
+
+    /**
      * Inflates the zlib stream in [length] bytes of [data] from [offset]. Returns null if the
      * stream is malformed or truncated, fails its Adler-32 check, needs a preset dictionary, or
      * inflates to more than [maxOutput] bytes. Bytes after the end of the stream are ignored.
@@ -40,8 +49,12 @@ internal object Zlib {
         require(offset >= 0 && length >= 0 && offset <= data.size - length) {
             "range $offset+$length out of ${data.size}"
         }
+        // Too short for a stream, decided without an inflater: a host may send many such commands.
+        if (length < MIN_STREAM_LENGTH) return null
         var given = false
-        return inflate(maxOutput) { inflater ->
+        // The first buffer follows the input too, so that small input allocates little.
+        val first = minOf(length.toLong() * INITIAL_RATIO, INITIAL_BUFFER_SIZE.toLong()).toInt()
+        return inflate(maxOutput, first) { inflater ->
             if (given) {
                 false
             } else {
@@ -57,11 +70,18 @@ internal object Zlib {
      * call of [feed] either sets the next piece on the inflater with `setInput` and returns true,
      * or returns false if there is no more input. Otherwise the same as the other overload.
      */
-    fun inflate(maxOutput: Int, feed: (Inflater) -> Boolean): ByteArray? {
+    fun inflate(maxOutput: Int, feed: (Inflater) -> Boolean): ByteArray? =
+        inflate(maxOutput, INITIAL_BUFFER_SIZE, feed)
+
+    private fun inflate(
+        maxOutput: Int,
+        firstBufferSize: Int,
+        feed: (Inflater) -> Boolean,
+    ): ByteArray? {
         require(maxOutput >= 0) { "maxOutput $maxOutput" }
         val inflater = Inflater()
         try {
-            var buffer = ByteArray(minOf(maxOutput, INITIAL_BUFFER_SIZE))
+            var buffer = ByteArray(minOf(maxOutput, firstBufferSize))
             var count = 0
             // When the buffer is full at the limit, any further byte means the limit is exceeded.
             val probe = ByteArray(1)

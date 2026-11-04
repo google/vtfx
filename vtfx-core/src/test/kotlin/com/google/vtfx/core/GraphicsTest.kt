@@ -816,6 +816,25 @@ class GraphicsTest {
         }
 
         @Test
+        fun compressedCommandsWithLittleDataAllocateLittle() {
+            val terminal = terminal()
+            // Compressed commands without a payload, or with 9 bytes, which fail without a reply.
+            val commands = "\u001b_Gf=100,o=z\u001b\\" + "\u001b_Gf=100,o=z;AAAAAAAAAAAA\u001b\\"
+            val output = commands.repeat(5_000).toByteArray()
+            terminal.write(output.copyOf(commands.length * 100))
+            val threads = ManagementFactory.getThreadMXBean() as com.sun.management.ThreadMXBean
+            @Suppress("DEPRECATION") val thread = Thread.currentThread().id
+            val before = threads.getThreadAllocatedBytes(thread)
+            terminal.write(output)
+            val allocated = threads.getThreadAllocatedBytes(thread) - before
+            // An output buffer of 4 KiB for each command took over 200 times the output.
+            assertTrue(
+                allocated < 100L * output.size,
+                "$allocated bytes allocated for ${output.size} bytes of commands",
+            )
+        }
+
+        @Test
         fun theDataOfATransmissionIsBounded() {
             val terminal = terminal(limits = TerminalLimits(maxImageBytes = 1000))
             val chunk = "A".repeat(4096)
