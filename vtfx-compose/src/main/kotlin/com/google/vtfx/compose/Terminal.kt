@@ -701,7 +701,7 @@ private class DisplayText(private val display: TerminalDisplay) {
         val currentOffset = display.scrollOffset
         if (currentVersion != version || currentOffset != scrollOffset) {
             val snapshot = display.displaySnapshot()
-            lines = List(snapshot.rows) { snapshot.line(it).visibleText().trimEnd() }
+            lines = List(snapshot.rows) { snapshot.line(it).visibleText().trimEnd(' ') }
             version = currentVersion
             scrollOffset = currentOffset
         }

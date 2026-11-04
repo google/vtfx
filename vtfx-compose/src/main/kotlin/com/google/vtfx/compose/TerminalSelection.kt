@@ -32,6 +32,8 @@ internal fun LineSnapshot.visibleTextAt(column: Int): String? =
 
 /**
  * Returns the text of the line as the display shows it, a space for each blank ([visibleTextAt]).
+ * Its trailing blanks are the spaces at its end, `trimEnd(' ')`: other characters that
+ * `Char.isWhitespace` takes, such as U+3000, are characters that the host wrote.
  */
 internal fun LineSnapshot.visibleText(): String = buildString {
     for (column in 0 until columns) {
@@ -259,7 +261,7 @@ internal data class TerminalSelection(
                     }
                 }
                 val continues = row != last.row && line.isWrapped && to == line.columns - 1
-                append(if (continues) text else text.trimEnd())
+                append(if (continues) text else text.trimEnd(' '))
                 if (row != last.row && !continues) append('\n')
             }
         }

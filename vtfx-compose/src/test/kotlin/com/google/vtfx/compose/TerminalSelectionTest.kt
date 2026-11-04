@@ -43,6 +43,17 @@ class TerminalSelectionTest {
     }
 
     @Test
+    fun charactersThatAreNotBlankCellsAreKeptAtTheEndOfALine() {
+        // An ideographic space, a no-break space, and an ogham space mark (which has ink) are
+        // characters that the host wrote, not blank cells, as the search reads them too.
+        val s = snapshot(10, 3, "a\u3000\r\nb\u00a0\r\nc\u1680")
+        assertEquals(
+            "a\u3000\nb\u00a0\nc\u1680",
+            TerminalSelection.onDisplay(s, Cell(0, 0), Cell(9, 2)).text(s),
+        )
+    }
+
+    @Test
     fun selectionCanBeBackwards() {
         val s = snapshot(10, 2, "abc\r\ndef")
         assertEquals("bc\nde", TerminalSelection.onDisplay(s, Cell(1, 1), Cell(1, 0)).text(s))

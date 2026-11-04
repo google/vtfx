@@ -76,6 +76,13 @@ class TerminalSemanticsTest {
     }
 
     @Test
+    fun charactersThatAreNotBlankCellsAreExposedAtTheEndOfARow() {
+        composeRule.setContent { Terminal(display, Modifier.size(300.dp, 200.dp)) }
+        session.feed("a\u3000  ".toByteArray())
+        composeRule.onNode(hasText("a\u3000", substring = false)).assertExists()
+    }
+
+    @Test
     fun scrolledBackTextIsExposed() {
         composeRule.setContent { Terminal(display, Modifier.size(300.dp, 200.dp)) }
         composeRule.waitForIdle()
