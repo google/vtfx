@@ -1283,9 +1283,13 @@ internal class Emulator(
                 newColumns,
             )
         // The screen shows the last rows, ending at the content or the cursor; the rest is the
-        // scrollback.
-        val screenStart = maxOf(0, result.rows.size - newRows)
-        val screenRows = result.rows.subList(screenStart, result.rows.size).toMutableList()
+        // scrollback. If more rows below the cursor than fit would push the cursor's row into the
+        // scrollback, the screen starts at the cursor's row instead, and the rows below the screen
+        // are dropped, as alacritty drops them, so that the cursor stays on its line.
+        val screenStart = minOf(maxOf(0, result.rows.size - newRows), result.cursorRow)
+        val screenEnd = minOf(result.rows.size, screenStart + newRows)
+        for (row in screenEnd until result.rows.size) result.rows[row].killAnchors()
+        val screenRows = result.rows.subList(screenStart, screenEnd).toMutableList()
         while (screenRows.size < newRows) screenRows += Line(newColumns)
         scrollback.replaceAll(result.rows.subList(0, screenStart), screenRows[0])
         mainScreen.replaceLines(screenRows, newColumns)

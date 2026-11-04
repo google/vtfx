@@ -1036,6 +1036,20 @@ class TerminalTest {
     }
 
     @Test
+    fun shrinkingKeepsTheCursorOnItsLineAndDropsTheRowsBelowThatDoNotFit() {
+        val t = terminal(3, 6)
+        t.write("a\r\nb\r\nc\r\nd\r\ne\r\nf\u001b[2;1H")
+        t.resize(3, 3)
+        // The cursor's row is the first row of the screen, and the rows above it go to the
+        // scrollback; "e" and "f" do not fit below and are dropped.
+        assertEquals(listOf("b  ", "c  ", "d  "), t.lines())
+        assertEquals(listOf("a  "), List(t.scrollbackSize) { t.scrollbackLine(it).text() })
+        assertEquals(CursorState(0, 0), t.cursor)
+        t.write("X")
+        assertEquals("X  ", t.lines()[0])
+    }
+
+    @Test
     fun growingKeepsContentAtTheTopWithoutScrollback() {
         val t = terminal(3, 2)
         t.write("a")

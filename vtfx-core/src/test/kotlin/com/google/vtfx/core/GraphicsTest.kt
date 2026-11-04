@@ -596,6 +596,21 @@ class GraphicsTest {
         }
 
         @Test
+        fun shrinkingDeletesPlacementsOnTheRowsDroppedBelowTheCursor() {
+            val terminal = terminal(columns = 10, rows = 5)
+            terminal.write("\u001b[5;1H")
+            terminal.place("i=1,c=1,r=1,C=1")
+            terminal.write("\u001b[2;1H")
+            terminal.place("i=2,c=1,r=1,C=1")
+            terminal.write("\u001b[1;1H")
+            // The cursor stays on the first row, so the rows from the third down are dropped.
+            terminal.resize(10, 2)
+            assertEquals(Pair(1, 0), terminal.placed())
+            assertEquals(1, terminal.graphicsLayer.placementCount)
+            terminal.checkPlacements()
+        }
+
+        @Test
         fun aLineWithOnlyAPlacementIsKeptByReflow() {
             val terminal = terminal(columns = 10, rows = 5)
             terminal.write("\u001b[4;5H")
