@@ -457,6 +457,21 @@ class GraphicsTest {
         }
 
         @Test
+        fun anImageWithoutAnIdThatIsNotPlacedIsNotKept() {
+            // Room for two images of 10 by 10.
+            val terminal = terminal(limits = TerminalLimits(maxImageBytes = 800))
+            terminal.write(apc("a=t,i=1,f=32,s=10,v=10,q=2", rgba(10, 10)))
+            // Nothing can refer to these: one only transmitted, one whose placement is invalid.
+            terminal.write(apc("a=t,f=32,s=10,v=10", rgba(10, 10)))
+            terminal.write(apc("a=T,x=10,f=32,s=10,v=10", rgba(10, 10)))
+            assertEquals(listOf(1L), terminal.graphicsLayer.images().map { it.id })
+            assertEquals(400L, terminal.imageBytes)
+            // So they do not make image 1, which the host can still place, go for room.
+            terminal.write(apc("a=t,i=2,f=32,s=10,v=10,q=2", rgba(10, 10)))
+            assertEquals(listOf(1L, 2L), terminal.graphicsLayer.images().map { it.id })
+        }
+
+        @Test
         fun scrollingRegionsAndDeletedLinesTakePlacementsAlong() {
             val terminal = terminal(rows = 10)
             terminal.write("\u001b[5;1H")

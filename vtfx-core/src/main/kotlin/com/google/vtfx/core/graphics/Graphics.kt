@@ -168,6 +168,11 @@ internal class Graphics(
             respond(command, GraphicsStatus.InvalidCommand)
             return
         }
+        val anonymous = command.imageId == 0L && command.imageNumber == 0L
+        // Nothing could ever place an image without an id or number that is only transmitted, so
+        // it is not kept, as kitty drops it, rather than make images that can be placed go for
+        // room.
+        if (anonymous && command.action == 't') return
         val bytes = image.width.toLong() * image.height * 4
         if (bytes > maxBytes) {
             respond(command, GraphicsStatus.TooLarge)
@@ -188,7 +193,10 @@ internal class Graphics(
         val stored = StoredImage(screen.layer, id, command.imageNumber, image)
         screen.layer.add(stored)
         if (command.action == 'T') {
-            respond(command, place(stored, command, screen), id)
+            val status = place(stored, command, screen)
+            // Likewise an image without an id or number whose placement was refused.
+            if (anonymous && !stored.hasPlacements) screen.layer.delete(stored)
+            respond(command, status, id)
         } else {
             respond(command, GraphicsStatus.Ok, id)
         }
