@@ -61,7 +61,7 @@ class TerminalAttributesDrawingTest {
                 session,
                 Modifier.size(600.dp, 300.dp).focusRequester(requester),
                 style = style,
-                onLinkClick = { true },
+                onLinkClick = {},
             )
         }
         composeRule.waitForIdle()

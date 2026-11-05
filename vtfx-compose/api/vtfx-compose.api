@@ -97,9 +97,7 @@ public final class com/google/vtfx/compose/TerminalLink$Matched : com/google/vtf
 public final class com/google/vtfx/compose/TerminalLinkClick {
 	public static final field $stable I
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getKeyboardModifiers-k7X9c1A ()I
 	public final fun getLink ()Lcom/google/vtfx/compose/TerminalLink;
-	public final fun getPointerType-T8wyACA ()I
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }

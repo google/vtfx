@@ -16,8 +16,6 @@
 
 package com.google.vtfx.compose
 
-import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
-import androidx.compose.ui.input.pointer.PointerType
 import com.google.vtfx.core.Hyperlink
 import com.google.vtfx.core.LinkPattern
 
@@ -100,38 +98,18 @@ public abstract class TerminalLink internal constructor() {
 }
 
 /**
- * A click on a link, passed to the `onLinkClick` of [Terminal]: [link][TerminalLinkClick.link], and
- * how the user clicked it, so that the app can, for example, open links only on Ctrl+click with a
- * mouse. Equal to a click with the same values.
+ * A click on a link, passed to the `onLinkClick` of [Terminal]: [link][TerminalLinkClick.link]. The
+ * terminal decides which clicks open links, the same in every app: a tap, and a click of a mouse's
+ * primary button with Ctrl held. Equal to a click with the same values.
  */
 public class TerminalLinkClick
 internal constructor(
     /** The link that the user clicked. */
-    public val link: TerminalLink,
-    /**
-     * The kind of pointer that clicked, as Compose reports it: [PointerType.Touch] for a tap,
-     * [PointerType.Mouse] for a click of a mouse's primary button, and [PointerType.Stylus] for a
-     * tap of a stylus. [PointerType.Unknown] when no pointer clicked, as when an accessibility
-     * service activates the link without a touch.
-     */
-    public val pointerType: PointerType,
-    /**
-     * The modifier keys held when the user clicked, as the pointer event reports them; none when no
-     * pointer clicked. Test them with `isCtrlPressed` and the other extensions of
-     * `androidx.compose.ui.input.pointer`.
-     */
-    public val keyboardModifiers: PointerKeyboardModifiers,
+    public val link: TerminalLink
 ) {
-    override fun equals(other: Any?): Boolean =
-        other is TerminalLinkClick &&
-            other.link == link &&
-            other.pointerType == pointerType &&
-            other.keyboardModifiers == keyboardModifiers
+    override fun equals(other: Any?): Boolean = other is TerminalLinkClick && other.link == link
 
-    override fun hashCode(): Int =
-        (31 * link.hashCode() + pointerType.hashCode()) * 31 + keyboardModifiers.hashCode()
+    override fun hashCode(): Int = link.hashCode()
 
-    override fun toString(): String =
-        "TerminalLinkClick(link=$link, pointerType=$pointerType, " +
-            "keyboardModifiers=$keyboardModifiers)"
+    override fun toString(): String = "TerminalLinkClick(link=$link)"
 }

@@ -60,17 +60,14 @@ Terminal(
     viewModel.session,
     Modifier.fillMaxSize(),
     style = TerminalStyle(fontSize = 14.sp),
-    onLinkClick = { click ->
-        confirmOpening(click.link.url)
-        true
-    },
+    onLinkClick = { click -> confirmOpening(click.link.url) },
 )
 ```
 
 - The number of columns and rows is determined by the size of the Composable, and `onResize` is called when it changes. Give `Terminal` a size with its `modifier` (`fillMaxSize()`, `weight(1f)`, and so on). Where the constraints leave the size free, it takes 80 × 24 cells, or as much of that as the constraints allow, as `Text` sizes to its content. Laid out with no width or height, it logs a warning (tag `vtfx`) and leaves the session's size as it was (section 10.1 of [compose-input.md](design/compose-input.md)). When the size changes continuously, as during the IME animation, it is called only once, after it has settled for 150 ms (section 3.2 of [session-and-threads.md](design/session-and-threads.md)).
 - Until displayed, the size is the `columns` and `rows` of `TerminalSession` (80 × 24 by default). When `Terminal` is first laid out, it resizes the session at once, and `onResize` is called with the size that fits even if it is the same as the session's; after that, only when the size, or the size of a cell in pixels, changes. So the host can either start with the session's size and follow `onResize`, or wait for the first `onResize` and start with that size, so that it does not start at a size it is resized from right away.
 - A tap shows the keyboard. A vertical swipe scrolls back through scrollback, and a flick goes on scrolling after the finger is lifted, until a touch stops it. A pinch zooms into a part of the terminal, up to 4 times, without changing its columns and rows, so the host is not resized; one finger then moves the zoomed part, and typing brings the cursor into view. Zooming is always on; `TerminalState.zoom` tells the zoom, and `resetZoom()` shows the whole terminal again (section 16 of [compose-input.md](design/compose-input.md)). A touchpad zooms with its pinch and with Ctrl+wheel, and its two-finger swipe moves the zoomed part and flicks as a finger does. To make the text larger for good, change `TerminalStyle.fontSize`. A long press selects and shows a menu with Copy, Paste, and Select all, and handles that move the ends of the selection, with the platform's loupe over the finger while it selects; the handles take the color of `LocalTextSelectionColors`, which a Material theme sets (sections 2, 4, and 14 of [compose-input.md](design/compose-input.md)).
-- With a mouse (Chromebooks, DeX, tablets with a mouse): the wheel scrolls; a drag selects, a double click selects a word, a triple click a line, and Shift+click extends the selection; a right click shows the same menu, or calls `onContextClick` if the app passes it (for its own menu, with the position of the click). When the host asks for mouse reports (vim's `mouse=a`, tmux, htop), clicks, the wheel, and motion go to the host instead; holding Shift gives the mouse back to the terminal, as in xterm, and so does scrolling back: while the display shows the scrollback, the mouse and touches are the terminal's, until the display is back at the bottom (section 3 of [compose-input.md](design/compose-input.md)).
+- With a mouse (Chromebooks, DeX, tablets with a mouse): the wheel scrolls; a drag selects, a double click selects a word, a triple click a line, and Shift+click extends the selection; a right click shows the same menu, or calls `onContextClick` if the app passes it (for its own menu, with the position of the click). When the host asks for mouse reports (vim's `mouse=a`, tmux, htop), clicks, the wheel, and motion go to the host instead; holding Shift gives the mouse back to the terminal, as in xterm (Ctrl+Shift+click opens a link then), and so does scrolling back: while the display shows the scrollback, the mouse and touches are the terminal's, until the display is back at the bottom (section 3 of [compose-input.md](design/compose-input.md)).
 - To move focus to the terminal from the app, add `Modifier.focusRequester(requester)` to the `modifier` of `Terminal` and call `requester.requestFocus()`. Input from a physical keyboard then reaches the terminal. There is no public means of showing the software keyboard yet (a tap shows it).
 - The appearance is changed with `TerminalStyle` (colors, font, the locale for Han glyphs, cursor shape, and `padding`). `padding` is space between the edges of `Terminal` and the grid, drawn in the terminal's background color; `start` and `end` follow the layout direction, and the columns and rows fit inside it. Use it rather than `Modifier.padding`, which would leave the space in the colors behind `Terminal`. `TerminalColors.cursorText` sets the color of the text under a block cursor; by default it is the background color.
 - Underline styles (SGR 4:1 to 4:5: single, double, curly, dotted, dashed), underline colors (SGR 58), and overline (SGR 53) are drawn. A program that reads the screen without the UI gets the underline color from `LineSnapshot.underlineColorAt` (section 8 of [emulation.md](design/emulation.md)).
@@ -173,7 +170,7 @@ TerminalStyle(font = TerminalFont.Sanitized(listOf(SanitizedFamily(latin), Sanit
 
 ### Links
 
-Link clicks are passed to `onLinkClick` as `TerminalLinkClick`: the `TerminalLink` (`click.link`), and how the user clicked it (below). `onLinkClick` returns whether it took the click: a click that it takes neither focuses the terminal nor shows the keyboard, and one that it does not take (`false`) acts as a click elsewhere, which focuses the terminal and shows the keyboard. There are two kinds of links, both shown underlined (section 6.1 of [compose-input.md](design/compose-input.md)). For both, **show the destination (`link.url`) to the user and get confirmation before** calling `session.openUrl(link.url)` (requirement 6.1).
+A tap on a link, and a mouse click on it with Ctrl held, are passed to `onLinkClick` as `TerminalLinkClick`, which holds the `TerminalLink` (`click.link`); they neither focus the terminal nor show the keyboard. A mouse click without Ctrl acts as a click elsewhere. vtfx decides which clicks open links, so that links open the same way in every app (section 6.1 of [compose-input.md](design/compose-input.md)). There are two kinds of links, both shown underlined (section 6.1 of [compose-input.md](design/compose-input.md)). For both, **show the destination (`link.url`) to the user and get confirmation before** calling `session.openUrl(link.url)` (requirement 6.1).
 
 - `TerminalLink.Explicit`: an OSC 8 hyperlink. The host decides both the link text (`link.text`) and the destination, so they do not necessarily match. Showing the text and the destination side by side makes discrepancies easier to notice.
 - `TerminalLink.Matched`: text that matched `linkPatterns` (by default `LinkPattern.Urls`, the `http` and `https` URLs written in the text). The matched text can still differ from what the user sees; the KDoc of `Terminal` says how.
@@ -189,18 +186,7 @@ val failure = when (session.openUrl(url)) {
 }
 ```
 
-Whether vtfx would try to open a URL (anything but `NotAllowed`) can be known beforehand with `session.canOpenUrl(url)`, so there is no need to show a confirmation dialog for URLs that vtfx does not allow. `GatePolicy.urlSchemes` applies equally to OSC 8 links and pattern links. Which text becomes a link is decided by `linkPatterns`, so adding a scheme to `urlSchemes` does not make URLs with that scheme detected in the text. If `onLinkClick` is not passed, links cannot be tapped, and `linkPatterns` are not matched.
-
-`click.pointerType` is the kind of pointer (`PointerType.Touch` for a tap, `PointerType.Mouse` for a mouse click), and `click.keyboardModifiers` the modifier keys held, so that an app can, for example, open links only on Ctrl+click with a mouse, as desktop terminals do, and leave other clicks on links to the terminal. When no pointer clicked, they are `PointerType.Unknown` and no modifiers.
-
-```kotlin
-onLinkClick = { click ->
-    val mouse = click.pointerType == PointerType.Mouse
-    val open = !mouse || click.keyboardModifiers.isCtrlPressed
-    if (open) confirmOpening(click.link.url)
-    open
-}
-```
+Whether vtfx would try to open a URL (anything but `NotAllowed`) can be known beforehand with `session.canOpenUrl(url)`, so there is no need to show a confirmation dialog for URLs that vtfx does not allow. `GatePolicy.urlSchemes` applies equally to OSC 8 links and pattern links. Which text becomes a link is decided by `linkPatterns`, so adding a scheme to `urlSchemes` does not make URLs with that scheme detected in the text. If `onLinkClick` is not passed, links cannot be clicked, and `linkPatterns` are not matched.
 
 Apps can add their own links with a regular expression and a URL template, in which `{0}` is the whole match and `{n}` the nth group.
 

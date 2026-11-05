@@ -24,6 +24,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
@@ -58,7 +59,8 @@ import kotlin.math.pow
  * - The primary button selects: a drag selects the cells it goes over, a double click selects a
  *   word and a triple click a line, and the drag that follows extends them by words or lines; a
  *   click with Shift extends the selection by the unit that made it. A click without a drag is a
- *   tap: [onLinkClick], and [onClick] unless it took the click.
+ *   tap: [onClick]. A click with Ctrl on a link calls [onLinkClick] instead, and a drag from it
+ *   does nothing.
  * - The secondary button calls [onContextClick].
  * - The wheel scrolls as a swipe does, in steps of [WHEEL_LINES] lines a notch.
  *
@@ -71,23 +73,22 @@ internal fun Modifier.terminalMouse(
     /** The padding around the grid within this modifier's bounds, where the mouse also acts. */
     padding: PaddingValues,
     layoutDirection: LayoutDirection,
-    /** A click that no link took, or a click that the host got with the primary button. */
+    /** A click that is not on a link, or a click that the host got with the primary button. */
     onClick: () -> Unit,
-    /**
-     * Called for a click on a cell of the display [TerminalSnapshot]. Returns whether a link took
-     * the click; if not, [onClick] is called.
-     */
-    onLinkClick: (TerminalSnapshot, Cell, PointerType, PointerKeyboardModifiers) -> Boolean,
+    /** The clickable link at a cell of the display [TerminalSnapshot], or null. */
+    linkAt: (TerminalSnapshot, Cell) -> TerminalLink?,
+    /** A click with Ctrl on a link. */
+    onLinkClick: (TerminalLink) -> Unit,
     /**
      * A click of the secondary button that the host does not get, at a position in this modifier's
      * bounds.
      */
     onContextClick: (Offset) -> Unit,
     /**
-     * The cell of the display under a pointer that hovers and that the host does not get, or null
-     * when it leaves.
+     * The icon of the pointer: a hand over a link with Ctrl held, the I-beam elsewhere, and the
+     * arrow while the host gets the mouse or when the pointer leaves.
      */
-    onHover: (TerminalSnapshot?, Cell?) -> Unit,
+    onPointerIcon: (PointerIcon) -> Unit,
 ): Modifier =
     this.pointerInput(display, metrics, padding, layoutDirection) {
         val gridOffset =
@@ -102,9 +103,10 @@ internal fun Modifier.terminalMouse(
                 gridOffset,
                 viewConfiguration,
                 onClick,
+                linkAt,
                 onLinkClick,
                 onContextClick,
-                onHover,
+                onPointerIcon,
             )
         awaitPointerEventScope {
             while (true) {
@@ -145,6 +147,15 @@ private enum class Button(val report: MouseButton) {
 }
 
 /**
+ * A press of the primary button with Ctrl on [link] at [cell] of the display, which clicks it when
+ * released in the same cell.
+ */
+private class LinkPress(val link: TerminalLink, val cell: Cell) {
+    /** Whether the pointer left the cell, which makes the press click nothing. */
+    var left = false
+}
+
+/**
  * A selection that the primary button makes: [origin] is what the press selected (a cell, a word,
  * or a line, or the end of the selection that a Shift+click extends), and moving extends it by its
  * unit to the pointer ([TerminalSelection.extendedTo]).
@@ -153,7 +164,6 @@ private class SelectionDrag(
     val origin: TerminalSelection,
     /** The selection last made, which the display drops when its text changes; null before. */
     var selected: TerminalSelection?,
-    val position: Offset,
 ) {
     /** Whether the press made a selection or the pointer left the cell. */
     var started: Boolean = selected != null
@@ -169,10 +179,10 @@ private class MouseHandler(
     private val gridOffset: Offset,
     private val viewConfiguration: ViewConfiguration,
     private val onClick: () -> Unit,
-    private val onLinkClick:
-        (TerminalSnapshot, Cell, PointerType, PointerKeyboardModifiers) -> Boolean,
+    private val linkAt: (TerminalSnapshot, Cell) -> TerminalLink?,
+    private val onLinkClick: (TerminalLink) -> Unit,
     private val onContextClick: (Offset) -> Unit,
-    private val onHover: (TerminalSnapshot?, Cell?) -> Unit,
+    private val onPointerIcon: (PointerIcon) -> Unit,
 ) {
     private val session = display.session
 
@@ -186,6 +196,8 @@ private class MouseHandler(
     private var reportedCell: Pair<Int, Int>? = null
 
     private var drag: SelectionDrag? = null
+
+    private var linkPress: LinkPress? = null
 
     /** The time and cell of the last press of the primary button, and how many clicks it made. */
     private var lastPressMillis = Long.MIN_VALUE
@@ -255,7 +267,7 @@ private class MouseHandler(
                 )
             PointerEventType.Exit -> {
                 reportedCell = null
-                onHover(null, null)
+                onPointerIcon(PointerIcon.Default)
             }
             else -> {
                 // A press stops a fling, as a touch does, and then acts as usual.
@@ -325,11 +337,35 @@ private class MouseHandler(
             return
         }
         when (button) {
-            Button.Primary -> select(change, modifiers)
+            Button.Primary -> {
+                val linkPress = pressLink(change, modifiers)
+                if (linkPress != null) {
+                    // A click on a link drops the selection, as a click elsewhere does.
+                    display.selection = null
+                    this.linkPress = linkPress
+                } else {
+                    select(change, modifiers)
+                }
+            }
             Button.Secondary -> onContextClick(change.position)
             // Android has no primary selection to paste, as X has.
             Button.Tertiary -> {}
         }
+    }
+
+    /**
+     * The press of the link under [change] if Ctrl is held, which makes the press a click on the
+     * link rather than a selection: links open on Ctrl+click in every app, as in desktop terminals.
+     */
+    private fun pressLink(
+        change: PointerInputChange,
+        modifiers: PointerKeyboardModifiers,
+    ): LinkPress? {
+        if (!modifiers.isCtrlPressed) return null
+        val snapshot = display.displaySnapshot()
+        val cell = displayCell(grid(change.position), metrics, snapshot)
+        val link = linkAt(snapshot, cell) ?: return null
+        return LinkPress(link, cell)
     }
 
     private fun select(change: PointerInputChange, modifiers: PointerKeyboardModifiers) {
@@ -367,7 +403,7 @@ private class MouseHandler(
                 origin to if (clicks == 1) null else origin
             }
         display.selection = selected
-        drag = SelectionDrag(origin, selected, grid(change.position))
+        drag = SelectionDrag(origin, selected)
     }
 
     private fun move(change: PointerInputChange, modifiers: PointerKeyboardModifiers) {
@@ -375,6 +411,14 @@ private class MouseHandler(
         if (held != null) {
             val cell = cellAt(grid(change.position), metrics, session)
             if (cell != reportedCell) report(held.report, MouseAction.Motion, cell, modifiers)
+            return
+        }
+        val linkPress = linkPress
+        if (linkPress != null) {
+            val snapshot = display.displaySnapshot()
+            if (displayCell(grid(change.position), metrics, snapshot) != linkPress.cell) {
+                linkPress.left = true
+            }
             return
         }
         val drag = drag
@@ -385,19 +429,24 @@ private class MouseHandler(
         if (pressed.isNotEmpty()) return
         if (isReporting(modifiers)) {
             // The host asked for all motion (mode 1003); the session leaves it out otherwise.
-            onHover(null, null)
+            onPointerIcon(PointerIcon.Default)
             val cell = cellAt(grid(change.position), metrics, session)
             if (cell != reportedCell) report(MouseButton.None, MouseAction.Motion, cell, modifiers)
         } else {
-            hover(change.position)
+            hover(change.position, modifiers)
         }
     }
 
-    /** Tells [onHover] the cell of the display under [position], which the host does not get. */
-    private fun hover(position: Offset) {
+    /**
+     * Tells [onPointerIcon] the icon for the cell of the display under [position], which the host
+     * does not get: a hand over a link that a click with [modifiers] would open.
+     */
+    private fun hover(position: Offset, modifiers: PointerKeyboardModifiers) {
         reportedCell = null
         val snapshot = display.displaySnapshot()
-        onHover(snapshot, displayCell(grid(position), metrics, snapshot))
+        val cell = displayCell(grid(position), metrics, snapshot)
+        val clickable = modifiers.isCtrlPressed && linkAt(snapshot, cell) != null
+        onPointerIcon(if (clickable) PointerIcon.Hand else PointerIcon.Text)
     }
 
     private fun extend(drag: SelectionDrag, position: Offset) {
@@ -442,13 +491,17 @@ private class MouseHandler(
             return
         }
         if (button != Button.Primary) return
+        val linkPress = linkPress
+        if (linkPress != null) {
+            this.linkPress = null
+            if (!linkPress.left) onLinkClick(linkPress.link)
+            return
+        }
         val drag = drag ?: return
         this.drag = null
         if (drag.started) return
         // A click: a tap, without the keyboard's long press.
-        val snapshot = display.displaySnapshot()
-        val cell = displayCell(drag.position, metrics, snapshot)
-        if (!onLinkClick(snapshot, cell, change.type, modifiers)) onClick()
+        onClick()
     }
 
     private fun wheel(change: PointerInputChange, modifiers: PointerKeyboardModifiers) {
@@ -559,7 +612,11 @@ private class MouseHandler(
                 // The pointer did not move, but what is under it did, and the host may get the
                 // mouse again at the bottom: the pointer icon follows.
                 if (pressed.isEmpty()) {
-                    if (isReporting(modifiers)) onHover(null, null) else hover(change.position)
+                    if (isReporting(modifiers)) {
+                        onPointerIcon(PointerIcon.Default)
+                    } else {
+                        hover(change.position, modifiers)
+                    }
                 }
             }
         }

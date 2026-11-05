@@ -27,8 +27,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
-import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.platform.TextToolbarStatus
 import androidx.compose.ui.platform.testTag
@@ -80,11 +78,8 @@ class TerminalGesturesTest {
     private val clickedLinks
         get() = linkClicks.map { it.link }
 
-    private var onLinkClick: ((TerminalLinkClick) -> Boolean)? by
-        mutableStateOf({ click ->
-            linkClicks += click
-            true
-        })
+    private var onLinkClick: ((TerminalLinkClick) -> Unit)? by
+        mutableStateOf({ click -> linkClicks += click })
     private var linkPatterns: List<LinkPattern> by mutableStateOf(listOf(LinkPattern.Urls))
 
     private fun show(output: String) {
@@ -673,34 +668,13 @@ class TerminalGesturesTest {
     }
 
     @Test
-    fun aTapOnALinkThatTheAppTakesDoesNotFocusTheTerminal() {
+    fun aTapOnALinkDoesNotFocusTheTerminal() {
         show("\u001b]8;;https://example.com/a\u001b\\link\u001b[?1004h")
 
         composeRule.onRoot().performTouchInput { click(Offset(1f, 5f)) }
         composeRule.waitForIdle()
 
         assertEquals("", sent.toString())
-    }
-
-    @Test
-    fun aTapOnALinkThatTheAppDoesNotTakeFocusesTheTerminal() {
-        onLinkClick = { false }
-        show("\u001b]8;;https://example.com/a\u001b\\link\u001b[?1004h")
-
-        composeRule.onRoot().performTouchInput { click(Offset(1f, 5f)) }
-        composeRule.waitForIdle()
-
-        assertEquals("\u001b[I", sent.toString())
-    }
-
-    @Test
-    fun aTapOnALinkIsATouchWithoutModifiers() {
-        show("\u001b]8;;https://example.com/a\u001b\\link")
-        composeRule.onRoot().performTouchInput { click(Offset(1f, 5f)) }
-        composeRule.waitForIdle()
-        val click = linkClicks.single()
-        assertEquals(PointerType.Touch, click.pointerType)
-        assertEquals(PointerKeyboardModifiers(0), click.keyboardModifiers)
     }
 
     @Test
@@ -766,10 +740,7 @@ class TerminalGesturesTest {
     fun tapOnAHyperlinkCallsTheLatestCallback() {
         show("\u001b]8;;https://example.com/a\u001b\\link")
         val latest = mutableListOf<String>()
-        onLinkClick = {
-            latest += it.link.url
-            true
-        }
+        onLinkClick = { latest += it.link.url }
         composeRule.waitForIdle()
         composeRule.onRoot().performTouchInput { click(Offset(1f, 5f)) }
         composeRule.waitForIdle()

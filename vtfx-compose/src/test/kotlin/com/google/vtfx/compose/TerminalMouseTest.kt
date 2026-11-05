@@ -26,9 +26,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.pointer.PointerType
-import androidx.compose.ui.input.pointer.isCtrlPressed
-import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.MouseButton
@@ -51,7 +48,6 @@ import com.google.vtfx.core.KeyModifiers
 import com.google.vtfx.session.TerminalSession
 import com.google.vtfx.testing.hyperlink
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -80,11 +76,8 @@ class TerminalMouseTest {
     private val toolbar = FakeTextToolbar()
     private val linkClicks = mutableListOf<TerminalLinkClick>()
     private val contextClicks = mutableListOf<Offset>()
-    private var onLinkClick: ((TerminalLinkClick) -> Boolean)? by
-        mutableStateOf({ click ->
-            linkClicks += click
-            true
-        })
+    private var onLinkClick: ((TerminalLinkClick) -> Unit)? by
+        mutableStateOf({ click -> linkClicks += click })
     private var onContextClick: ((Offset) -> Unit)? by mutableStateOf(null)
 
     /** The size of a cell, from the size of the grid and the session's size. */
@@ -125,11 +118,18 @@ class TerminalMouseTest {
     }
 
     /** Runs [block] with [key] held down. */
-    private fun withKey(key: Key, block: androidx.compose.ui.test.MouseInjectionScope.() -> Unit) {
+    private fun withKey(key: Key, block: androidx.compose.ui.test.MouseInjectionScope.() -> Unit) =
+        withKeys(listOf(key), block)
+
+    /** Runs [block] with [keys] held down. */
+    private fun withKeys(
+        keys: List<Key>,
+        block: androidx.compose.ui.test.MouseInjectionScope.() -> Unit,
+    ) {
         composeRule.onNodeWithTag(TERMINAL).performMultiModalInput {
-            key { keyDown(key) }
+            key { keys.forEach { keyDown(it) } }
             mouse { block() }
-            key { keyUp(key) }
+            key { keys.reversed().forEach { keyUp(it) } }
         }
         composeRule.waitForIdle()
     }
@@ -937,7 +937,7 @@ class TerminalMouseTest {
         // To the top of the scrollback, where the link is on the first row.
         withKey(Key.ShiftLeft) { scroll(-100f) }
         assertTrue(display.scrollOffset > 0)
-        mouse { click(cell(1, 0)) }
+        withKey(Key.CtrlLeft) { click(cell(1, 0)) }
         assertEquals(
             TerminalLink.Explicit("link", hyperlink("https://example.com/a", null)),
             linkClicks.single().link,
@@ -1083,37 +1083,53 @@ class TerminalMouseTest {
     // --- Links ---
 
     @Test
-    fun aClickOnALinkCallsBackWithTheMouseAndTheModifiers() {
+    fun aCtrlClickOnALinkCallsBack() {
         show("\u001b]8;;https://example.com/a\u001b\\link\u001b]8;;\u001b\\ plain")
-        mouse { click(cell(1, 0)) }
-        // Another cell, or it would be a double click.
-        withKey(Key.CtrlLeft) { click(cell(2, 0)) }
-        mouse { click(cell(7, 0)) }
-        val link = TerminalLink.Explicit("link", hyperlink("https://example.com/a", null))
-        assertEquals(listOf(link, link), linkClicks.map { it.link })
+
+        withKey(Key.CtrlLeft) { click(cell(1, 0)) }
+
         assertEquals(
-            listOf(PointerType.Mouse, PointerType.Mouse),
-            linkClicks.map { it.pointerType },
+            listOf(
+                TerminalLinkClick(
+                    TerminalLink.Explicit("link", hyperlink("https://example.com/a", null))
+                )
+            ),
+            linkClicks,
         )
-        assertFalse(linkClicks[0].keyboardModifiers.isCtrlPressed)
-        assertTrue(linkClicks[1].keyboardModifiers.isCtrlPressed)
     }
 
     @Test
-    fun aClickOnALinkThatTheAppTakesDoesNotFocusTheTerminal() {
+    fun aCtrlClickOnALinkDoesNotFocusTheTerminal() {
         show("\u001b]8;;https://example.com/a\u001b\\link\u001b[?1004h")
 
-        mouse { click(cell(1, 0)) }
+        withKey(Key.CtrlLeft) { click(cell(1, 0)) }
 
         assertEquals("", sent.toString())
     }
 
     @Test
-    fun aClickOnALinkThatTheAppDoesNotTakeFocusesTheTerminal() {
-        onLinkClick = { false }
+    fun aClickWithoutCtrlOnALinkDoesNotCallBack() {
+        show("\u001b]8;;https://example.com/a\u001b\\link\u001b]8;;\u001b\\ plain")
+
+        mouse { click(cell(1, 0)) }
+
+        assertEquals(emptyList<TerminalLinkClick>(), linkClicks)
+    }
+
+    @Test
+    fun aClickWithoutCtrlOnALinkFocusesTheTerminal() {
         show("\u001b]8;;https://example.com/a\u001b\\link\u001b[?1004h")
 
         mouse { click(cell(1, 0)) }
+
+        assertEquals("\u001b[I", sent.toString())
+    }
+
+    @Test
+    fun aCtrlClickOffLinksFocusesTheTerminal() {
+        show("\u001b]8;;https://example.com/a\u001b\\link\u001b]8;;\u001b\\ plain\u001b[?1004h")
+
+        withKey(Key.CtrlLeft) { click(cell(7, 0)) }
 
         assertEquals("\u001b[I", sent.toString())
     }
@@ -1127,17 +1143,71 @@ class TerminalMouseTest {
     }
 
     @Test
-    fun theHostGetsClicksOnLinksUnlessShiftIsHeld() {
+    fun aCtrlDragFromALinkNeitherClicksNorSelects() {
+        show("\u001b]8;;https://example.com/a\u001b\\link\u001b]8;;\u001b\\ plain")
+
+        withKey(Key.CtrlLeft) {
+            moveTo(cell(1, 0))
+            press()
+            moveTo(cell(7, 0))
+            release()
+        }
+
+        assertEquals(emptyList<TerminalLinkClick>(), linkClicks)
+        assertNull(display.selection)
+    }
+
+    @Test
+    fun withoutOnLinkClickACtrlClickOnALinkFocusesTheTerminal() {
+        onLinkClick = null
+        show("\u001b]8;;https://example.com/a\u001b\\link\u001b[?1004h")
+
+        withKey(Key.CtrlLeft) { click(cell(1, 0)) }
+
+        assertEquals("\u001b[I", sent.toString())
+    }
+
+    @Test
+    fun theHostGetsCtrlClicksOnLinks() {
         show(
             "\u001b]8;;https://example.com/a\u001b\\link\u001b]8;;\u001b\\\u001b[?1000h\u001b[?1006h"
         )
-        mouse { click(cell(1, 0)) }
+
+        withKey(Key.CtrlLeft) { click(cell(1, 0)) }
+
+        assertEquals("\u001b[<16;2;1M\u001b[<16;2;1m", sent.toString())
         assertEquals(emptyList<TerminalLinkClick>(), linkClicks)
-        assertEquals("\u001b[<0;2;1M\u001b[<0;2;1m", sent.toString())
-        sent.setLength(0)
-        withKey(Key.ShiftLeft) { click(cell(1, 0)) }
+    }
+
+    @Test
+    fun aCtrlShiftClickOnALinkCallsBackWhileTheHostAsksForTheMouse() {
+        show(
+            "\u001b]8;;https://example.com/a\u001b\\link\u001b]8;;\u001b\\\u001b[?1000h\u001b[?1006h"
+        )
+
+        withKeys(listOf(Key.CtrlLeft, Key.ShiftLeft)) { click(cell(1, 0)) }
+
         assertEquals("", sent.toString())
-        assertTrue(linkClicks.single().keyboardModifiers.isShiftPressed)
+        assertEquals(
+            listOf(
+                TerminalLinkClick(
+                    TerminalLink.Explicit("link", hyperlink("https://example.com/a", null))
+                )
+            ),
+            linkClicks,
+        )
+    }
+
+    @Test
+    fun aShiftClickOnALinkDoesNotCallBackWhileTheHostAsksForTheMouse() {
+        show(
+            "\u001b]8;;https://example.com/a\u001b\\link\u001b]8;;\u001b\\\u001b[?1000h\u001b[?1006h"
+        )
+
+        withKey(Key.ShiftLeft) { click(cell(1, 0)) }
+
+        assertEquals("", sent.toString())
+        assertEquals(emptyList<TerminalLinkClick>(), linkClicks)
     }
 
     private companion object {

@@ -121,7 +121,6 @@ class MainActivity : ComponentActivity() {
                         linkPatterns = LINK_PATTERNS,
                         onLinkClick = { click ->
                             confirmOpening(viewModel.session, click.link.url)
-                            true
                         },
                         onPreImeKeyEvent = {
                             interceptShortcut(

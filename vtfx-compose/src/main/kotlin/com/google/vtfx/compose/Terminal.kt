@@ -48,8 +48,6 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
-import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
@@ -107,18 +105,18 @@ import kotlinx.coroutines.flow.drop
  * the zoomed part before it scrolls, and typing brings the cursor into view. [TerminalState.zoom]
  * of [state] tells the zoom.
  *
- * A tap on a link calls [onLinkClick], unless the host asked for mouse reports, which then get the
- * tap. The [TerminalLinkClick] tells the kind of pointer and the modifier keys held, and
- * [onLinkClick] returns whether it took the tap, so that the app can, for example, open links only
- * on Ctrl+click: a tap that it takes does not show the keyboard, and one that it does not take acts
- * as a tap elsewhere. Links are OSC 8 hyperlinks ([TerminalLink.Explicit]) and the text that
- * [linkPatterns] match ([TerminalLink.Matched]), both underlined; where they overlap, the hyperlink
- * wins, and so does the earlier pattern of two. A match that a hyperlink removes still hides the
- * later patterns' matches that it overlaps; so does a match over concealed text (SGR 8), which is
- * not a link. The URL of any link may differ from what the user sees: an OSC 8 hyperlink's text and
- * URL come from the host apart, and text in the background's color or out of view can be part of a
- * match. Show the URL to the user, and call [TerminalSession.openUrl] only when they confirm.
- * Without [onLinkClick], links are not clickable, and [linkPatterns] are not matched.
+ * A tap on a link, and a mouse click on it with Ctrl held, call [onLinkClick], which then neither
+ * focuses the terminal nor shows the keyboard; a mouse click without Ctrl acts as a click
+ * elsewhere. The terminal decides this, so that links open the same way in every app. When the host
+ * asks for mouse reports, it gets the taps and the clicks, on links too. Links are OSC 8 hyperlinks
+ * ([TerminalLink.Explicit]) and the text that [linkPatterns] match ([TerminalLink.Matched]), both
+ * underlined; where they overlap, the hyperlink wins, and so does the earlier pattern of two. A
+ * match that a hyperlink removes still hides the later patterns' matches that it overlaps; so does
+ * a match over concealed text (SGR 8), which is not a link. The URL of any link may differ from
+ * what the user sees: an OSC 8 hyperlink's text and URL come from the host apart, and text in the
+ * background's color or out of view can be part of a match. Show the URL to the user, and call
+ * [TerminalSession.openUrl] only when they confirm. Without [onLinkClick], links are not clickable,
+ * and [linkPatterns] are not matched.
  *
  * Hardware keys go to the focused terminal. An app takes keys for its own shortcuts, such as
  * Ctrl+Shift+C and Ctrl+Shift+V for copy and paste, with [onPreImeKeyEvent], which sees them before
@@ -138,9 +136,9 @@ import kotlinx.coroutines.flow.drop
  * scrolls as a swipe does. The secondary button calls [onContextClick], or shows the menu of the
  * long press. When the host asks for mouse reports, it gets the buttons, the wheel, and the motion
  * that it asked for, on links too, unless Shift is held: Shift leaves the mouse to the terminal, as
- * in xterm, so Shift+click on a link calls [onLinkClick]. While the display shows the scrollback,
- * the mouse and touches are the terminal's too, as a report could not tell its rows from the
- * screen's, until the display is back at the bottom.
+ * in xterm, so Ctrl+Shift+click on a link calls [onLinkClick]. While the display shows the
+ * scrollback, the mouse and touches are the terminal's too, as a report could not tell its rows
+ * from the screen's, until the display is back at the bottom.
  *
  * @param session The session to display, which may outlive this composable.
  * @param modifier The modifier to apply to the terminal. Its size sets the number of columns and
@@ -155,9 +153,9 @@ import kotlinx.coroutines.flow.drop
  * @param linkPatterns The text to show as links, besides OSC 8 hyperlinks, in order of priority. By
  *   default, the URLs in the text. The patterns run on the main thread when the display changes,
  *   without a bound on their work; see [LinkPattern] for the patterns to give.
- * @param onLinkClick Called on the main thread with the link that the user clicked and how. Return
- *   true to take the click, which then neither focuses the terminal nor shows the keyboard; return
- *   false to leave it to the terminal as a click elsewhere. Null to make links not clickable.
+ * @param onLinkClick Called on the main thread with the link that the user tapped, or clicked with
+ *   Ctrl held. Show its URL, and open it only when the user confirms. Null to make links not
+ *   clickable.
  * @param onContextClick Called on the main thread when the user clicks the secondary mouse button
  *   and the host does not get the click, with the position of the click in pixels from the top left
  *   of this composable (within the padding that [modifier] may add), for the app's own menu; it can
@@ -177,7 +175,7 @@ public fun Terminal(
     state: TerminalState = rememberTerminalState(),
     style: TerminalStyle = TerminalStyle(),
     linkPatterns: List<LinkPattern> = listOf(LinkPattern.Urls),
-    onLinkClick: ((TerminalLinkClick) -> Boolean)? = null,
+    onLinkClick: ((TerminalLinkClick) -> Unit)? = null,
     onContextClick: ((Offset) -> Unit)? = null,
     onPreImeKeyEvent: ((KeyEvent) -> Boolean)? = null,
 ) {
@@ -202,7 +200,7 @@ internal fun Terminal(
     state: TerminalState = rememberTerminalState(),
     style: TerminalStyle = TerminalStyle(),
     linkPatterns: List<LinkPattern> = listOf(LinkPattern.Urls),
-    onLinkClick: ((TerminalLinkClick) -> Boolean)? = null,
+    onLinkClick: ((TerminalLinkClick) -> Unit)? = null,
     onContextClick: ((Offset) -> Unit)? = null,
     onPreImeKeyEvent: ((KeyEvent) -> Boolean)? = null,
 ) {
@@ -285,7 +283,8 @@ internal fun Terminal(
     val currentOnContextClick by rememberUpdatedState(onContextClick)
     // The terminal's position in the root, where the mouse's positions start.
     var origin by remember { mutableStateOf(Offset.Zero) }
-    // The pointer icon: a hand over a link, the arrow while the host gets the mouse.
+    // The pointer icon: a hand over a link that a click would open, the arrow while the host gets
+    // the mouse.
     var hoverIcon by remember { mutableStateOf(PointerIcon.Text) }
     // A tap, on the grid or in the padding, or a click drops the selection (docs/decisions/0085).
     val onTap: () -> Unit = {
@@ -293,16 +292,14 @@ internal fun Terminal(
         toolbar.hide()
         inputView?.showKeyboard()
     }
-    // Returns whether the app took the click on a link.
-    val onLinkTap =
-        { snapshot: TerminalSnapshot, cell: Cell, type: PointerType, keys: PointerKeyboardModifiers
-            ->
-            val click = currentOnLinkClick
-            val link = click?.let { linkAt(snapshot, cell, currentLinkFinder) }
-            val taken = click != null && link != null && click(TerminalLinkClick(link, type, keys))
-            if (taken) toolbar.hide()
-            taken
-        }
+    // The link at a cell of the display, if links are clickable.
+    val clickableLinkAt = { snapshot: TerminalSnapshot, cell: Cell ->
+        if (currentOnLinkClick == null) null else linkAt(snapshot, cell, currentLinkFinder)
+    }
+    val onLinkTap: (TerminalLink) -> Unit = { link ->
+        toolbar.hide()
+        currentOnLinkClick?.invoke(TerminalLinkClick(link))
+    }
 
     // The padding takes the grid's default background, which reverse video (DECSCNM) swaps and the
     // host may set (OSC 10, 11).
@@ -348,6 +345,7 @@ internal fun Terminal(
                 style.padding,
                 layoutDirection,
                 onClick = onTap,
+                linkAt = clickableLinkAt,
                 onLinkClick = onLinkTap,
                 onContextClick = { position ->
                     val click = currentOnContextClick
@@ -363,16 +361,7 @@ internal fun Terminal(
                         )
                     }
                 },
-                onHover = { snapshot, cell ->
-                    hoverIcon =
-                        when {
-                            snapshot == null || cell == null -> PointerIcon.Default
-                            currentOnLinkClick != null &&
-                                linkAt(snapshot, cell, currentLinkFinder) != null ->
-                                PointerIcon.Hand
-                            else -> PointerIcon.Text
-                        }
-                },
+                onPointerIcon = { hoverIcon = it },
             )
             .pointerHoverIcon(hoverIcon)
             .paddingTaps(style.padding, layoutDirection, toolbar, onTap = onTap)
@@ -451,6 +440,7 @@ internal fun Terminal(
                         display,
                         metrics,
                         onTap = onTap,
+                        linkAt = clickableLinkAt,
                         onLinkTap = onLinkTap,
                         // The menu of the last selection would cover the loupe, and point at the
                         // last selection, until the finger is lifted (docs/decisions/0100).

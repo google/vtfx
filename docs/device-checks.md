@@ -181,8 +181,8 @@ Section 3 of [compose-input.md](design/compose-input.md). Only Compose's injecte
 | 7.4 | Shift+click further on | The selection extends to there; after a double click (7.3), to the end of the word clicked |
 | 7.5 | Right-click on the selection | The menu (Copy, Paste, Select all) appears at the pointer; Copy copies the selection |
 | 7.6 | Ctrl+Shift+C after selecting | The selection is copied (the system's clipboard preview shows it) |
-| 7.7 | Hover over a link, then over plain text | The pointer is a hand over the link and an I-beam elsewhere |
-| 7.8 | Click a link | The confirmation dialog appears |
+| 7.7 | Hover over a link, then hold Ctrl and move over it, then over plain text | The pointer is an I-beam over the link, a hand over it with Ctrl held, and an I-beam over plain text |
+| 7.8 | Click a link, then Ctrl+click it | The click shows no dialog; the Ctrl+click shows the confirmation dialog |
 | 7.9 | Type `mouse`, then click, drag, turn the wheel, right-click, and middle-click | logcat shows SGR reports (`1b5b3c...`): presses (`M`), releases (`m`), drags (`32;`), wheel (`64;`, `65;`) |
 | 7.10 | With `mouse` on, Shift+drag | Text is selected, and nothing appears in logcat |
 | 7.11 | Type `mouse off` | Clicks no longer appear in logcat |

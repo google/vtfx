@@ -78,10 +78,7 @@ class TerminalZoomTest {
                     Modifier.size(300.dp, 200.dp),
                     state,
                     linkPatterns = listOf(LinkPattern.Urls),
-                    onLinkClick = {
-                        linkClicks += it
-                        true
-                    },
+                    onLinkClick = { linkClicks += it },
                 )
             }
         }

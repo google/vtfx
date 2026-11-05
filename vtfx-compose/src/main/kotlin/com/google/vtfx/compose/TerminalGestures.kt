@@ -33,8 +33,6 @@ import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerInputChange
-import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
-import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.changedToDownIgnoreConsumed
 import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
@@ -60,7 +58,8 @@ import kotlin.math.sign
  * mouse:
  *
  * - A tap shows the keyboard, and if the host asked for mouse events, it is also a click. A tap
- *   drops the selection.
+ *   drops the selection. A tap on a link that the host does not get calls [onLinkTap] instead of
+ *   showing the keyboard.
  * - A long press selects the word under it, and moving the finger then extends the selection by
  *   words. [onSelectionStart] is called when it selects, and [onSelectionEnd] when the finger is
  *   lifted, with the position to show a menu at.
@@ -71,12 +70,13 @@ internal fun Modifier.terminalGestures(
     display: TerminalDisplay,
     metrics: CellMetrics,
     onTap: () -> Unit,
+    /** The clickable link at a cell of the display [TerminalSnapshot], or null. */
+    linkAt: (TerminalSnapshot, Cell) -> TerminalLink?,
     /**
-     * Called for a tap on a cell of the display [TerminalSnapshot], with the kind of pointer and
-     * the modifier keys held, unless the host gets the tap as a click. Returns whether a link took
-     * the tap; if not, [onTap] is called.
+     * Called for a tap on a link, unless the host gets the tap as a click; [onTap] is called for
+     * the other taps.
      */
-    onLinkTap: (TerminalSnapshot, Cell, PointerType, PointerKeyboardModifiers) -> Boolean,
+    onLinkTap: (TerminalLink) -> Unit,
     onSelectionStart: () -> Unit,
     onSelectionEnd: (Offset) -> Unit,
 ): Modifier {
@@ -90,7 +90,7 @@ internal fun Modifier.terminalGestures(
             when (awaitPress(down)) {
                 Press.Tap -> {
                     display.selection = null
-                    val linkTapped =
+                    val link =
                         if (isReportingTouches(display)) {
                             // The host asked for the clicks, links included.
                             val (column, row) = cellAt(down.position, metrics, session)
@@ -100,17 +100,12 @@ internal fun Modifier.terminalGestures(
                             session.sendMouse(
                                 MouseReport(MouseButton.Left, MouseAction.Release, column, row)
                             )
-                            false
+                            null
                         } else {
                             val snapshot = display.displaySnapshot()
-                            onLinkTap(
-                                snapshot,
-                                displayCell(down.position, metrics, snapshot),
-                                down.type,
-                                currentEvent.keyboardModifiers,
-                            )
+                            linkAt(snapshot, displayCell(down.position, metrics, snapshot))
                         }
-                    if (!linkTapped) onTap()
+                    if (link != null) onLinkTap(link) else onTap()
                 }
                 Press.Moved -> {}
                 null -> {
