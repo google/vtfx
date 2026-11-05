@@ -54,13 +54,14 @@ import kotlin.math.pow
  *
  * When the host asks for mouse reports, the buttons, the wheel, and the motion that the host asked
  * for are reported, unless Shift is held, which leaves the mouse to the terminal as xterm does, or
- * the display shows the scrollback, whose rows the reports cannot tell from the screen's.
+ * the display shows the scrollback, whose rows the reports cannot tell from the screen's. A press
+ * of the primary button with Ctrl on a link is never reported: it clicks the link, as below.
  * Otherwise:
  * - The primary button selects: a drag selects the cells it goes over, a double click selects a
  *   word and a triple click a line, and the drag that follows extends them by words or lines; a
  *   click with Shift extends the selection by the unit that made it. A click without a drag is a
  *   tap: [onClick]. A click with Ctrl on a link calls [onLinkClick] instead, and a drag from it
- *   does nothing.
+ *   does nothing, whether or not the host asks for mouse reports.
  * - The secondary button calls [onContextClick].
  * - The wheel scrolls as a swipe does, in steps of [WHEEL_LINES] lines a notch.
  *
@@ -324,6 +325,16 @@ private class MouseHandler(
         change: PointerInputChange,
         modifiers: PointerKeyboardModifiers,
     ) {
+        // Before the reports: Ctrl+click opens a link even while the host asks for the mouse, as in
+        // GNOME Terminal, so that links open the same way whatever runs on the host. The host
+        // gets neither the press nor its release.
+        val linkPress = if (button == Button.Primary) pressLink(change, modifiers) else null
+        if (linkPress != null) {
+            // A click on a link drops the selection, as a click elsewhere does.
+            display.selection = null
+            this.linkPress = linkPress
+            return
+        }
         if (isReporting(modifiers)) {
             // A click that the host gets drops the selection, as a tap that it gets does.
             if (button == Button.Primary) display.selection = null
@@ -337,16 +348,7 @@ private class MouseHandler(
             return
         }
         when (button) {
-            Button.Primary -> {
-                val linkPress = pressLink(change, modifiers)
-                if (linkPress != null) {
-                    // A click on a link drops the selection, as a click elsewhere does.
-                    display.selection = null
-                    this.linkPress = linkPress
-                } else {
-                    select(change, modifiers)
-                }
-            }
+            Button.Primary -> select(change, modifiers)
             Button.Secondary -> onContextClick(change.position)
             // Android has no primary selection to paste, as X has.
             Button.Tertiary -> {}
@@ -427,26 +429,29 @@ private class MouseHandler(
             return
         }
         if (pressed.isNotEmpty()) return
+        onPointerIcon(pointerIcon(change.position, modifiers))
         if (isReporting(modifiers)) {
             // The host asked for all motion (mode 1003); the session leaves it out otherwise.
-            onPointerIcon(PointerIcon.Default)
             val cell = cellAt(grid(change.position), metrics, session)
             if (cell != reportedCell) report(MouseButton.None, MouseAction.Motion, cell, modifiers)
         } else {
-            hover(change.position, modifiers)
+            reportedCell = null
         }
     }
 
     /**
-     * Tells [onPointerIcon] the icon for the cell of the display under [position], which the host
-     * does not get: a hand over a link that a click with [modifiers] would open.
+     * The icon for a pointer at [position] with [modifiers]: a hand over a link that a click would
+     * open, the arrow while the host gets the mouse, and the I-beam elsewhere.
      */
-    private fun hover(position: Offset, modifiers: PointerKeyboardModifiers) {
-        reportedCell = null
-        val snapshot = display.displaySnapshot()
-        val cell = displayCell(grid(position), metrics, snapshot)
-        val clickable = modifiers.isCtrlPressed && linkAt(snapshot, cell) != null
-        onPointerIcon(if (clickable) PointerIcon.Hand else PointerIcon.Text)
+    private fun pointerIcon(position: Offset, modifiers: PointerKeyboardModifiers): PointerIcon {
+        // The snapshot only with Ctrl, which motion that the host gets rarely has.
+        if (modifiers.isCtrlPressed) {
+            val snapshot = display.displaySnapshot()
+            if (linkAt(snapshot, displayCell(grid(position), metrics, snapshot)) != null) {
+                return PointerIcon.Hand
+            }
+        }
+        return if (isReporting(modifiers)) PointerIcon.Default else PointerIcon.Text
     }
 
     private fun extend(drag: SelectionDrag, position: Offset) {
@@ -612,11 +617,8 @@ private class MouseHandler(
                 // The pointer did not move, but what is under it did, and the host may get the
                 // mouse again at the bottom: the pointer icon follows.
                 if (pressed.isEmpty()) {
-                    if (isReporting(modifiers)) {
-                        onPointerIcon(PointerIcon.Default)
-                    } else {
-                        hover(change.position, modifiers)
-                    }
+                    if (!isReporting(modifiers)) reportedCell = null
+                    onPointerIcon(pointerIcon(change.position, modifiers))
                 }
             }
         }

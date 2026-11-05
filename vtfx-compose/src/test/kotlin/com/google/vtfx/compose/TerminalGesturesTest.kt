@@ -17,6 +17,11 @@
 package com.google.vtfx.compose
 
 import android.os.Looper
+import android.os.SystemClock
+import android.view.InputDevice
+import android.view.KeyEvent
+import android.view.MotionEvent
+import android.view.View
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.CompositionLocalProvider
@@ -28,6 +33,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalTextToolbar
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.TextToolbarStatus
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.click
@@ -82,8 +88,12 @@ class TerminalGesturesTest {
         mutableStateOf({ click -> linkClicks += click })
     private var linkPatterns: List<LinkPattern> by mutableStateOf(listOf(LinkPattern.Urls))
 
+    /** The view that holds the terminal, for events that Compose's injection cannot make. */
+    private lateinit var view: View
+
     private fun show(output: String) {
         composeRule.setContent {
+            view = LocalView.current
             Terminal(
                 display,
                 Modifier.size(300.dp, 200.dp),
@@ -98,6 +108,68 @@ class TerminalGesturesTest {
     }
 
     private fun lines(count: Int) = (1..count).joinToString("\r\n") { "line $it" }
+
+    /**
+     * Taps at [position] with Ctrl held, as a finger does with a hardware keyboard. Compose's
+     * injected touches carry no modifier keys, so the events go to the view.
+     */
+    private fun tapWithCtrl(position: Offset) {
+        val properties =
+            arrayOf(
+                MotionEvent.PointerProperties().apply {
+                    id = 0
+                    toolType = MotionEvent.TOOL_TYPE_FINGER
+                }
+            )
+        val coords =
+            arrayOf(
+                MotionEvent.PointerCoords().apply {
+                    x = position.x
+                    y = position.y
+                }
+            )
+        val time = SystemClock.uptimeMillis()
+        val ctrl = KeyEvent.META_CTRL_ON or KeyEvent.META_CTRL_LEFT_ON
+        val down =
+            MotionEvent.obtain(
+                time,
+                time,
+                MotionEvent.ACTION_DOWN,
+                1,
+                properties,
+                coords,
+                ctrl,
+                0,
+                1f,
+                1f,
+                0,
+                0,
+                InputDevice.SOURCE_TOUCHSCREEN,
+                0,
+            )
+        val up =
+            MotionEvent.obtain(
+                time,
+                time,
+                MotionEvent.ACTION_UP,
+                1,
+                properties,
+                coords,
+                ctrl,
+                0,
+                1f,
+                1f,
+                0,
+                0,
+                InputDevice.SOURCE_TOUCHSCREEN,
+                0,
+            )
+        composeRule.runOnIdle {
+            view.dispatchTouchEvent(down)
+            view.dispatchTouchEvent(up)
+        }
+        composeRule.waitForIdle()
+    }
 
     /** Presses at [position] until the long press selects, and keeps the finger down. */
     private fun pressAndHold(position: Offset) {
@@ -808,6 +880,22 @@ class TerminalGesturesTest {
         composeRule.waitForIdle()
         assertEquals(emptyList<TerminalLink>(), clickedLinks)
         assertEquals("\u001b[<0;1;1M\u001b[<0;1;1m", sent.toString())
+    }
+
+    @Test
+    fun aCtrlTapOnALinkCallsBackInsteadOfReportingWhileTheHostAsksForTheMouse() {
+        // A hardware keyboard's Ctrl with a touch, as with a mouse.
+        show("\u001b]8;;https://example.com/a\u001b\\link\u001b[?1000h\u001b[?1006h")
+
+        tapWithCtrl(Offset(1f, 1f))
+
+        assertEquals(
+            listOf<TerminalLink>(
+                TerminalLink.Explicit("link", hyperlink("https://example.com/a", null))
+            ),
+            clickedLinks,
+        )
+        assertEquals("", sent.toString())
     }
 
     private companion object {

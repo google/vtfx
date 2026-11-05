@@ -1168,15 +1168,73 @@ class TerminalMouseTest {
     }
 
     @Test
-    fun theHostGetsCtrlClicksOnLinks() {
+    fun aCtrlClickOnALinkCallsBackWhileTheHostAsksForTheMouse() {
         show(
             "\u001b]8;;https://example.com/a\u001b\\link\u001b]8;;\u001b\\\u001b[?1000h\u001b[?1006h"
         )
 
         withKey(Key.CtrlLeft) { click(cell(1, 0)) }
 
-        assertEquals("\u001b[<16;2;1M\u001b[<16;2;1m", sent.toString())
+        assertEquals(
+            listOf(
+                TerminalLinkClick(
+                    TerminalLink.Explicit("link", hyperlink("https://example.com/a", null))
+                )
+            ),
+            linkClicks,
+        )
+    }
+
+    @Test
+    fun aCtrlClickOnALinkIsNotReportedWhileTheHostAsksForTheMouse() {
+        show(
+            "\u001b]8;;https://example.com/a\u001b\\link\u001b]8;;\u001b\\\u001b[?1000h\u001b[?1006h"
+        )
+
+        withKey(Key.CtrlLeft) { click(cell(1, 0)) }
+
+        assertEquals("", sent.toString())
+    }
+
+    @Test
+    fun aCtrlDragFromALinkIsNotReportedWhileTheHostAsksForTheMouse() {
+        show(
+            "\u001b]8;;https://example.com/a\u001b\\link\u001b]8;;\u001b\\ plain" +
+                "\u001b[?1002h\u001b[?1006h"
+        )
+
+        withKey(Key.CtrlLeft) {
+            moveTo(cell(1, 0))
+            press()
+            moveTo(cell(7, 0))
+            release()
+        }
+
+        assertEquals("", sent.toString())
         assertEquals(emptyList<TerminalLinkClick>(), linkClicks)
+    }
+
+    @Test
+    fun theHostGetsClicksWithoutCtrlOnLinks() {
+        show(
+            "\u001b]8;;https://example.com/a\u001b\\link\u001b]8;;\u001b\\\u001b[?1000h\u001b[?1006h"
+        )
+
+        mouse { click(cell(1, 0)) }
+
+        assertEquals("\u001b[<0;2;1M\u001b[<0;2;1m", sent.toString())
+    }
+
+    @Test
+    fun theHostGetsCtrlClicksOffLinks() {
+        show(
+            "\u001b]8;;https://example.com/a\u001b\\link\u001b]8;;\u001b\\ plain" +
+                "\u001b[?1000h\u001b[?1006h"
+        )
+
+        withKey(Key.CtrlLeft) { click(cell(7, 0)) }
+
+        assertEquals("\u001b[<16;8;1M\u001b[<16;8;1m", sent.toString())
     }
 
     @Test

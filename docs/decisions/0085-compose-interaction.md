@@ -98,13 +98,13 @@ During synchronized output (mode 2026), copying and the link of a click read the
 ## 7. Link clicks
 
 1. vtfx decides which clicks open links, the same in every app: a tap on a link, and a click of the mouse's primary button on it with Ctrl held, whatever other modifiers are held, call the app's `onLinkClick`. A mouse click without Ctrl acts as a click off links. A link click does not show the keyboard. vtfx never opens a link from a click: the app shows the URL and opens it with `TerminalSession.openUrl` when the user confirms (requirement 6.1, [0083](0083-gate.md), section 5 of [gate-policy.md](../design/gate-policy.md)). Without the callback, links cannot be clicked, and only OSC 8 hyperlinks are underlined.
-2. While reporting, clicks go to the host regardless of links; with a mouse, Shift takes the mouse back, so Ctrl+Shift+click calls `onLinkClick`.
+2. While reporting, a tap or a click with Ctrl on a link still calls `onLinkClick`, and the host gets neither its press nor its release; other taps and clicks go to the host, links included.
 3. `onLinkClick` takes a `TerminalLinkClick`, which holds the link. It is a class, with room for more properties (the position, for example).
 4. The pointer shows a hand over a link only while Ctrl is held, when a click would open it; links are underlined whatever keys are held.
 
 See sections 3 and 6.1 of [compose-input.md](../design/compose-input.md).
 
-**Why.** When each app decides, the same link opens on a plain click in one app built on vtfx and on Ctrl+click in another, and users who move between them cannot rely on either. Desktop terminals open links on Ctrl+click (GNOME Terminal, the terminal of VS Code). A plain click has to stay a click: it focuses the terminal and starts a selection, and in output full of URLs it often lands on a link. Touch has no Ctrl, and a tap does not start a selection (a long press does), so a tap on a link opens it, as links in Android's text views do. Ctrl decides whatever else is held, as in GNOME Terminal, so that Shift, which takes the mouse back from the host, still lets Ctrl open links. Changing the icon only with Ctrl tells the user what a click will do, while the underline keeps the links visible.
+**Why.** When each app decides, the same link opens on a plain click in one app built on vtfx and on Ctrl+click in another, and users who move between them cannot rely on either. Desktop terminals open links on Ctrl+click (GNOME Terminal, the terminal of VS Code). A plain click has to stay a click: it focuses the terminal and starts a selection, and in output full of URLs it often lands on a link. Touch has no Ctrl, and a tap does not start a selection (a long press does), so a tap on a link opens it, as links in Android's text views do. Ctrl decides whatever else is held, as in GNOME Terminal. Ctrl+click takes the link from the host as GNOME Terminal does, so that links open with the same keys whatever runs on the host; xterm sends no Ctrl+click to the host either, as it opens a menu, so hosts do not rely on it. Requiring Shift as well while the host asks for the mouse, as Alacritty does, would make the keys depend on the host's modes, which the user does not see. Changing the icon only with Ctrl tells the user what a click will do, while the underline keeps the links visible.
 
 **Alternatives considered.**
 - **Each app deciding from the pointer type and the modifiers of the click, with `onLinkClick` returning whether it took it**: Links open differently from one app to another, for no reason the user can see.
@@ -112,7 +112,7 @@ See sections 3 and 6.1 of [compose-input.md](../design/compose-input.md).
 - **A tap not opening links, leaving them to a menu of the long press**: A tap is the only direct way to open a link on touch, and a tap meant to show the keyboard is as easily made off the link.
 - **`onLinkClick: (TerminalLink) -> Unit`**: Every new property would break every caller; a class can grow.
 - **A click on a link always also acting as a click off links, as in xterm.js**: An app that opens links on a tap shows a confirmation, under which the keyboard would come up.
-- **Ctrl+click on a link overriding mouse reports**: Ctrl+click is a meaningful report for some hosts (bit 16), and Shift is already the xterm convention for taking the mouse back.
+- **Ctrl+click on a link reported to the host, with Ctrl+Shift+click opening it**: The keys that open a link would change with the host's modes; tmux with `mouse on` would need Shift as well.
 
 ## 8. Hardware keys
 

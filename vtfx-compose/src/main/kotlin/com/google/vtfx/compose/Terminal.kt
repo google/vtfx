@@ -108,15 +108,16 @@ import kotlinx.coroutines.flow.drop
  * A tap on a link, and a mouse click on it with Ctrl held, call [onLinkClick], which then neither
  * focuses the terminal nor shows the keyboard; a mouse click without Ctrl acts as a click
  * elsewhere. The terminal decides this, so that links open the same way in every app. When the host
- * asks for mouse reports, it gets the taps and the clicks, on links too. Links are OSC 8 hyperlinks
- * ([TerminalLink.Explicit]) and the text that [linkPatterns] match ([TerminalLink.Matched]), both
- * underlined; where they overlap, the hyperlink wins, and so does the earlier pattern of two. A
- * match that a hyperlink removes still hides the later patterns' matches that it overlaps; so does
- * a match over concealed text (SGR 8), which is not a link. The URL of any link may differ from
- * what the user sees: an OSC 8 hyperlink's text and URL come from the host apart, and text in the
- * background's color or out of view can be part of a match. Show the URL to the user, and call
- * [TerminalSession.openUrl] only when they confirm. Without [onLinkClick], links are not clickable,
- * and [linkPatterns] are not matched.
+ * asks for mouse reports, it gets the taps and the clicks, on links too, except those with Ctrl on
+ * links, which still call [onLinkClick]. Links are OSC 8 hyperlinks ([TerminalLink.Explicit]) and
+ * the text that [linkPatterns] match ([TerminalLink.Matched]), both underlined; where they overlap,
+ * the hyperlink wins, and so does the earlier pattern of two. A match that a hyperlink removes
+ * still hides the later patterns' matches that it overlaps; so does a match over concealed text
+ * (SGR 8), which is not a link. The URL of any link may differ from what the user sees: an OSC 8
+ * hyperlink's text and URL come from the host apart, and text in the background's color or out of
+ * view can be part of a match. Show the URL to the user, and call [TerminalSession.openUrl] only
+ * when they confirm. Without [onLinkClick], links are not clickable, and [linkPatterns] are not
+ * matched.
  *
  * Hardware keys go to the focused terminal. An app takes keys for its own shortcuts, such as
  * Ctrl+Shift+C and Ctrl+Shift+V for copy and paste, with [onPreImeKeyEvent], which sees them before
@@ -135,10 +136,10 @@ import kotlinx.coroutines.flow.drop
  * extends the selection by the unit that made it; a click without a drag is a tap. The wheel
  * scrolls as a swipe does. The secondary button calls [onContextClick], or shows the menu of the
  * long press. When the host asks for mouse reports, it gets the buttons, the wheel, and the motion
- * that it asked for, on links too, unless Shift is held: Shift leaves the mouse to the terminal, as
- * in xterm, so Ctrl+Shift+click on a link calls [onLinkClick]. While the display shows the
- * scrollback, the mouse and touches are the terminal's too, as a report could not tell its rows
- * from the screen's, until the display is back at the bottom.
+ * that it asked for, on links too, unless Shift is held, which leaves the mouse to the terminal, as
+ * in xterm, or Ctrl+click is on a link. While the display shows the scrollback, the mouse and
+ * touches are the terminal's too, as a report could not tell its rows from the screen's, until the
+ * display is back at the bottom.
  *
  * @param session The session to display, which may outlive this composable.
  * @param modifier The modifier to apply to the terminal. Its size sets the number of columns and
