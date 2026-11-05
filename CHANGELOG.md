@@ -3,6 +3,40 @@
 This file lists the notable changes of each release of vtfx, newest first.
 Versions follow Semantic Versioning; before 1.0, any release may break compatibility ([topic 2 of docs/decisions/0087](docs/decisions/0087-public-api.md)).
 
+## 0.7.0 - Unreleased
+
+### Changed
+
+- `vtfx-compose`: vtfx now decides which clicks open links, the same in every app: a tap on a link, or a click of the mouse's primary button on it with Ctrl held (whatever else is held), calls `onLinkClick`, without focusing the terminal or showing the keyboard. Ctrl+click opens the link also while the host asks for the mouse, and the host then gets neither the press nor its release. A mouse click without Ctrl acts as a click off links, and the pointer shows a hand over a link only while Ctrl is held. `TerminalLinkClick` no longer has `pointerType` and `keyboardModifiers`, and `onLinkClick` returns `Unit`; callbacks that return `Boolean` no longer compile.
+- `vtfx-compose`: A pinch now zooms into the display, from 1 to 4 times, without resizing the terminal, so the host is told nothing. One finger moves the zoomed display, and the user's input moves it to the cursor. A pinch on a touchpad (Android 14 and later) and Ctrl+wheel zoom about the pointer; while the host asks for the mouse, Ctrl+wheel still goes to the host unless Shift is held. `TerminalState.zoom` and `TerminalState.resetZoom()` read and reset the zoom, which `TerminalState` keeps with the view.
+- `vtfx-compose`: A swipe of a finger or a two-finger swipe on a touchpad now goes on as a fling after the fingers are lifted, scrolling as the swipe did. It stops at the end of the scrollback, at a touch, at the user's input, and when the app or the search scrolls.
+- `vtfx-compose`: The platform's text loupe now shows over the row under the finger while a long press selects and while a selection handle is dragged.
+- `vtfx-compose`: `TerminalState.scrollBy`, `scrollByPages`, `scrollToTop`, and `scrollToBottom` scroll the display from the app, and `isScrolledBack` tells whether it shows the scrollback. On the alternate screen they do nothing.
+- `vtfx-compose`: `TerminalStyle` now throws `IllegalArgumentException` for a `fontSize` that is not finite, positive, and in sp. Before, a size of 0 made cells of no size, and the host was told as many columns and rows as the session allows.
+- `vtfx-session`: `TerminalSession.clearScrollback()` clears the scrollback from the app, as ED 3 from the host does, without telling the host.
+
+### Fixed
+
+- `vtfx-gate`: Ctrl+` now sends NUL, and Ctrl+{, Ctrl+|, Ctrl+}, and Ctrl+~ send ESC, FS, GS, and RS, as in xterm. Before, they sent the plain character, so Ctrl+` as a tmux prefix typed a backtick.
+- `vtfx-input`: `deleteSurroundingText` and `deleteSurroundingTextInCodePoints` now delete before the composing text, as `BaseInputConnection` does, instead of deleting the end of the composing text. An IME that deletes a space before the word it composes now has the space deleted on the host.
+- `vtfx-compose`: The IME is now told the new selection after a hardware key that the IME did not consume and after `TerminalSession.sendKey`, so its next edits no longer go to the old cursor position.
+- `vtfx-compose`: An IME that connects while the edit buffer holds a selection, as after switching IMEs, is now given that selection instead of a collapsed cursor, so its next character no longer replaces text it did not know was selected.
+- `vtfx-core`: When the terminal gets shorter while more rows than the new height are below the cursor, as when the keyboard shows, the screen now starts at the cursor's row and the rows below it are dropped. Before, the cursor landed on another line, which the next output overwrote.
+- `vtfx-core`: With autowrap (DECAWM) off, a combining character or regional indicator printed after a character in the last column now joins that character, instead of the one in the column before it.
+- `vtfx-core`: A kitty graphics image transmitted without an id or number, which the host can never place or delete, is no longer stored, so it no longer evicts older images that the host can still place.
+- `vtfx-compose`: One scroll event now sends at most as many wheel reports or arrow keys as the screen has rows. Before, a device that reported a huge delta made the app send one per notch or line and hang.
+- `vtfx-compose`: Turning the mouse wheel by a huge delta no longer overflows and scrolls the other way.
+- `vtfx-compose`: A swipe or fling that sends arrow keys or scrolls the scrollback now stops when the host switches between the main and alternate screens, instead of sending arrow keys to a program that just started or scrolling the scrollback after it exited.
+- `vtfx-compose`: A `Terminal` recreated after a rotation now shows the bottom when its new size reflows the lines, as promised, instead of some lines of the reflowed scrollback.
+- `vtfx-compose`: Copying and the rows exposed to accessibility now drop only trailing spaces, keeping characters such as U+3000 (ideographic space) and U+00A0 that the host wrote at the end of a line.
+- `vtfx-compose`: The built-in glyphs (box drawing, block elements, braille, Powerline, and the others drawn by the terminal) and the underlines of links found by patterns are now drawn faint in faint text (SGR 2), like the text next to them.
+- `vtfx-compose`: The underline of an OSC 8 hyperlink is now drawn again over a focused block cursor, like the cell's other decorations.
+- `vtfx-compose`: The selection menu now hides while a long press makes a new selection, and while the display zooms, moves, or scrolls, instead of staying over the row and pointing at other text.
+
+### Security
+
+- `vtfx-core`: Kitty graphics commands with little or no data no longer allocate far more memory than their size (a 64 KiB buffer for each transmission, and a decompressor for each compressed command), so a host that floods short commands can no longer make the terminal allocate hundreds of times its output.
+
 ## 0.6.0 - 2026-11-02
 
 ### Changed
