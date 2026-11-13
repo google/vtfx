@@ -221,7 +221,8 @@ public class TerminalColors(
 /**
  * The appearance of a terminal. Immutable, and equal to a style with the same values.
  *
- * @throws IllegalArgumentException if [fontSize] is not a finite, positive size in sp.
+ * @throws IllegalArgumentException if [fontSize][TerminalStyle.fontSize] is not a finite, positive
+ *   size in sp.
  */
 @Immutable
 public class TerminalStyle(
