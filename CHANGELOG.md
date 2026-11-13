@@ -3,6 +3,12 @@
 This file lists the notable changes of each release of vtfx, newest first.
 Versions follow Semantic Versioning; before 1.0, any release may break compatibility ([topic 2 of docs/decisions/0087](docs/decisions/0087-public-api.md)).
 
+## 0.7.1 - 2026-11-13
+
+### Fixed
+
+- `vtfx-input`: Keys typed on a hardware keyboard through Gboard while the host redraws another line, such as a status line in tmux, are no longer lost. A reset of the input history now tells the IME the new selection instead of restarting its input, which dropped what the IME committed while it reconnected. The input is still restarted when the IME may hold composing text that vtfx committed on its own, and when Direct input is switched.
+
 ## 0.7.0 - 2026-11-05
 
 ### Changed
