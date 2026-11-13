@@ -1,6 +1,6 @@
 # Resets tell the IME the selection instead of restarting it
 
-- Status: Provisional
+- Status: Approved
 - Date: 2026-11-13
 - Related: Requirement 5.3, sections 5.1 and 5.2 of [ime-contract.md](../design/ime-contract.md), [0082](0082-ime-editing-model.md), [research/ime-gboard-reset.md](../research/ime-gboard-reset.md)
 
