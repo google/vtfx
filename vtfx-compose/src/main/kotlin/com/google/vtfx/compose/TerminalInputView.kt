@@ -194,7 +194,7 @@ internal class TerminalInputView(context: Context) : View(context), InputHost {
         reporter?.onEditorChanged()
     }
 
-    override fun onUserInput() {
-        connection?.onUserInput()
+    override fun onEditorChangedOutsideIme() {
+        connection?.onEditorChangedOutsideIme()
     }
 }

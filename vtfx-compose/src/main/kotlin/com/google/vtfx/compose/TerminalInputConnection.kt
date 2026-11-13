@@ -260,7 +260,7 @@ internal class TerminalInputConnection(
      * key of the app's key bar, which types into the input history without a restart (section 7).
      * Not during a batch edit, after which the IME is told anyway.
      */
-    fun onUserInput() {
+    fun onEditorChangedOutsideIme() {
         if (!session.edit { it.isBatchEditInProgress }) reportSelection()
     }
 
