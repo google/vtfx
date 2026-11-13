@@ -119,7 +119,7 @@ Recorded with the settings of [ime-contract.md](../design/ime-contract.md) (`inp
 - With flick input too, the flow of updating composing text with `setComposingText` and committing with `commitText` was the same as QWERTY romaji input.
 - When another candidate was chosen while the first candidate (`感じ`) was the composing text, it was committed directly with `commitText("漢字")`.
 - The dakuten key (`か` → `が`) arrived as a replacement of the composing text.
-- The ◀ key during composition arrived as `setComposingText` with the same content. The cursor position within the composing text is not conveyed to the editor.
+- The ◀ key during composition arrived as `setComposingText` with the same content. The cursor position within the composing text is conveyed only by the spans of that text, which the recording tool did not record ([ime-composing-spans.md](ime-composing-spans.md)).
 - The ◀ ▶ keys when not composing arrived as key events `KEYCODE_DPAD_LEFT` and `KEYCODE_DPAD_RIGHT`.
 - With this device's settings, toggle input was disabled, and tapping `あ` twice gave `ああ`.
 

@@ -30,3 +30,11 @@ For each item, write why it is worth doing, what to do, and when it is done. Kee
 **What.** On the device, check what AltGr+Q on a German layout and AltGr+2 on a French layout send, with Gboard and with no IME consuming the keys. If it is `ESC` and the base character, treat `META_ALT_RIGHT_ON` as AltGr: take the character with the right Alt kept in the meta state, and when it differs from the one without, send it as text without Alt, as xterm and the platform's text fields do. Left Alt stays a modifier. Update section 7.1 and record the choice in a decision.
 
 **Done when.** A test of `KeyEventHandler` with a key character map that has AltGr covers it, the device sends `@` for AltGr+Q on a German layout, and section 7.1 says how AltGr is told from Alt.
+
+### 1.6 Draw the IME's colors of composing text
+
+**Why.** Japanese IMEs show the clause being converted, and their cursor within the composing text, only by the colors of the text they compose, which vtfx drops ([0103](decisions/0103-ime-colors-of-composing-text.md), [research/ime-composing-spans.md](research/ime-composing-spans.md)).
+
+**What.** Implement the topics of 0103: the colored ranges held with the composing text in `ImeEditor`, taken from the spans in `TerminalInputConnection`, and drawn by `TerminalRenderer`. Update sections 6.1 and 7 of [ime-contract.md](design/ime-contract.md), and add a row for the colors to section 2 of [device-checks.md](device-checks.md), with Samsung Keyboard, which was not checked.
+
+**Done when.** Tests cover the ranges through `ImeEditor` (clipping, the limit, the paths that drop them) and `TerminalInputConnection` (spans of both kinds, a change of spans alone redraws), `HostileImeTest` and the fuzzer feed arbitrary spans, screenshot goldens show Gboard's and Simeji's colors on dark and light colors, and the colors were checked on a device with Gboard and Simeji.
