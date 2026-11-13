@@ -1,6 +1,6 @@
 # The IME's colors of composing text
 
-- Status: Provisional
+- Status: Approved
 - Date: 2026-11-14
 - Related: Requirements 5.3 and 6.1, section 7 of [ime-contract.md](../design/ime-contract.md), [0082](0082-ime-editing-model.md), [research/ime-composing-spans.md](../research/ime-composing-spans.md)
 
