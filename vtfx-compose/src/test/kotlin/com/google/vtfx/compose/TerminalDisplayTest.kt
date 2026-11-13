@@ -159,8 +159,8 @@ class TerminalDisplayTest {
             looper.runOneTask()
             tasks++
         }
-        // One redraw and one to follow the scrollback.
-        assertEquals(2, tasks)
+        // One redraw, one to follow the scrollback, and one to tell the IME the selection.
+        assertEquals(3, tasks)
     }
 
     @Test
@@ -177,15 +177,38 @@ class TerminalDisplayTest {
                 override fun onEditorChangedOutsideIme() {}
             }
         val other = Thread {
-            repeat(100) {
-                session.edit { it.commitText("a") }
-                feed("\r\n")
+            repeat(100) { i ->
+                session.directInput = i % 2 == 0
             }
         }
         other.start()
         other.join()
         shadowOf(Looper.getMainLooper()).idle()
         assertEquals(1, restarts)
+    }
+
+    @Test
+    fun editorResetsFromAnotherThreadWaitForTheMainThreadOnce() {
+        var editorChanges = 0
+        display.inputHost =
+            object : InputHost {
+                override fun restartInput() {}
+
+                override fun onScreenChanged() {}
+
+                override fun onEditorChangedOutsideIme() {
+                    editorChanges++
+                }
+            }
+        val other = Thread {
+            repeat(100) {
+                feed("\r\n")
+            }
+        }
+        other.start()
+        other.join()
+        shadowOf(Looper.getMainLooper()).idle()
+        assertEquals(1, editorChanges)
     }
 
     @Test

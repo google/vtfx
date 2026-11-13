@@ -78,6 +78,8 @@ class ImeSpecTest {
                     }
 
                     override fun restartInput() {}
+
+                    override fun updateSelection() {}
                 }
             )
         for (line in trace.readLines()) {

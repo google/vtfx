@@ -50,10 +50,20 @@ public class ImeEditor(
         public fun send(input: HostInput)
 
         /**
-         * Tells the IME that the edit buffer was reset, by calling
-         * `InputMethodManager.restartInput` on Android (section 5.2).
+         * Tells the IME that the edit buffer was reset and that it must start its input again, by
+         * calling `InputMethodManager.restartInput` on Android: it may still have composing text
+         * that the editor committed, or it must read what it reads only when its input starts
+         * (section 5.2).
          */
         public fun restartInput()
+
+        /**
+         * Tells the IME that the edit buffer was reset, by reporting the new selection with
+         * `InputMethodManager.updateSelection` on Android, after which the IME reads the edit
+         * buffer again. Unlike a restart, this keeps the IME's connection open, so an edit that the
+         * IME makes meanwhile is not lost (section 5.2, docs/decisions/0102).
+         */
+        public fun updateSelection()
     }
 
     init {
@@ -82,13 +92,11 @@ public class ImeEditor(
     private var pastedInBatch = false
 
     /**
-     * Whether the IME may have seen an edit since the last restart of its input, or since the
-     * editor was made. Until then its edit buffer is empty, and a reset does not restart it again,
-     * so that host output that moves the cursor to another line does not restart the IME on every
-     * receive while the user types nothing (section 5.2). An edit that leaves the edit buffer
-     * empty, such as [finishComposingText] without composing text, is not one.
+     * Whether the next reset restarts the IME's input instead of telling it the new selection: the
+     * editor committed composing text that the IME may still have, which only a restart makes it
+     * drop, or the IME must read what it reads only when its input starts (section 5.2).
      */
-    private var changedSinceRestart = false
+    private var restartNeeded = false
 
     /**
      * The start of a selection that ends at the cursor, or -1 if the selection is collapsed. Only
@@ -180,7 +188,7 @@ public class ImeEditor(
      * password (docs/decisions/0082).
      */
     public fun typeText(text: String) {
-        commitComposingText()
+        takeComposingText()
         flush()
         val typed = withoutDroppedControls(text)
         var start = 0
@@ -199,7 +207,7 @@ public class ImeEditor(
             start = i
         }
         history += typed.substring(start)
-        // Not an edit that the IME saw: the reset restarts it only if it saw one before.
+        // The IME never sees the app's text: the reset empties the history before it is told.
         requestReset()
     }
 
@@ -352,6 +360,8 @@ public class ImeEditor(
     /** Finishes the composing text, which would otherwise be lost (section 6.4). */
     public fun closeConnection() {
         commitComposingText()
+        // The next connection starts the IME's input anew.
+        restartNeeded = false
         batchDepth = 0
         pastedInBatch = false
         flush()
@@ -385,11 +395,7 @@ public class ImeEditor(
     public fun onKeyDown(stroke: KeyStroke) {
         val key = asKey(stroke)
         val hadComposingText = composing.isNotEmpty()
-        commitComposingText()
-        // A key changes the edit buffer only through the composing text it commits or the
-        // character it types, which mark the change themselves. A key with nothing typed, such as
-        // an arrow key that moves around in a program, does not restart the IME: Gboard hides and
-        // shows its toolbar for physical keyboards on every restart (section 5.2).
+        takeComposingText()
         if (
             key is KeyStroke.Character &&
                 !key.modifiers.ctrl &&
@@ -422,7 +428,7 @@ public class ImeEditor(
      * the order made. Resets afterwards, since the host's line no longer matches the history.
      */
     public fun paste(text: String) {
-        commitComposingText()
+        takeComposingText()
         sendPaste(HostInput.Paste(text))
     }
 
@@ -431,7 +437,7 @@ public class ImeEditor(
      * (docs/decisions/0091).
      */
     public fun pasteClipboard() {
-        commitComposingText()
+        takeComposingText()
         sendPaste(HostInput.ClipboardPaste)
     }
 
@@ -440,7 +446,6 @@ public class ImeEditor(
      * 6.4).
      */
     private fun sendPaste(paste: HostInput) {
-        changedSinceRestart = true
         flush()
         listener.send(paste)
         if (batchDepth > 0) pastedInBatch = true
@@ -453,7 +458,6 @@ public class ImeEditor(
      * take back the line break before it reaches the host, or delete across it.
      */
     private fun sendEnter() {
-        changedSinceRestart = true
         flush()
         listener.send(HostInput.Key(KeyStroke.Special(TerminalKey.Enter)))
         requestReset()
@@ -469,10 +473,11 @@ public class ImeEditor(
      * edit, so that a change that applies to later input, such as the app arming sticky modifiers,
      * does not apply to it (section 6.3). Then resets, so that the IME can no longer correct the
      * text typed before, which would be sent again with the change; the reset restarts the IME only
-     * if it saw an edit since the last restart (docs/decisions/0082).
+     * if it had composing text, and otherwise tells it the new selection (docs/decisions/0082,
+     * docs/decisions/0102).
      */
     public fun sendPendingInput() {
-        commitComposingText()
+        takeComposingText()
         requestReset()
     }
 
@@ -482,42 +487,37 @@ public class ImeEditor(
      * Resets the input history, for example because the host moved the cursor to another line
      * (section 5.1). The edits not sent yet are sent first, and the history is emptied at once,
      * even during a batch edit, so that the IME's later edits do not apply to text the host's line
-     * may no longer end with. Restarting the IME's input waits for the end of the batch edit, and
-     * for the composing text to finish, since restarting the input would commit it
-     * (docs/decisions/0082).
+     * may no longer end with. Telling the IME waits for the end of the batch edit, and for the
+     * composing text to finish, since restarting the input would commit it (docs/decisions/0082).
+     * The IME is then told the new selection, or restarted if it may still have composing text that
+     * the editor committed (docs/decisions/0102).
      */
     public fun requestReset() {
         flush()
         clearHistory()
-        restartIfReady()
+        tellResetIfReady()
     }
 
     /**
      * Commits the composing text and resets as [requestReset] does, and restarts the IME's input
-     * even if its edit buffer has not changed since the last restart, for a change that the IME
-     * reads only when its input starts, such as the input type of direct input (section 3). The
-     * restart waits for the end of the batch edit, as any restart does.
+     * rather than telling it the new selection, for a change that the IME reads only when its input
+     * starts, such as the input type of direct input (section 3). The restart waits for the end of
+     * the batch edit, as any restart does.
      */
     public fun requestRestart() {
         commitComposingText()
-        changedSinceRestart = true
+        restartNeeded = true
         requestReset()
     }
 
     private fun endOperation() {
-        // The edit buffer is empty after a restart until an edit puts something in it, so an edit
-        // that leaves it empty changed nothing the IME sees. Android calls finishComposingText
-        // without composing text on the connection that a restart closed, right after the restart,
-        // and the host's echo of Enter must not restart the IME a second time: a key that the IME
-        // commits in between, to the connection that the second restart closes, would be lost.
-        if (history.isNotEmpty() || composing.isNotEmpty()) changedSinceRestart = true
         if (isHistoryOverLimit()) {
             // Past the limit, the history is sent and reset at once, even during a batch edit and
             // with composing text, which is committed as restarting the input would commit it.
             // Otherwise an IME that does not end its batch, or that moves its composing text into
             // the history bit by bit with setComposingRegion, could make the buffer grow without
             // bound (invariant 5).
-            commitComposingText()
+            takeComposingText()
             flush()
         } else if (batchDepth == 0 || '\t' in history) {
             // HT resets after it is sent (section 5.1), which sends the edits made before it and
@@ -539,6 +539,16 @@ public class ImeEditor(
         commit(committed)
     }
 
+    /**
+     * Commits the composing text as [commitComposingText] does, for a call that is not the IME's
+     * own: the IME may still have the composing text, so the next reset restarts its input, which
+     * makes it drop the composition. Telling it the new selection does not (docs/decisions/0082).
+     */
+    private fun takeComposingText() {
+        if (composing.isNotEmpty()) restartNeeded = true
+        commitComposingText()
+    }
+
     private fun isHistoryOverLimit(): Boolean =
         history.length > maxHistoryLength &&
             history.codePointCount(0, history.length) > maxHistoryLength
@@ -557,10 +567,10 @@ public class ImeEditor(
         // A committed HT resets as the Tab key does: the shell may complete the word, and the
         // history no longer predicts the host's line (docs/decisions/0082).
         if ('\t' in added || isHistoryOverLimit()) clearHistory()
-        restartIfReady()
+        tellResetIfReady()
     }
 
-    /** Empties the input history, and restarts the IME's input once it can (section 5.2). */
+    /** Empties the input history, and tells the IME once it can (section 5.2). */
     private fun clearHistory() {
         selectionFrom = -1
         history = ""
@@ -569,19 +579,23 @@ public class ImeEditor(
     }
 
     /**
-     * Restarts the IME's input if a reset waits for it, outside batch edits and without composing
-     * text. What was committed since the reset is dropped from the history too, since the IME
-     * restarts without it.
+     * Tells the IME about a reset that waits for it, outside batch edits and without composing
+     * text: restarts its input if [restartNeeded], and otherwise tells it the new selection, which
+     * keeps its connection open, so that an edit it makes meanwhile, such as the commit of a key
+     * typed as the host's output arrives, is not lost (docs/decisions/0102). What was committed
+     * since the reset is dropped from the history too, since the IME reads the empty edit buffer.
      */
-    private fun restartIfReady() {
+    private fun tellResetIfReady() {
         if (!resetPending || batchDepth > 0 || composing.isNotEmpty()) return
         resetPending = false
         selectionFrom = -1
         history = ""
         sentHistory = ""
-        if (changedSinceRestart) {
-            changedSinceRestart = false
+        if (restartNeeded) {
+            restartNeeded = false
             listener.restartInput()
+        } else {
+            listener.updateSelection()
         }
     }
 

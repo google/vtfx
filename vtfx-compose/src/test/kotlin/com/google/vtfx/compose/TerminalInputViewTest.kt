@@ -249,4 +249,28 @@ class TerminalInputViewTest {
         assertEquals("b", first.take())
         assertEquals(RecordingInputMethodManager.ReportedSelection(4, 4, -1, -1), selections.last())
     }
+
+    /**
+     * Host output that moves the cursor to another line, as a program that redraws a status line on
+     * every key makes, tells the IME the empty edit buffer's selection and keeps its connection
+     * open: a restart would close it, and Android would drop the commit of a key that the IME was
+     * handling (docs/decisions/0102).
+     */
+    @Test
+    @Config(shadows = [RecordingInputMethodManager::class])
+    fun hostOutputOnAnotherLineTellsTheImeTheSelectionWithoutRestartingIt() {
+        first.display.attach()
+        val input = focusAndType(first)
+        RecordingInputMethodManager.selections.clear()
+        RecordingInputMethodManager.restarts = 0
+
+        first.session.feed("\u001b7\u001b[24;1Hstatus\u001b8".toByteArray())
+
+        assertEquals(0, RecordingInputMethodManager.restarts)
+        assertEquals(
+            listOf(RecordingInputMethodManager.ReportedSelection(0, 0, -1, -1)),
+            RecordingInputMethodManager.selections,
+        )
+        assertEquals("", input.getTextBeforeCursor(100, 0).toString())
+    }
 }

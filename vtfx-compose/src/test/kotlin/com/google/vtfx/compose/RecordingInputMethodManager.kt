@@ -24,7 +24,8 @@ import org.robolectric.shadows.ShadowInputMethodManager
 
 /**
  * Records the selections that the app tells the IME with `InputMethodManager.updateSelection`,
- * which Robolectric's shadow drops. Tests that use it name it in their `@Config(shadows = ...)`.
+ * which Robolectric's shadow drops, and the restarts of the IME's input. Tests that use it name it
+ * in their `@Config(shadows = ...)`.
  */
 @Implements(InputMethodManager::class)
 class RecordingInputMethodManager : ShadowInputMethodManager() {
@@ -39,6 +40,11 @@ class RecordingInputMethodManager : ShadowInputMethodManager() {
         selections += ReportedSelection(selStart, selEnd, candidatesStart, candidatesEnd)
     }
 
+    @Implementation
+    override fun restartInput(view: View) {
+        restarts++
+    }
+
     /** A selection and composing region as `updateSelection` reports them. */
     data class ReportedSelection(
         val start: Int,
@@ -50,5 +56,8 @@ class RecordingInputMethodManager : ShadowInputMethodManager() {
     companion object {
         /** The selections reported, in order. Tests clear it before they use it. */
         @JvmStatic val selections = mutableListOf<ReportedSelection>()
+
+        /** The number of restarts of the IME's input. Tests set it to 0 before they use it. */
+        @JvmStatic var restarts = 0
     }
 }

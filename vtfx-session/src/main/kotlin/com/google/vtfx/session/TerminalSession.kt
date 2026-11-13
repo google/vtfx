@@ -268,6 +268,12 @@ public class TerminalSession(
     /** Whether the IME editing model asked to restart the input during the current operation. */
     private var restartRequested = false
 
+    /**
+     * Whether the IME editing model asked to tell the IME the new selection after a reset during
+     * the current operation.
+     */
+    private var selectionUpdateRequested = false
+
     /** Whether to reset the IME editing model after the current operation. */
     private var resetRequested = false
 
@@ -329,8 +335,8 @@ public class TerminalSession(
             input(userAction = false) { editor ->
                 if (value == directInputState) return@input
                 directInputState = value
-                // The IME reads the input type only when its input starts, so it restarts even if
-                // its edit buffer is empty (docs/design/ime-contract.md section 3).
+                // The IME reads the input type only when its input starts, so its input restarts
+                // instead of being told the new selection (docs/design/ime-contract.md section 3).
                 editor.requestRestart()
             }
         }
@@ -383,6 +389,10 @@ public class TerminalSession(
 
                 override fun restartInput() {
                     restartRequested = true
+                }
+
+                override fun updateSelection() {
+                    selectionUpdateRequested = true
                 }
             }
         )
@@ -446,12 +456,19 @@ public class TerminalSession(
         }
         val result: T
         val restart: Boolean
+        val selectionUpdate: Boolean
         val sent: Boolean
         val stickyModifiersChanged: Boolean
         inputLock.withLock {
             val sends: List<() -> Unit>
             lock.withLock {
-                check(outbox.isEmpty() && !inputSent && !restartRequested && !resetRequested)
+                check(
+                    outbox.isEmpty() &&
+                        !inputSent &&
+                        !restartRequested &&
+                        !selectionUpdateRequested &&
+                        !resetRequested
+                )
                 val stickyModifiersBefore = stickyModifiersState
                 editingThread = Thread.currentThread()
                 try {
@@ -472,6 +489,8 @@ public class TerminalSession(
                     inputSent = false
                     restart = restartRequested
                     restartRequested = false
+                    selectionUpdate = selectionUpdateRequested
+                    selectionUpdateRequested = false
                     resetRequested = false
                 }
                 stickyModifiersChanged = stickyModifiersState != stickyModifiersBefore
@@ -480,6 +499,7 @@ public class TerminalSession(
             for (send in sends) send()
         }
         if (restart) for (observer in observers) observer.onRestartInput()
+        if (selectionUpdate) for (observer in observers) observer.onEditorReset()
         // Only the thread that changed them tells them, so that an operation that changed nothing,
         // such as the reset of a feed, does not tell another thread's change on its own thread
         // (docs/design/session-and-threads.md section 2.5).
@@ -939,6 +959,16 @@ public interface SessionObserver {
     /** The user's input was sent to the host. */
     public fun onUserInput()
 
-    /** The IME edit buffer was reset, so the IME must restart its input. */
+    /**
+     * The IME edit buffer was reset, and the IME must restart its input: it may still have
+     * composing text that the editing model committed, or must read what it reads only when its
+     * input starts.
+     */
     public fun onRestartInput()
+
+    /**
+     * The IME edit buffer was reset, and the IME must be told the new selection, after which it
+     * reads the edit buffer again (docs/decisions/0102).
+     */
+    public fun onEditorReset()
 }

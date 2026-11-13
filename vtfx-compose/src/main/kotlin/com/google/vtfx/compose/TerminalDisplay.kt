@@ -170,6 +170,9 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
     /** Whether a restart of the IME's input is posted, for the same reason. */
     private val restartPending = AtomicBoolean(false)
 
+    /** Whether telling the IME the selection after a reset is posted, for the same reason. */
+    private val editorResetPending = AtomicBoolean(false)
+
     /** Starts receiving the session's notifications. */
     fun attach() {
         session.addObserver(this)
@@ -187,6 +190,7 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
         mainHandler.removeCallbacksAndMessages(null)
         synchronized(followLock) { linesToFollow = -1L }
         restartPending.set(false)
+        editorResetPending.set(false)
         invalidationPending.set(false)
         synchronizationTimeoutPending.set(false)
         pendingSize = null
@@ -801,6 +805,18 @@ internal class TerminalDisplay(val session: TerminalSession) : SessionObserver {
             runOnMain {
                 restartPending.set(false)
                 inputHost?.restartInput()
+            }
+        }
+    }
+
+    // A reset that the host's output caused happens on the thread that fed it, and the IME is told
+    // the empty edit buffer's selection on the main thread (docs/decisions/0102).
+    @AnyThread
+    override fun onEditorReset() {
+        if (editorResetPending.compareAndSet(false, true)) {
+            runOnMain {
+                editorResetPending.set(false)
+                inputHost?.onEditorChangedOutsideIme()
             }
         }
     }

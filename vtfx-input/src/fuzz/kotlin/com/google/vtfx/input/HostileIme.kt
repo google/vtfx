@@ -77,6 +77,8 @@ internal object HostileIme {
         }
 
         override fun restartInput() {}
+
+        override fun updateSelection() {}
     }
 
     /**

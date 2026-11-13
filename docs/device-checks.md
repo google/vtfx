@@ -317,7 +317,7 @@ What to tell us: the device and Android version, and any pause or freeze, with r
 
 ## 15. Restarts of the IME
 
-5.1 and 5.2 of [ime-contract.md](design/ime-contract.md), [decisions/0082](decisions/0082-ime-editing-model.md). The input history is reset, and the IME restarts, when a key of a hardware keyboard commits the composing text, after Enter, and when a sticky modifier is armed. On the emulator (Gboard 18.4), Japanese and Korean composing text that the key bar's → committed reached the host once, and Gboard dropped its composition, as Japanese did on a Pixel XL (Android 10, Gboard 18.4). Gboard took the keys injected with `adb shell input` itself while composing, so no hardware key committed composing text there; and keys injected right after Enter were lost before `bd194b21ccce3eeab2fb8efb92b4d3db145bdbec`, when the echo of Enter restarted the input a second time.
+5.1 and 5.2 of [ime-contract.md](design/ime-contract.md), [decisions/0082](decisions/0082-ime-editing-model.md), [decisions/0102](decisions/0102-resets-tell-the-ime-the-selection.md). The input history is reset when a key of a hardware keyboard commits the composing text, after Enter, when a sticky modifier is armed, and when host output moves the cursor to another line. The IME restarts only when vtfx committed composing text that it may still have, as in the first case; otherwise it is told the new selection. On the emulator (Gboard 18.4), Japanese and Korean composing text that the key bar's → committed reached the host once, and Gboard dropped its composition, as Japanese did on a Pixel XL (Android 10, Gboard 18.4). Gboard took the keys injected with `adb shell input` itself while composing, so no hardware key committed composing text there; and keys injected right after Enter were lost before `bd194b21ccce3eeab2fb8efb92b4d3db145bdbec`, when the echo of Enter restarted the input a second time.
 
 Connect a USB or Bluetooth keyboard, set the IME to Gboard, and start the sample app with logHostInput enabled (section 1).
 
@@ -325,7 +325,8 @@ Connect a USB or Bluetooth keyboard, set the IME to Gboard, and start the sample
 |---|---|---|
 | 15.1 | In Japanese, type `にほんご` on the software keyboard without committing, then press an arrow key of the hardware keyboard | The composing text reaches the host once, and Gboard drops its composition (no composing text is left on the keyboard) |
 | 15.2 | Type `echo hi` on the hardware keyboard, press Enter, and right away type `ls` and Enter | Every key reaches the host: `echo hi`, `0d`, `ls`, `0d` |
-| 15.3 | Type a word on the software keyboard, then tap Ctrl on the key bar and a letter | Ctrl and the letter are sent. Note whether the restart of the keyboard when Ctrl is armed feels disruptive |
+| 15.3 | Type a word on the software keyboard, then tap Ctrl on the key bar and a letter | Ctrl and the letter are sent, and the keyboard does not restart when Ctrl is armed |
+| 15.4 | Over SSH, in a program that redraws another line on every key (a status line in tmux), type quickly on the hardware keyboard | Every key reaches the host |
 
 What to tell us: the Gboard version, the device and Android version, and each row's logcat output.
 
@@ -351,7 +352,7 @@ What to tell us: the Gboard version, the device and Android version, and each ro
 | 12: copying all the text | Agents | — |
 | 13: IMEs on API 29 to 33 | Agents (`scripts/e2e_ime.py --serial`); the keys of more Gboard versions remain to be found | — |
 | 14: searching | Agents | — |
-| 15: restarts of the IME | Agents, with a virtual keyboard (`scripts/device_checks.py` for 15.2) | Whether the restart when Ctrl is armed feels disruptive (15.3) |
+| 15: restarts of the IME | Agents, with a virtual keyboard (`scripts/device_checks.py` for 15.2) | — |
 | 17: throughput | Agents | — |
 | 18: colors set by the host | Agents, judging screenshots | — |
 | 19: selection handles | Agents, with touches from a virtual touchscreen | Whether dragging a handle feels right (19.2, 19.3), judged from a recording |

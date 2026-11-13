@@ -51,6 +51,7 @@ class TerminalSessionTest {
     private val titles = mutableListOf<String>()
     private val stickyModifiersChanges = mutableListOf<KeyModifiers>()
     private var restarts = 0
+    private var editorResets = 0
     private val clipboard =
         object : ClipboardAccess {
             var text: String? = "pasted\u001b[201~\n"
@@ -86,7 +87,10 @@ class TerminalSessionTest {
                         }
                     },
             )
-            .also { it.addObserver(RestartCounter { restarts++ }) }
+            .also {
+                it.addObserver(RestartCounter { restarts++ })
+                it.addObserver(EditorResetCounter { editorResets++ })
+            }
 
     private fun feed(text: String) = session.feed(text.toByteArray(Charsets.UTF_8))
 
@@ -249,10 +253,12 @@ class TerminalSessionTest {
     fun aNewLineAtTheBottomResetsTheIme() {
         feed("\u001b[5H")
         restarts = 0
+        editorResets = 0
         session.edit { it.commitText("ls") }
         feed("ls")
         feed("\r\n$ ")
-        assertEquals(1, restarts)
+        assertEquals(1, editorResets)
+        assertEquals(0, restarts)
         assertEquals("", session.edit { it.text })
     }
 
@@ -261,7 +267,8 @@ class TerminalSessionTest {
         session.edit { it.commitText("ls") }
         feed("ls")
         feed("\u001b7\u001b[3Hdone\u001b8")
-        assertEquals(1, restarts)
+        assertEquals(1, editorResets)
+        assertEquals(0, restarts)
         assertEquals("", session.edit { it.text })
     }
 
@@ -270,7 +277,8 @@ class TerminalSessionTest {
         session.edit { it.commitText("old") }
         feed("old")
         feed("\u001bc")
-        assertEquals(1, restarts)
+        assertEquals(1, editorResets)
+        assertEquals(0, restarts)
         assertEquals("", session.edit { it.text })
         sent.setLength(0)
         assertEquals(false, session.edit { it.replaceText(0, 3, "new") })
@@ -282,22 +290,23 @@ class TerminalSessionTest {
         session.edit { it.commitText("old") }
         feed("old")
         feed("\u001b[?1049h\u001b[?1049l")
-        assertEquals(1, restarts)
+        assertEquals(1, editorResets)
+        assertEquals(0, restarts)
         assertEquals("", session.edit { it.text })
     }
 
     @Test
-    fun theEchoOfEnterDoesNotRestartTheImeAgainAfterAFinishWithoutComposingText() {
+    fun theEchoOfEnterTellsTheSelectionWithoutRestartingAfterAFinishWithoutComposingText() {
         session.edit { it.commitText("ab") }
         session.edit { it.onKeyDown(KeyStroke.Special(TerminalKey.Enter)) }
-        assertEquals(1, restarts)
-        // Android calls this on the connection that the restart closed, right after the restart.
+        assertEquals(1, editorResets)
         session.edit { it.finishComposingText() }
         // The echo, and a prompt drawn in several receives.
         feed("ab\r\n")
         feed("\r\n")
         feed("$ ")
-        assertEquals(1, restarts)
+        assertEquals(3, editorResets)
+        assertEquals(0, restarts)
         assertEquals("ab\r", sent.toString())
     }
 
@@ -306,10 +315,12 @@ class TerminalSessionTest {
         session.sendText("old")
         session.edit { it.setComposingText("か") }
         feed("old\u001bc")
+        assertEquals(1, editorResets)
         assertEquals(0, restarts)
         session.edit { it.finishComposingText() }
         assertEquals("oldか", sent.toString())
-        assertEquals(1, restarts)
+        assertEquals(2, editorResets)
+        assertEquals(0, restarts)
         assertEquals("", session.edit { it.text })
     }
 
@@ -500,7 +511,8 @@ class TerminalSessionTest {
         // The text typed before arming is out of the IME's reach, so no Ctrl+H is sent.
         assertFalse(session.edit { it.replaceText(0, 3, "the") })
         assertEquals("teh", sent.toString())
-        assertEquals(1, restarts)
+        assertEquals(1, editorResets)
+        assertEquals(0, restarts)
         session.sendText("c")
         assertEquals("teh\u0003", sent.toString())
     }
@@ -612,9 +624,11 @@ class TerminalSessionTest {
     fun hostOutputMovingTheCursorToAnotherLineResetsTheIme() {
         session.edit { it.commitText("ls") }
         feed("ls")
+        assertEquals(0, editorResets)
         assertEquals(0, restarts)
         feed("\r\nfile\r\n$ ")
-        assertEquals(1, restarts)
+        assertEquals(1, editorResets)
+        assertEquals(0, restarts)
         assertEquals("", session.edit { it.text })
     }
 
@@ -698,6 +712,8 @@ class TerminalSessionTest {
                 override fun onUserInput() {}
 
                 override fun onRestartInput() {}
+
+                override fun onEditorReset() {}
             }
         )
         // The session has 5 rows; 8 lines leave the first 3 in the scrollback. The host is in the
@@ -748,12 +764,13 @@ class TerminalSessionTest {
     }
 
     @Test
-    fun outputWithoutTypingDoesNotRestartTheIme() {
+    fun outputWithoutTypingTellsTheSelectionAndDoesNotRestartTheIme() {
         repeat(100) { feed("line $it\r\n") }
-        assertEquals(0, restarts)
+        assertEquals(100, editorResets)
         session.edit { it.commitText("ls") }
         repeat(100) { feed("line $it\r\n") }
-        assertEquals(1, restarts)
+        assertEquals(200, editorResets)
+        assertEquals(0, restarts)
     }
 
     @Test
@@ -859,6 +876,8 @@ class TerminalSessionTest {
                 }
 
                 override fun onRestartInput() {}
+
+                override fun onEditorReset() {}
             }
         )
         session.edit { it.finishComposingText() }
@@ -940,11 +959,12 @@ class TerminalSessionTest {
         assertEquals(1, restarts)
         session.edit { it.commitText("ab") }
         session.sendKey(KeyStroke.Special(TerminalKey.Enter))
+        assertEquals(1, editorResets)
+        assertEquals(1, restarts)
+        session.directInput = false
         assertEquals(2, restarts)
         session.directInput = false
-        assertEquals(3, restarts)
-        session.directInput = false
-        assertEquals(3, restarts)
+        assertEquals(2, restarts)
     }
 
     @Test
@@ -1329,14 +1349,14 @@ class TerminalSessionTest {
     }
 
     @Test
-    fun theRestartOfTheInputByFeedIsToldWithoutTheOutputLock() {
+    fun theResetOfTheInputByFeedIsToldWithoutTheOutputLock() {
         // The output moves the cursor to another line, which resets the IME editing model and
-        // restarts the input. An observer that waits for a feed on another thread would otherwise
-        // deadlock.
+        // tells the IME the selection. An observer that waits for a feed on another thread would
+        // otherwise deadlock.
         val resetting = TerminalSession({})
         var otherFinished = false
         resetting.addObserver(
-            RestartCounter {
+            EditorResetCounter {
                 val other = Thread { resetting.feed("\u001b[6n".toByteArray()) }
                 other.start()
                 other.join(TIMEOUT_MILLIS)
@@ -1399,13 +1419,16 @@ class TerminalSessionTest {
             )
         typing.edit { it.commitText("a") }
         typing.stickyModifiers = KeyModifiers.of(ctrl = true)
+        val typist = Thread.currentThread()
         var fed = false
         typing.addObserver(
-            RestartCounter {
-                val feeding = Thread { typing.feed("\r\n".toByteArray()) }
-                feeding.start()
-                feeding.join(TIMEOUT_MILLIS)
-                fed = !feeding.isAlive
+            EditorResetCounter {
+                if (Thread.currentThread() === typist) {
+                    val feeding = Thread { typing.feed("\r\n".toByteArray()) }
+                    feeding.start()
+                    feeding.join(TIMEOUT_MILLIS)
+                    fed = !feeding.isAlive
+                }
             }
         )
 
@@ -1615,6 +1638,16 @@ class TerminalSessionTest {
         }
     }
 
+    @Test
+    fun hostOutputOnAnotherLineTellsTheImeTheSelectionWithoutRestartingIt() {
+        session.edit { it.commitText("ls") }
+
+        feed("\r\n")
+
+        assertEquals(1, editorResets)
+        assertEquals(0, restarts)
+    }
+
     /** Counts the restarts of the IME input that the session asks its displays for. */
     private class RestartCounter(private val onRestart: () -> Unit) : SessionObserver {
         override fun onOutput(
@@ -1628,6 +1661,25 @@ class TerminalSessionTest {
         override fun onUserInput() {}
 
         override fun onRestartInput() = onRestart()
+
+        override fun onEditorReset() {}
+    }
+
+    /** Counts the selection updates after a reset that the session asks its displays for. */
+    private class EditorResetCounter(private val onReset: () -> Unit) : SessionObserver {
+        override fun onOutput(
+            scrolledLines: Long,
+            scrollbackShrank: Boolean,
+            synchronizing: Boolean,
+        ) {}
+
+        override fun onScreenChanged() {}
+
+        override fun onUserInput() {}
+
+        override fun onRestartInput() {}
+
+        override fun onEditorReset() = onReset()
     }
 
     /** Counts the times the session tells its displays of the user's input. */
@@ -1643,6 +1695,8 @@ class TerminalSessionTest {
         override fun onUserInput() = onInput()
 
         override fun onRestartInput() {}
+
+        override fun onEditorReset() {}
     }
 
     private companion object {

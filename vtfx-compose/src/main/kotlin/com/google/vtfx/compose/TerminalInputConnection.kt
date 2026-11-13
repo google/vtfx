@@ -255,10 +255,11 @@ internal class TerminalInputConnection(
     }
 
     /**
-     * Tells the IME about a change of the edit buffer that may have come from outside its calls,
-     * after the session sent the user's input: a hardware key that the IME did not consume, or a
-     * key of the app's key bar, which types into the input history without a restart (section 7).
-     * Not during a batch edit, after which the IME is told anyway.
+     * Tells the IME about a change of the edit buffer that may have come from outside its calls:
+     * the session sent the user's input from a hardware key that the IME did not consume or from a
+     * key of the app's key bar, which types into the input history without a reset, or a reset
+     * emptied the input history (sections 5.2 and 7). Not during a batch edit, after which the IME
+     * is told anyway.
      */
     fun onEditorChangedOutsideIme() {
         if (!session.edit { it.isBatchEditInProgress }) reportSelection()

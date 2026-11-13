@@ -45,6 +45,8 @@ class CursorAnchorInfoTest {
                 override fun send(input: HostInput) {}
 
                 override fun restartInput() {}
+
+                override fun updateSelection() {}
             }
         )
     private val metrics = CellMetrics(width = 10f, height = 20f, baseline = 15f)
