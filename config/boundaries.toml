@@ -279,6 +279,10 @@ classes = [
     "android/os/Handler",
     "android/os/LocaleList",
     "android/os/Looper",
+    # The IME's colored spans of composing text (docs/decisions/0103).
+    "android/text/Spanned",
+    "android/text/style/BackgroundColorSpan",
+    "android/text/style/ForegroundColorSpan",
     "android/view/KeyEvent",
     "android/view/inputmethod/BaseInputConnection",
     "android/view/inputmethod/CompletionInfo",
