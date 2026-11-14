@@ -117,7 +117,7 @@ class RenderConsistencyTest {
                         snapshot,
                         ImageBitmaps(),
                         links = emptyList(),
-                        session.edit { it.composingText },
+                        session.edit { it.composing.text },
                         session.ambiguousWidth,
                         focused = false,
                         selection = null,

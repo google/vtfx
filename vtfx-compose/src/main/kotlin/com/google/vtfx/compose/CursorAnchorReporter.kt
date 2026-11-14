@@ -135,7 +135,7 @@ internal fun cursorAnchorInfo(
     fun flags(left: Float, top: Float, right: Float, bottom: Float): Int =
         if (zoom.shows(left, top, right, bottom, grid)) CursorAnchorInfo.FLAG_HAS_VISIBLE_REGION
         else CursorAnchorInfo.FLAG_HAS_INVISIBLE_REGION
-    val composing = editor.composingText
+    val composing = editor.composing.text
     val layout =
         ComposingLayout(
             composing,

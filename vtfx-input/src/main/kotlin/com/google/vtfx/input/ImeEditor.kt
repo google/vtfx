@@ -71,7 +71,14 @@ public class ImeEditor(
     }
 
     private var history = ""
-    private var composing = ""
+
+    /**
+     * The composing text and its colored ranges, which the terminal displays at its cursor (section
+     * 7, docs/decisions/0103). Held as one value so that every change of the composing text other
+     * than [setComposingText] drops the ranges.
+     */
+    public var composing: ComposingText = ComposingText.Empty
+        private set
 
     /** The input history as last sent to the host. */
     private var sentHistory = ""
@@ -106,11 +113,11 @@ public class ImeEditor(
 
     /** The edit buffer: the input history followed by the composing text. */
     public val text: String
-        get() = history + composing
+        get() = history + composing.text
 
     /** The cursor, which is always at the end of [text]. It is also the end of the selection. */
     public val cursor: Int
-        get() = history.length + composing.length
+        get() = history.length + composing.text.length
 
     /**
      * The start of the selection, which always ends at [cursor]. Equal to [cursor] unless the IME
@@ -125,15 +132,11 @@ public class ImeEditor(
 
     /** The start of the composing text in [text], or -1 if there is none. */
     public val composingStart: Int
-        get() = if (composing.isEmpty()) -1 else history.length
+        get() = if (composing.text.isEmpty()) -1 else history.length
 
     /** The end of the composing text in [text], or -1 if there is none. */
     public val composingEnd: Int
-        get() = if (composing.isEmpty()) -1 else cursor
-
-    /** The composing text, which the terminal displays at its cursor (section 7). */
-    public val composingText: String
-        get() = composing
+        get() = if (composing.text.isEmpty()) -1 else cursor
 
     /**
      * Whether a batch edit is in progress. The IME is told about selection changes only outside
@@ -144,10 +147,19 @@ public class ImeEditor(
 
     // --- Edits (section 6.1) ---
 
-    /** Replaces the composing text, or the selection if there is one, with [text]. */
-    public fun setComposingText(text: CharSequence) {
+    /**
+     * Replaces the composing text, or the selection if there is one, with [text] and [colors]
+     * (docs/decisions/0103). At most [MAX_COLORED_RANGES] ranges are kept, in order, clipped to
+     * [text] with empty ones dropped; if removing dropped control characters changed the length of
+     * [text], all ranges are dropped.
+     */
+    public fun setComposingText(
+        text: CharSequence,
+        colors: List<ColoredRange> = emptyList(),
+    ) {
         removeSelectedText()
-        composing = withoutDroppedControls(text)
+        val sanitized = withoutDroppedControls(text)
+        composing = ComposingText(sanitized, boundColors(text.length, sanitized, colors))
         endOperation()
     }
 
@@ -158,7 +170,7 @@ public class ImeEditor(
      */
     public fun commitText(text: CharSequence) {
         removeSelectedText()
-        composing = ""
+        composing = ComposingText.Empty
         commit(withoutDroppedControls(text))
         endOperation()
     }
@@ -235,11 +247,11 @@ public class ImeEditor(
         if (to != buffer.length) return false
         if (from < history.length) {
             history = buffer.substring(0, from)
-            composing = buffer.substring(from)
+            composing = ComposingText(buffer.substring(from))
         } else {
             // The composing text before the region is committed.
-            val committed = composing.substring(0, from - history.length)
-            composing = composing.substring(from - history.length)
+            val committed = composing.text.substring(0, from - history.length)
+            composing = ComposingText(composing.text.substring(from - history.length))
             commit(committed)
         }
         endOperation()
@@ -282,9 +294,9 @@ public class ImeEditor(
         if (
             cut < history.length &&
                 history.last().isHighSurrogate() &&
-                composing.firstOrNull()?.isLowSurrogate() == true
+                composing.text.firstOrNull()?.isLowSurrogate() == true
         ) {
-            composing = composing.substring(1)
+            composing = ComposingText(composing.text.substring(1))
         }
         history = history.substring(0, cut)
         // Added as Long, since both may be near Int.MAX_VALUE.
@@ -308,7 +320,7 @@ public class ImeEditor(
         selectionFrom = -1
         val kept = minOf(from, history.length)
         history = buffer.substring(0, kept)
-        composing = ""
+        composing = ComposingText.Empty
         commit(buffer.substring(kept, from) + withoutDroppedControls(text) + buffer.substring(to))
         endOperation()
         return true
@@ -328,7 +340,7 @@ public class ImeEditor(
             selectionFrom = -1
             return true
         }
-        if (composing.isNotEmpty() || splitsSurrogatePair(history, from)) return false
+        if (composing.text.isNotEmpty() || splitsSurrogatePair(history, from)) return false
         selectionFrom = from
         return true
     }
@@ -394,7 +406,7 @@ public class ImeEditor(
      */
     public fun onKeyDown(stroke: KeyStroke) {
         val key = asKey(stroke)
-        val hadComposingText = composing.isNotEmpty()
+        val hadComposingText = composing.text.isNotEmpty()
         takeComposingText()
         if (
             key is KeyStroke.Character &&
@@ -534,8 +546,8 @@ public class ImeEditor(
      */
     private fun commitComposingText() {
         selectionFrom = -1
-        val committed = composing
-        composing = ""
+        val committed = composing.text
+        composing = ComposingText.Empty
         commit(committed)
     }
 
@@ -545,7 +557,7 @@ public class ImeEditor(
      * makes it drop the composition. Telling it the new selection does not (docs/decisions/0082).
      */
     private fun takeComposingText() {
-        if (composing.isNotEmpty()) restartNeeded = true
+        if (composing.text.isNotEmpty()) restartNeeded = true
         commitComposingText()
     }
 
@@ -586,7 +598,7 @@ public class ImeEditor(
      * since the reset is dropped from the history too, since the IME reads the empty edit buffer.
      */
     private fun tellResetIfReady() {
-        if (!resetPending || batchDepth > 0 || composing.isNotEmpty()) return
+        if (!resetPending || batchDepth > 0 || composing.text.isNotEmpty()) return
         resetPending = false
         selectionFrom = -1
         history = ""
@@ -603,6 +615,33 @@ public class ImeEditor(
     public companion object {
         /** The default limit of the input history, in code points (ime-contract.md section 10). */
         public const val DEFAULT_MAX_HISTORY_LENGTH: Int = 1024
+
+        /** The most colored ranges kept with the composing text (docs/decisions/0103). */
+        public const val MAX_COLORED_RANGES: Int = 16
+
+        private fun boundColors(
+            rawLength: Int,
+            text: String,
+            colors: List<ColoredRange>,
+        ): List<ColoredRange> {
+            if (text.length != rawLength) return emptyList()
+            return colors
+                .asSequence()
+                .mapNotNull { range ->
+                    val start = range.start.coerceIn(0, text.length)
+                    val end = range.end.coerceIn(0, text.length)
+                    if (start >= end) {
+                        null
+                    } else {
+                        when (range) {
+                            is ColoredRange.Background -> range.copy(start = start, end = end)
+                            is ColoredRange.Foreground -> range.copy(start = start, end = end)
+                        }
+                    }
+                }
+                .take(MAX_COLORED_RANGES)
+                .toList()
+        }
 
         /**
          * Removes the controls that the gate drops (ime-contract.md section 4.2), so that the edit

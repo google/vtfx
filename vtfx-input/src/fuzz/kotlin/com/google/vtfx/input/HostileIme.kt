@@ -29,7 +29,20 @@ import com.google.vtfx.core.TerminalKey
  */
 internal object HostileIme {
     /** Text an IME may commit: line breaks, surrogate pairs, combining marks, and nothing. */
-    val TEXTS = listOf("", "a", "ab ", "日本", "😀", "é", "x\ny", "\r\n", "\uD83D", "long text here")
+    val TEXTS =
+        listOf(
+            "",
+            "a",
+            "ab ",
+            "日本",
+            "😀",
+            "é",
+            "x\ny",
+            "\r\n",
+            "\uD83D",
+            "a\u0007b",
+            "long text here",
+        )
     val KEYS =
         listOf(
             KeyStroke.Character('q'.code, KeyModifiers.None, 'q'.code, 'q'.code),
@@ -94,14 +107,26 @@ internal object HostileIme {
                 else -> Int.MIN_VALUE
             }
         fun text() = TEXTS[choose(TEXTS.size)]
+        fun colors(): List<ColoredRange> =
+            List(choose(ImeEditor.MAX_COLORED_RANGES + 5)) {
+                val start = offset()
+                val end = offset()
+                val color = (choose(256) shl 24) or choose(0x1000000)
+                if (choose(2) == 0) {
+                    ColoredRange.Background(start, end, color)
+                } else {
+                    ColoredRange.Foreground(start, end, color)
+                }
+            }
         fun describe(name: String, vararg arguments: Any) =
             "$name(${arguments.joinToString { if (it is String) "'$it'" else "$it" }})"
         return when (choose(14)) {
-            0 ->
-                text().let {
-                    editor.setComposingText(it)
-                    describe("setComposingText", it)
-                }
+            0 -> {
+                val t = text()
+                val c = colors()
+                editor.setComposingText(t, c)
+                describe("setComposingText", t, c)
+            }
             1 ->
                 text().let {
                     editor.commitText(it)
@@ -170,6 +195,13 @@ internal object HostileIme {
             "$context: cursor ${editor.cursor}, text length ${editor.text.length}"
         }
         check(editor.selectionStart in 0..editor.cursor) { context }
+        val composing = editor.composing
+        check(composing.colors.size <= ImeEditor.MAX_COLORED_RANGES) { context }
+        for (range in composing.colors) {
+            check(range.start in 0 until range.end && range.end <= composing.text.length) {
+                "$context: range $range in '${composing.text}'"
+            }
+        }
         // Invariant 5: the input history stays within its limit, also during a batch edit.
         val history =
             editor.text.substring(0, editor.composingStart.takeIf { it >= 0 } ?: editor.cursor)

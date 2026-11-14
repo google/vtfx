@@ -760,7 +760,7 @@ class ImeEditorTest {
     @Test
     fun controlsAreRemovedFromTheComposingText() {
         editor.setComposingText("か\u0007")
-        assertEquals("か", editor.composingText)
+        assertEquals("か", editor.composing.text)
         editor.finishComposingText()
         assertEquals(listOf<HostInput>(text("か")), sent)
     }
@@ -1087,6 +1087,207 @@ class ImeEditorTest {
 
         assertEquals(0, restarts)
         assertEquals(1, selectionUpdates)
+    }
+
+    @Test
+    fun setComposingTextKeepsColoredRangesInOrder() {
+        val colors =
+            listOf(
+                ColoredRange.Background(0, 3, 0x66ef3566),
+                ColoredRange.Background(3, 5, 0x19ef3566),
+                ColoredRange.Foreground(0, 5, 0xff000000.toInt()),
+            )
+
+        editor.setComposingText("今日は天気", colors)
+
+        assertEquals(ComposingText("今日は天気", colors), editor.composing)
+    }
+
+    @Test
+    fun coloredRangesAreClippedAndEmptyOnesDropped() {
+        editor.setComposingText(
+            "にほんご",
+            listOf(
+                ColoredRange.Background(-3, 2, 1),
+                ColoredRange.Foreground(2, 9, 2),
+                ColoredRange.Background(1, 1, 3),
+                ColoredRange.Background(3, 1, 4),
+                ColoredRange.Foreground(-5, 0, 5),
+                ColoredRange.Foreground(4, 8, 6),
+                ColoredRange.Background(-10, 10, 7),
+            ),
+        )
+
+        assertEquals(
+            listOf(
+                ColoredRange.Background(0, 2, 1),
+                ColoredRange.Foreground(2, 4, 2),
+                ColoredRange.Background(0, 4, 7),
+            ),
+            editor.composing.colors,
+        )
+    }
+
+    @Test
+    fun atMostSixteenColoredRangesAreKept() {
+        val empty = ColoredRange.Background(0, 0, 99)
+        val valid = List(20) { ColoredRange.Background(0, 1, it) }
+
+        editor.setComposingText("か", listOf(empty) + valid)
+
+        assertEquals(valid.take(ImeEditor.MAX_COLORED_RANGES), editor.composing.colors)
+    }
+
+    @Test
+    fun removingControlsFromTheComposingTextDropsAllColoredRanges() {
+        editor.setComposingText(
+            "か\u0007き",
+            listOf(ColoredRange.Background(0, 1, 1), ColoredRange.Foreground(0, 3, 2)),
+        )
+
+        assertEquals(ComposingText("かき"), editor.composing)
+    }
+
+    @Test
+    fun keptControlsInTheComposingTextKeepTheColoredRanges() {
+        val colors = listOf(ColoredRange.Background(0, 3, 1))
+
+        editor.setComposingText("a\nb", colors)
+
+        assertEquals(ComposingText("a\nb", colors), editor.composing)
+    }
+
+    @Test
+    fun commitsDropTheColoredRanges() {
+        val colors = listOf(ColoredRange.Background(0, 2, 1))
+
+        editor.setComposingText("にほ", colors)
+        editor.commitText("日本")
+        assertEquals(ComposingText.Empty, editor.composing)
+
+        editor.setComposingText("にほ", colors)
+        editor.finishComposingText()
+        assertEquals(ComposingText.Empty, editor.composing)
+
+        editor.setComposingText("にほ", colors)
+        assertTrue(editor.replaceText(0, editor.text.length, "x"))
+        assertEquals(ComposingText.Empty, editor.composing)
+
+        editor.setComposingText("にほ", colors)
+        editor.closeConnection()
+        assertEquals(ComposingText.Empty, editor.composing)
+    }
+
+    @Test
+    fun setComposingRegionDropsTheColoredRanges() {
+        val colors = listOf(ColoredRange.Background(0, 2, 1))
+        editor.commitText("ab")
+
+        // Expanding into the input history.
+        editor.setComposingText("cd", colors)
+        assertTrue(editor.setComposingRegion(1, 4))
+        assertEquals(ComposingText("bcd"), editor.composing)
+
+        // Shrinking within the composing text.
+        editor.setComposingText("cd", colors)
+        assertTrue(editor.setComposingRegion(2, 3))
+        assertEquals(ComposingText("d"), editor.composing)
+
+        // Keeping the same composing bounds still goes through setComposingRegion, not
+        // setComposingText.
+        editor.setComposingText("ef", colors)
+        assertTrue(editor.setComposingRegion(editor.composingStart, editor.composingEnd))
+        assertEquals(ComposingText("ef"), editor.composing)
+
+        // An empty region finishes the composition.
+        editor.setComposingText("ef", colors)
+        assertTrue(editor.setComposingRegion(0, 0))
+        assertEquals(ComposingText.Empty, editor.composing)
+    }
+
+    @Test
+    fun deletingBeforeTheComposingTextKeepsItsColoredRangesUnlessACharacterOfItIsTaken() {
+        val colors = listOf(ColoredRange.Background(0, 2, 1))
+        editor.commitText("ab\ud83d")
+        editor.setComposingText("\ude00か", colors)
+
+        // Deleting 1 code unit from "ab\ud83d" takes the split pair's low half from the composing
+        // text, which drops the ranges.
+        assertTrue(editor.deleteSurroundingText(1, 0))
+        assertEquals(ComposingText("か"), editor.composing)
+
+        // Deleting in the input history without touching the composing text keeps its ranges.
+        editor.setComposingText("かき", colors)
+        assertTrue(editor.deleteSurroundingText(1, 0))
+        assertEquals(ComposingText("かき", colors), editor.composing)
+        assertTrue(editor.deleteSurroundingTextInCodePoints(1, 0))
+        assertEquals(ComposingText("かき", colors), editor.composing)
+
+        // Deleting a split surrogate in code points also drops the ranges.
+        editor.commitText("\ud83d")
+        editor.setComposingText("\ude00か", colors)
+        assertTrue(editor.deleteSurroundingTextInCodePoints(1, 0))
+        assertEquals(ComposingText("か"), editor.composing)
+    }
+
+    @Test
+    fun nonImeCommitsAndResetsThatClearComposingTextDropTheColoredRanges() {
+        val colors = listOf(ColoredRange.Background(0, 1, 1))
+
+        editor.setComposingText("か", colors)
+        editor.onKeyDown(characterKey('x'.code))
+        assertEquals(ComposingText.Empty, editor.composing)
+
+        editor.setComposingText("か", colors)
+        editor.onKeyDown(KeyStroke.Special(TerminalKey.Left))
+        assertEquals(ComposingText.Empty, editor.composing)
+
+        editor.setComposingText("か", colors)
+        editor.paste("p")
+        assertEquals(ComposingText.Empty, editor.composing)
+
+        editor.setComposingText("か", colors)
+        editor.pasteClipboard()
+        assertEquals(ComposingText.Empty, editor.composing)
+
+        editor.setComposingText("か", colors)
+        editor.typeText("t")
+        assertEquals(ComposingText.Empty, editor.composing)
+
+        editor.setComposingText("か", colors)
+        editor.sendPendingInput()
+        assertEquals(ComposingText.Empty, editor.composing)
+
+        editor.setComposingText("か", colors)
+        editor.requestRestart()
+        assertEquals(ComposingText.Empty, editor.composing)
+
+        val small =
+            ImeEditor(
+                object : ImeEditor.Listener {
+                    override fun send(input: HostInput) {}
+
+                    override fun restartInput() {}
+
+                    override fun updateSelection() {}
+                },
+                maxHistoryLength = 2,
+            )
+        small.commitText("ab")
+        small.setComposingText("cd", listOf(ColoredRange.Background(0, 2, 1)))
+        assertTrue(small.setComposingRegion(3, 4))
+        assertEquals(ComposingText.Empty, small.composing)
+    }
+
+    @Test
+    fun aResetOfTheHistoryAloneKeepsTheComposingTextWithItsColoredRanges() {
+        val colors = listOf(ColoredRange.Background(0, 2, 1))
+        editor.commitText("ab")
+        editor.setComposingText("かき", colors)
+
+        editor.requestReset()
+
+        assertEquals(ComposingText("かき", colors), editor.composing)
     }
 }
 
