@@ -18,6 +18,14 @@
 
 package com.google.vtfx.compose
 
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.BackgroundColorSpan
+import android.text.style.ForegroundColorSpan
+import android.text.style.LocaleSpan
+import android.text.style.UnderlineSpan
+import android.view.View
+import android.view.inputmethod.EditorInfo
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
@@ -37,6 +45,7 @@ import com.google.vtfx.font.gate.FontLimits
 import com.google.vtfx.font.gate.SanitizedFamily
 import com.google.vtfx.font.gate.SanitizedFont
 import com.google.vtfx.session.TerminalSession
+import java.util.Locale
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -146,6 +155,68 @@ class TerminalScreenshotTest {
         composeRule.waitForIdle()
         composeRule.onRoot().captureRoboImage()
     }
+
+    /**
+     * Gboard's Japanese conversion spans on dark colors: translucent red backgrounds over the
+     * focused clause and the rest, keeping the terminal's text color and underline
+     * (docs/decisions/0103).
+     */
+    @Test
+    fun composingColorsGboardDark() {
+        showComposingSpans(TerminalColors.Dark, gboardConvertingSpans())
+        composeRule.onRoot().captureRoboImage()
+    }
+
+    /** Gboard's Japanese conversion spans on light colors (docs/decisions/0103). */
+    @Test
+    fun composingColorsGboardLight() {
+        showComposingSpans(TerminalColors.Light, gboardConvertingSpans())
+        composeRule.onRoot().captureRoboImage()
+    }
+
+    /**
+     * Simeji's Japanese conversion spans on dark colors: opaque light backgrounds over the focused
+     * clause and the rest, with a black foreground for the text and its underline
+     * (docs/decisions/0103).
+     */
+    @Test
+    fun composingColorsSimejiDark() {
+        showComposingSpans(TerminalColors.Dark, simejiConvertingSpans())
+        composeRule.onRoot().captureRoboImage()
+    }
+
+    /** Simeji's Japanese conversion spans on light colors (docs/decisions/0103). */
+    @Test
+    fun composingColorsSimejiLight() {
+        showComposingSpans(TerminalColors.Light, simejiConvertingSpans())
+        composeRule.onRoot().captureRoboImage()
+    }
+
+    private fun showComposingSpans(colors: TerminalColors, composing: CharSequence) {
+        show(style = TerminalStyle(colors = colors), output = "$ echo ")
+        composeRule.onRoot().performClick()
+        composeRule.waitForIdle()
+        val view = checkNotNull(display.inputHost as? View)
+        val connection = checkNotNull(view.onCreateInputConnection(EditorInfo()))
+        composeRule.runOnIdle { connection.setComposingText(composing, 1) }
+        composeRule.waitForIdle()
+    }
+
+    private fun gboardConvertingSpans(): SpannableString =
+        SpannableString("今日はいい天気").apply {
+            setSpan(UnderlineSpan(), 0, length, Spanned.SPAN_COMPOSING)
+            setSpan(BackgroundColorSpan(0x66ef3566), 0, 3, Spanned.SPAN_COMPOSING)
+            setSpan(BackgroundColorSpan(0x19ef3566), 3, length, Spanned.SPAN_COMPOSING)
+            setSpan(LocaleSpan(Locale.JAPANESE), 0, length, Spanned.SPAN_COMPOSING)
+        }
+
+    private fun simejiConvertingSpans(): SpannableString =
+        SpannableString("今日はいい天気").apply {
+            setSpan(BackgroundColorSpan(0xff8888ff.toInt()), 0, 3, Spanned.SPAN_COMPOSING)
+            setSpan(BackgroundColorSpan(0xfff0ffff.toInt()), 3, length, Spanned.SPAN_COMPOSING)
+            setSpan(ForegroundColorSpan(0xff000000.toInt()), 0, length, Spanned.SPAN_COMPOSING)
+            setSpan(UnderlineSpan(), 0, length, Spanned.SPAN_COMPOSING)
+        }
 
     @Test
     fun lineDrawingAndHyperlinks() {

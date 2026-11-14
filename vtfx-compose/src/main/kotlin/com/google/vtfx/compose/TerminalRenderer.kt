@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint as ComposePaint
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -48,6 +49,8 @@ import com.google.vtfx.core.TerminalColor
 import com.google.vtfx.core.TerminalLimits
 import com.google.vtfx.core.TerminalSnapshot
 import com.google.vtfx.core.UnderlineStyle
+import com.google.vtfx.input.ColoredRange
+import com.google.vtfx.input.ComposingText
 import kotlin.math.ceil
 
 /** The size of a cell in pixels, and the baseline from its top. */
@@ -186,7 +189,7 @@ internal class TerminalRenderer(
          * with their text.
          */
         links: List<FoundLink>,
-        composingText: String,
+        composing: ComposingText,
         ambiguousWidth: AmbiguousWidth,
         focused: Boolean,
         selection: TerminalSelection?,
@@ -247,10 +250,10 @@ internal class TerminalRenderer(
         val cursorColor = if (reverse) defaultForeground else colors.cursor
         val cursorTextColor =
             if (reverse || colors.cursorText.isUnspecified) defaultBackground else colors.cursorText
-        if (composingText.isNotEmpty()) {
+        if (composing.text.isNotEmpty()) {
             val layout =
                 ComposingLayout(
-                    composingText,
+                    composing.text,
                     cursorColumn,
                     cursorRow,
                     snapshot.columns,
@@ -259,7 +262,7 @@ internal class TerminalRenderer(
                 )
             drawComposing(
                 layout,
-                composingText,
+                composing,
                 snapshot.rows,
                 cursorColor,
                 defaultForeground,
@@ -787,18 +790,30 @@ internal class TerminalRenderer(
 
     private fun DrawScope.drawComposing(
         layout: ComposingLayout,
-        text: String,
+        composing: ComposingText,
         rows: Int,
         cursorColor: Color,
         defaultForeground: Color,
         defaultBackground: Color,
     ) {
         val composingStyle = CellStyle.Default
+        val text = composing.text
+        val colors = composing.colors
         for (cell in layout.cells) {
+            var cellBackground = defaultBackground
+            var cellForeground = defaultForeground
+            for (range in colors) {
+                if (cell.start !in range.start until range.end) continue
+                when (range) {
+                    is ColoredRange.Background ->
+                        cellBackground = Color(range.color).compositeOver(cellBackground)
+                    is ColoredRange.Foreground -> cellForeground = Color(range.color)
+                }
+            }
             val topLeft = Offset(cell.column * metrics.width, cell.row * metrics.height)
             fill.rect(
                 this,
-                defaultBackground,
+                cellBackground,
                 topLeft,
                 Size(cell.width * metrics.width, metrics.height),
             )
@@ -809,11 +824,12 @@ internal class TerminalRenderer(
                 composingStyle,
                 defaultForeground,
                 defaultBackground,
+                colorOverride = cellForeground,
             )
             // The underline marks the text as not yet sent.
             val underlineY = (cell.row + 1) * metrics.height - UNDERLINE_WIDTH
             drawLine(
-                defaultForeground,
+                cellForeground,
                 Offset(topLeft.x, underlineY),
                 Offset(topLeft.x + cell.width * metrics.width, underlineY),
                 UNDERLINE_WIDTH,

@@ -21,6 +21,9 @@ package com.google.vtfx.compose
 import android.os.Build
 import android.os.Bundle
 import android.text.InputType
+import android.text.Spanned
+import android.text.style.BackgroundColorSpan
+import android.text.style.ForegroundColorSpan
 import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.BaseInputConnection
@@ -35,6 +38,8 @@ import android.view.inputmethod.SurroundingText
 import android.view.inputmethod.TextAttribute
 import androidx.annotation.RequiresApi
 import com.google.vtfx.core.InternalVtfxApi
+import com.google.vtfx.input.ColoredRange
+import com.google.vtfx.input.ComposingText
 import com.google.vtfx.input.ImeEditor
 import com.google.vtfx.session.TerminalSession
 
@@ -75,11 +80,16 @@ internal class TerminalInputConnection(
         val composingEnd: Int,
     )
 
-    private data class EditorState(val text: String, val selection: Selection) {
+    private data class EditorState(
+        val text: String,
+        val composing: ComposingText,
+        val selection: Selection,
+    ) {
         constructor(
             editor: ImeEditor
         ) : this(
             editor.text,
+            editor.composing,
             Selection(
                 editor.selectionStart,
                 editor.cursor,
@@ -91,9 +101,12 @@ internal class TerminalInputConnection(
 
     // --- Edits (section 6.1) ---
 
-    override fun setComposingText(text: CharSequence, newCursorPosition: Int): Boolean = edit {
-        it.setComposingText(text)
-        true
+    override fun setComposingText(text: CharSequence, newCursorPosition: Int): Boolean {
+        val colors = coloredRanges(text)
+        return edit {
+            it.setComposingText(text, colors)
+            true
+        }
     }
 
     override fun setComposingText(
@@ -297,6 +310,26 @@ internal class TerminalInputConnection(
     }
 
     companion object {
+        /**
+         * Takes the `BackgroundColorSpan`s and `ForegroundColorSpan`s of [text] in span order,
+         * ignoring every other kind of span. [ImeEditor.setComposingText] bounds and clips them
+         * (docs/decisions/0103).
+         */
+        private fun coloredRanges(text: CharSequence): List<ColoredRange> {
+            if (text !is Spanned) return emptyList()
+            return text.getSpans(0, text.length, Any::class.java).mapNotNull { span ->
+                val start = text.getSpanStart(span)
+                val end = text.getSpanEnd(span)
+                when (span) {
+                    is BackgroundColorSpan ->
+                        ColoredRange.Background(start, end, span.backgroundColor)
+                    is ForegroundColorSpan ->
+                        ColoredRange.Foreground(start, end, span.foregroundColor)
+                    else -> null
+                }
+            }
+        }
+
         /**
          * Fills [outAttrs] as docs/design/ime-contract.md section 3 specifies. The IME is asked for
          * no suggestions, which keeps Gboard from autocorrecting what was typed. With

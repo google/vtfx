@@ -16,19 +16,29 @@
 
 package com.google.vtfx.compose
 
+import android.graphics.Bitmap
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.BackgroundColorSpan
+import android.text.style.ForegroundColorSpan
+import android.view.View
+import android.view.inputmethod.EditorInfo
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.vtfx.session.TerminalSession
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -111,6 +121,106 @@ class TerminalAttributesDrawingTest {
             pixels("\u001b]8;;https://example.com/\u001b\\ \u001b]8;;\u001b\\\u001b[D", style)
         assertTrue(CURSOR.toArgb() in pixels)
         assertTrue(pixels.any { it.green() > 0x80 && it.red() < 0x40 })
+    }
+
+    @Test
+    fun composingColorsCompositeBackgroundsInOrderAndTakeTheLastForeground() {
+        val display = TerminalDisplay(session)
+        val style =
+            TerminalStyle(
+                colors = TerminalColors.Dark.copy(cursor = CURSOR),
+                fontSize = 40.sp,
+            )
+        composeRule.setContent { Terminal(display, Modifier.size(600.dp, 300.dp), style = style) }
+        composeRule.onRoot().performClick()
+        composeRule.waitForIdle()
+        session.feed("X".toByteArray())
+        composeRule.waitForIdle()
+        val view = checkNotNull(display.inputHost as? View)
+        val metrics = checkNotNull((view as TerminalInputView).metrics)
+        val connection = checkNotNull(view.onCreateInputConnection(EditorInfo()))
+
+        // Over "   " at columns 1..3: cell 1 gets two translucent backgrounds in order and two
+        // foregrounds (yellow after green); cell 2 gets the first background and green; cell 3
+        // has no spans; cell 0 holds the terminal's own "X"; cell 4 gets the cursor bar.
+        val bgFirst = 0x80FF0000.toInt()
+        val bgSecond = 0x800000FF.toInt()
+        val green = 0xFF00FF00.toInt()
+        val yellow = 0xFFFFFF00.toInt()
+        val text =
+            SpannableString("   ").apply {
+                setSpan(BackgroundColorSpan(bgFirst), 0, 2, Spanned.SPAN_COMPOSING)
+                setSpan(BackgroundColorSpan(bgSecond), 0, 1, Spanned.SPAN_COMPOSING)
+                setSpan(ForegroundColorSpan(green), 0, 2, Spanned.SPAN_COMPOSING)
+                setSpan(ForegroundColorSpan(yellow), 0, 1, Spanned.SPAN_COMPOSING)
+            }
+        composeRule.runOnIdle { assertTrue(connection.setComposingText(text, 1)) }
+        composeRule.waitForIdle()
+        val bitmap = composeRule.onRoot().captureToImage().asAndroidBitmap()
+
+        val defaultBg = style.colors.background
+        val defaultFg = style.colors.foreground
+        val expectedCell1Bg =
+            Color(bgSecond).compositeOver(Color(bgFirst).compositeOver(defaultBg)).toArgb()
+        val expectedCell2Bg = Color(bgFirst).compositeOver(defaultBg).toArgb()
+        assertEquals(defaultBg.toArgb(), bitmap.cellBackground(0, metrics))
+        assertEquals(expectedCell1Bg, bitmap.cellBackground(1, metrics))
+        assertEquals(expectedCell2Bg, bitmap.cellBackground(2, metrics))
+        assertEquals(defaultBg.toArgb(), bitmap.cellBackground(3, metrics))
+        // Spaces have no glyph ink, so the underline at the bottom of each cell shows its
+        // foreground color.
+        assertEquals(yellow, bitmap.cellUnderline(1, metrics))
+        assertEquals(green, bitmap.cellUnderline(2, metrics))
+        assertEquals(defaultFg.toArgb(), bitmap.cellUnderline(3, metrics))
+        assertTrue(CURSOR.toArgb() in bitmap.cellPixels(4, metrics))
+    }
+
+    @Test
+    fun changingOnlyTheComposingColorSpansRedrawsTheDisplay() {
+        val display = TerminalDisplay(session)
+        val style = TerminalStyle(fontSize = 40.sp)
+        composeRule.setContent { Terminal(display, Modifier.size(600.dp, 300.dp), style = style) }
+        composeRule.onRoot().performClick()
+        composeRule.waitForIdle()
+        val view = checkNotNull(display.inputHost as? TerminalInputView)
+        val metrics = checkNotNull(view.metrics)
+        val connection = checkNotNull(view.onCreateInputConnection(EditorInfo()))
+        val highlight = 0xFF00AA00.toInt()
+        val defaultBg = style.colors.background.toArgb()
+
+        fun composeFocus(start: Int, end: Int) {
+            val text =
+                SpannableString("  ").apply {
+                    setSpan(BackgroundColorSpan(highlight), start, end, Spanned.SPAN_COMPOSING)
+                }
+            composeRule.runOnIdle { assertTrue(connection.setComposingText(text, 1)) }
+            composeRule.waitForIdle()
+        }
+
+        composeFocus(0, 1)
+        val first = composeRule.onRoot().captureToImage().asAndroidBitmap()
+        assertEquals(highlight, first.cellBackground(0, metrics))
+        assertEquals(defaultBg, first.cellBackground(1, metrics))
+
+        composeFocus(1, 2)
+        val second = composeRule.onRoot().captureToImage().asAndroidBitmap()
+        assertEquals(defaultBg, second.cellBackground(0, metrics))
+        assertEquals(highlight, second.cellBackground(1, metrics))
+    }
+
+    private fun Bitmap.cellBackground(column: Int, metrics: CellMetrics): Int =
+        getPixel(((column + 0.5f) * metrics.width).toInt(), (metrics.height * 0.25f).toInt())
+
+    private fun Bitmap.cellUnderline(column: Int, metrics: CellMetrics): Int =
+        getPixel(((column + 0.5f) * metrics.width).toInt(), metrics.height.toInt() - 2)
+
+    private fun Bitmap.cellPixels(column: Int, metrics: CellMetrics): IntArray {
+        val left = (column * metrics.width).toInt()
+        val width = metrics.width.toInt()
+        val height = metrics.height.toInt()
+        val out = IntArray(width * height)
+        getPixels(out, 0, width, left, 0, width, height)
+        return out
     }
 
     private fun Int.red() = (this shr 16) and 0xFF

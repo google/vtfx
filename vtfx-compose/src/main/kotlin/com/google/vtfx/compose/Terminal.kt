@@ -464,7 +464,7 @@ internal fun Terminal(
                         snapshot,
                         images,
                         links,
-                        display.observeEditorVersion().let { session.edit { it.composing.text } },
+                        display.observeEditorVersion().let { session.edit { it.composing } },
                         session.ambiguousWidth,
                         focused,
                         display.selection,

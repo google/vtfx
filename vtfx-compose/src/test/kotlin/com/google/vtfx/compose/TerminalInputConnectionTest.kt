@@ -18,13 +18,27 @@
 
 package com.google.vtfx.compose
 
+import android.graphics.Typeface
 import android.text.InputType
+import android.text.SpannableString
+import android.text.SpannableStringBuilder
+import android.text.Spanned
+import android.text.style.BackgroundColorSpan
+import android.text.style.ForegroundColorSpan
+import android.text.style.LocaleSpan
+import android.text.style.StyleSpan
+import android.text.style.SuggestionSpan
+import android.text.style.UnderlineSpan
 import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import com.google.vtfx.core.InternalVtfxApi
+import com.google.vtfx.input.ColoredRange
+import com.google.vtfx.input.ComposingText
+import com.google.vtfx.input.ImeEditor
 import com.google.vtfx.session.TerminalSession
+import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -314,5 +328,85 @@ class TerminalInputConnectionTest {
         connection.setComposingText("a", 1)
         connection.setComposingText("a", 1)
         assertEquals(1, changes)
+    }
+
+    @Test
+    fun coloredSpansOfComposingTextAreExtractedInOrderAndOtherSpansIgnored() {
+        val text =
+            SpannableString("今日はいい天気").apply {
+                setSpan(UnderlineSpan(), 0, length, Spanned.SPAN_COMPOSING)
+                setSpan(LocaleSpan(Locale.JAPANESE), 0, length, Spanned.SPAN_COMPOSING)
+                setSpan(BackgroundColorSpan(0x66ef3566), 0, 3, Spanned.SPAN_COMPOSING)
+                setSpan(StyleSpan(Typeface.BOLD), 0, 3, Spanned.SPAN_COMPOSING)
+                setSpan(BackgroundColorSpan(0x19ef3566), 3, length, Spanned.SPAN_COMPOSING)
+                setSpan(
+                    SuggestionSpan(Locale.JAPANESE, arrayOf("きょう"), 0),
+                    0,
+                    3,
+                    Spanned.SPAN_COMPOSING,
+                )
+                setSpan(ForegroundColorSpan(0xff000000.toInt()), 0, length, Spanned.SPAN_COMPOSING)
+            }
+
+        assertTrue(connection.setComposingText(text, 1, null))
+
+        assertEquals(
+            ComposingText(
+                "今日はいい天気",
+                listOf(
+                    ColoredRange.Background(0, 3, 0x66ef3566),
+                    ColoredRange.Background(3, 7, 0x19ef3566),
+                    ColoredRange.Foreground(0, 7, 0xff000000.toInt()),
+                ),
+            ),
+            session.edit { it.composing },
+        )
+    }
+
+    @Test
+    fun changingOnlyTheColoredSpansReportsAnEditorChange() {
+        fun clause(start: Int, end: Int) =
+            SpannableString("今日は天気").apply {
+                setSpan(BackgroundColorSpan(0x66ef3566), start, end, Spanned.SPAN_COMPOSING)
+            }
+
+        connection.setComposingText(clause(0, 3), 1)
+        assertEquals(1, changes)
+
+        // Moving the focus to the next clause keeps the text and changes only the spans.
+        connection.setComposingText(clause(3, 5), 1)
+        assertEquals(2, changes)
+
+        // Equal text and spans are not reported again.
+        connection.setComposingText(clause(3, 5), 1)
+        assertEquals(2, changes)
+
+        // Dropping the spans while keeping the text is a change too.
+        connection.setComposingText("今日は天気", 1)
+        assertEquals(3, changes)
+        assertEquals(ComposingText("今日は天気"), session.edit { it.composing })
+    }
+
+    @Test
+    fun coloredSpansAreBoundedAndDroppedWhenControlsChangeTheLength() {
+        val many =
+            SpannableStringBuilder("かき").apply {
+                setSpan(BackgroundColorSpan(99), 1, 1, Spanned.SPAN_INCLUSIVE_INCLUSIVE)
+                repeat(20) {
+                    setSpan(BackgroundColorSpan(it), 0, 2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                }
+            }
+        connection.setComposingText(many, 1)
+        assertEquals(
+            List(ImeEditor.MAX_COLORED_RANGES) { ColoredRange.Background(0, 2, it) },
+            session.edit { it.composing.colors },
+        )
+
+        val withControl =
+            SpannableString("か\u0007き").apply {
+                setSpan(BackgroundColorSpan(1), 0, 3, Spanned.SPAN_COMPOSING)
+            }
+        connection.setComposingText(withControl, 1)
+        assertEquals(ComposingText("かき"), session.edit { it.composing })
     }
 }

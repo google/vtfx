@@ -39,7 +39,7 @@ adb -s SERIAL shell am start -S -n com.google.vtfx.sample/.MainActivity --ez log
 
 ## 2. IMEs other than Gboard, voice input, handwriting input
 
-Section 13 of [ime-contract.md](design/ime-contract.md). Gboard (English, Japanese, Korean) was checked with the emulator e2e (`scripts/e2e_ime.py`). Rows 2.1 to 2.6 are left for later, with no date set; rows 2.7 and 2.8 are run with the other checks ([decisions/0092](decisions/0092-device-checks-by-agents.md)).
+Section 13 of [ime-contract.md](design/ime-contract.md). Gboard (English, Japanese, Korean) was checked with the emulator e2e (`scripts/e2e_ime.py`). Rows 2.1 to 2.6 and 2.9 are left for later, with no date set; rows 2.7 and 2.8 are run with the other checks ([decisions/0092](decisions/0092-device-checks-by-agents.md)).
 
 The targets are three: Samsung Keyboard, SwiftKey, and Simeji. For each, start the app with logHostInput enabled, and tap the terminal to show the keyboard.
 
@@ -59,7 +59,15 @@ Then check the following with Gboard.
 | 2.7 | Write characters with Gboard's handwriting keyboard | The written characters appear when committed |
 | 2.8 | Write characters directly on the terminal with a stylus (handwriting input on Android 14 and later). If it works, also try the erase gesture (a horizontal line over characters) | No expectation has been decided. Record whether handwriting starts and whether the written characters are sent. Handwriting gestures are not accepted (6.4 of [ime-contract.md](design/ime-contract.md)), so the erase gesture should send nothing and the app should not crash |
 
+Then check the colors of composing text ([decisions/0103](decisions/0103-ime-colors-of-composing-text.md), section 7 of [ime-contract.md](design/ime-contract.md)) with Samsung Keyboard, which has not been checked.
+
+| # | Action | Expected |
+|---|---|---|
+| 2.9 | In Japanese input, type `きょうはいいてんき`, move the cursor within the composing text, and convert into clauses and move between them, on dark and light terminal backgrounds | Any clause and cursor highlights from the IME's colored spans appear on the composing text, redrawing when the active clause or cursor moves, and the composing text stays readable |
+
 What to tell us: the IME's name and version, the device and Android version, and the result of each row (whether as expected, and if not, the logcat output).
+
+The colors of composing text ([decisions/0103](decisions/0103-ime-colors-of-composing-text.md)) were checked on 2026-11-14: on the `vtfx-probe` AVD (API 37, Gboard 18.5) and on a real device (API 35, Simeji 23.7), moving the IME's cursor within `きょうはいいてんき` and converting into clauses (`今日はいい天気`) and moving between them drew each IME's background and foreground colors over the composing text and redrew when only the spans changed; Microsoft SwiftKey 9.13 on the same device sends no spans ([research/ime-composing-spans.md](research/ime-composing-spans.md)). Samsung Keyboard (2.9) was not checked.
 
 ## 3. Physical keyboards
 
@@ -338,7 +346,7 @@ What to tell us: the Gboard version, the device and Android version, and each ro
 
 | Section | Run by | Human |
 |---|---|---|
-| 2.1 to 2.6: IMEs other than Gboard, voice input | Nobody for now; left for later, with no date set | — |
+| 2.1 to 2.6, 2.9: IMEs other than Gboard, voice input | Nobody for now; left for later, with no date set | — |
 | 2.7, 2.8: handwriting input | Agents | — |
 | 3: physical keyboards | Agents, with a virtual keyboard made through `uhid` (`scripts/device_checks.py`) | — |
 | 4: TalkBack | Agents, with touches from a virtual touchscreen | Only if explore by touch cannot be driven |
