@@ -152,7 +152,10 @@ class TerminalZoomTest {
             down(Offset(100f, 50f))
             moveTo(Offset(100f, 70f))
             moveTo(Offset(100f, 110f))
+            // The finger rests where it stopped before it is lifted, so that the swipe does not
+            // fling also with a velocity tracker that does not take the pause as a stop.
             advanceEventTime(200)
+            moveTo(Offset(100f, 110f))
             up()
         }
         composeRule.waitForIdle()
