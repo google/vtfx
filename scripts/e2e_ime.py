@@ -23,8 +23,10 @@ human-owned expectations in spec/ime/gboard.toml. The result is for reporting, n
 Before the scenarios, Gboard is set up with the English (US), Japanese (QWERTY), and Korean (2-set)
 keyboards through its settings screen, since the emulator boots from a snapshot without them.
 
-On a screen other than the Pixel 7 AVD's (a device reached over adb), the keys are found from the
-keyboard's touchable region (layouts_for() in run_scenarios.py), and the keyboard's language is
+On anything but an emulator with the Pixel 7 AVD's screen (a device reached over adb, even one
+with the same screen size), the keys are found from the keyboard's touchable region, without the
+navigation bar that the IME draws under the keys with gesture navigation (layouts_for() in
+run_scenarios.py), and the keyboard's language is
 told by what reaches the host after typing "a" and Enter, since Gboard does not report it in the
 settings on every Android version.
 
@@ -36,6 +38,7 @@ Start the emulator with scripts/emulator.sh start first, or pass the serial of a
 import argparse
 import datetime
 import fnmatch
+import itertools
 import os
 import re
 import subprocess
@@ -180,32 +183,84 @@ def set_up_gboard(serial):
         raise RuntimeError(f"Gboard keyboards missing: {missing}")
 
 
+def ime_navigation_bar(serial):
+    """The navigation bar that the IME draws under its keys with gesture navigation, as (height,
+    center of the IME switcher button or None), or None if the IME draws none.
+
+    `dumpsys input_method` gives the bar's frame and its view tree, whose views give their position
+    in their parent as "pos=L,T-R,B" on newer versions and as l, t, w, and h attributes on older
+    ones. The bar's right button is the IME switcher; older versions hide it and show a language
+    key in the keyboard instead."""
+    dump = adb(serial, "shell", "dumpsys", "input_method")
+    bar = re.search(r"mNavigationBarController=\{mImeDrawsImeNavBar=true mNavigationBarFrame=\S+ \S+ \S+ "
+                    r"-?\d+,(-?\d+)-(-?\d+),(-?\d+)", dump)
+    if not bar:
+        return None
+    height = int(bar.group(3)) - int(bar.group(1))
+    lines = dump[dump.index("<NavigationBarFrame"):].splitlines()[1:]
+    ancestors, buttons = [], []
+    for line in itertools.takewhile(lambda line: "NavigationBarFrame" not in line, lines):
+        new = re.search(r"<(\w+)[^>]* pos=(-?\d+),-?\d+-(-?\d+),-?\d+ visibility=\"(\d+)\"", line)
+        old = re.search(r"<(\w+)[^>]* l=\"(-?\d+)\" t=\"-?\d+\" w=\"(\d+)\" h=\"\d+\" visibility=\"(\d+)\"", line)
+        if new:
+            name, x, width, visibility = new.group(1), int(new.group(2)), int(new.group(3)) - int(new.group(2)), new.group(4)
+        elif old:
+            name, x, width, visibility = old.group(1), int(old.group(2)), int(old.group(3)), old.group(4)
+        else:
+            continue
+        # A view's ancestors are the views above it with less indentation.
+        indent = len(line) - len(line.lstrip())
+        while ancestors and ancestors[-1][0] >= indent:
+            ancestors.pop()
+        if name == "KeyButtonView":
+            buttons.append((sum(a[1] for a in ancestors) + x + width // 2, visibility == "0" and width > 0))
+        ancestors.append((indent, x))
+    if len(buttons) != 2:
+        raise RuntimeError(f"expected the back and IME switcher buttons in the IME's navigation bar, found {buttons}")
+    x, shown = max(buttons)
+    return height, x if shown else None
+
+
 def keyboard_region(serial):
-    """The touchable region of the software keyboard, (left, top, right, bottom), once it shows."""
-    for _ in range(10):
+    """The touchable region of the software keyboard, (left, top, right, bottom), and the IME's
+    navigation bar (ime_navigation_bar()), once the keyboard shows.
+
+    The region holds only the bar while the keyboard is hidden, and grows while the keyboard slides
+    in; it is taken when it is taller than the bar and has not changed since it was last read."""
+    last = None
+    for _ in range(20):
         windows = adb(serial, "shell", "dumpsys", "window", "windows")
         match = re.search(r"Window\{\S+ u0 InputMethod\}:.*?touchable region=SkRegion\(\((\d+),(\d+),(\d+),(\d+)\)\)",
                           windows, re.S)
-        if match and int(match.group(4)) > int(match.group(2)):
-            return tuple(int(v) for v in match.groups())
-        time.sleep(1)
-    raise RuntimeError("the software keyboard did not show")
+        region = tuple(int(v) for v in match.groups()) if match else None
+        bar = ime_navigation_bar(serial)
+        if region and region == last and region[3] - region[1] > (bar[0] if bar else 0):
+            return region, bar
+        last = region
+        time.sleep(0.5)
+    raise RuntimeError(f"the software keyboard did not show; its last touchable region was {last}")
 
 
 def adapt_to_device(serial, scenarios):
-    """On a screen other than the AVD's, finds Gboard's keys from its touchable region, and
-    switches its language by typing, since the subtype in the settings may not follow it."""
+    """On anything but the AVD, finds Gboard's keys from its touchable region, and switches its
+    language by typing, since the subtype in the settings may not follow it. Phones with the AVD's
+    screen size are not the AVD: their keyboards differ from it in height."""
     global terminal_tap, switch_language
     width, height = (int(v) for v in re.search(r"(\d+)x(\d+)", adb(serial, "shell", "wm", "size")).groups())
-    if f"{width}x{height}" == AVD_SCREEN:
+    emulator = adb(serial, "shell", "getprop", "ro.boot.qemu").strip() == "1"
+    if emulator and f"{width}x{height}" == AVD_SCREEN:
         return
     terminal_tap = (width // 2, height // 3)
     adb(serial, "shell", "am", "start", "-S", "-W", "-n", ACTIVITY, "--ez", "logHostInput", "true")
     time.sleep(2)
     scenarios.tap(terminal_tap)
-    region = keyboard_region(serial)
-    scenarios.LAYOUTS = scenarios.layouts_for(*region)
-    print(f"Keyboard region {region} on a {width}x{height} screen")
+    (left, top, right, bottom), bar = keyboard_region(serial)
+    bar_height, switcher_x = bar or (0, None)
+    keys_bottom = bottom - bar_height
+    switcher = (switcher_x, bottom - bar_height // 2) if switcher_x is not None else None
+    scenarios.LAYOUTS = scenarios.layouts_for(left, top, right, keys_bottom, switcher)
+    print(f"Keyboard region {(left, top, right, bottom)} on a {width}x{height} screen, "
+          f"IME navigation bar {bar_height} high, IME switcher at {switcher}")
 
     def language():
         """Types "a" and Enter, and tells the language by what reaches the host."""
@@ -226,10 +281,21 @@ def adapt_to_device(serial, scenarios):
     names = {"en": ENGLISH_NAMES, **{subtype_lang: k[1] for subtype_lang, k in zip(("ja", "ko"), KEYBOARDS)}}
     ui = Ui(serial)
 
+    def choose_from_list(lang):
+        """Taps the language in the list of keyboards, whose items may add the layout to the name
+        (e.g. "한국어(두벌식)"). Returns whether the list had it."""
+        for label, node in ui.nodes():
+            if label.startswith(names[lang]):
+                ui.tap_node(node)
+                return True
+        return False
+
     def switch(lang):
-        # A tap on the language key moves to the next language on some Gboard versions, and back to
-        # the previous one on others; holding the key opens Gboard's list of its keyboards on some
-        # versions, where the language is chosen by name. Taps are tried first, then the list.
+        # A tap on the language key moves to the next language on some versions, and back to the
+        # previous one on others (so that taps alone never reach a third language); on others the
+        # tap opens the system's list of the keyboards, and holding the key opens such a list on
+        # some versions. A language is chosen by name in a list that shows. Taps are tried first,
+        # then holding the key.
         for attempt in range(6):
             current = language()
             if current == lang:
@@ -237,12 +303,12 @@ def adapt_to_device(serial, scenarios):
             x, y = scenarios.LAYOUTS[current or "en"]["GLOBE"]
             if attempt < 3:
                 scenarios.tap((x, y))
+                time.sleep(1.5)
+                choose_from_list(lang)
             else:
                 adb(serial, "shell", "input", "swipe", str(x), str(y), str(x), str(y), "1200")
                 time.sleep(1.5)
-                try:
-                    ui.tap(*names[lang], timeout=5)
-                except RuntimeError:
+                if not choose_from_list(lang):
                     adb(serial, "shell", "input", "keyevent", "KEYCODE_BACK")
             time.sleep(1.5)
         else:

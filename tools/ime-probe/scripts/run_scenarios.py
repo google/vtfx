@@ -65,14 +65,19 @@ LAYOUTS = {
 LAYOUTS["ko"] = LAYOUTS["en"]
 
 
-def layouts_for(left, top, right, bottom):
+def layouts_for(left, top, right, bottom, switcher):
     """The key coordinates of Gboard's keyboards on any screen, from the touchable region of the
     keyboard (`touchable region` of the InputMethod window in `dumpsys window windows`).
 
+    `bottom` is the bottom of the keys: with gesture navigation, the IME draws its own navigation
+    bar under them, inside the region, and the caller leaves it out. `switcher` is the center of
+    the IME switcher button in that bar, or None where there is none.
+
     The keys are at fixed fractions of the width, measured on the Pixel 7 AVD and on a Pixel XL
-    with Gboard 18.4: four rows of keys under a toolbar about 0.73 of a row high. On a device with
-    three-button navigation, Gboard shows a language switch key ("GLOBE") where the Japanese
-    keyboard has "?" and left of the English space bar."""
+    with Gboard 18.4: four rows of keys under a toolbar about 0.73 of a row high. Without the
+    switcher button (Android 10 with three-button navigation, or Gboard 12.4 on Android 13), Gboard
+    shows a language switch key ("GLOBE") where the Japanese keyboard has "?" and left of the
+    English space bar; with it, the button is the language key."""
     key = (right - left) / 10
     row = (bottom - top) / (4 + 0.733)
     rows = [round(bottom - (3.5 - k) * row) for k in range(4)]
@@ -94,6 +99,9 @@ def layouts_for(left, top, right, bottom):
         "ja": layout(0.5, {"KANA": 0.078, "、": 0.2, "?": 0.3, "GLOBE": 0.3, " ": 0.45, "。": 0.6, "LEFT": 0.7,
                            "RIGHT": 0.795, "ENTER": 0.92}),
     }
+    if switcher is not None:
+        for keys in layouts.values():
+            keys["GLOBE"] = switcher
     layouts["ko"] = layouts["en"]
     return layouts
 

@@ -309,6 +309,15 @@ What to tell us: the Gboard version, the device and Android version, and each ro
 
 So rows 13.1 to 13.3 are checked on Android 10 and 15, and on Android 11 with an old Gboard; Android 12 and 13, a current Gboard on Android 11 to 13, and 13.4 remain. The phones' layouts of `layouts_for` do not fit Gboard 15.1 on a Pixel 10, or a tablet.
 
+With gesture navigation, the IME draws a navigation bar under its keys, inside the keyboard's touchable region, and the language key is the IME switcher button in that bar. Until the script left the bar out of the region and tapped that button, it put the bottom row of keys in the bar and could not switch the language, on the devices of the releases of 0.7.1 and 0.8.0. Taking the bar from `dumpsys input_method`, on 2026-11-16:
+
+| Device | Gboard | Result |
+|---|---|---|
+| Pixel 8a, Android 14 | 13.5, as the system shipped it | All 12 scenarios passed. A tap on the switcher button opens the system's list of the keyboards |
+| Pixel 8, Android 16 | 15.9, as the system shipped it | All 12 passed. A tap on the switcher button goes back to the previous language, so the third one is chosen from the list that holding the button opens |
+| A real device, Android 17 | 17.2.3, as the system shipped it | All 12 passed |
+| Pixel 7, Android 13 | 12.4, as the system shipped it | Not run: the switcher button is hidden, and this Gboard kept its Japanese keyboard at 12 keys although the QWERTY layout was chosen in its settings |
+
 ## 14. Searching
 
 Section 13 of [compose-input.md](design/compose-input.md), [decisions/0085](decisions/0085-compose-interaction.md). A search runs on the main thread: a new search lays out the text of the whole scrollback, a change of the text searches the text kept, and each redraw after output searches the new lines. These were timed only on the development machine's JVM, not on ART.
