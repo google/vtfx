@@ -462,7 +462,7 @@ class AttackTest {
             for (url in
                 listOf(
                     "https://a.com\u0000@b.com",
-                    "https://a.com‮/b",
+                    "https://a.com\u202E/b",
                     "https://a.com b",
                     "https://a.com\nb",
                     "",
