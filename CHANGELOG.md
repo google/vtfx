@@ -3,6 +3,10 @@
 This file lists the notable changes of each release of vtfx, newest first.
 Versions follow Semantic Versioning; before 1.0, any release may break compatibility ([topic 2 of docs/decisions/0087](docs/decisions/0087-public-api.md)).
 
+## 0.8.1 - 2026-11-16
+
+No changes that apps or their users can notice: the release carries changes to the tests and the fuzz targets only.
+
 ## 0.8.0 - 2026-11-16
 
 ### Changed
