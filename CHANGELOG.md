@@ -3,6 +3,12 @@
 This file lists the notable changes of each release of vtfx, newest first.
 Versions follow Semantic Versioning; before 1.0, any release may break compatibility ([topic 2 of docs/decisions/0087](docs/decisions/0087-public-api.md)).
 
+## 0.8.0 - 2026-11-16
+
+### Changed
+
+- `vtfx-compose`: The IME's composing text is now drawn in the colors that the IME gives it, as `EditText` draws them: its background colors composited over the terminal's default background, and its text color for the characters and their underline. Japanese IMEs such as Gboard and Simeji show the clause being converted, and their cursor within the composing text, only by these colors, which vtfx dropped before.
+
 ## 0.7.1 - 2026-11-13
 
 ### Fixed
