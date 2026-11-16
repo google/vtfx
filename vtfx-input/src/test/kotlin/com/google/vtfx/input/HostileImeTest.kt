@@ -43,11 +43,14 @@ class HostileImeTest {
                     editor,
                     host,
                     maxHistoryLength = 16,
-                    "iteration $iteration, step $step, calls ${calls.joinToString("; ")}",
-                )
+                ) {
+                    "iteration $iteration, step $step, calls ${calls.joinToString("; ")}"
+                }
             }
             editor.closeConnection()
-            HostileIme.checkDeleteBound(host, CALLS, maxHistoryLength = 16, "iteration $iteration")
+            HostileIme.checkDeleteBound(host, CALLS, maxHistoryLength = 16) {
+                "iteration $iteration"
+            }
         }
     }
 

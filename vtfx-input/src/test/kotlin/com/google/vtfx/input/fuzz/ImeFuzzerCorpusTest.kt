@@ -20,6 +20,7 @@ import com.google.testing.junit.testparameterinjector.TestParameter
 import com.google.testing.junit.testparameterinjector.TestParameterInjector
 import com.google.testing.junit.testparameterinjector.TestParameterValuesProvider
 import java.io.File
+import kotlin.random.Random
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -40,6 +41,16 @@ class ImeFuzzerCorpusTest {
         ImeFuzzer.fuzzerTestOneInput(ByteArray(0))
     }
 
+    /**
+     * An input far longer than fuzzing makes, as a test run that feeds the target arbitrary files
+     * gives it, still runs within the time limit: the work for each call does not grow with the
+     * calls before it.
+     */
+    @Test(timeout = HANG_MILLIS)
+    fun longInput() {
+        ImeFuzzer.fuzzerTestOneInput(Random(SEED).nextBytes(LONG_INPUT_BYTES))
+    }
+
     private class Corpus : TestParameterValuesProvider() {
         override fun provideValues(context: Context): List<*> {
             val directory =
@@ -57,5 +68,7 @@ class ImeFuzzerCorpusTest {
 
     private companion object {
         const val HANG_MILLIS = 10_000L
+        const val SEED = 20261116
+        const val LONG_INPUT_BYTES = 1 shl 20
     }
 }

@@ -187,27 +187,32 @@ internal object HostileIme {
 
     /**
      * Checks the invariants after a call of an editor with [maxHistoryLength]. [context] describes
-     * the calls so far.
+     * the calls so far; it is built only for a failure, since it grows with the calls.
      */
-    fun checkInvariants(editor: ImeEditor, host: Host, maxHistoryLength: Int, context: String) {
+    fun checkInvariants(
+        editor: ImeEditor,
+        host: Host,
+        maxHistoryLength: Int,
+        context: () -> String,
+    ) {
         // Invariant 1: the cursor is at the end of the edit buffer.
         check(editor.cursor == editor.text.length) {
-            "$context: cursor ${editor.cursor}, text length ${editor.text.length}"
+            "${context()}: cursor ${editor.cursor}, text length ${editor.text.length}"
         }
-        check(editor.selectionStart in 0..editor.cursor) { context }
+        check(editor.selectionStart in 0..editor.cursor) { context() }
         val composing = editor.composing
-        check(composing.colors.size <= ImeEditor.MAX_COLORED_RANGES) { context }
+        check(composing.colors.size <= ImeEditor.MAX_COLORED_RANGES) { context() }
         for (range in composing.colors) {
             check(range.start in 0 until range.end && range.end <= composing.text.length) {
-                "$context: range $range in '${composing.text}'"
+                "${context()}: range $range in '${composing.text}'"
             }
         }
         // Invariant 5: the input history stays within its limit, also during a batch edit.
         val history =
             editor.text.substring(0, editor.composingStart.takeIf { it >= 0 } ?: editor.cursor)
-        check(history.codePointCount(0, history.length) <= maxHistoryLength) { context }
+        check(history.codePointCount(0, history.length) <= maxHistoryLength) { context() }
         // A line break is Enter or part of a paste, never history (ime-contract.md section 4.2).
-        check(history.none { it == '\n' || it == '\r' }) { context }
+        check(history.none { it == '\n' || it == '\r' }) { context() }
         if (!editor.isBatchEditInProgress) {
             // The host has exactly the committed part of the history at the end of its line.
             val committed =
@@ -216,7 +221,7 @@ internal object HostileIme {
                     if (editor.composingStart >= 0) editor.composingStart else editor.cursor,
                 )
             check(host.line.endsWith(committed)) {
-                "$context: host '${host.line}' editor '$committed'"
+                "${context()}: host '${host.line}' editor '$committed'"
             }
         }
     }
@@ -225,9 +230,9 @@ internal object HostileIme {
      * Checks that the DELs beyond the text that was sent are bounded by the history's limit, after
      * [calls] calls.
      */
-    fun checkDeleteBound(host: Host, calls: Int, maxHistoryLength: Int, context: String) {
+    fun checkDeleteBound(host: Host, calls: Int, maxHistoryLength: Int, context: () -> String) {
         check(host.largestDelete <= TEXTS.maxOf { it.length } * calls + maxHistoryLength) {
-            context
+            context()
         }
     }
 }

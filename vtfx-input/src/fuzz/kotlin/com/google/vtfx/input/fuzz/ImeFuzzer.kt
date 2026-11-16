@@ -53,15 +53,17 @@ object ImeFuzzer {
                 editor,
                 host,
                 maxHistoryLength,
-                "calls ${calls.joinToString("; ")}",
-            )
+            ) {
+                "calls ${calls.joinToString("; ")}"
+            }
         }
         editor.closeConnection()
         HostileIme.checkDeleteBound(
             host,
             calls.size,
             maxHistoryLength,
-            "calls ${calls.joinToString("; ")}",
-        )
+        ) {
+            "calls ${calls.joinToString("; ")}"
+        }
     }
 }
